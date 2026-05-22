@@ -1,0 +1,27 @@
+name: deploy-template
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to deploy
+        required: true
+        default: latest
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    environment: production-approval-required
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Explain manual deployment guardrail
+        run: |
+          echo "This workflow is a template only."
+          echo "Configure AWS OIDC, ECR image promotion, kubeconfig, and environment approval before applying manifests."
+      - name: Validate Kubernetes manifests
+        run: kubectl apply --dry-run=client -f infra/k8s/zhongwen-platform.yaml
+      - name: Render intended image tag
+        run: echo "Would deploy image tag ${{ inputs.image_tag }} after explicit approval."
