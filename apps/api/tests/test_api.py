@@ -59,3 +59,60 @@ def test_search_and_metrics():
     metrics = client.get("/metrics")
     assert metrics.status_code == 200
     assert "zhongwen_api_requests_total" in metrics.text
+
+
+def test_seed_database_is_repeatable_after_reset():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    with SessionLocal() as db:
+        seed_database(db)
+        first_count = len(client.get("/api/courses").json())
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    with SessionLocal() as db:
+        seed_database(db)
+    second_count = len(client.get("/api/courses").json())
+    assert second_count == first_count
+
+
+def test_admin_upload_course_flow():
+    payload = {
+        "slug": "calligraphy-orchid-preface",
+        "title": "Calligraphy: Wang Xizhi and the Orchid Pavilion Preface",
+        "era": "Eastern Jin",
+        "level": "Advanced",
+        "category": "Art",
+        "description": "Upload flow smoke test for a course about 行书 rhythm, gathering, and cultural memory.",
+        "subscription_tier": "mock_active",
+        "lessons": [
+            {
+                "title": "Reading 行书 as Movement",
+                "summary": "A short authoring-flow lesson with vocabulary and flashcards.",
+                "body_simplified": "《兰亭集序》表现了书法的节奏、聚会的雅趣和时间的感叹。",
+                "body_traditional": "《蘭亭集序》表現了書法的節奏、聚會的雅趣和時間的感嘆。",
+                "pinyin": "Lántíng jí xù biǎoxiàn le shūfǎ de jiézòu.",
+                "audio_url": None,
+                "video_url": "https://example.com/media/orchid-preface.mp4",
+                "vocabulary": [
+                    {"simplified": "书法", "traditional": "書法", "pinyin": "shūfǎ", "definition": "calligraphy"},
+                    {"simplified": "节奏", "traditional": "節奏", "pinyin": "jiézòu", "definition": "rhythm"},
+                ],
+                "flashcards": [
+                    {"prompt": "What does 书法 mean?", "answer": "calligraphy", "pinyin": "shūfǎ", "difficulty": "intermediate"}
+                ],
+            }
+        ],
+    }
+
+    created = client.post("/api/admin/courses", json=payload)
+    assert created.status_code == 201
+    course = created.json()
+    assert course["slug"] == "calligraphy-orchid-preface"
+    assert course["lessons"][0]["title"] == "Reading 行书 as Movement"
+
+    duplicate = client.post("/api/admin/courses", json=payload)
+    assert duplicate.status_code == 409
+
+    search = client.get("/api/search?q=兰亭")
+    assert search.status_code == 200
+    assert search.json()["lessons"]

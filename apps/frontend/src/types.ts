@@ -45,6 +45,27 @@ export interface Course {
   lessons: LessonSummary[];
 }
 
+export interface CourseCreate {
+  slug: string;
+  title: string;
+  era: string;
+  level: string;
+  category: string;
+  description: string;
+  subscription_tier: string;
+  lessons: Array<{
+    title: string;
+    summary: string;
+    body_simplified: string;
+    body_traditional: string;
+    pinyin: string;
+    audio_url?: string | null;
+    video_url?: string | null;
+    vocabulary: Array<{ simplified: string; traditional: string; pinyin: string; definition: string }>;
+    flashcards: Array<{ prompt: string; answer: string; pinyin: string; difficulty: string }>;
+  }>;
+}
+
 export interface Progress {
   id: number;
   user_id: string;

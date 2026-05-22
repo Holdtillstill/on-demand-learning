@@ -13,5 +13,6 @@ describe("App", () => {
     );
     expect(screen.getByText("Zhongwen Cloud")).toBeInTheDocument();
     expect(screen.getByText("Catalog")).toBeInTheDocument();
+    expect(screen.getByText("Admin Upload")).toBeInTheDocument();
   });
 });

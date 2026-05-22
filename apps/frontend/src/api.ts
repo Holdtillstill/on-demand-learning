@@ -1,4 +1,4 @@
-import type { Course, Flashcard, Lesson, Progress } from "./types";
+import type { Course, CourseCreate, Flashcard, Lesson, Progress } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -32,5 +32,6 @@ export const api = {
   saveProgress: (lessonId: number, completed: boolean, score: number) =>
     postJson<Progress>("/api/progress", { user_id: "demo-user", lesson_id: lessonId, completed, score }),
   quizAttempt: (lessonId: number, score: number, answers: Record<string, string>) =>
-    postJson("/api/quiz/attempts", { user_id: "demo-user", lesson_id: lessonId, score, answers })
+    postJson("/api/quiz/attempts", { user_id: "demo-user", lesson_id: lessonId, score, answers }),
+  createCourse: (course: CourseCreate) => postJson<Course>("/api/admin/courses", course)
 };

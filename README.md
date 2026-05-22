@@ -6,6 +6,7 @@ Zhongwen Cloud Learning Platform is a local-first, production-style portfolio pr
 
 ```bash
 cp .env.example .env
+make bootstrap          # uses python3.11 by default; override with PYTHON=/path/to/python
 docker compose up --build
 ```
 
@@ -34,8 +35,8 @@ Then open OpenSearch Dashboards at http://localhost:5601.
 
 ## What Is Built
 
-- FastAPI backend with course catalog, lessons, progress, search, flashcards, quiz attempts, admin seed endpoint, health/readiness, Prometheus metrics, OpenTelemetry tracing, request IDs, basic rate limiting, and JSON logs.
-- React/Vite/TypeScript frontend with catalog, course detail, lesson viewer, flashcards, progress, and platform information pages.
+- FastAPI backend with course catalog, lessons, progress, search, flashcards, quiz attempts, admin seed and nested course-upload endpoints, health/readiness, Prometheus metrics, OpenTelemetry tracing, request IDs, basic rate limiting, and JSON logs.
+- React/Vite/TypeScript frontend with catalog, course detail, lesson viewer, flashcards, progress, admin upload, and platform information pages.
 - Worker service that refreshes recommendations and due-card counts while emitting metrics, logs, and traces.
 - PostgreSQL schema created by SQLAlchemy plus seeded Mandarin, Tang poetry, Song painting, classical fiction, and modern culture content.
 - Dockerfiles and Docker Compose for app, DB, Redis, Prometheus, Grafana, Jaeger, and optional OpenSearch/Fluent Bit.
@@ -46,12 +47,13 @@ Then open OpenSearch Dashboards at http://localhost:5601.
 ## Common Commands
 
 ```bash
+make bootstrap      # Install local Python dependencies with python3.11
 make up              # Start local platform
 make up-logging      # Start platform plus OpenSearch logging profile
 make compose-config  # Validate docker-compose.yml
 make backend-test
 make worker-test
-make frontend-test
+make frontend-test   # Forces devDependencies even when npm config omit=dev is set
 make test
 ```
 
@@ -63,6 +65,11 @@ curl "http://localhost:8000/api/search?q=Tang"
 curl -X POST http://localhost:8000/api/progress \
   -H 'content-type: application/json' \
   -d '{"user_id":"demo-user","lesson_id":1,"completed":true,"score":1}'
+
+# Admin/content authoring flow: create a nested course with lessons, vocabulary, and flashcards.
+curl -X POST http://localhost:8000/api/admin/courses \
+  -H 'content-type: application/json' \
+  -d @docs/examples/orchid-pavilion-course.json
 ```
 
 ## Repository Map

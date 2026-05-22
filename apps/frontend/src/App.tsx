@@ -1,6 +1,7 @@
-import { BookOpen, ChartNoAxesColumn, Gauge, GraduationCap, Layers3 } from "lucide-react";
+import { BookOpen, ChartNoAxesColumn, Gauge, GraduationCap, Layers3, UploadCloud } from "lucide-react";
 import { NavLink, Route, Routes } from "react-router-dom";
 
+import AdminUploadPage from "./pages/AdminUploadPage";
 import CatalogPage from "./pages/CatalogPage";
 import CoursePage from "./pages/CoursePage";
 import FlashcardsPage from "./pages/FlashcardsPage";
@@ -12,6 +13,7 @@ const nav = [
   { to: "/", label: "Catalog", icon: BookOpen },
   { to: "/flashcards", label: "Flashcards", icon: Layers3 },
   { to: "/progress", label: "Progress", icon: ChartNoAxesColumn },
+  { to: "/admin/upload", label: "Admin Upload", icon: UploadCloud },
   { to: "/platform", label: "Platform", icon: Gauge }
 ];
 
@@ -45,6 +47,7 @@ export default function App() {
           <Route path="/lessons/:id" element={<LessonPage />} />
           <Route path="/flashcards" element={<FlashcardsPage />} />
           <Route path="/progress" element={<ProgressPage />} />
+          <Route path="/admin/upload" element={<AdminUploadPage />} />
           <Route path="/platform" element={<ObservabilityPage />} />
         </Routes>
       </main>

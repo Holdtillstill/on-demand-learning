@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from sqlalchemy.orm import Session
 
 from app.models import Course, Flashcard, Lesson, User, VocabularyTerm
@@ -156,7 +158,7 @@ def seed_database(db: Session) -> None:
         return
 
     db.add(User(id="demo-user", display_name="Demo Learner", subscription_status="mock_active"))
-    for course_data in SEED_COURSES:
+    for course_data in deepcopy(SEED_COURSES):
         lessons = course_data.pop("lessons")
         course = Course(**course_data)
         db.add(course)

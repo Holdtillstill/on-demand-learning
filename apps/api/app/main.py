@@ -4,7 +4,7 @@ from collections import defaultdict, deque
 from uuid import uuid4
 
 import redis
-from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from sqlalchemy import or_, text
@@ -14,8 +14,9 @@ from app.config import get_settings
 from app.database import Base, SessionLocal, check_database, engine, get_db
 from app.logging_config import configure_logging
 from app.metrics import DB_HEALTH, ERROR_COUNT, LESSON_COMPLETIONS, QUIZ_ATTEMPTS, REQUEST_COUNT, REQUEST_LATENCY
-from app.models import Course, Flashcard, Lesson, Progress, QuizAttempt, User
+from app.models import Course, Flashcard, Lesson, Progress, QuizAttempt, User, VocabularyTerm
 from app.schemas import (
+    CourseCreate,
     CourseOut,
     FlashcardOut,
     LessonOut,
@@ -229,6 +230,68 @@ def create_quiz_attempt(payload: QuizAttemptIn, db: Session = Depends(get_db)):
     db.refresh(attempt)
     QUIZ_ATTEMPTS.inc()
     return attempt
+
+
+@app.post("/api/admin/courses", response_model=CourseOut, status_code=status.HTTP_201_CREATED)
+def admin_create_course(payload: CourseCreate, db: Session = Depends(get_db)):
+    existing = db.query(Course).filter(Course.slug == payload.slug).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="course slug already exists")
+
+    course = Course(
+        slug=payload.slug,
+        title=payload.title,
+        era=payload.era,
+        level=payload.level,
+        category=payload.category,
+        description=payload.description,
+        subscription_tier=payload.subscription_tier,
+    )
+    db.add(course)
+    db.flush()
+
+    for index, lesson_data in enumerate(payload.lessons, start=1):
+        lesson = Lesson(
+            course_id=course.id,
+            title=lesson_data.title,
+            summary=lesson_data.summary,
+            body_simplified=lesson_data.body_simplified,
+            body_traditional=lesson_data.body_traditional,
+            pinyin=lesson_data.pinyin,
+            audio_url=lesson_data.audio_url,
+            video_url=lesson_data.video_url,
+            sequence=index,
+        )
+        db.add(lesson)
+        db.flush()
+        for term in lesson_data.vocabulary:
+            db.add(
+                VocabularyTerm(
+                    lesson_id=lesson.id,
+                    simplified=term.simplified,
+                    traditional=term.traditional,
+                    pinyin=term.pinyin,
+                    definition=term.definition,
+                )
+            )
+        for card in lesson_data.flashcards:
+            db.add(
+                Flashcard(
+                    lesson_id=lesson.id,
+                    prompt=card.prompt,
+                    answer=card.answer,
+                    pinyin=card.pinyin,
+                    difficulty=card.difficulty,
+                )
+            )
+
+    db.commit()
+    created = db.query(Course).options(joinedload(Course.lessons)).filter(Course.id == course.id).one()
+    logger.info(
+        "admin_course_created",
+        extra={"request_id": "-", "path": "/api/admin/courses", "method": "POST", "status_code": 201, "duration_ms": 0},
+    )
+    return created
 
 
 @app.get("/api/admin/seed")
