@@ -147,6 +147,72 @@
       ],
       "title": "Worker Jobs Last Hour",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 15
+      },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "increase(zhongwen_xp_awarded_total[1h])",
+          "legendFormat": "xp awarded",
+          "refId": "A"
+        }
+      ],
+      "title": "XP Awarded Last Hour",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 15
+      },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "increase(zhongwen_srs_reviews_total[1h])",
+          "legendFormat": "srs reviews",
+          "refId": "A"
+        }
+      ],
+      "title": "SRS Reviews Last Hour",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 15
+      },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "zhongwen_worker_due_flashcards",
+          "legendFormat": "due cards",
+          "refId": "A"
+        }
+      ],
+      "title": "Worker Due Flashcards",
+      "type": "stat"
     }
   ],
   "refresh": "30s",

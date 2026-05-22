@@ -1,0 +1,52 @@
+groups:
+  - name: zhongwen-platform
+    rules:
+      - alert: ZhongwenApiHighErrorRate
+        expr: sum(rate(zhongwen_api_requests_total{status_code=~"5.."}[5m])) / clamp_min(sum(rate(zhongwen_api_requests_total[5m])), 0.001) > 0.05
+        for: 10m
+        labels:
+          severity: page
+          service: api
+        annotations:
+          summary: API 5xx rate is above 5 percent
+          runbook_url: docs/runbooks.md#elevated-api-error-rate
+
+      - alert: ZhongwenApiReadinessFailing
+        expr: zhongwen_api_db_health == 0
+        for: 5m
+        labels:
+          severity: page
+          service: api
+        annotations:
+          summary: API readiness dependency check is failing
+          runbook_url: docs/runbooks.md#api-readiness-failing
+
+      - alert: ZhongwenApiHighLatency
+        expr: histogram_quantile(0.95, sum by (le) (rate(zhongwen_api_request_latency_seconds_bucket[5m]))) > 1
+        for: 10m
+        labels:
+          severity: ticket
+          service: api
+        annotations:
+          summary: API p95 latency is above 1 second
+          runbook_url: docs/runbooks.md#elevated-api-latency
+
+      - alert: ZhongwenWorkerDown
+        expr: up{job="zhongwen-worker"} == 0
+        for: 5m
+        labels:
+          severity: page
+          service: worker
+        annotations:
+          summary: Prometheus cannot scrape the learner activity worker
+          runbook_url: docs/runbooks.md#worker-job-failures
+
+      - alert: ZhongwenWorkerJobFailures
+        expr: increase(zhongwen_worker_job_failures_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: ticket
+          service: worker
+        annotations:
+          summary: Worker jobs are failing
+          runbook_url: docs/runbooks.md#worker-job-failures

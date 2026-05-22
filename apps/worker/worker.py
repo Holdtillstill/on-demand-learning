@@ -33,6 +33,7 @@ tracer = trace.get_tracer(__name__)
 JOB_COUNT = Counter("zhongwen_worker_jobs_total", "Worker jobs completed", ["job"])
 JOB_FAILURES = Counter("zhongwen_worker_job_failures_total", "Worker jobs failed", ["job"])
 RECOMMENDATIONS = Gauge("zhongwen_worker_recommendations", "Current recommendation rows")
+DUE_CARDS = Gauge("zhongwen_worker_due_flashcards", "Due flashcards for demo-user")
 
 
 def refresh_recommendations() -> int:
@@ -84,8 +85,21 @@ def publish_due_card_count() -> int:
     engine = create_engine(DATABASE_URL, pool_pre_ping=True)
     redis_client = redis.from_url(REDIS_URL)
     with engine.connect() as connection:
-        count = connection.execute(text("SELECT COUNT(*) FROM flashcards")).scalar_one()
+        count = connection.execute(
+            text(
+                """
+                SELECT COUNT(*)
+                FROM flashcards f
+                LEFT JOIN review_states rs
+                  ON rs.flashcard_id = f.id
+                 AND rs.user_id = 'demo-user'
+                WHERE rs.id IS NULL
+                   OR rs.due_at <= CURRENT_TIMESTAMP
+                """
+            )
+        ).scalar_one()
     redis_client.set("zhongwen:due_flashcards:demo-user", count)
+    DUE_CARDS.set(count)
     return count
 
 

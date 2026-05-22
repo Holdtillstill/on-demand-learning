@@ -116,3 +116,81 @@ def test_admin_upload_course_flow():
     search = client.get("/api/search?q=兰亭")
     assert search.status_code == 200
     assert search.json()["lessons"]
+
+
+def test_learning_path_marks_completion_and_recommendation():
+    courses = client.get("/api/courses").json()
+    first_lesson_id = courses[0]["lessons"][0]["id"]
+    client.post("/api/progress", json={"user_id": "demo-user", "lesson_id": first_lesson_id, "completed": True, "score": 1})
+
+    response = client.get("/api/learning-path?user_id=demo-user")
+    assert response.status_code == 200
+    path = response.json()
+
+    assert path["user_id"] == "demo-user"
+    assert path["modules"]
+    lesson_states = [lesson["state"] for module in path["modules"] for lesson in module["lessons"]]
+    assert "completed" in lesson_states
+    assert "recommended" in lesson_states
+    assert "locked" in lesson_states
+
+
+def test_user_dashboard_reports_xp_streak_goal_and_achievements():
+    courses = client.get("/api/courses").json()
+    first_lesson_id = courses[0]["lessons"][0]["id"]
+    poetry_lesson_id = next(
+        lesson["id"]
+        for course in courses
+        if course["category"] == "Literature"
+        for lesson in course["lessons"]
+    )
+    client.post("/api/progress", json={"user_id": "demo-user", "lesson_id": first_lesson_id, "completed": True, "score": 1})
+    client.post("/api/progress", json={"user_id": "demo-user", "lesson_id": poetry_lesson_id, "completed": True, "score": 1})
+    client.post(
+        "/api/quiz/attempts",
+        json={"user_id": "demo-user", "lesson_id": first_lesson_id, "score": 0.8, "answers": {"tone": "声调"}},
+    )
+
+    response = client.get("/api/users/demo-user/dashboard")
+    assert response.status_code == 200
+    dashboard = response.json()
+
+    assert dashboard["xp"]["total"] >= 48
+    assert dashboard["xp"]["total"] == dashboard["xp"]["lesson_completion_xp"] + dashboard["xp"]["quiz_xp"] + dashboard["xp"]["review_xp"]
+    assert dashboard["daily_goal"]["target_xp"] == 50
+    assert dashboard["daily_goal"]["earned_xp_today"] >= 48
+    assert dashboard["streak"]["current_days"] >= 1
+    earned = {achievement["code"] for achievement in dashboard["achievements"] if achievement["earned"]}
+    assert {"first_lesson", "poetry_explorer"}.issubset(earned)
+
+
+def test_due_reviews_and_answer_update_schedule():
+    card = client.get("/api/flashcards").json()[0]
+
+    due = client.get("/api/reviews/due?user_id=demo-user")
+    assert due.status_code == 200
+    assert any(item["id"] == card["id"] for item in due.json()["cards"])
+
+    answer = client.post(f"/api/reviews/{card['id']}/answer", json={"user_id": "demo-user", "quality": 5, "correct": True})
+    assert answer.status_code == 200
+    updated = answer.json()
+    assert updated["flashcard_id"] == card["id"]
+    assert updated["interval_days"] >= 1
+    assert updated["ease"] > 2
+    assert updated["due_at"] > updated["last_reviewed_at"]
+
+
+def test_character_practice_metadata():
+    response = client.get("/api/characters")
+    assert response.status_code == 200
+    characters = response.json()
+    moon = next(item for item in characters if item["simplified"] == "月")
+    assert moon["traditional"] == "月"
+    assert moon["pinyin"] == "yuè"
+    assert moon["radical"]
+    assert moon["strokes"] > 0
+    assert moon["example_words"]
+
+    detail = client.get(f"/api/characters/{moon['id']}")
+    assert detail.status_code == 200
+    assert detail.json()["mnemonic"]

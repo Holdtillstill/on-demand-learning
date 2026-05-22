@@ -1,4 +1,15 @@
-import type { Course, CourseCreate, Flashcard, Lesson, Progress } from "./types";
+import type {
+  CharacterMetadata,
+  Course,
+  CourseCreate,
+  DueReviewQueue,
+  Flashcard,
+  LearningPath,
+  Lesson,
+  Progress,
+  ReviewState,
+  UserDashboard
+} from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -17,7 +28,14 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body)
   });
   if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}`);
+    let detail = response.statusText;
+    try {
+      const payload = (await response.json()) as { detail?: unknown };
+      detail = typeof payload.detail === "string" ? payload.detail : JSON.stringify(payload.detail);
+    } catch {
+      detail = response.statusText;
+    }
+    throw new Error(`${response.status} ${detail}`);
   }
   return response.json();
 }
@@ -28,6 +46,12 @@ export const api = {
   lesson: (id: string) => getJson<Lesson>(`/api/lessons/${id}`),
   flashcards: () => getJson<Flashcard[]>("/api/flashcards"),
   progress: (userId = "demo-user") => getJson<Progress[]>(`/api/progress/${userId}`),
+  dashboard: (userId = "demo-user") => getJson<UserDashboard>(`/api/users/${userId}/dashboard`),
+  learningPath: (userId = "demo-user") => getJson<LearningPath>(`/api/learning-path?user_id=${encodeURIComponent(userId)}`),
+  dueReviews: (userId = "demo-user") => getJson<DueReviewQueue>(`/api/reviews/due?user_id=${encodeURIComponent(userId)}`),
+  answerReview: (flashcardId: number, quality: number, correct: boolean, userId = "demo-user") =>
+    postJson<ReviewState>(`/api/reviews/${flashcardId}/answer`, { user_id: userId, quality, correct }),
+  characters: () => getJson<CharacterMetadata[]>("/api/characters"),
   search: (q: string) => getJson<{ courses: Course[]; lessons: Lesson[] }>(`/api/search?q=${encodeURIComponent(q)}`),
   saveProgress: (lessonId: number, completed: boolean, score: number) =>
     postJson<Progress>("/api/progress", { user_id: "demo-user", lesson_id: lessonId, completed, score }),

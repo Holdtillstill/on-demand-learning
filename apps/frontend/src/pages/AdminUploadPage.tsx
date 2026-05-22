@@ -33,17 +33,73 @@ const sampleCourse: CourseCreate = {
   ]
 };
 
+const survivalCourse: CourseCreate = {
+  slug: "mandarin-survival-authoring-demo",
+  title: "Mandarin Survival: Cafe and Metro",
+  era: "Modern",
+  level: "Beginner",
+  category: "Mandarin",
+  description: "A compact authoring sample for practical dialogue, signs, vocabulary, and review cards.",
+  subscription_tier: "free",
+  lessons: [
+    {
+      title: "Coffee With Mobile Payment",
+      summary: "Order a drink, request less sugar, and ask whether mobile payment works.",
+      body_simplified: "你好，我想要一杯冰拿铁，少糖。可以用手机支付吗？",
+      body_traditional: "你好，我想要一杯冰拿鐵，少糖。可以用手機支付嗎？",
+      pinyin: "Nǐ hǎo, wǒ xiǎng yào yì bēi bīng nátiě, shǎo táng.",
+      audio_url: null,
+      video_url: null,
+      vocabulary: [
+        { simplified: "冰", traditional: "冰", pinyin: "bīng", definition: "iced; ice" },
+        { simplified: "少糖", traditional: "少糖", pinyin: "shǎo táng", definition: "less sugar" },
+        { simplified: "支付", traditional: "支付", pinyin: "zhīfù", definition: "to pay" }
+      ],
+      flashcards: [
+        { prompt: "How do you ask for less sugar?", answer: "少糖", pinyin: "shǎo táng", difficulty: "beginner" }
+      ]
+    }
+  ]
+};
+
+const templates = [
+  { label: "Calligraphy", course: sampleCourse },
+  { label: "Survival Mandarin", course: survivalCourse }
+];
+
 export default function AdminUploadPage() {
   const [jsonText, setJsonText] = useState(JSON.stringify(sampleCourse, null, 2));
   const [status, setStatus] = useState<string>("Paste a course JSON payload or use the sample, then upload.");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  function parseCourse(): { course?: CourseCreate; error?: string } {
+    try {
+      const parsed = JSON.parse(jsonText) as CourseCreate;
+      if (!parsed.slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(parsed.slug)) return { error: "Slug must be unique kebab-case." };
+      if (!parsed.title) return { error: "Title is required." };
+      if (!parsed.lessons?.length) return { error: "At least one lesson is required." };
+      const missingLesson = parsed.lessons.find((lesson) => !lesson.title || !lesson.body_simplified || !lesson.body_traditional || !lesson.pinyin);
+      if (missingLesson) return { error: "Every lesson needs title, simplified body, traditional body, and pinyin." };
+      return { course: parsed };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : "Invalid JSON." };
+    }
+  }
+
+  const preview = parseCourse();
+  const lessonCount = preview.course?.lessons.length ?? 0;
+  const vocabCount = preview.course?.lessons.reduce((total, lesson) => total + lesson.vocabulary.length, 0) ?? 0;
+  const flashcardCount = preview.course?.lessons.reduce((total, lesson) => total + lesson.flashcards.length, 0) ?? 0;
+
   async function submitCourse() {
     setIsSubmitting(true);
     setStatus("Uploading course...");
     try {
-      const parsed = JSON.parse(jsonText) as CourseCreate;
-      const created = await api.createCourse(parsed);
+      if (preview.error || !preview.course) {
+        setStatus(`Validation failed: ${preview.error}`);
+        return;
+      }
+      const created = await api.createCourse(preview.course);
       setStatus(`Created course #${created.id}: ${created.title}`);
     } catch (error) {
       setStatus(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed: unknown error");
@@ -71,7 +127,19 @@ export default function AdminUploadPage() {
           <textarea value={jsonText} onChange={(event) => setJsonText(event.target.value)} rows={24} spellCheck={false} />
         </label>
         <aside className="upload-panel">
-          <h2>Upload checklist</h2>
+          <h2>Authoring workflow</h2>
+          <div className="template-buttons" aria-label="Course templates">
+            {templates.map((template) => (
+              <button key={template.label} onClick={() => setJsonText(JSON.stringify(template.course, null, 2))}>
+                {template.label}
+              </button>
+            ))}
+          </div>
+          <div className="preview-box">
+            <span>{preview.course?.title ?? "Invalid course payload"}</span>
+            <strong>{lessonCount} lessons / {vocabCount} terms / {flashcardCount} cards</strong>
+            {preview.error && <p>{preview.error}</p>}
+          </div>
           <ul>
             <li>Slug must be unique and kebab-case.</li>
             <li>At least one lesson is required.</li>

@@ -15,6 +15,28 @@ export interface Flashcard {
   difficulty: string;
 }
 
+export interface ReviewCard extends Flashcard {
+  due_at: string;
+  interval_days: number;
+  ease: number;
+}
+
+export interface DueReviewQueue {
+  user_id: string;
+  generated_at: string;
+  count: number;
+  cards: ReviewCard[];
+}
+
+export interface ReviewState {
+  user_id: string;
+  flashcard_id: number;
+  ease: number;
+  interval_days: number;
+  due_at: string;
+  last_reviewed_at: string;
+}
+
 export interface LessonSummary {
   id: number;
   course_id: number;
@@ -43,6 +65,79 @@ export interface Course {
   description: string;
   subscription_tier: string;
   lessons: LessonSummary[];
+}
+
+export interface LearningPathLesson {
+  id: number;
+  title: string;
+  summary: string;
+  sequence: number;
+  state: "completed" | "recommended" | "locked";
+  score?: number | null;
+}
+
+export interface LearningPathModule {
+  course_id: number;
+  slug: string;
+  title: string;
+  category: string;
+  era: string;
+  level: string;
+  sequence: number;
+  locked: boolean;
+  lessons: LearningPathLesson[];
+}
+
+export interface LearningPath {
+  user_id: string;
+  recommended_lesson_id?: number | null;
+  modules: LearningPathModule[];
+}
+
+export interface Achievement {
+  code: string;
+  title: string;
+  description: string;
+  earned: boolean;
+  progress: number;
+  target: number;
+  awarded_at?: string | null;
+}
+
+export interface UserDashboard {
+  user_id: string;
+  xp: {
+    total: number;
+    lesson_completion_xp: number;
+    quiz_xp: number;
+    review_xp: number;
+  };
+  daily_goal: {
+    target_xp: number;
+    earned_xp_today: number;
+    met: boolean;
+  };
+  streak: {
+    current_days: number;
+    freeze_available: boolean;
+    last_activity_date?: string | null;
+  };
+  achievements: Achievement[];
+  completed_lessons: number;
+  due_reviews: number;
+}
+
+export interface CharacterMetadata {
+  id: number;
+  simplified: string;
+  traditional: string;
+  pinyin: string;
+  meaning: string;
+  radical: string;
+  strokes: number;
+  mnemonic: string;
+  cultural_note: string;
+  example_words: string[];
 }
 
 export interface CourseCreate {

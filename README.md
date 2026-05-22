@@ -35,10 +35,10 @@ Then open OpenSearch Dashboards at http://localhost:5601.
 
 ## What Is Built
 
-- FastAPI backend with course catalog, lessons, progress, search, flashcards, quiz attempts, admin seed and nested course-upload endpoints, health/readiness, Prometheus metrics, OpenTelemetry tracing, request IDs, basic rate limiting, and JSON logs.
-- React/Vite/TypeScript frontend with catalog, course detail, lesson viewer, flashcards, progress, admin upload, and platform information pages.
+- FastAPI backend with course catalog, lessons, learning path, learner dashboard, XP, streaks, achievements, SRS review queue, character metadata, progress, search, flashcards, quiz attempts, admin seed and nested course-upload endpoints, health/readiness, Prometheus metrics, OpenTelemetry tracing, request IDs, basic rate limiting, and JSON logs.
+- React/Vite/TypeScript frontend with learner dashboard, curriculum map, catalog, course detail, lesson viewer, SRS reviews, character practice, progress log, admin authoring upload, and platform information pages.
 - Worker service that refreshes recommendations and due-card counts while emitting metrics, logs, and traces.
-- PostgreSQL schema created by SQLAlchemy plus seeded Mandarin, Tang poetry, Song painting, classical fiction, and modern culture content.
+- PostgreSQL schema created by SQLAlchemy plus seeded Mandarin survival, HSK foundations, character building blocks, Tang poetry, Song painting, calligraphy, classical fiction, and modern culture content.
 - Dockerfiles and Docker Compose for app, DB, Redis, Prometheus, Grafana, Jaeger, and optional OpenSearch/Fluent Bit.
 - Kubernetes deployment scaffolding with probes, HPAs, PDBs, network policy, ingress, configmaps, and secret template.
 - Terraform scaffold for AWS `us-west-2`: VPC, EKS, ECR, S3, RDS, ElastiCache, IAM roles, and Budget alert.
@@ -61,15 +61,25 @@ make test
 
 ```bash
 curl http://localhost:8000/api/courses
+curl "http://localhost:8000/api/learning-path?user_id=demo-user"
+curl http://localhost:8000/api/users/demo-user/dashboard
+curl "http://localhost:8000/api/reviews/due?user_id=demo-user"
+curl http://localhost:8000/api/characters
 curl "http://localhost:8000/api/search?q=Tang"
 curl -X POST http://localhost:8000/api/progress \
   -H 'content-type: application/json' \
   -d '{"user_id":"demo-user","lesson_id":1,"completed":true,"score":1}'
+curl -X POST http://localhost:8000/api/reviews/1/answer \
+  -H 'content-type: application/json' \
+  -d '{"user_id":"demo-user","quality":5,"correct":true}'
 
 # Admin/content authoring flow: create a nested course with lessons, vocabulary, and flashcards.
 curl -X POST http://localhost:8000/api/admin/courses \
   -H 'content-type: application/json' \
   -d @docs/examples/orchid-pavilion-course.json
+
+# Generate local demo activity for metrics, traces, XP, reviews, and dashboards.
+bash scripts/generate_learner_activity.sh
 ```
 
 ## Repository Map

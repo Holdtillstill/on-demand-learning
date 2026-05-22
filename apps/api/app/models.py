@@ -62,6 +62,34 @@ class Flashcard(Base):
     lesson: Mapped[Lesson] = relationship(back_populates="flashcards")
 
 
+class ReviewState(Base):
+    __tablename__ = "review_states"
+    __table_args__ = (UniqueConstraint("user_id", "flashcard_id", name="uq_review_state_user_flashcard"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    flashcard_id: Mapped[int] = mapped_column(ForeignKey("flashcards.id"), index=True)
+    ease: Mapped[float] = mapped_column(Float, default=2.5)
+    interval_days: Mapped[int] = mapped_column(Integer, default=0)
+    due_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    last_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class CharacterMetadata(Base):
+    __tablename__ = "character_metadata"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    simplified: Mapped[str] = mapped_column(String(8), unique=True, index=True)
+    traditional: Mapped[str] = mapped_column(String(8), index=True)
+    pinyin: Mapped[str] = mapped_column(String(80))
+    meaning: Mapped[str] = mapped_column(String(160))
+    radical: Mapped[str] = mapped_column(String(40))
+    strokes: Mapped[int] = mapped_column(Integer)
+    mnemonic: Mapped[str] = mapped_column(Text)
+    cultural_note: Mapped[str] = mapped_column(Text)
+    example_words: Mapped[list[str]] = mapped_column(JSON, default=list)
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -81,6 +109,29 @@ class Progress(Base):
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     score: Mapped[float] = mapped_column(Float, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    lesson: Mapped[Lesson] = relationship()
+
+
+class XpEvent(Base):
+    __tablename__ = "xp_events"
+    __table_args__ = (UniqueConstraint("user_id", "source", "source_id", name="uq_xp_event_source"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    source: Mapped[str] = mapped_column(String(80), index=True)
+    source_id: Mapped[int] = mapped_column(Integer)
+    xp: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class UserAchievement(Base):
+    __tablename__ = "user_achievements"
+    __table_args__ = (UniqueConstraint("user_id", "code", name="uq_user_achievement_code"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    code: Mapped[str] = mapped_column(String(80), index=True)
+    awarded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class QuizAttempt(Base):

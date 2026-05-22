@@ -1,0 +1,25 @@
+name: platform-validate
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  local-platform-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.3
+      - name: Validate Docker Compose config
+        run: docker compose config
+      - name: Validate Terraform scaffold
+        working-directory: infra/terraform
+        run: |
+          terraform fmt -check
+          terraform init -backend=false
+          terraform validate
+      - name: Validate Kubernetes manifests
+        run: kubectl apply --dry-run=client -f infra/k8s/zhongwen-platform.yaml

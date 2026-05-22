@@ -24,6 +24,51 @@ class FlashcardOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ReviewCardOut(FlashcardOut):
+    due_at: datetime
+    interval_days: int = 0
+    ease: float = 2.5
+
+
+class DueReviewQueue(BaseModel):
+    user_id: str
+    generated_at: datetime
+    count: int
+    cards: list[ReviewCardOut]
+
+
+class ReviewAnswerIn(BaseModel):
+    user_id: str = "demo-user"
+    quality: int = Field(ge=0, le=5)
+    correct: bool
+
+
+class ReviewStateOut(BaseModel):
+    user_id: str
+    flashcard_id: int
+    ease: float
+    interval_days: int
+    due_at: datetime
+    last_reviewed_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CharacterOut(BaseModel):
+    id: int
+    simplified: str
+    traditional: str
+    pinyin: str
+    meaning: str
+    radical: str
+    strokes: int
+    mnemonic: str
+    cultural_note: str
+    example_words: list[str]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class LessonSummary(BaseModel):
     id: int
     course_id: int
@@ -56,6 +101,33 @@ class CourseOut(BaseModel):
     lessons: list[LessonSummary] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class LearningPathLesson(BaseModel):
+    id: int
+    title: str
+    summary: str
+    sequence: int
+    state: str
+    score: float | None = None
+
+
+class LearningPathModule(BaseModel):
+    course_id: int
+    slug: str
+    title: str
+    category: str
+    era: str
+    level: str
+    sequence: int
+    locked: bool
+    lessons: list[LearningPathLesson]
+
+
+class LearningPathOut(BaseModel):
+    user_id: str
+    recommended_lesson_id: int | None
+    modules: list[LearningPathModule]
 
 
 class VocabularyIn(BaseModel):
@@ -126,3 +198,42 @@ class QuizAttemptOut(QuizAttemptIn):
 class SearchResult(BaseModel):
     courses: list[CourseOut]
     lessons: list[LessonSummary]
+
+
+class XpSummary(BaseModel):
+    total: int
+    lesson_completion_xp: int
+    quiz_xp: int
+    review_xp: int
+
+
+class DailyGoalSummary(BaseModel):
+    target_xp: int
+    earned_xp_today: int
+    met: bool
+
+
+class StreakSummary(BaseModel):
+    current_days: int
+    freeze_available: bool
+    last_activity_date: str | None
+
+
+class AchievementOut(BaseModel):
+    code: str
+    title: str
+    description: str
+    earned: bool
+    progress: int
+    target: int
+    awarded_at: datetime | None = None
+
+
+class UserDashboard(BaseModel):
+    user_id: str
+    xp: XpSummary
+    daily_goal: DailyGoalSummary
+    streak: StreakSummary
+    achievements: list[AchievementOut]
+    completed_lessons: int
+    due_reviews: int
