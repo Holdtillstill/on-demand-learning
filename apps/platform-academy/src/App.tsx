@@ -2,24 +2,35 @@ import {
   Activity,
   ArrowRight,
   BookOpen,
+  BookMarked,
   Boxes,
   CheckCircle2,
   ChevronLeft,
   Clock,
   Cloud,
   Compass,
+  Cpu,
+  Database,
   FileText,
   Filter,
+  Gauge,
   GitBranch,
+  Globe,
   GraduationCap,
+  Hexagon,
   Layers3,
   LayoutDashboard,
   ListChecks,
   Map,
+  MonitorDot,
   Network,
+  RadioTower,
   Route,
   Search,
+  Server,
   ShieldCheck,
+  Sparkles,
+  Target,
   Terminal
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -217,6 +228,10 @@ function AppShell({ children }: { children: React.ReactNode }) {
           <NavLink to="/resources">
             <FileText aria-hidden="true" />
             Resources
+          </NavLink>
+          <NavLink to="/designs">
+            <Sparkles aria-hidden="true" />
+            Designs
           </NavLink>
         </nav>
       </header>
@@ -580,6 +595,677 @@ function ResourceCard({ resource, data }: { resource: PlatformResource; data: Ac
   );
 }
 
+const designBriefs = [
+  {
+    id: 1,
+    title: "Cinematic Cloud Control Room",
+    direction: "A launch-room view of incidents, rollout gates, and academy progress.",
+    signal: "Control room"
+  },
+  {
+    id: 2,
+    title: "Editorial Academy",
+    direction: "A refined journal for senior platform judgment and curriculum sequencing.",
+    signal: "Editorial"
+  },
+  {
+    id: 3,
+    title: "Terminal Ops Cockpit",
+    direction: "A keyboard-first training console built around commands, queues, and runbooks.",
+    signal: "TUI"
+  },
+  {
+    id: 4,
+    title: "Glass Cloud Atlas",
+    direction: "A translucent atlas of domains, tracks, and cloud-native waypoints.",
+    signal: "Atlas"
+  },
+  {
+    id: 5,
+    title: "Observability Wall",
+    direction: "A dark monitoring wall for readiness, labs, reviews, and learning signals.",
+    signal: "Telemetry"
+  },
+  {
+    id: 6,
+    title: "Infra Blueprint",
+    direction: "A precise blueprint sheet for platform architecture progression.",
+    signal: "Blueprint"
+  },
+  {
+    id: 7,
+    title: "Premium SaaS Dashboard",
+    direction: "A restrained operating dashboard for academy administration and cohort planning.",
+    signal: "SaaS"
+  },
+  {
+    id: 8,
+    title: "Command Center Map",
+    direction: "A network map that treats the curriculum as deployable platform territory.",
+    signal: "Map"
+  },
+  {
+    id: 9,
+    title: "Certification Bootcamp",
+    direction: "A focused bootcamp surface for outcomes, drills, and exam-grade practice.",
+    signal: "Bootcamp"
+  },
+  {
+    id: 10,
+    title: "Resource Magazine Library",
+    direction: "An elegant library for runbooks, cheatsheets, references, and project briefs.",
+    signal: "Library"
+  }
+] as const;
+
+type DesignStats = {
+  courses: Course[];
+  tracks: PlatformTrack[];
+  labs: PlatformLab[];
+  resources: PlatformResource[];
+  stages: PlatformRoadmapStage[];
+  domains: string[];
+  totalCompleted: number;
+  completionPercent: number;
+  recommended?: Course["lessons"][number];
+};
+
+function getDesignStats(data: AcademyData): DesignStats {
+  const courses = allCourses(data.catalog);
+  const lessons = courses.flatMap((course) => course.lessons);
+  const completed = completedLessonIds(data.progress);
+  const totalCompleted = lessons.filter((lesson) => completed.has(lesson.id)).length;
+  return {
+    courses,
+    tracks: data.catalog.tracks,
+    labs: data.catalog.labs,
+    resources: data.resources.resources,
+    stages: data.roadmap.stages,
+    domains: data.resources.domains,
+    totalCompleted,
+    completionPercent: data.catalog.total_lessons > 0 ? Math.round((totalCompleted / data.catalog.total_lessons) * 100) : 0,
+    recommended: nextLesson(courses, completed)
+  };
+}
+
+function DesignFrameNav({ activeId }: { activeId?: number }) {
+  return (
+    <div className="design-navline">
+      <Link to="/designs">
+        <ChevronLeft aria-hidden="true" />
+        Designs
+      </Link>
+      <Link to="/">Academy</Link>
+      {activeId && <span>{String(activeId).padStart(2, "0")} / 10</span>}
+    </div>
+  );
+}
+
+function DesignsIndexPage({ data }: { data: AcademyData }) {
+  const stats = getDesignStats(data);
+  return (
+    <section className="design-page design-index">
+      <header className="design-index-hero">
+        <DesignFrameNav />
+        <div>
+          <p className="design-kicker">Design explorations</p>
+          <h1>Ten visual systems for Platform Academy.</h1>
+          <p>
+            Each direction uses the same Kubernetes, EKS, Helm, ArgoCD, and SRE curriculum data, reshaped into a different senior platform
+            learning product.
+          </p>
+        </div>
+        <dl>
+          <div>
+            <dt>Courses</dt>
+            <dd>{data.catalog.total_courses}</dd>
+          </div>
+          <div>
+            <dt>Lessons</dt>
+            <dd>{data.catalog.total_lessons}</dd>
+          </div>
+          <div>
+            <dt>Resources</dt>
+            <dd>{stats.resources.length}</dd>
+          </div>
+        </dl>
+      </header>
+
+      <section className="design-index-grid" aria-label="Design routes">
+        {designBriefs.map((brief) => (
+          <Link className={`design-index-card design-index-card-${brief.id}`} to={`/designs/${brief.id}`} key={brief.id}>
+            <span>{String(brief.id).padStart(2, "0")}</span>
+            <div>
+              <p>{brief.signal}</p>
+              <h2>{brief.title}</h2>
+            </div>
+            <small>{brief.direction}</small>
+            <ArrowRight aria-hidden="true" />
+          </Link>
+        ))}
+      </section>
+    </section>
+  );
+}
+
+function DesignVariantPage({ data }: { data: AcademyData }) {
+  const { id = "" } = useParams();
+  const stats = getDesignStats(data);
+  const numericId = Number(id);
+
+  if (!Number.isInteger(numericId) || numericId < 1 || numericId > 10) {
+    return <EmptyState title="Design route not found." detail="Choose a numbered design exploration from the index." />;
+  }
+
+  switch (numericId) {
+    case 1:
+      return <DesignControlRoom data={data} stats={stats} />;
+    case 2:
+      return <DesignEditorialAcademy data={data} stats={stats} />;
+    case 3:
+      return <DesignTerminalCockpit data={data} stats={stats} />;
+    case 4:
+      return <DesignCloudAtlas data={data} stats={stats} />;
+    case 5:
+      return <DesignObservabilityWall data={data} stats={stats} />;
+    case 6:
+      return <DesignInfraBlueprint data={data} stats={stats} />;
+    case 7:
+      return <DesignSaasDashboard data={data} stats={stats} />;
+    case 8:
+      return <DesignCommandCenterMap data={data} stats={stats} />;
+    case 9:
+      return <DesignBootcamp data={data} stats={stats} />;
+    case 10:
+      return <DesignResourceLibrary data={data} stats={stats} />;
+    default:
+      return null;
+  }
+}
+
+function DesignControlRoom({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  const leadCourse = stats.courses[0];
+  const leadStage = stats.stages[0];
+  return (
+    <section className="design-page design-control-room">
+      <DesignFrameNav activeId={1} />
+      <div className="control-room-grid">
+        <div className="control-copy">
+          <p className="design-kicker">Live platform academy</p>
+          <h1>Platform Academy</h1>
+          <p>{data.catalog.promise}</p>
+          <div className="design-actions">
+            {leadCourse && (
+              <Link to={`/courses/${leadCourse.id}`}>
+                Start control sequence <ArrowRight aria-hidden="true" />
+              </Link>
+            )}
+            <Link to="/roadmap">Open roadmap</Link>
+          </div>
+        </div>
+        <div className="control-screen" aria-label="Cloud control room status">
+          <div className="control-screen-header">
+            <RadioTower aria-hidden="true" />
+            <span>Platform readiness board</span>
+            <strong>{stats.completionPercent}% trained</strong>
+          </div>
+          <div className="radar-scope" aria-hidden="true">
+            <span />
+            <i />
+            <b />
+          </div>
+          <div className="control-status-list">
+            {stats.tracks.slice(0, 4).map((track) => (
+              <div key={track.slug}>
+                <span>{track.level_group}</span>
+                <strong>{track.title}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <section className="control-mission-strip" aria-label="Mission metrics">
+        <article>
+          <span>Active courses</span>
+          <strong>{data.catalog.total_courses}</strong>
+        </article>
+        <article>
+          <span>Local-safe labs</span>
+          <strong>{stats.labs.length}</strong>
+        </article>
+        <article>
+          <span>Current objective</span>
+          <strong>{leadStage?.title ?? "Roadmap calibration"}</strong>
+        </article>
+      </section>
+    </section>
+  );
+}
+
+function DesignEditorialAcademy({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  const leadCourse = stats.courses[0];
+  return (
+    <section className="design-page design-editorial">
+      <DesignFrameNav activeId={2} />
+      <header className="editorial-masthead">
+        <p>Platform Academy Review</p>
+        <h1>Production judgment, taught in sequence.</h1>
+        <span>{data.catalog.total_lessons} lessons across Kubernetes, GitOps, SRE, and cloud operations.</span>
+      </header>
+      <section className="editorial-layout">
+        <article className="editorial-feature">
+          <p className="design-kicker">Featured syllabus</p>
+          <h2>{leadCourse?.title ?? data.catalog.title}</h2>
+          <p>{leadCourse?.description ?? data.catalog.promise}</p>
+          {leadCourse && (
+            <Link to={`/courses/${leadCourse.id}`}>
+              Read the course brief <ArrowRight aria-hidden="true" />
+            </Link>
+          )}
+        </article>
+        <div className="editorial-columns">
+          {stats.tracks.slice(0, 3).map((track) => (
+            <article key={track.slug}>
+              <BookMarked aria-hidden="true" />
+              <span>{track.level_group}</span>
+              <h3>{track.title}</h3>
+              <p>{track.summary}</p>
+            </article>
+          ))}
+        </div>
+        <aside className="editorial-aside">
+          <h2>Field notes</h2>
+          {stats.resources.slice(0, 4).map((resource) => (
+            <Link to="/resources" key={resource.slug}>
+              <span>{resource.resource_type}</span>
+              {resource.title}
+            </Link>
+          ))}
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+function DesignTerminalCockpit({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  const commands = [
+    ...stats.labs.flatMap((lab) => lab.commands),
+    ...stats.resources.flatMap((resource) => resource.commands)
+  ].slice(0, 6);
+  return (
+    <section className="design-page design-terminal">
+      <DesignFrameNav activeId={3} />
+      <div className="terminal-shell">
+        <header>
+          <Terminal aria-hidden="true" />
+          <span>academyctl session --profile sre</span>
+          <strong>{data.dashboard.xp.total} xp</strong>
+        </header>
+        <div className="terminal-grid">
+          <article className="terminal-hero">
+            <p>demo-user@platform-academy:~$ ./start-learning</p>
+            <h1>Ops cockpit for Kubernetes practice.</h1>
+            <span>{data.catalog.promise}</span>
+          </article>
+          <article className="terminal-panel">
+            <h2>Queue</h2>
+            {stats.labs.slice(0, 4).map((lab) => (
+              <div key={lab.slug}>
+                <span>{lab.level_group}</span>
+                <strong>{lab.title}</strong>
+              </div>
+            ))}
+          </article>
+          <article className="terminal-panel terminal-command-panel">
+            <h2>Command buffer</h2>
+            <pre>
+              <code>{commands.length > 0 ? commands.join("\n") : "$ kubectl get pods -A"}</code>
+            </pre>
+          </article>
+          <article className="terminal-panel terminal-route-panel">
+            <h2>Route table</h2>
+            {stats.courses.slice(0, 5).map((course) => (
+              <Link to={`/courses/${course.id}`} key={course.id}>
+                <span>{course.category}</span>
+                {course.title}
+              </Link>
+            ))}
+          </article>
+          <article className="terminal-panel terminal-signal-panel">
+            <h2>Signal panel</h2>
+            {stats.resources.slice(0, 4).map((resource) => (
+              <div key={resource.slug}>
+                <span>{resource.resource_type}</span>
+                <strong>{resource.domain}</strong>
+              </div>
+            ))}
+          </article>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DesignCloudAtlas({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  return (
+    <section className="design-page design-atlas">
+      <DesignFrameNav activeId={4} />
+      <header className="atlas-header">
+        <p className="design-kicker">Cloud atlas</p>
+        <h1>Navigate the platform curriculum by domain.</h1>
+        <p>{data.catalog.promise}</p>
+      </header>
+      <section className="atlas-layout">
+        <div className="atlas-map" aria-label="Course atlas">
+          {stats.tracks.slice(0, 6).map((track, index) => (
+            <Link className={`atlas-node atlas-node-${index + 1}`} to={`/courses/${track.course.id}`} key={track.slug}>
+              <Globe aria-hidden="true" />
+              <span>{track.level_group}</span>
+              <strong>{track.course.category}</strong>
+            </Link>
+          ))}
+        </div>
+        <aside className="atlas-panel">
+          <h2>Domain layers</h2>
+          <div>
+            {stats.domains.slice(0, 8).map((domain) => (
+              <span key={domain}>{domain}</span>
+            ))}
+          </div>
+          <dl>
+            <div>
+              <dt>Tracks</dt>
+              <dd>{stats.tracks.length}</dd>
+            </div>
+            <div>
+              <dt>Resources</dt>
+              <dd>{stats.resources.length}</dd>
+            </div>
+            <div>
+              <dt>Labs</dt>
+              <dd>{stats.labs.length}</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+function DesignObservabilityWall({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  const metricRows = [
+    { label: "Course inventory", value: data.catalog.total_courses },
+    { label: "Lessons shipped", value: data.catalog.total_lessons },
+    { label: "Completed lessons", value: stats.totalCompleted },
+    { label: "Due reviews", value: data.dashboard.due_reviews }
+  ];
+  return (
+    <section className="design-page design-observability">
+      <DesignFrameNav activeId={5} />
+      <header className="obs-header">
+        <div>
+          <p className="design-kicker">Observability wall</p>
+          <h1>Learning signals for platform operators.</h1>
+        </div>
+        <Gauge aria-hidden="true" />
+      </header>
+      <section className="obs-metric-grid">
+        {metricRows.map((metric) => (
+          <article key={metric.label}>
+            <span>{metric.label}</span>
+            <strong>{metric.value}</strong>
+          </article>
+        ))}
+      </section>
+      <section className="obs-wall">
+        <article className="obs-chart">
+          <h2>Curriculum load</h2>
+          {data.catalog.levels.map((level) => (
+            <div key={level.slug}>
+              <span>{level.level_group}</span>
+              <i style={{ width: `${Math.max(8, Math.min(100, level.total_lessons * 8))}%` }} />
+              <strong>{level.total_lessons}</strong>
+            </div>
+          ))}
+        </article>
+        <article className="obs-logs">
+          <h2>Training event stream</h2>
+          {stats.labs.slice(0, 5).map((lab) => (
+            <p key={lab.slug}>
+              <Activity aria-hidden="true" />
+              <span>{lab.track}</span>
+              {lab.scenario}
+            </p>
+          ))}
+        </article>
+        <article className="obs-current">
+          <MonitorDot aria-hidden="true" />
+          <span>Next lesson</span>
+          <strong>{stats.recommended?.title ?? "Select a lesson"}</strong>
+          {stats.recommended && <Link to={`/lessons/${stats.recommended.id}`}>Resume lesson</Link>}
+        </article>
+      </section>
+    </section>
+  );
+}
+
+function DesignInfraBlueprint({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  return (
+    <section className="design-page design-blueprint">
+      <DesignFrameNav activeId={6} />
+      <header className="blueprint-title">
+        <div>
+          <p className="design-kicker">Infrastructure blueprint</p>
+          <h1>Platform Academy build sheet.</h1>
+        </div>
+        <Hexagon aria-hidden="true" />
+      </header>
+      <section className="blueprint-sheet">
+        <div className="blueprint-spec">
+          <span>Spec PA-2026</span>
+          <strong>{data.catalog.total_courses} courses / {data.catalog.total_lessons} lessons</strong>
+          <p>{data.catalog.promise}</p>
+        </div>
+        <div className="blueprint-plan">
+          {stats.stages.map((stage) => (
+            <article key={stage.sequence}>
+              <span>{String(stage.sequence).padStart(2, "0")}</span>
+              <div>
+                <h2>{stage.title}</h2>
+                <p>{stage.focus}</p>
+              </div>
+              <strong>{stage.level_group}</strong>
+            </article>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
+
+function DesignSaasDashboard({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  return (
+    <section className="design-page design-saas">
+      <div className="saas-layout">
+        <aside className="saas-sidebar">
+          <DesignFrameNav activeId={7} />
+          <div>
+            <GraduationCap aria-hidden="true" />
+            <strong>Platform Academy</strong>
+            <span>Cohort console</span>
+          </div>
+          <nav aria-label="Dashboard sections">
+            <a href="#overview">Overview</a>
+            <a href="#tracks">Tracks</a>
+            <a href="#resources">Resources</a>
+          </nav>
+        </aside>
+        <div className="saas-workspace">
+          <header id="overview">
+            <div>
+              <p className="design-kicker">Academy operations</p>
+              <h1>Curriculum health dashboard.</h1>
+            </div>
+            <Link to="/labs">Review labs</Link>
+          </header>
+          <section className="saas-kpis">
+            <article>
+              <Database aria-hidden="true" />
+              <span>Resources</span>
+              <strong>{stats.resources.length}</strong>
+            </article>
+            <article>
+              <Gauge aria-hidden="true" />
+              <span>Completion</span>
+              <strong>{stats.completionPercent}%</strong>
+            </article>
+            <article>
+              <Cpu aria-hidden="true" />
+              <span>XP earned</span>
+              <strong>{data.dashboard.xp.total}</strong>
+            </article>
+          </section>
+          <section className="saas-table" id="tracks">
+            <div className="saas-table-head">
+              <h2>Track pipeline</h2>
+              <span>{stats.tracks.length} active tracks</span>
+            </div>
+            {stats.tracks.slice(0, 6).map((track) => (
+              <Link to={`/courses/${track.course.id}`} key={track.slug}>
+                <span>{track.level_group}</span>
+                <strong>{track.title}</strong>
+                <p>{track.role}</p>
+              </Link>
+            ))}
+          </section>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DesignCommandCenterMap({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  const positions = [
+    { left: "12%", top: "24%" },
+    { left: "42%", top: "12%" },
+    { left: "70%", top: "30%" },
+    { left: "28%", top: "64%" },
+    { left: "62%", top: "70%" }
+  ];
+  return (
+    <section className="design-page design-command-map">
+      <DesignFrameNav activeId={8} />
+      <header className="command-header">
+        <p className="design-kicker">Command center</p>
+        <h1>Deploy learning routes across the platform map.</h1>
+        <p>{data.catalog.promise}</p>
+      </header>
+      <section className="command-layout">
+        <div className="command-map-board" aria-label="Platform course map">
+          <span className="map-line map-line-a" />
+          <span className="map-line map-line-b" />
+          <span className="map-line map-line-c" />
+          {stats.courses.slice(0, 5).map((course, index) => (
+            <Link className="command-node" style={positions[index]} to={`/courses/${course.id}`} key={course.id}>
+              <Server aria-hidden="true" />
+              <span>{course.category}</span>
+              <strong>{course.title}</strong>
+            </Link>
+          ))}
+        </div>
+        <aside className="command-rail">
+          <h2>Dispatch queue</h2>
+          {stats.labs.slice(0, 5).map((lab) => (
+            <article key={lab.slug}>
+              <RadioTower aria-hidden="true" />
+              <div>
+                <strong>{lab.title}</strong>
+                <span>{lab.estimated_minutes} min / {lab.level_group}</span>
+              </div>
+            </article>
+          ))}
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+function DesignBootcamp({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  return (
+    <section className="design-page design-bootcamp">
+      <DesignFrameNav activeId={9} />
+      <header className="bootcamp-hero">
+        <div>
+          <p className="design-kicker">Certification bootcamp</p>
+          <h1>Train for platform interviews, incidents, and architecture reviews.</h1>
+          <p>{data.catalog.promise}</p>
+          {stats.recommended && (
+            <Link to={`/lessons/${stats.recommended.id}`}>
+              Continue drill <ArrowRight aria-hidden="true" />
+            </Link>
+          )}
+        </div>
+        <aside>
+          <Target aria-hidden="true" />
+          <strong>{stats.completionPercent}%</strong>
+          <span>readiness score</span>
+        </aside>
+      </header>
+      <section className="bootcamp-timeline" aria-label="Bootcamp progression">
+        {data.catalog.levels.map((level, index) => (
+          <article key={level.slug}>
+            <span>Week {index + 1}</span>
+            <h2>{level.level_group}</h2>
+            <p>{level.audience}</p>
+            <strong>{level.total_courses} courses</strong>
+          </article>
+        ))}
+      </section>
+      <section className="bootcamp-drills">
+        {stats.resources.slice(0, 4).map((resource) => (
+          <article key={resource.slug}>
+            <span>{resource.resource_type}</span>
+            <h3>{resource.title}</h3>
+            <p>{resource.summary}</p>
+          </article>
+        ))}
+      </section>
+    </section>
+  );
+}
+
+function DesignResourceLibrary({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  const leadResource = stats.resources[0];
+  return (
+    <section className="design-page design-library">
+      <DesignFrameNav activeId={10} />
+      <header className="library-hero">
+        <p className="design-kicker">Resource library</p>
+        <h1>Runbooks, briefs, and references for every platform domain.</h1>
+        <p>{data.catalog.promise}</p>
+      </header>
+      <section className="library-layout">
+        <article className="library-feature">
+          <BookMarked aria-hidden="true" />
+          <span>{leadResource?.resource_type ?? "resource"}</span>
+          <h2>{leadResource?.title ?? "Platform resource collection"}</h2>
+          <p>{leadResource?.summary ?? "Curated support material for the academy."}</p>
+          <Link to="/resources">Open resource library</Link>
+        </article>
+        <div className="library-stack">
+          {stats.resources.slice(0, 6).map((resource) => (
+            <article key={resource.slug}>
+              <span>{resource.domain}</span>
+              <h3>{resource.title}</h3>
+              <p>{resource.outcomes.slice(0, 2).join(" ")}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    </section>
+  );
+}
+
 function CoursePage({ data }: { data: AcademyData }) {
   const { id = "" } = useParams();
   const completed = useMemo(() => completedLessonIds(data.progress), [data.progress]);
@@ -764,6 +1450,8 @@ export default function App() {
         <RouterRoute path="/roadmap" element={<RoadmapPage data={data} />} />
         <RouterRoute path="/labs" element={<LabsPage data={data} />} />
         <RouterRoute path="/resources" element={<ResourcesPage data={data} />} />
+        <RouterRoute path="/designs" element={<DesignsIndexPage data={data} />} />
+        <RouterRoute path="/designs/:id" element={<DesignVariantPage data={data} />} />
         <RouterRoute path="/courses/:id" element={<CoursePage data={data} />} />
         <RouterRoute path="/lessons/:id" element={<LessonPage onProgressSaved={loadData} />} />
         <RouterRoute path="*" element={<Navigate to="/" replace />} />

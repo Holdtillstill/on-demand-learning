@@ -138,6 +138,23 @@ const dashboard = {
   due_reviews: 0
 };
 
+function stubAcademyFetch() {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
+      if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+      if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+      if (url.includes("/api/progress/demo-user")) {
+        return jsonResponse([{ id: 1, user_id: "demo-user", lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
+      }
+      if (url.includes("/api/users/demo-user/dashboard")) return jsonResponse(dashboard);
+      return jsonResponse([]);
+    })
+  );
+}
+
 describe("Platform Academy app", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -242,5 +259,38 @@ describe("Platform Academy app", () => {
 
     expect(await screen.findByText("Kubernetes Object Mental Model")).toBeInTheDocument();
     expect(screen.getByText("Trace a Deployment to a Pod.")).toBeInTheDocument();
+  });
+
+  it("renders the design exploration index", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/designs"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("Ten visual systems for Platform Academy.")).toBeInTheDocument();
+    expect(screen.getByText("Cinematic Cloud Control Room")).toBeInTheDocument();
+    expect(screen.getByText("Terminal Ops Cockpit")).toBeInTheDocument();
+    expect(screen.getByText("Resource Magazine Library")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["/designs/1", "Platform readiness board"],
+    ["/designs/3", "academyctl session --profile sre"],
+    ["/designs/5", "Learning signals for platform operators."],
+    ["/designs/7", "Curriculum health dashboard."],
+    ["/designs/10", "Runbooks, briefs, and references for every platform domain."]
+  ])("renders design route %s", async (route, expectedText) => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={[route]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText(expectedText)).toBeInTheDocument();
   });
 });
