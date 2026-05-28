@@ -149,3 +149,27 @@ export interface PlatformRoadmapStage {
 export interface PlatformAcademyRoadmap {
   stages: PlatformRoadmapStage[];
 }
+
+export interface PlatformResource {
+  slug: string;
+  title: string;
+  domain: string;
+  level_group: string;
+  resource_type: string;
+  estimated_minutes: number;
+  summary: string;
+  outcomes: string[];
+  prerequisites: string[];
+  safety_level: string;
+  commands: string[];
+  artifacts: string[];
+  related_lessons: number[];
+  related_labs: string[];
+  next_steps: string[];
+}
+
+export interface PlatformResources {
+  domains: string[];
+  types: string[];
+  resources: PlatformResource[];
+}

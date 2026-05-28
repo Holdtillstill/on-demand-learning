@@ -1,4 +1,4 @@
-import type { Course, Lesson, PlatformAcademyCatalog, PlatformAcademyRoadmap, PlatformLab, Progress, UserDashboard } from "./types";
+import type { Course, Lesson, PlatformAcademyCatalog, PlatformAcademyRoadmap, PlatformLab, PlatformResources, Progress, UserDashboard } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -32,6 +32,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 export const api = {
   catalog: () => getJson<PlatformAcademyCatalog>("/api/platform-academy/catalog"),
   roadmap: () => getJson<PlatformAcademyRoadmap>("/api/platform-academy/roadmap"),
+  resources: () => getJson<PlatformResources>("/api/platform-academy/resources"),
   labs: () => getJson<PlatformLab[]>("/api/platform-academy/labs"),
   course: (id: string) => getJson<Course>(`/api/courses/${id}`),
   lesson: (id: string) => getJson<Lesson>(`/api/lessons/${id}`),

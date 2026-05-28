@@ -282,6 +282,7 @@ h2 {
 .level-strip,
 .course-board,
 .lab-grid,
+.resource-grid,
 .term-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -295,6 +296,7 @@ h2 {
 .level-strip article,
 .course-card,
 .lab-card,
+.resource-card,
 .outcome-panel,
 .state-panel,
 .practice-panel,
@@ -323,6 +325,7 @@ h2 {
 .level-strip p,
 .course-card p,
 .lab-card p,
+.resource-card p,
 .roadmap-stage p,
 .lesson-row p,
 .outcome-panel p,
@@ -512,6 +515,7 @@ h2 {
 
 .roadmap-stage ul,
 .lab-card ul,
+.resource-card ul,
 .outcome-panel ul,
 .lesson-body ul,
 .practice-panel ul {
@@ -803,3 +807,85 @@ pre {
     height: 36px;
   }
 }
+.resource-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: stretch;
+}
+
+.resources-heading {
+  display: grid;
+  gap: 14px;
+}
+
+.resource-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+}
+
+.resource-stats div {
+  min-width: 130px;
+  border: 1px solid #dce3dd;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px 14px;
+}
+
+.resource-stats dt {
+  color: #64736d;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.resource-stats dd {
+  margin: 4px 0 0;
+  color: #14382e;
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.resource-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.resource-card h3 {
+  margin: 4px 0 0;
+  color: #23352f;
+  font-size: 0.95rem;
+}
+
+.resource-card-top,
+.resource-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.resource-card-top span:not(.level-badge),
+.resource-links span {
+  border-radius: 999px;
+  background: #f1f5f3;
+  color: #52625c;
+  padding: 5px 9px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.resource-card pre,
+.lab-card pre,
+.lesson-body pre,
+.practice-panel pre {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+

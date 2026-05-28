@@ -2740,4 +2740,227 @@ PLATFORM_LABS.extend(
 )
 
 
+RESOURCE_TYPE_BLUEPRINTS = [
+    ("cheatsheet", "Compact command/reference sheet", 20),
+    ("runbook", "Incident-ready diagnosis and mitigation procedure", 35),
+    ("lab worksheet", "Hands-on practice worksheet with evidence prompts", 45),
+    ("project brief", "Portfolio project brief with acceptance criteria", 60),
+    ("interview prep", "Scenario questions and senior-level answer rubric", 30),
+    ("official reference", "Curated official docs reading path", 25),
+    ("architecture diagram", "Diagram prompt and review checklist", 40),
+    ("template", "Reusable starter artifact or review template", 30),
+    ("assessment", "Self-check quiz and practical grading rubric", 35),
+    ("troubleshooting guide", "Symptom-to-signal debugging map", 40),
+]
+
+RESOURCE_DOMAIN_BLUEPRINTS = [
+    {
+        "domain": "Linux",
+        "level_group": "Fresher",
+        "course_slug": "platform-linux-command-line-foundations",
+        "lab_slug": "inspect-linux-failure-evidence",
+        "topics": "shell navigation, files, processes, logs, permissions, exit codes, text pipelines",
+        "command": "ps aux | head && journalctl --since '15 min ago'",
+        "artifact": "Linux operator evidence checklist",
+    },
+    {
+        "domain": "Networking",
+        "level_group": "Fresher",
+        "course_slug": "platform-networking-fundamentals",
+        "lab_slug": "trace-network-path",
+        "topics": "IP paths, ports, DNS, HTTP, TLS, Ingress, load balancers, firewalls",
+        "command": "curl -Iv https://app.example.com/healthz",
+        "artifact": "request path diagram",
+    },
+    {
+        "domain": "Docker",
+        "level_group": "Fresher",
+        "course_slug": "platform-cloud-native-foundations",
+        "lab_slug": "review-yaml-before-apply",
+        "topics": "Dockerfiles, layers, multi-stage builds, tags, digests, registries, image scanning",
+        "command": "docker image inspect IMAGE:TAG",
+        "artifact": "container image review checklist",
+    },
+    {
+        "domain": "Kubernetes",
+        "level_group": "Fresher",
+        "course_slug": "platform-kubernetes-fundamentals",
+        "lab_slug": "trace-service-to-pod",
+        "topics": "Pods, Deployments, ReplicaSets, Services, EndpointSlices, probes, requests, ConfigMaps, Secrets",
+        "command": "kubectl get deploy,rs,pods,svc,endpointslice -n payments",
+        "artifact": "Kubernetes object relationship map",
+    },
+    {
+        "domain": "kubectl",
+        "level_group": "Fresher",
+        "course_slug": "platform-kubectl-debugging-basics",
+        "lab_slug": "debug-crashloop-imagepull",
+        "topics": "get, describe, logs, events, exec, port-forward, CrashLoopBackOff, ImagePullBackOff, Pending",
+        "command": "kubectl describe pod POD -n NAMESPACE",
+        "artifact": "first responder command tree",
+    },
+    {
+        "domain": "Cloud Native",
+        "level_group": "Fresher",
+        "course_slug": "platform-cloud-native-foundations",
+        "lab_slug": "review-yaml-before-apply",
+        "topics": "YAML, manifests, registries, DNS, ports, resource requests, environment promotion",
+        "command": "kubectl apply --dry-run=client -f manifest.yaml",
+        "artifact": "manifest review worksheet",
+    },
+    {
+        "domain": "EKS",
+        "level_group": "Intermediate",
+        "course_slug": "platform-eks-operations",
+        "lab_slug": "diagnose-eks-ip-exhaustion",
+        "topics": "VPC CNI, subnet IP exhaustion, managed node groups, Fargate, add-ons, ALB controller",
+        "command": "aws eks describe-cluster --name prod-platform",
+        "artifact": "EKS operations checklist",
+    },
+    {
+        "domain": "Terraform",
+        "level_group": "Intermediate",
+        "course_slug": "platform-terraform-aws-infrastructure",
+        "lab_slug": "review-terraform-eks-plan",
+        "topics": "state, locking, modules, variables, VPC, EKS, plan review, drift, safe applies",
+        "command": "terraform plan -out=tfplan && terraform show -no-color tfplan",
+        "artifact": "Terraform plan review template",
+    },
+    {
+        "domain": "AWS IAM",
+        "level_group": "Intermediate",
+        "course_slug": "platform-aws-iam-for-eks",
+        "lab_slug": "debug-irsa-access-denied",
+        "topics": "policy evaluation, STS, AssumeRole, trust policies, IRSA, Pod Identity, CloudTrail",
+        "command": "aws sts get-caller-identity",
+        "artifact": "IAM access decision worksheet",
+    },
+    {
+        "domain": "Helm",
+        "level_group": "Intermediate",
+        "course_slug": "platform-helm-application-delivery",
+        "lab_slug": "validate-helm-release-artifact",
+        "topics": "values layering, templates, helpers, schema, lint, template, diff, hooks, CRDs, rollback",
+        "command": "helm template checkout charts/checkout -f values/prod.yaml",
+        "artifact": "rendered manifest review rubric",
+    },
+    {
+        "domain": "ArgoCD",
+        "level_group": "Intermediate",
+        "course_slug": "platform-argocd-gitops",
+        "lab_slug": "trace-argocd-drift",
+        "topics": "Applications, AppProjects, sync waves, pruning, drift, self-heal, secrets, rollback through Git",
+        "command": "argocd app diff checkout-prod",
+        "artifact": "GitOps drift triage guide",
+    },
+    {
+        "domain": "CI/CD",
+        "level_group": "Advanced",
+        "course_slug": "platform-cicd-release-engineering",
+        "lab_slug": "design-safe-release-pipeline",
+        "topics": "quality gates, artifact promotion, SBOMs, signing, image scanning, canaries, rollback, runner security",
+        "command": "helm template checkout charts/checkout -f values/prod.yaml",
+        "artifact": "release pipeline quality gate matrix",
+    },
+    {
+        "domain": "Security",
+        "level_group": "Advanced",
+        "course_slug": "platform-kubernetes-security-multitenancy",
+        "lab_slug": "audit-tenant-boundaries",
+        "topics": "RBAC, NetworkPolicy, Pod Security Standards, admission, secrets, tenant boundaries, audit",
+        "command": "kubectl auth can-i get secrets -n payments --as dev@example.com",
+        "artifact": "tenant security review checklist",
+    },
+    {
+        "domain": "SRE",
+        "level_group": "Advanced",
+        "course_slug": "platform-sre-observability-kubernetes",
+        "lab_slug": "write-slo-backed-runbook",
+        "topics": "RED/USE, Prometheus, Grafana, logs, traces, SLOs, error budgets, burn-rate alerts, runbooks",
+        "command": "kubectl get prometheusrule -A",
+        "artifact": "SLO and alert review worksheet",
+    },
+    {
+        "domain": "Incident Response",
+        "level_group": "Advanced",
+        "course_slug": "platform-sre-observability-kubernetes",
+        "lab_slug": "write-slo-backed-runbook",
+        "topics": "severity, incident commander, comms, mitigation, escalation, timelines, postmortems, game days",
+        "command": "kubectl get events -n payments --sort-by=.lastTimestamp",
+        "artifact": "incident timeline and postmortem template",
+    },
+    {
+        "domain": "FinOps",
+        "level_group": "Advanced",
+        "course_slug": "platform-production-eks-architecture",
+        "lab_slug": "design-production-eks-review",
+        "topics": "OpenCost, AWS CUR, budgets, NAT costs, load balancers, spot, right-sizing, chargeback, cost per service",
+        "command": "kubectl top pods -A --containers",
+        "artifact": "EKS cost review worksheet",
+    },
+    {
+        "domain": "Platform Engineering",
+        "level_group": "Advanced",
+        "course_slug": "platform-engineering-product-operating-model",
+        "lab_slug": "create-platform-golden-path",
+        "topics": "golden paths, service ownership, paved-road APIs, templates, production readiness, scorecards, developer experience",
+        "command": "argocd app get new-service-dev",
+        "artifact": "golden path launch checklist",
+    },
+    {
+        "domain": "Career",
+        "level_group": "Advanced",
+        "course_slug": "platform-engineering-product-operating-model",
+        "lab_slug": "create-platform-golden-path",
+        "topics": "skill matrix, portfolio projects, interview scenarios, CKA/CKAD/CKS, AWS, Terraform Associate, resume proof",
+        "command": "git log --oneline --decorate -5",
+        "artifact": "portfolio proof and interview rubric",
+    },
+]
+
+
+def platform_resource_slug(domain: str, resource_type: str) -> str:
+    return f"{domain}-{resource_type}".lower().replace("/", " ").replace("&", "and").replace(" ", "-")
+
+
+def build_platform_resources() -> list[dict]:
+    resources: list[dict] = []
+    for domain in RESOURCE_DOMAIN_BLUEPRINTS:
+        for resource_type, type_summary, minutes in RESOURCE_TYPE_BLUEPRINTS:
+            title = f"{domain['domain']} {resource_type.title()}"
+            resources.append(
+                {
+                    "slug": platform_resource_slug(domain["domain"], resource_type),
+                    "title": title,
+                    "domain": domain["domain"],
+                    "level_group": domain["level_group"],
+                    "resource_type": resource_type,
+                    "estimated_minutes": minutes,
+                    "summary": f"{type_summary} for {domain['topics']}.",
+                    "outcomes": [
+                        f"Explain the core {domain['domain']} mental model in operational language.",
+                        f"Use the resource to make safer {domain['domain']} decisions during reviews or incidents.",
+                        "Produce a reusable artifact that can be attached to a portfolio project or runbook.",
+                    ],
+                    "prerequisites": [
+                        "Read the related Platform Academy lesson.",
+                        "Know whether you are using a local cluster, mock data, or an approved sandbox.",
+                    ],
+                    "safety_level": "local-safe" if domain["level_group"] == "Fresher" else "read-only / sandbox-first",
+                    "commands": [domain["command"]],
+                    "artifacts": [domain["artifact"], f"{domain['domain']} {resource_type} notes"],
+                    "related_lessons": [],
+                    "related_labs": [domain["lab_slug"]],
+                    "next_steps": [
+                        "Open the related lab and collect evidence before changing anything.",
+                        "Convert the artifact into a portfolio-ready README section.",
+                    ],
+                }
+            )
+    return resources
+
+
+PLATFORM_RESOURCES = build_platform_resources()
+
+
 PLATFORM_COURSE_SLUGS = [course["slug"] for course in PLATFORM_COURSES]

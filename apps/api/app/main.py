@@ -38,7 +38,7 @@ from app.models import (
     VocabularyTerm,
     XpEvent,
 )
-from app.platform_content import PLATFORM_ACADEMY_ERA, PLATFORM_LABS, PLATFORM_LEVELS, PLATFORM_ROADMAP, PLATFORM_TRACKS
+from app.platform_content import PLATFORM_ACADEMY_ERA, PLATFORM_LABS, PLATFORM_LEVELS, PLATFORM_RESOURCES, PLATFORM_ROADMAP, PLATFORM_TRACKS
 from app.schemas import (
     CharacterOut,
     CourseCreate,
@@ -50,6 +50,7 @@ from app.schemas import (
     PlatformAcademyCatalogOut,
     PlatformAcademyRoadmapOut,
     PlatformLabOut,
+    PlatformResourcesOut,
     ProgressIn,
     ProgressOut,
     QuizAttemptIn,
@@ -343,6 +344,15 @@ def get_platform_academy_roadmap():
 @app.get("/api/platform-academy/labs", response_model=list[PlatformLabOut])
 def get_platform_academy_labs(db: Session = Depends(get_db)):
     return platform_lab_payloads(platform_courses(db))
+
+
+@app.get("/api/platform-academy/resources", response_model=PlatformResourcesOut)
+def get_platform_academy_resources():
+    return {
+        "domains": sorted({resource["domain"] for resource in PLATFORM_RESOURCES}),
+        "types": sorted({resource["resource_type"] for resource in PLATFORM_RESOURCES}),
+        "resources": PLATFORM_RESOURCES,
+    }
 
 
 @app.get("/api/courses/{course_id}", response_model=CourseOut)

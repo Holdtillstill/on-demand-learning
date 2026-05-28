@@ -81,6 +81,33 @@ def test_platform_academy_catalog_roadmap_and_labs():
     assert len(labs.json()) >= 15
     assert {lab["track"] for lab in labs.json()} >= expected_categories
 
+    resources = client.get("/api/platform-academy/resources")
+    assert resources.status_code == 200
+    resource_payload = resources.json()
+    assert len(resource_payload["resources"]) >= 80
+    assert len(resource_payload["domains"]) >= 14
+    assert len(resource_payload["types"]) >= 10
+    assert {item["domain"] for item in resource_payload["resources"]} >= expected_categories | {
+        "Docker",
+        "Incident Response",
+        "FinOps",
+        "Career",
+    }
+    must_have_types = {
+        "cheatsheet",
+        "runbook",
+        "lab worksheet",
+        "project brief",
+        "interview prep",
+        "official reference",
+        "architecture diagram",
+        "template",
+        "assessment",
+        "troubleshooting guide",
+    }
+    assert set(resource_payload["types"]) >= must_have_types
+    assert all(resource["related_lessons"] or resource["related_labs"] for resource in resource_payload["resources"])
+
 
 def test_course_domain_filters_keep_zhongwen_and_platform_separate():
     zhongwen = client.get("/api/courses?domain=zhongwen")

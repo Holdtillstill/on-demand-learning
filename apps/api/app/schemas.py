@@ -193,6 +193,30 @@ class PlatformAcademyRoadmapOut(BaseModel):
     stages: list[PlatformRoadmapStageOut]
 
 
+class PlatformResourceOut(BaseModel):
+    slug: str
+    title: str
+    domain: str
+    level_group: str
+    resource_type: str
+    estimated_minutes: int
+    summary: str
+    outcomes: list[str]
+    prerequisites: list[str]
+    safety_level: str
+    commands: list[str]
+    artifacts: list[str]
+    related_lessons: list[int] = Field(default_factory=list)
+    related_labs: list[str] = Field(default_factory=list)
+    next_steps: list[str]
+
+
+class PlatformResourcesOut(BaseModel):
+    domains: list[str]
+    types: list[str]
+    resources: list[PlatformResourceOut]
+
+
 class VocabularyIn(BaseModel):
     simplified: str = Field(min_length=1, max_length=80)
     traditional: str = Field(min_length=1, max_length=80)

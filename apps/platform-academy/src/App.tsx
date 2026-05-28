@@ -8,6 +8,7 @@ import {
   Clock,
   Cloud,
   Compass,
+  FileText,
   Filter,
   GitBranch,
   GraduationCap,
@@ -32,6 +33,8 @@ import type {
   PlatformAcademyCatalog,
   PlatformAcademyRoadmap,
   PlatformLab,
+  PlatformResource,
+  PlatformResources,
   PlatformRoadmapStage,
   PlatformTrack,
   Progress,
@@ -41,6 +44,7 @@ import type {
 type AcademyData = {
   catalog: PlatformAcademyCatalog;
   roadmap: PlatformAcademyRoadmap;
+  resources: PlatformResources;
   progress: Progress[];
   dashboard: UserDashboard;
 };
@@ -209,6 +213,10 @@ function AppShell({ children }: { children: React.ReactNode }) {
           <NavLink to="/labs">
             <ListChecks aria-hidden="true" />
             Labs
+          </NavLink>
+          <NavLink to="/resources">
+            <FileText aria-hidden="true" />
+            Resources
           </NavLink>
         </nav>
       </header>
@@ -468,6 +476,110 @@ function LabCard({ lab }: { lab: PlatformLab }) {
   );
 }
 
+function ResourcesPage({ data }: { data: AcademyData }) {
+  const [selectedDomain, setSelectedDomain] = useState("All");
+  const [selectedType, setSelectedType] = useState("All");
+  const [query, setQuery] = useState("");
+  const filteredResources = data.resources.resources.filter((resource) => {
+    const text = `${resource.title} ${resource.summary} ${resource.domain} ${resource.resource_type}`.toLowerCase();
+    return (
+      (selectedDomain === "All" || resource.domain === selectedDomain) &&
+      (selectedType === "All" || resource.resource_type === selectedType) &&
+      text.includes(query.toLowerCase())
+    );
+  });
+
+  return (
+    <section className="page">
+      <header className="page-heading resources-heading">
+        <p className="eyebrow">Codex gap audit: resources, projects, rubrics, references</p>
+        <h1>Resource library for comprehensive platform mastery</h1>
+        <p className="lead">
+          Cheatsheets, runbooks, worksheets, project briefs, templates, references, diagrams, assessments, and interview drills for every academy domain.
+        </p>
+        <dl className="resource-stats">
+          <div>
+            <dt>Resources</dt>
+            <dd>{data.resources.resources.length}</dd>
+          </div>
+          <div>
+            <dt>Domains</dt>
+            <dd>{data.resources.domains.length}</dd>
+          </div>
+          <div>
+            <dt>Artifact types</dt>
+            <dd>{data.resources.types.length}</dd>
+          </div>
+        </dl>
+      </header>
+      <section className="toolbar" aria-label="Resource filters">
+        <div className="search-box">
+          <Search aria-hidden="true" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search resources, runbooks, projects..." />
+        </div>
+        <div className="segmented topics">
+          {["All", ...data.resources.domains].map((domain) => (
+            <button key={domain} className={selectedDomain === domain ? "selected" : ""} onClick={() => setSelectedDomain(domain)}>
+              {domain}
+            </button>
+          ))}
+        </div>
+        <div className="segmented topics">
+          {["All", ...data.resources.types].map((type) => (
+            <button key={type} className={selectedType === type ? "selected" : ""} onClick={() => setSelectedType(type)}>
+              {type}
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="resource-grid" aria-label="Platform Academy resources">
+        {filteredResources.map((resource) => (
+          <ResourceCard resource={resource} data={data} key={resource.slug} />
+        ))}
+      </section>
+      {filteredResources.length === 0 && <EmptyState title="No resources match those filters." />}
+    </section>
+  );
+}
+
+function ResourceCard({ resource, data }: { resource: PlatformResource; data: AcademyData }) {
+  const lab = data.catalog.labs.find((item) => resource.related_labs.includes(item.slug));
+  return (
+    <article className="resource-card">
+      <div className="resource-card-top">
+        <LevelBadge level={resource.level_group} />
+        <span>{resource.resource_type}</span>
+        <span>{resource.estimated_minutes} min</span>
+      </div>
+      <h2>{resource.title}</h2>
+      <p>{resource.summary}</p>
+      <div className="chip-list">
+        <span>{resource.domain}</span>
+        <span>{resource.safety_level}</span>
+      </div>
+      <h3>Outcomes</h3>
+      <ul>
+        {resource.outcomes.slice(0, 2).map((outcome) => (
+          <li key={outcome}>{outcome}</li>
+        ))}
+      </ul>
+      <h3>Artifact</h3>
+      <p>{resource.artifacts.join(" • ")}</p>
+      <pre>
+        <code>{resource.commands.join("\n")}</code>
+      </pre>
+      <div className="resource-links">
+        {lab?.lesson_id && (
+          <Link className="text-link" to={`/lessons/${lab.lesson_id}`}>
+            Related lesson <ArrowRight aria-hidden="true" />
+          </Link>
+        )}
+        {lab && <span>Lab: {lab.title}</span>}
+      </div>
+    </article>
+  );
+}
+
 function CoursePage({ data }: { data: AcademyData }) {
   const { id = "" } = useParams();
   const completed = useMemo(() => completedLessonIds(data.progress), [data.progress]);
@@ -620,8 +732,8 @@ export default function App() {
   const [error, setError] = useState("");
 
   const loadData = () => {
-    Promise.all([api.catalog(), api.roadmap(), api.progress(), api.dashboard()])
-      .then(([catalog, roadmap, progress, dashboard]) => setData({ catalog, roadmap, progress, dashboard }))
+    Promise.all([api.catalog(), api.roadmap(), api.resources(), api.progress(), api.dashboard()])
+      .then(([catalog, roadmap, resources, progress, dashboard]) => setData({ catalog, roadmap, resources, progress, dashboard }))
       .catch((err) => setError(err.message));
   };
 
@@ -651,6 +763,7 @@ export default function App() {
         <RouterRoute path="/" element={<DashboardPage data={data} />} />
         <RouterRoute path="/roadmap" element={<RoadmapPage data={data} />} />
         <RouterRoute path="/labs" element={<LabsPage data={data} />} />
+        <RouterRoute path="/resources" element={<ResourcesPage data={data} />} />
         <RouterRoute path="/courses/:id" element={<CoursePage data={data} />} />
         <RouterRoute path="/lessons/:id" element={<LessonPage onProgressSaved={loadData} />} />
         <RouterRoute path="*" element={<Navigate to="/" replace />} />

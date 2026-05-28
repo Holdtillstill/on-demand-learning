@@ -48,7 +48,7 @@ The catalog is organized into three learning levels with five courses each, form
 - CI/CD and Release Engineering: quality gates, immutable artifact promotion, image signing, SBOMs, progressive delivery, rollback, canaries, pipeline security, and deploy permissions.
 - Platform Engineering Operating Model: golden paths, internal developer experience, service ownership, production readiness, platform APIs, Backstage-style templates, KPIs, and adoption metrics.
 
-Current seed count: 15 courses, 60 lessons, and 15 labs.
+Current seed count: 15 courses, 60 lessons, 15 labs, and 180 reusable resources.
 
 ## How To Learn From It
 
@@ -62,6 +62,27 @@ For each lesson:
 - Study the key terms until you can explain them without notes.
 - Use review flashcards for recall.
 - Mark the lesson complete to update `/api/progress` and dashboard XP.
+
+## Resource Library
+
+Codex identified the biggest remaining gap as a reusable resources/projects layer: learners need artifacts they can return to while building real portfolio-grade systems. The app now exposes `/resources` and `/api/platform-academy/resources` with filters for domain and artifact type.
+
+Resource domains include Linux, Networking, Docker, Kubernetes, kubectl, Cloud Native, EKS, Terraform, AWS IAM, Helm, ArgoCD, CI/CD, Security, SRE, Incident Response, FinOps, Platform Engineering, and Career.
+
+Resource types include:
+
+- Cheatsheets.
+- Runbooks.
+- Lab worksheets.
+- Project briefs.
+- Interview prep.
+- Official reference paths.
+- Architecture diagram prompts.
+- Templates.
+- Assessments.
+- Troubleshooting guides.
+
+Each resource includes prerequisites, outcomes, safety level, commands, expected artifacts, related labs, and next steps.
 
 ## Labs
 

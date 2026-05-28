@@ -104,6 +104,30 @@ const roadmap = {
   ]
 };
 
+const resources = {
+  domains: ["Kubernetes", "EKS", "Terraform", "FinOps"],
+  types: ["cheatsheet", "runbook", "project brief"],
+  resources: [
+    {
+      slug: "kubernetes-debugging-cheatsheet",
+      title: "Kubernetes Debugging Cheatsheet",
+      domain: "Kubernetes",
+      level_group: "Fresher",
+      resource_type: "cheatsheet",
+      estimated_minutes: 20,
+      summary: "Command map for first-response debugging.",
+      outcomes: ["Choose the right kubectl command."],
+      prerequisites: ["Kubernetes object basics"],
+      safety_level: "local-safe",
+      commands: ["kubectl get pods -A"],
+      artifacts: ["debugging checklist"],
+      related_lessons: [201],
+      related_labs: ["trace-service-to-pod"],
+      next_steps: ["Practice a lab"]
+    }
+  ]
+};
+
 const dashboard = {
   user_id: "demo-user",
   xp: { total: 20, lesson_completion_xp: 20, quiz_xp: 0, review_xp: 0 },
@@ -127,6 +151,7 @@ describe("Platform Academy app", () => {
         const url = String(input);
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
         if (url.includes("/api/progress/demo-user")) return jsonResponse([{ id: 1, user_id: "demo-user", lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
         if (url.includes("/api/users/demo-user/dashboard")) return jsonResponse(dashboard);
         return jsonResponse([]);
@@ -143,6 +168,56 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("Kubernetes Fundamentals")).toBeInTheDocument();
     expect(screen.getByText("Fresher / Beginner")).toBeInTheDocument();
     expect(screen.getByText("Continue learning")).toBeInTheDocument();
+    expect(screen.getByText("Resources")).toBeInTheDocument();
+  });
+
+  it("renders a comprehensive resources library", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
+        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (url.includes("/api/platform-academy/resources")) {
+          return jsonResponse({
+            domains: ["Kubernetes", "EKS", "Terraform", "FinOps"],
+            types: ["cheatsheet", "runbook", "project brief"],
+            resources: [
+              {
+                slug: "kubernetes-debugging-cheatsheet",
+                title: "Kubernetes Debugging Cheatsheet",
+                domain: "Kubernetes",
+                level_group: "Fresher",
+                resource_type: "cheatsheet",
+                estimated_minutes: 20,
+                summary: "Command map for first-response debugging.",
+                outcomes: ["Choose the right kubectl command."],
+                prerequisites: ["Kubernetes object basics"],
+                safety_level: "local-safe",
+                commands: ["kubectl get pods -A"],
+                artifacts: ["debugging checklist"],
+                related_lessons: [201],
+                related_labs: ["trace-service-to-pod"],
+                next_steps: ["Practice a lab"]
+              }
+            ]
+          });
+        }
+        if (url.includes("/api/progress/demo-user")) return jsonResponse([]);
+        if (url.includes("/api/users/demo-user/dashboard")) return jsonResponse(dashboard);
+        return jsonResponse([]);
+      })
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/resources"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("Resource library for comprehensive platform mastery")).toBeInTheDocument();
+    expect(screen.getByText("Kubernetes Debugging Cheatsheet")).toBeInTheDocument();
+    expect(screen.getByText("FinOps")).toBeInTheDocument();
   });
 
   it("renders roadmap stages", async () => {
@@ -152,6 +227,7 @@ describe("Platform Academy app", () => {
         const url = String(input);
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
         if (url.includes("/api/progress/demo-user")) return jsonResponse([]);
         if (url.includes("/api/users/demo-user/dashboard")) return jsonResponse(dashboard);
         return jsonResponse([]);
