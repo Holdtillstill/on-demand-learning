@@ -6,6 +6,9 @@ import type {
   Flashcard,
   LearningPath,
   Lesson,
+  PlatformAcademyCatalog,
+  PlatformAcademyRoadmap,
+  PlatformLab,
   Progress,
   ReviewState,
   UserDashboard
@@ -41,7 +44,7 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 export const api = {
-  courses: () => getJson<Course[]>("/api/courses"),
+  courses: (domain: "all" | "zhongwen" | "platform" = "all") => getJson<Course[]>(`/api/courses?domain=${domain}`),
   course: (id: string) => getJson<Course>(`/api/courses/${id}`),
   lesson: (id: string) => getJson<Lesson>(`/api/lessons/${id}`),
   flashcards: () => getJson<Flashcard[]>("/api/flashcards"),
@@ -49,6 +52,9 @@ export const api = {
   dashboard: (userId = "demo-user") => getJson<UserDashboard>(`/api/users/${userId}/dashboard`),
   learningPath: (userId = "demo-user") => getJson<LearningPath>(`/api/learning-path?user_id=${encodeURIComponent(userId)}`),
   dueReviews: (userId = "demo-user") => getJson<DueReviewQueue>(`/api/reviews/due?user_id=${encodeURIComponent(userId)}`),
+  platformAcademy: () => getJson<PlatformAcademyCatalog>("/api/platform-academy/catalog"),
+  platformRoadmap: () => getJson<PlatformAcademyRoadmap>("/api/platform-academy/roadmap"),
+  platformLabs: () => getJson<PlatformLab[]>("/api/platform-academy/labs"),
   answerReview: (flashcardId: number, quality: number, correct: boolean, userId = "demo-user") =>
     postJson<ReviewState>(`/api/reviews/${flashcardId}/answer`, { user_id: userId, quality, correct }),
   characters: () => getJson<CharacterMetadata[]>("/api/characters"),

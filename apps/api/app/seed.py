@@ -3,6 +3,7 @@ from copy import deepcopy
 from sqlalchemy.orm import Session
 
 from app.models import CharacterMetadata, Course, Flashcard, Lesson, User, VocabularyTerm
+from app.platform_content import PLATFORM_COURSES
 
 SEED_COURSES = [
     {
@@ -358,6 +359,8 @@ SEED_COURSES = [
         ],
     },
 ]
+
+SEED_COURSES.extend(PLATFORM_COURSES)
 
 
 CHARACTER_METADATA = [

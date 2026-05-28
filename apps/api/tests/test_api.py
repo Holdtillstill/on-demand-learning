@@ -30,6 +30,46 @@ def test_courses_are_seeded():
     assert any(course["era"] == "Tang" for course in courses)
 
 
+def test_platform_academy_catalog_roadmap_and_labs():
+    catalog = client.get("/api/platform-academy/catalog")
+    assert catalog.status_code == 200
+    payload = catalog.json()
+    assert payload["title"] == "Platform Academy"
+    assert payload["total_courses"] >= 5
+    assert payload["total_lessons"] >= 15
+    assert {track["course"]["category"] for track in payload["tracks"]} >= {"Kubernetes", "EKS", "Helm", "ArgoCD", "SRE"}
+    kubernetes_track = next(track for track in payload["tracks"] if track["slug"] == "kubernetes")
+    assert len(kubernetes_track["course"]["lessons"]) >= 3
+    assert any("CrashLoopBackOff" in lab["title"] for lab in payload["labs"])
+    assert all(lab["lesson_id"] for lab in payload["labs"])
+
+    roadmap = client.get("/api/platform-academy/roadmap")
+    assert roadmap.status_code == 200
+    stages = roadmap.json()["stages"]
+    assert len(stages) >= 5
+    assert stages[0]["title"] == "Workload Debugger"
+
+    labs = client.get("/api/platform-academy/labs")
+    assert labs.status_code == 200
+    assert {lab["track"] for lab in labs.json()} >= {"Kubernetes", "EKS", "Helm", "ArgoCD", "SRE"}
+
+
+def test_course_domain_filters_keep_zhongwen_and_platform_separate():
+    zhongwen = client.get("/api/courses?domain=zhongwen")
+    assert zhongwen.status_code == 200
+    assert zhongwen.json()
+    assert all(course["era"] != "Platform Academy" for course in zhongwen.json())
+
+    platform = client.get("/api/courses?domain=platform")
+    assert platform.status_code == 200
+    platform_courses = platform.json()
+    assert len(platform_courses) >= 5
+    assert all(course["era"] == "Platform Academy" for course in platform_courses)
+
+    invalid = client.get("/api/courses?domain=bad")
+    assert invalid.status_code == 400
+
+
 def test_lesson_and_flashcards():
     courses = client.get("/api/courses").json()
     lesson_id = courses[0]["lessons"][0]["id"]
@@ -39,6 +79,23 @@ def test_lesson_and_flashcards():
     cards = client.get(f"/api/flashcards?lesson_id={lesson_id}")
     assert cards.status_code == 200
     assert cards.json()
+
+
+def test_platform_lesson_contains_teaching_terms_and_review_prompts():
+    catalog = client.get("/api/platform-academy/catalog").json()
+    lesson_id = next(track for track in catalog["tracks"] if track["slug"] == "eks")["course"]["lessons"][1]["id"]
+    lesson = client.get(f"/api/lessons/{lesson_id}")
+    assert lesson.status_code == 200
+    payload = lesson.json()
+    assert payload["course_era"] == "Platform Academy"
+    assert "IRSA" in payload["body_simplified"]
+    assert "service account" in payload["body_simplified"]
+    assert payload["vocabulary"]
+    assert payload["flashcards"]
+
+    search = client.get("/api/search?q=CrashLoopBackOff")
+    assert search.status_code == 200
+    assert search.json()["lessons"]
 
 
 def test_progress_and_quiz_attempt():

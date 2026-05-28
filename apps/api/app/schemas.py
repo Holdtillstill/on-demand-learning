@@ -85,6 +85,9 @@ class LessonOut(LessonSummary):
     pinyin: str
     audio_url: str | None
     video_url: str | None
+    course_slug: str | None = None
+    course_category: str | None = None
+    course_era: str | None = None
     vocabulary: list[VocabularyOut] = []
     flashcards: list[FlashcardOut] = []
 
@@ -128,6 +131,51 @@ class LearningPathOut(BaseModel):
     user_id: str
     recommended_lesson_id: int | None
     modules: list[LearningPathModule]
+
+
+class PlatformLabOut(BaseModel):
+    slug: str
+    title: str
+    track: str
+    difficulty: str
+    estimated_minutes: int
+    scenario: str
+    skills: list[str]
+    commands: list[str]
+    checklist: list[str]
+    course_slug: str
+    lesson_id: int | None = None
+
+
+class PlatformTrackOut(BaseModel):
+    slug: str
+    title: str
+    role: str
+    summary: str
+    outcomes: list[str]
+    course: CourseOut
+
+
+class PlatformAcademyCatalogOut(BaseModel):
+    title: str
+    promise: str
+    total_courses: int
+    total_lessons: int
+    tracks: list[PlatformTrackOut]
+    labs: list[PlatformLabOut]
+
+
+class PlatformRoadmapStageOut(BaseModel):
+    sequence: int
+    title: str
+    role: str
+    focus: str
+    course_slugs: list[str]
+    checkpoints: list[str]
+
+
+class PlatformAcademyRoadmapOut(BaseModel):
+    stages: list[PlatformRoadmapStageOut]
 
 
 class VocabularyIn(BaseModel):

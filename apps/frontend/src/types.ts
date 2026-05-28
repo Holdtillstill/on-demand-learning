@@ -51,6 +51,9 @@ export interface Lesson extends LessonSummary {
   pinyin: string;
   audio_url?: string | null;
   video_url?: string | null;
+  course_slug?: string | null;
+  course_category?: string | null;
+  course_era?: string | null;
   vocabulary: VocabularyTerm[];
   flashcards: Flashcard[];
 }
@@ -92,6 +95,51 @@ export interface LearningPath {
   user_id: string;
   recommended_lesson_id?: number | null;
   modules: LearningPathModule[];
+}
+
+export interface PlatformLab {
+  slug: string;
+  title: string;
+  track: string;
+  difficulty: string;
+  estimated_minutes: number;
+  scenario: string;
+  skills: string[];
+  commands: string[];
+  checklist: string[];
+  course_slug: string;
+  lesson_id?: number | null;
+}
+
+export interface PlatformTrack {
+  slug: string;
+  title: string;
+  role: string;
+  summary: string;
+  outcomes: string[];
+  course: Course;
+}
+
+export interface PlatformAcademyCatalog {
+  title: string;
+  promise: string;
+  total_courses: number;
+  total_lessons: number;
+  tracks: PlatformTrack[];
+  labs: PlatformLab[];
+}
+
+export interface PlatformRoadmapStage {
+  sequence: number;
+  title: string;
+  role: string;
+  focus: string;
+  course_slugs: string[];
+  checkpoints: string[];
+}
+
+export interface PlatformAcademyRoadmap {
+  stages: PlatformRoadmapStage[];
 }
 
 export interface Achievement {

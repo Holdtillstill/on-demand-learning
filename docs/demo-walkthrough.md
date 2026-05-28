@@ -19,10 +19,12 @@ Open:
 
 1. Open **Dashboard** and point out XP, daily goal, streak, achievements, and due reviews for `demo-user`.
 2. Open **Learning Path** and show completed, recommended, and locked lesson states across Mandarin, characters, poetry, art, and culture.
-3. Open **Characters** and switch simplified/traditional forms while explaining radicals, stroke counts, mnemonics, and cultural notes.
-4. Open **Reviews**, reveal a due card, and submit **Know it** to update SRS scheduling, quiz telemetry, and XP.
-5. Open a Tang poetry or Song painting course to show seeded cultural content with pinyin and vocabulary.
-6. Open **Admin Upload**, choose a template, inspect the preview counts, and submit. Re-submit to show duplicate-slug handling.
+3. Open **Platform Academy** and show the Kubernetes/EKS/Helm/ArgoCD/SRE roadmap, track progress, and practical labs.
+4. Open a Platform Academy lesson and show the production teaching body, key terms, review prompts, lab checklist, and **Mark complete** progress hook.
+5. Open **Characters** and switch simplified/traditional forms while explaining radicals, stroke counts, mnemonics, and cultural notes.
+6. Open **Reviews**, reveal a due card, and submit **Know it** to update SRS scheduling, quiz telemetry, and XP.
+7. Open a Tang poetry or Song painting course to show seeded cultural content with pinyin and vocabulary.
+8. Open **Admin Upload**, choose a template, inspect the preview counts, and submit. Re-submit to show duplicate-slug handling.
 
 ## 3. Generate Operational Signals
 
@@ -39,6 +41,7 @@ Then show:
 ## 4. Explain Platform Guardrails
 
 - Docker Compose keeps the full stack reproducible without cloud resources.
+- Platform Academy teaches EKS, IRSA, Karpenter, Helm, ArgoCD, and SRE patterns without deploying to AWS or requiring credentials.
 - Kubernetes manifests include probes, HPAs, PDBs, service accounts, and network policy.
 - Terraform is scaffold-only and validated, not applied.
 - CI validates backend, frontend, Docker builds, security scan, Compose config, Terraform, and Kubernetes dry-run.

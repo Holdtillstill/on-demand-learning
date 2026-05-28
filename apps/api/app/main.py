@@ -38,6 +38,7 @@ from app.models import (
     VocabularyTerm,
     XpEvent,
 )
+from app.platform_content import PLATFORM_ACADEMY_ERA, PLATFORM_LABS, PLATFORM_ROADMAP, PLATFORM_TRACKS
 from app.schemas import (
     CharacterOut,
     CourseCreate,
@@ -46,6 +47,9 @@ from app.schemas import (
     FlashcardOut,
     LearningPathOut,
     LessonOut,
+    PlatformAcademyCatalogOut,
+    PlatformAcademyRoadmapOut,
+    PlatformLabOut,
     ProgressIn,
     ProgressOut,
     QuizAttemptIn,
@@ -146,6 +150,56 @@ def due_review_count(db: Session, user_id: str) -> int:
     return count
 
 
+def apply_course_domain_filter(query, domain: str | None):
+    selected = (domain or "all").lower()
+    if selected == "all":
+        return query
+    if selected == "platform":
+        return query.filter(Course.era == PLATFORM_ACADEMY_ERA)
+    if selected == "zhongwen":
+        return query.filter(Course.era != PLATFORM_ACADEMY_ERA)
+    raise HTTPException(status_code=400, detail="domain must be one of: all, zhongwen, platform")
+
+
+def platform_courses(db: Session) -> list[Course]:
+    courses = (
+        db.query(Course)
+        .options(joinedload(Course.lessons))
+        .filter(Course.era == PLATFORM_ACADEMY_ERA)
+        .order_by(Course.id)
+        .all()
+    )
+    course_by_slug = {course.slug: course for course in courses}
+    ordered_slugs = [track["course_slug"] for track in PLATFORM_TRACKS]
+    return [course_by_slug[slug] for slug in ordered_slugs if slug in course_by_slug]
+
+
+def platform_lab_payloads(courses: list[Course]) -> list[dict]:
+    course_by_slug = {course.slug: course for course in courses}
+    labs = []
+    for lab in PLATFORM_LABS:
+        course = course_by_slug.get(lab["course_slug"])
+        lesson_id = None
+        if course:
+            lesson_id = next((lesson.id for lesson in course.lessons if lesson.title == lab["lesson_title"]), None)
+        labs.append(
+            {
+                "slug": lab["slug"],
+                "title": lab["title"],
+                "track": lab["track"],
+                "difficulty": lab["difficulty"],
+                "estimated_minutes": lab["estimated_minutes"],
+                "scenario": lab["scenario"],
+                "skills": lab["skills"],
+                "commands": lab["commands"],
+                "checklist": lab["checklist"],
+                "course_slug": lab["course_slug"],
+                "lesson_id": lesson_id,
+            }
+        )
+    return labs
+
+
 @app.on_event("startup")
 def startup() -> None:
     Base.metadata.create_all(bind=engine)
@@ -224,13 +278,53 @@ def metrics() -> Response:
 
 
 @app.get("/api/courses", response_model=list[CourseOut])
-def list_courses(category: str | None = None, level: str | None = None, db: Session = Depends(get_db)):
+def list_courses(category: str | None = None, level: str | None = None, domain: str = "all", db: Session = Depends(get_db)):
     query = db.query(Course).options(joinedload(Course.lessons)).order_by(Course.id)
+    query = apply_course_domain_filter(query, domain)
     if category:
         query = query.filter(Course.category == category)
     if level:
         query = query.filter(Course.level == level)
     return query.all()
+
+
+@app.get("/api/platform-academy/catalog", response_model=PlatformAcademyCatalogOut)
+def get_platform_academy_catalog(db: Session = Depends(get_db)):
+    courses = platform_courses(db)
+    course_by_slug = {course.slug: course for course in courses}
+    tracks = []
+    for track in PLATFORM_TRACKS:
+        course = course_by_slug.get(track["course_slug"])
+        if not course:
+            continue
+        tracks.append(
+            {
+                "slug": track["slug"],
+                "title": track["title"],
+                "role": track["role"],
+                "summary": track["summary"],
+                "outcomes": track["outcomes"],
+                "course": course,
+            }
+        )
+    return {
+        "title": "Platform Academy",
+        "promise": "Learn Kubernetes, EKS, Helm, ArgoCD, and SRE through production platform scenarios you can practice locally.",
+        "total_courses": len(courses),
+        "total_lessons": sum(len(course.lessons) for course in courses),
+        "tracks": tracks,
+        "labs": platform_lab_payloads(courses),
+    }
+
+
+@app.get("/api/platform-academy/roadmap", response_model=PlatformAcademyRoadmapOut)
+def get_platform_academy_roadmap():
+    return {"stages": PLATFORM_ROADMAP}
+
+
+@app.get("/api/platform-academy/labs", response_model=list[PlatformLabOut])
+def get_platform_academy_labs(db: Session = Depends(get_db)):
+    return platform_lab_payloads(platform_courses(db))
 
 
 @app.get("/api/courses/{course_id}", response_model=CourseOut)
@@ -245,7 +339,7 @@ def get_course(course_id: int, db: Session = Depends(get_db)):
 def get_lesson(lesson_id: int, db: Session = Depends(get_db)):
     lesson = (
         db.query(Lesson)
-        .options(joinedload(Lesson.vocabulary), joinedload(Lesson.flashcards))
+        .options(joinedload(Lesson.course), joinedload(Lesson.vocabulary), joinedload(Lesson.flashcards))
         .filter(Lesson.id == lesson_id)
         .first()
     )
@@ -335,9 +429,10 @@ def create_quiz_attempt(payload: QuizAttemptIn, db: Session = Depends(get_db)):
 
 
 @app.get("/api/learning-path", response_model=LearningPathOut)
-def get_learning_path(user_id: str = "demo-user", db: Session = Depends(get_db)):
+def get_learning_path(user_id: str = "demo-user", domain: str = "zhongwen", db: Session = Depends(get_db)):
     ensure_user(db, user_id)
-    courses = db.query(Course).options(joinedload(Course.lessons)).order_by(Course.id).all()
+    query = db.query(Course).options(joinedload(Course.lessons)).order_by(Course.id)
+    courses = apply_course_domain_filter(query, domain).all()
     progress_rows = db.query(Progress).filter(Progress.user_id == user_id).all()
     progress_by_lesson = {row.lesson_id: row for row in progress_rows}
 

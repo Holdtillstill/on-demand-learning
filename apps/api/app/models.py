@@ -17,7 +17,7 @@ class Course(Base):
     category: Mapped[str] = mapped_column(String(80), index=True)
     description: Mapped[str] = mapped_column(Text)
     subscription_tier: Mapped[str] = mapped_column(String(40), default="free")
-    lessons: Mapped[list["Lesson"]] = relationship(back_populates="course", cascade="all, delete-orphan")
+    lessons: Mapped[list["Lesson"]] = relationship(back_populates="course", cascade="all, delete-orphan", order_by="Lesson.sequence")
 
 
 class Lesson(Base):
@@ -36,6 +36,18 @@ class Lesson(Base):
     course: Mapped[Course] = relationship(back_populates="lessons")
     vocabulary: Mapped[list["VocabularyTerm"]] = relationship(back_populates="lesson", cascade="all, delete-orphan")
     flashcards: Mapped[list["Flashcard"]] = relationship(back_populates="lesson", cascade="all, delete-orphan")
+
+    @property
+    def course_slug(self) -> str | None:
+        return self.course.slug if self.course else None
+
+    @property
+    def course_category(self) -> str | None:
+        return self.course.category if self.course else None
+
+    @property
+    def course_era(self) -> str | None:
+        return self.course.era if self.course else None
 
 
 class VocabularyTerm(Base):

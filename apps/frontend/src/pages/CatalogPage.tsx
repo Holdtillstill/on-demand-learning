@@ -13,7 +13,7 @@ export default function CatalogPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api.courses().then(setCourses).catch((err) => setError(err.message));
+    api.courses("zhongwen").then(setCourses).catch((err) => setError(err.message));
   }, []);
 
   const categories = useMemo(() => ["All", ...Array.from(new Set(courses.map((course) => course.category)))], [courses]);
