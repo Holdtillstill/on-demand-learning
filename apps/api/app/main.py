@@ -38,7 +38,7 @@ from app.models import (
     VocabularyTerm,
     XpEvent,
 )
-from app.platform_content import PLATFORM_ACADEMY_ERA, PLATFORM_LABS, PLATFORM_ROADMAP, PLATFORM_TRACKS
+from app.platform_content import PLATFORM_ACADEMY_ERA, PLATFORM_LABS, PLATFORM_LEVELS, PLATFORM_ROADMAP, PLATFORM_TRACKS
 from app.schemas import (
     CharacterOut,
     CourseCreate,
@@ -188,6 +188,7 @@ def platform_lab_payloads(courses: list[Course]) -> list[dict]:
                 "title": lab["title"],
                 "track": lab["track"],
                 "difficulty": lab["difficulty"],
+                "level_group": lab["level_group"],
                 "estimated_minutes": lab["estimated_minutes"],
                 "scenario": lab["scenario"],
                 "skills": lab["skills"],
@@ -292,6 +293,20 @@ def list_courses(category: str | None = None, level: str | None = None, domain: 
 def get_platform_academy_catalog(db: Session = Depends(get_db)):
     courses = platform_courses(db)
     course_by_slug = {course.slug: course for course in courses}
+    levels = []
+    for level in PLATFORM_LEVELS:
+        level_courses = [course_by_slug[slug] for slug in level["course_slugs"] if slug in course_by_slug]
+        levels.append(
+            {
+                "slug": level["slug"],
+                "title": level["title"],
+                "level_group": level["level_group"],
+                "audience": level["audience"],
+                "total_courses": len(level_courses),
+                "total_lessons": sum(len(course.lessons) for course in level_courses),
+                "courses": level_courses,
+            }
+        )
     tracks = []
     for track in PLATFORM_TRACKS:
         course = course_by_slug.get(track["course_slug"])
@@ -303,6 +318,8 @@ def get_platform_academy_catalog(db: Session = Depends(get_db)):
                 "title": track["title"],
                 "role": track["role"],
                 "summary": track["summary"],
+                "level_group": track["level_group"],
+                "audience": track["audience"],
                 "outcomes": track["outcomes"],
                 "course": course,
             }
@@ -312,6 +329,7 @@ def get_platform_academy_catalog(db: Session = Depends(get_db)):
         "promise": "Learn Kubernetes, EKS, Helm, ArgoCD, and SRE through production platform scenarios you can practice locally.",
         "total_courses": len(courses),
         "total_lessons": sum(len(course.lessons) for course in courses),
+        "levels": levels,
         "tracks": tracks,
         "labs": platform_lab_payloads(courses),
     }

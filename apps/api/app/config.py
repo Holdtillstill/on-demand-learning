@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     environment: str = "local"
     database_url: str = "postgresql+psycopg://zhongwen:zhongwen@postgres:5432/zhongwen"
     redis_url: str = "redis://redis:6379/0"
-    cors_origins: str = "http://localhost:5173,http://localhost:8080"
+    cors_origins: str = "http://localhost:5173,http://localhost:5174,http://localhost:8080,http://localhost:8081,http://localhost:8082,http://localhost:8090"
     auto_seed: bool = True
     otel_exporter_otlp_endpoint: str | None = "http://jaeger:4318"
     rate_limit_per_minute: int = 120

@@ -1,4 +1,4 @@
-.PHONY: help up up-logging down logs test bootstrap backend-test frontend-test worker-test build compose-config fmt-check
+.PHONY: help up up-logging down logs test bootstrap backend-test frontend-test platform-academy-test worker-test build compose-config fmt-check
 
 PYTHON ?= python3.11
 
@@ -29,10 +29,13 @@ backend-test: ## Run backend tests locally
 frontend-test: ## Run frontend tests locally
 	cd apps/frontend && npm install --include=dev && npm run typecheck && npm test && npm run build
 
+platform-academy-test: ## Run standalone Platform Academy frontend tests locally
+	cd apps/platform-academy && npm install --include=dev && npm run typecheck && npm test && npm run build
+
 worker-test: ## Run worker tests locally
 	cd apps/worker && $(PYTHON) -m pytest
 
-test: backend-test worker-test frontend-test ## Run all tests
+test: backend-test worker-test frontend-test platform-academy-test ## Run all tests
 
 build: ## Build local service images
 	docker compose build

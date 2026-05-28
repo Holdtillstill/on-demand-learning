@@ -138,6 +138,7 @@ class PlatformLabOut(BaseModel):
     title: str
     track: str
     difficulty: str
+    level_group: str
     estimated_minutes: int
     scenario: str
     skills: list[str]
@@ -152,8 +153,20 @@ class PlatformTrackOut(BaseModel):
     title: str
     role: str
     summary: str
+    level_group: str
+    audience: str
     outcomes: list[str]
     course: CourseOut
+
+
+class PlatformLevelOut(BaseModel):
+    slug: str
+    title: str
+    level_group: str
+    audience: str
+    total_courses: int
+    total_lessons: int
+    courses: list[CourseOut]
 
 
 class PlatformAcademyCatalogOut(BaseModel):
@@ -161,6 +174,7 @@ class PlatformAcademyCatalogOut(BaseModel):
     promise: str
     total_courses: int
     total_lessons: int
+    levels: list[PlatformLevelOut]
     tracks: list[PlatformTrackOut]
     labs: list[PlatformLabOut]
 
@@ -170,6 +184,7 @@ class PlatformRoadmapStageOut(BaseModel):
     title: str
     role: str
     focus: str
+    level_group: str
     course_slugs: list[str]
     checkpoints: list[str]
 

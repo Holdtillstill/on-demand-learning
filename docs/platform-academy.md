@@ -1,10 +1,10 @@
 # Platform Academy
 
-Platform Academy is the second learning domain inside Zhongwen Cloud. It uses the existing course, lesson, flashcard, progress, XP, and dashboard machinery to teach production Kubernetes platform engineering without requiring AWS credentials or a real cluster.
+Platform Academy is a standalone local-first learning app for Kubernetes platform engineering. It shares the FastAPI backend, database, progress, XP, and lesson APIs with the Zhongwen app, but it has its own React/Vite frontend, brand, navigation, and Docker Compose service.
 
 ## Local Use
 
-Start the app locally:
+Start the local stack:
 
 ```bash
 docker compose up --build
@@ -12,57 +12,74 @@ docker compose up --build
 
 Open:
 
-- Frontend: http://localhost:8080/platform-academy
+- Platform Academy frontend: http://localhost:8090
+- Zhongwen frontend: http://localhost:8080
 - Catalog API: http://localhost:8000/api/platform-academy/catalog
 - Roadmap API: http://localhost:8000/api/platform-academy/roadmap
 - Labs API: http://localhost:8000/api/platform-academy/labs
 
-The academy is local-first. Do not run `terraform apply`, do not deploy to AWS, and do not add real credentials. Commands in lessons are teaching drills and inspection patterns.
+The academy is instructional and local-first. Do not run `terraform apply`, do not deploy to AWS, and do not add real credentials. AWS CLI examples are labeled as inspection/design examples, not required commands for this repo.
 
-## Curriculum
+## Level Structure
 
-The seeded MVP contains five production-oriented tracks:
+The catalog is organized into three learning levels with three courses each.
 
-- Kubernetes Foundations for Platform Engineers: control loops, Pods, Deployments, Services, Ingress, ConfigMaps, Secrets, probes, resource requests, CrashLoopBackOff, and rollout inspection.
-- EKS Production Blueprint: VPC CNI behavior, subnet/IP planning, private endpoint tradeoffs, IAM/OIDC/IRSA, service account boundaries, managed node groups, Karpenter, add-ons, and cost guardrails.
-- Helm in Production: chart API design, values layering, helpers, rendered diffs, immutable selectors, CRDs, hooks, rollback limits, chart testing, and supply chain checks.
-- GitOps with ArgoCD: app-of-apps, AppProjects, sync waves, health, pruning, self-heal, drift, secrets, promotion, and rollback through Git.
-- Observability and SRE for Kubernetes: RED/USE metrics, dashboards, SLOs, error budgets, alert fatigue, logs, traces, and incident runbooks.
+### Fresher / Beginner
 
-Each lesson includes:
+- Kubernetes Fundamentals: containers, images, Pods, Deployments, ReplicaSets, Services, namespaces, labels/selectors, ConfigMaps, Secrets, resource requests, and probes.
+- kubectl Debugging Basics: `get`, `describe`, `logs`, events, `exec`, port-forward, CrashLoopBackOff, ImagePullBackOff, Pending Pods, scheduling messages, and probe failures.
+- Cloud Native Foundations: Docker images, tags/digests, registries, YAML, dry-run, environment promotion, service DNS, ports, resource requests, and memory failure signals.
 
-- A concrete teaching body with production tradeoffs.
-- Key terms stored as lesson vocabulary.
-- Flashcard-style review prompts.
-- A practical lab scenario with commands and checklists.
-- Progress completion through the existing `/api/progress` endpoint, which awards lesson XP.
+### Intermediate
+
+- EKS Operations: VPC CNI, IP exhaustion, managed node groups, Fargate vs EC2, IRSA/OIDC, controller permissions, add-ons, and AWS Load Balancer Controller troubleshooting.
+- Helm for Application Delivery: chart anatomy, values as an API, values layering, templates, helpers, lint/template/diff, upgrade safety, rollbacks, hooks, CRDs, and supply chain review.
+- ArgoCD GitOps: Applications, desired vs live state, app-of-apps, AppProjects, sync waves, pruning, self-heal, drift, secrets, environments, and rollback through Git.
+
+### Advanced
+
+- Production EKS Architecture: private endpoints, access paths, Karpenter, NodePools, multi-AZ placement, zonal storage, cost guardrails, and cluster upgrade planning.
+- Kubernetes Security and Multi-tenancy: RBAC, `kubectl auth can-i`, NetworkPolicy, Pod Security Standards, admission policy, secret strategy, rotation, and tenant blast radius.
+- SRE and Observability for Kubernetes: RED/USE metrics, Prometheus/Grafana, logs, traces, SLOs, error budgets, burn-rate alerts, alert routing, runbooks, and post-incident learning.
+
+Current seed count: 9 courses, 36 lessons, and 9 labs.
+
+## How To Learn From It
+
+Use the roadmap in order if you are building fundamentals. Start with Fresher lessons until the object model and debugging commands feel natural, then move into EKS/Helm/ArgoCD. Use Advanced courses after you can already read manifests and debug common workload failures.
+
+For each lesson:
+
+- Read the concept section and identify the production tradeoff.
+- Run only local-safe commands against a local cluster if you have one.
+- Treat AWS and ArgoCD commands as examples unless you are in an approved sandbox.
+- Study the key terms until you can explain them without notes.
+- Use review flashcards for recall.
+- Mark the lesson complete to update `/api/progress` and dashboard XP.
 
 ## Labs
 
-The first lab set is intentionally safe and local-readable:
+Each course has a lab tied to a real lesson ID:
 
-- Debug CrashLoopBackOff without guessing.
-- Design an EKS workload identity boundary.
-- Validate a Helm chart like a release artifact.
+- Trace Service traffic to ready Pods.
+- Separate CrashLoopBackOff from ImagePullBackOff.
+- Review Kubernetes YAML before apply.
+- Diagnose EKS Pod IP exhaustion.
+- Validate a Helm release artifact.
 - Trace an ArgoCD drift report.
+- Run a production EKS architecture review.
+- Audit Kubernetes tenant boundaries.
 - Write an SLO-backed Kubernetes runbook.
 
-The labs can be demonstrated from the frontend or fetched from `/api/platform-academy/labs`. They are written as realistic production exercises, but they do not mutate cloud infrastructure.
+Labs are written as realistic production drills with commands, signals to inspect, and checklists. They avoid cloud mutation and are safe to discuss, rehearse, or adapt to a local kind/minikube cluster.
 
-## Portfolio Story
+## Product Boundary
 
-This feature shows that the product can support multiple learning domains while reusing shared platform capabilities:
-
-- One SQLAlchemy model supports Mandarin lessons and platform-engineering lessons.
-- Domain filtering keeps the original Zhongwen catalog and learning path separate from Platform Academy.
-- Dedicated academy APIs expose a catalog, roadmap, and labs for a polished product surface.
-- The frontend demonstrates a marketable senior DevOps learning product with real progress hooks.
-- The operating model remains local-first with Docker Compose, tests, metrics, docs, and safe infra scaffolding.
+Platform Academy is no longer a nav item inside the Zhongwen app. The Zhongwen frontend remains focused on Mandarin, Chinese literature, art, characters, reviews, and admin upload. Direct platform lesson URLs still render in the Zhongwen lesson viewer because both apps use the same `/api/lessons/:id` endpoint, but the main platform learning experience lives at http://localhost:8090.
 
 ## Next Iterations
 
-- Add an in-browser lab worksheet with answer capture and rubric feedback.
-- Add downloadable manifests for kind-based labs.
-- Add platform-specific achievements such as `cluster_debugger` and `gitops_operator`.
-- Add search facets by role, difficulty, and tool.
-- Add a mock incident simulator that emits local metrics and logs for observability labs.
+- Add downloadable kind manifests for selected labs.
+- Add lab worksheet state, answers, and rubric feedback.
+- Add platform-specific achievements such as `cluster_debugger`, `helm_release_operator`, and `gitops_owner`.
+- Add a mock incident simulator that emits local metrics/logs for observability labs.

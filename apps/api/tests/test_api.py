@@ -35,23 +35,34 @@ def test_platform_academy_catalog_roadmap_and_labs():
     assert catalog.status_code == 200
     payload = catalog.json()
     assert payload["title"] == "Platform Academy"
-    assert payload["total_courses"] >= 5
-    assert payload["total_lessons"] >= 15
-    assert {track["course"]["category"] for track in payload["tracks"]} >= {"Kubernetes", "EKS", "Helm", "ArgoCD", "SRE"}
-    kubernetes_track = next(track for track in payload["tracks"] if track["slug"] == "kubernetes")
-    assert len(kubernetes_track["course"]["lessons"]) >= 3
+    assert payload["total_courses"] >= 9
+    assert payload["total_lessons"] >= 30
+    assert {level["level_group"]: level["total_courses"] for level in payload["levels"]} == {
+        "Fresher": 3,
+        "Intermediate": 3,
+        "Advanced": 3,
+    }
+    assert all(level["total_lessons"] >= 12 for level in payload["levels"])
+    expected_categories = {"Kubernetes", "kubectl", "Cloud Native", "EKS", "Helm", "ArgoCD", "Security", "SRE"}
+    assert {track["course"]["category"] for track in payload["tracks"]} >= expected_categories
+    assert {track["level_group"] for track in payload["tracks"]} == {"Fresher", "Intermediate", "Advanced"}
+    kubernetes_track = next(track for track in payload["tracks"] if track["slug"] == "kubernetes-fundamentals")
+    assert len(kubernetes_track["course"]["lessons"]) >= 4
     assert any("CrashLoopBackOff" in lab["title"] for lab in payload["labs"])
+    assert {lab["level_group"] for lab in payload["labs"]} == {"Fresher", "Intermediate", "Advanced"}
     assert all(lab["lesson_id"] for lab in payload["labs"])
 
     roadmap = client.get("/api/platform-academy/roadmap")
     assert roadmap.status_code == 200
     stages = roadmap.json()["stages"]
-    assert len(stages) >= 5
-    assert stages[0]["title"] == "Workload Debugger"
+    assert len(stages) >= 9
+    assert stages[0]["title"] == "Kubernetes Object Mental Model"
+    assert {stage["level_group"] for stage in stages} == {"Fresher", "Intermediate", "Advanced"}
 
     labs = client.get("/api/platform-academy/labs")
     assert labs.status_code == 200
-    assert {lab["track"] for lab in labs.json()} >= {"Kubernetes", "EKS", "Helm", "ArgoCD", "SRE"}
+    assert len(labs.json()) >= 9
+    assert {lab["track"] for lab in labs.json()} >= expected_categories
 
 
 def test_course_domain_filters_keep_zhongwen_and_platform_separate():
@@ -63,7 +74,7 @@ def test_course_domain_filters_keep_zhongwen_and_platform_separate():
     platform = client.get("/api/courses?domain=platform")
     assert platform.status_code == 200
     platform_courses = platform.json()
-    assert len(platform_courses) >= 5
+    assert len(platform_courses) >= 9
     assert all(course["era"] == "Platform Academy" for course in platform_courses)
 
     invalid = client.get("/api/courses?domain=bad")
@@ -83,7 +94,7 @@ def test_lesson_and_flashcards():
 
 def test_platform_lesson_contains_teaching_terms_and_review_prompts():
     catalog = client.get("/api/platform-academy/catalog").json()
-    lesson_id = next(track for track in catalog["tracks"] if track["slug"] == "eks")["course"]["lessons"][1]["id"]
+    lesson_id = next(track for track in catalog["tracks"] if track["slug"] == "eks-operations")["course"]["lessons"][2]["id"]
     lesson = client.get(f"/api/lessons/{lesson_id}")
     assert lesson.status_code == 200
     payload = lesson.json()

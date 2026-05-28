@@ -16,6 +16,8 @@ jobs:
             dockerfile: apps/api/Dockerfile
           - name: frontend
             dockerfile: apps/frontend/Dockerfile
+          - name: platform-academy
+            dockerfile: apps/platform-academy/Dockerfile
           - name: worker
             dockerfile: apps/worker/Dockerfile
     steps:

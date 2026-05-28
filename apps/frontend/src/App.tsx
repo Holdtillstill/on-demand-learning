@@ -1,4 +1,4 @@
-import { BookOpen, BrainCircuit, Brush, Gauge, GraduationCap, Layers3, Map, Network, Trophy, UploadCloud } from "lucide-react";
+import { BookOpen, BrainCircuit, Brush, Gauge, GraduationCap, Layers3, Map, Trophy, UploadCloud } from "lucide-react";
 import { NavLink, Route, Routes } from "react-router-dom";
 
 import AdminUploadPage from "./pages/AdminUploadPage";
@@ -10,7 +10,6 @@ import FlashcardsPage from "./pages/FlashcardsPage";
 import LearningPathPage from "./pages/LearningPathPage";
 import LessonPage from "./pages/LessonPage";
 import ObservabilityPage from "./pages/ObservabilityPage";
-import PlatformAcademyPage from "./pages/PlatformAcademyPage";
 import ProgressPage from "./pages/ProgressPage";
 
 const nav = [
@@ -20,7 +19,6 @@ const nav = [
   { to: "/flashcards", label: "Reviews", icon: BrainCircuit },
   { to: "/characters", label: "Characters", icon: Brush },
   { to: "/progress", label: "Progress Log", icon: Layers3 },
-  { to: "/platform-academy", label: "Platform Academy", icon: Network },
   { to: "/admin/upload", label: "Admin Upload", icon: UploadCloud },
   { to: "/platform", label: "Ops Layer", icon: Gauge }
 ];
@@ -58,7 +56,6 @@ export default function App() {
           <Route path="/flashcards" element={<FlashcardsPage />} />
           <Route path="/characters" element={<CharactersPage />} />
           <Route path="/progress" element={<ProgressPage />} />
-          <Route path="/platform-academy" element={<PlatformAcademyPage />} />
           <Route path="/admin/upload" element={<AdminUploadPage />} />
           <Route path="/platform" element={<ObservabilityPage />} />
         </Routes>

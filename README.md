@@ -1,6 +1,6 @@
 # Zhongwen Cloud Learning Platform
 
-Zhongwen Cloud Learning Platform is a local-first, production-style portfolio project for learning Mandarin, Chinese art/literature, and platform engineering. The product surface is a small Udemy-like learning app with a dedicated Platform Academy for Kubernetes, EKS, Helm, ArgoCD, and SRE; the portfolio story is the platform around it: Docker Compose, FastAPI, React, PostgreSQL, Redis, a worker, metrics, traces, JSON logs, Kubernetes manifests, Terraform AWS scaffolding, CI/CD, SLOs, and runbooks.
+Zhongwen Cloud Learning Platform is a local-first, production-style portfolio project with two frontend product surfaces: a Mandarin/Chinese culture learning app and a standalone Cloud Native Platform Academy for Kubernetes, EKS, Helm, ArgoCD, security, and SRE. The portfolio story is the platform around them: Docker Compose, FastAPI, React, PostgreSQL, Redis, a worker, metrics, traces, JSON logs, Kubernetes manifests, Terraform AWS scaffolding, CI/CD, SLOs, and runbooks.
 
 ## Quickstart
 
@@ -14,7 +14,8 @@ Open:
 
 | Service | URL | Notes |
 | --- | --- | --- |
-| Frontend | http://localhost:8080 | Course catalog, learner dashboard, and Platform Academy |
+| Zhongwen frontend | http://localhost:8080 | Mandarin, Chinese literature, art, characters, reviews, and admin upload |
+| Platform Academy frontend | http://localhost:8090 | Standalone Kubernetes/EKS/Helm/ArgoCD/security/SRE learning app |
 | API | http://localhost:8000/docs | FastAPI OpenAPI docs |
 | API health | http://localhost:8000/healthz | Liveness |
 | API readiness | http://localhost:8000/readyz | DB and Redis dependency check |
@@ -36,9 +37,10 @@ Then open OpenSearch Dashboards at http://localhost:5601.
 ## What Is Built
 
 - FastAPI backend with course catalog, Platform Academy catalog/roadmap/labs, lessons, learning path, learner dashboard, XP, streaks, achievements, SRS review queue, character metadata, progress, search, flashcards, quiz attempts, admin seed and nested course-upload endpoints, health/readiness, Prometheus metrics, OpenTelemetry tracing, request IDs, basic rate limiting, and JSON logs.
-- React/Vite/TypeScript frontend with learner dashboard, curriculum map, Mandarin catalog, Platform Academy, course detail, platform-aware lesson viewer, SRS reviews, character practice, progress log, admin authoring upload, and platform information pages.
+- Zhongwen React/Vite/TypeScript frontend with learner dashboard, curriculum map, Mandarin catalog, course detail, platform-aware direct lesson rendering, SRS reviews, character practice, progress log, admin authoring upload, and platform information pages.
+- Standalone Platform Academy React/Vite/TypeScript frontend with its own brand, navigation, level filters, roadmap, course pages, lesson pages, labs, and progress/XP display.
 - Worker service that refreshes recommendations and due-card counts while emitting metrics, logs, and traces.
-- PostgreSQL schema created by SQLAlchemy plus seeded Mandarin survival, HSK foundations, character building blocks, Tang poetry, Song painting, calligraphy, classical fiction, modern culture content, and five Platform Academy tracks with 15 Kubernetes/EKS/Helm/ArgoCD/SRE lessons.
+- PostgreSQL schema created by SQLAlchemy plus seeded Mandarin survival, HSK foundations, character building blocks, Tang poetry, Song painting, calligraphy, classical fiction, modern culture content, and nine Platform Academy courses with 36 Kubernetes/EKS/Helm/ArgoCD/security/SRE lessons.
 - Dockerfiles and Docker Compose for app, DB, Redis, Prometheus, Grafana, Jaeger, and optional OpenSearch/Fluent Bit.
 - Kubernetes deployment scaffolding with probes, HPAs, PDBs, network policy, ingress, configmaps, and secret template.
 - Terraform scaffold for AWS `us-west-2`: VPC, EKS, ECR, S3, RDS, ElastiCache, IAM roles, and Budget alert.
@@ -54,6 +56,7 @@ make compose-config  # Validate docker-compose.yml
 make backend-test
 make worker-test
 make frontend-test   # Forces devDependencies even when npm config omit=dev is set
+make platform-academy-test
 make test
 ```
 
@@ -90,6 +93,7 @@ bash scripts/generate_learner_activity.sh
 ```text
 apps/api          FastAPI service
 apps/frontend     React/Vite UI
+apps/platform-academy Standalone React/Vite Platform Academy UI
 apps/worker       background worker
 infra/k8s         Kubernetes manifests
 infra/terraform   AWS scaffold, not auto-applied
@@ -99,7 +103,7 @@ docs              SRE and platform engineering docs
 
 ## Platform Academy
 
-Open http://localhost:8080/platform-academy for the Kubernetes/EKS/Helm/ArgoCD/SRE learning product. It includes role-based roadmap stages, track progress, lesson links, practical lab cards, key terms, review prompts, and progress/XP hooks backed by the same API state as the Mandarin academy.
+Open http://localhost:8090 for the standalone Kubernetes/EKS/Helm/ArgoCD/security/SRE learning product. The Zhongwen frontend on http://localhost:8080 intentionally does not include Platform Academy in its sidebar; both apps share the same local FastAPI backend and progress state.
 
 See [docs/platform-academy.md](docs/platform-academy.md) for the curriculum outline and local-safe lab story.
 
