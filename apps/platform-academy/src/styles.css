@@ -970,6 +970,110 @@ pre {
   font-weight: 900;
 }
 
+.design-proof-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  width: min(1220px, 100%);
+  margin: 0 auto 20px;
+}
+
+.design-proof-strip div,
+.design-research-notes article,
+.design-lab-brief,
+.design-resource-brief {
+  border: 1px solid rgba(23, 33, 29, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 14px;
+}
+
+.design-proof-strip dt,
+.design-research-notes span,
+.design-lab-brief .design-kicker,
+.design-resource-brief .design-kicker {
+  color: inherit;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.design-proof-strip dd {
+  margin: 5px 0 0;
+  font-size: 1.28rem;
+  font-weight: 950;
+  line-height: 1.05;
+}
+
+.design-proof-strip span {
+  display: block;
+  margin-top: 6px;
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.35;
+  opacity: 0.76;
+}
+
+.design-research-notes {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 12px;
+  width: min(1260px, 100%);
+  margin: 0 auto 24px;
+}
+
+.design-research-notes p,
+.design-lab-brief p,
+.design-resource-brief p {
+  margin-top: 8px;
+  color: inherit;
+  line-height: 1.52;
+  opacity: 0.78;
+}
+
+.design-lab-brief,
+.design-resource-brief {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.design-lab-brief h2,
+.design-resource-brief h2 {
+  font-size: 1.35rem;
+  line-height: 1.12;
+}
+
+.design-lab-brief > div,
+.design-resource-brief > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.design-lab-brief > div span,
+.design-resource-brief > div span {
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 0.76rem;
+  font-weight: 900;
+  opacity: 0.78;
+}
+
+.design-lab-brief pre {
+  margin: 0;
+  padding: 12px;
+  font-size: 0.78rem;
+}
+
+.design-lab-brief ul {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.45;
+}
+
 .design-index {
   background:
     linear-gradient(120deg, rgba(31, 111, 90, 0.08), transparent 34%),
@@ -1147,6 +1251,13 @@ pre {
   color: #d8f7ff;
 }
 
+.design-control-room .design-proof-strip div,
+.design-control-room .design-lab-brief,
+.design-control-room .design-resource-brief {
+  border-color: rgba(125, 211, 252, 0.24);
+  background: rgba(15, 23, 42, 0.7);
+}
+
 .control-room-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(420px, 1fr);
@@ -1192,7 +1303,7 @@ pre {
 .control-screen {
   position: relative;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto auto;
   min-height: 560px;
   overflow: hidden;
   border: 1px solid rgba(125, 211, 252, 0.32);
@@ -1263,6 +1374,32 @@ pre {
   height: 12px;
 }
 
+.control-current-lab {
+  display: grid;
+  gap: 6px;
+  margin: 0 18px 12px;
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.48);
+  padding: 12px;
+}
+
+.control-current-lab span {
+  color: #8cdbe7;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.control-current-lab code {
+  display: block;
+  overflow-x: auto;
+  color: #d8f7ff;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
 .control-status-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1315,6 +1452,13 @@ pre {
 .design-editorial .design-navline span {
   border-color: #8d7863;
   color: #3a2e24;
+}
+
+.design-editorial .design-proof-strip div,
+.design-editorial .design-lab-brief,
+.design-editorial .design-resource-brief {
+  border-color: rgba(141, 120, 99, 0.42);
+  background: rgba(255, 250, 241, 0.82);
 }
 
 .editorial-masthead {
@@ -1442,6 +1586,20 @@ pre {
   font-weight: 900;
 }
 
+.editorial-source-note {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(141, 120, 99, 0.42);
+  padding-top: 14px;
+}
+
+.editorial-source-note p {
+  color: #5c4d40;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
 .design-terminal {
   background: #050806;
   color: #d9ffe8;
@@ -1474,6 +1632,20 @@ pre {
   border-bottom: 1px solid #1f6f46;
   padding: 14px 18px;
   color: #86efac;
+}
+
+.terminal-shell .design-proof-strip {
+  width: auto;
+  margin: 0;
+  border-bottom: 1px solid #1f6f46;
+  padding: 12px;
+}
+
+.terminal-shell .design-proof-strip div,
+.design-terminal .design-lab-brief,
+.design-terminal .design-resource-brief {
+  border-color: #17442c;
+  background: #07150e;
 }
 
 .terminal-shell > header span {
@@ -1546,6 +1718,15 @@ pre {
 }
 
 .terminal-command-panel {
+  grid-column: 1 / -1;
+}
+
+.terminal-lab-panel {
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.terminal-lab-panel h2 {
   grid-column: 1 / -1;
 }
 
@@ -1691,6 +1872,14 @@ pre {
   backdrop-filter: blur(16px);
 }
 
+.design-atlas .design-proof-strip div,
+.design-atlas .design-lab-brief,
+.design-atlas .design-resource-brief {
+  border-color: rgba(14, 116, 144, 0.22);
+  background: rgba(255, 255, 255, 0.68);
+  color: #0f2f35;
+}
+
 .atlas-panel > div {
   display: flex;
   flex-wrap: wrap;
@@ -1734,6 +1923,13 @@ pre {
     repeating-linear-gradient(90deg, rgba(148, 163, 184, 0.07) 0 1px, transparent 1px 120px),
     #020617;
   color: #e2e8f0;
+}
+
+.design-observability .design-proof-strip div,
+.design-observability .design-lab-brief,
+.design-observability .design-resource-brief {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.75);
 }
 
 .design-observability .design-navline a,
@@ -1894,6 +2090,13 @@ pre {
   color: #eff6ff;
 }
 
+.design-blueprint .design-proof-strip div,
+.design-blueprint .design-lab-brief,
+.design-blueprint .design-resource-brief {
+  border-color: rgba(219, 234, 254, 0.72);
+  background: rgba(9, 48, 95, 0.48);
+}
+
 .design-blueprint .design-navline a,
 .design-blueprint .design-navline span {
   border-color: rgba(219, 234, 254, 0.72);
@@ -1952,6 +2155,13 @@ pre {
 .blueprint-spec p {
   color: #dbeafe;
   line-height: 1.65;
+}
+
+.blueprint-spec ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #dbeafe;
+  line-height: 1.55;
 }
 
 .blueprint-plan {
@@ -2090,6 +2300,18 @@ pre {
   color: #ffffff;
 }
 
+.design-saas .design-proof-strip {
+  width: auto;
+  margin: 0;
+}
+
+.design-saas .design-proof-strip div,
+.design-saas .design-lab-brief,
+.design-saas .design-resource-brief {
+  border-color: #d7ded9;
+  background: #ffffff;
+}
+
 .saas-kpis {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2161,12 +2383,50 @@ pre {
   line-height: 1.45;
 }
 
+.saas-evidence {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid #d7ded9;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.saas-evidence article {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 0.42fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid #e5eae6;
+  padding: 16px;
+}
+
+.saas-evidence article:last-child {
+  border-bottom: 0;
+}
+
+.saas-evidence article span {
+  color: #1f6f5a;
+  font-weight: 900;
+}
+
+.saas-evidence article p {
+  color: #52625c;
+  line-height: 1.45;
+}
+
 .design-command-map {
   background:
     linear-gradient(145deg, rgba(31, 22, 52, 0.96), rgba(6, 44, 50, 0.96)),
     repeating-linear-gradient(90deg, rgba(94, 234, 212, 0.08) 0 1px, transparent 1px 90px),
     #111827;
   color: #eefdfb;
+}
+
+.design-command-map .design-proof-strip div,
+.design-command-map .design-lab-brief,
+.design-command-map .design-resource-brief {
+  border-color: rgba(94, 234, 212, 0.26);
+  background: rgba(15, 23, 42, 0.62);
 }
 
 .design-command-map .design-navline a,
@@ -2304,12 +2564,26 @@ pre {
   font-weight: 800;
 }
 
+.command-rail p {
+  margin-top: 8px;
+  color: #b5d8d4;
+  font-size: 0.92rem;
+  line-height: 1.42;
+}
+
 .design-bootcamp {
   background:
     linear-gradient(110deg, rgba(255, 247, 237, 0.94), rgba(255, 251, 235, 0.82)),
     repeating-linear-gradient(90deg, rgba(190, 18, 60, 0.08) 0 1px, transparent 1px 70px),
     #fff7ed;
   color: #241515;
+}
+
+.design-bootcamp .design-proof-strip div,
+.design-bootcamp .design-lab-brief,
+.design-bootcamp .design-resource-brief {
+  border-color: #241515;
+  background: #fffaf1;
 }
 
 .design-bootcamp .design-navline a,
@@ -2439,9 +2713,24 @@ pre {
   color: #f5d7c5;
 }
 
+.bootcamp-assessment {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 12px;
+  width: min(1220px, 100%);
+  margin: 12px auto 0;
+}
+
 .design-library {
   background: #f5f7f8;
   color: #111827;
+}
+
+.design-library .design-proof-strip div,
+.design-library .design-lab-brief,
+.design-library .design-resource-brief {
+  border-color: #cbd5e1;
+  background: #ffffff;
 }
 
 .design-library .design-navline a,
@@ -2522,6 +2811,18 @@ pre {
 .library-stack p {
   color: #475569;
   line-height: 1.6;
+}
+
+.library-feature pre {
+  margin: 0;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.78rem;
+}
+
+.library-feature small {
+  color: #475569;
+  font-weight: 850;
 }
 
 .library-feature a {
@@ -2619,7 +2920,10 @@ pre {
   .control-mission-strip,
   .obs-metric-grid,
   .saas-kpis,
-  .bootcamp-timeline {
+  .bootcamp-timeline,
+  .design-proof-strip,
+  .design-research-notes,
+  .bootcamp-assessment {
     grid-template-columns: 1fr;
   }
 
@@ -2627,8 +2931,10 @@ pre {
     grid-template-columns: 1fr;
   }
 
-  .terminal-command-panel {
+  .terminal-command-panel,
+  .terminal-lab-panel {
     grid-column: auto;
+    grid-template-columns: 1fr;
   }
 
   .atlas-map,
@@ -2643,7 +2949,8 @@ pre {
 
   .blueprint-plan article,
   .saas-table-head,
-  .saas-table a {
+  .saas-table a,
+  .saas-evidence article {
     grid-template-columns: 1fr;
   }
 
@@ -2662,7 +2969,8 @@ pre {
 @media (max-width: 620px) {
   .design-index-grid,
   .library-stack,
-  .bootcamp-drills {
+  .bootcamp-drills,
+  .design-proof-strip {
     grid-template-columns: 1fr;
   }
 

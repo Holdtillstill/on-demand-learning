@@ -474,9 +474,11 @@ function LabCard({ lab }: { lab: PlatformLab }) {
           <span key={skill}>{skill}</span>
         ))}
       </div>
+      <h3>Command surface</h3>
       <pre>
         <code>{lab.commands.join("\n")}</code>
       </pre>
+      <h3>Validation checklist</h3>
       <ul>
         {lab.checklist.map((item) => (
           <li key={item}>{item}</li>
@@ -507,7 +509,7 @@ function ResourcesPage({ data }: { data: AcademyData }) {
   return (
     <section className="page">
       <header className="page-heading resources-heading">
-        <p className="eyebrow">Codex gap audit: resources, projects, rubrics, references</p>
+        <p className="eyebrow">Runbooks, projects, rubrics, references</p>
         <h1>Resource library for comprehensive platform mastery</h1>
         <p className="lead">
           Cheatsheets, runbooks, worksheets, project briefs, templates, references, diagrams, assessments, and interview drills for every academy domain.
@@ -580,6 +582,7 @@ function ResourceCard({ resource, data }: { resource: PlatformResource; data: Ac
       </ul>
       <h3>Artifact</h3>
       <p>{resource.artifacts.join(" • ")}</p>
+      <h3>Command surface</h3>
       <pre>
         <code>{resource.commands.join("\n")}</code>
       </pre>
@@ -688,6 +691,16 @@ function getDesignStats(data: AcademyData): DesignStats {
   };
 }
 
+function averageLabMinutes(labs: PlatformLab[]) {
+  if (labs.length === 0) return 0;
+  return Math.round(labs.reduce((total, lab) => total + lab.estimated_minutes, 0) / labs.length);
+}
+
+function firstResourceForLab(resources: PlatformResource[], lab?: PlatformLab) {
+  if (!lab) return resources[0];
+  return resources.find((resource) => resource.related_labs.includes(lab.slug)) ?? resources[0];
+}
+
 function DesignFrameNav({ activeId }: { activeId?: number }) {
   return (
     <div className="design-navline">
@@ -698,6 +711,84 @@ function DesignFrameNav({ activeId }: { activeId?: number }) {
       <Link to="/">Academy</Link>
       {activeId && <span>{String(activeId).padStart(2, "0")} / 10</span>}
     </div>
+  );
+}
+
+function DesignEvidenceStrip({ data, stats }: { data: AcademyData; stats: DesignStats }) {
+  const items = [
+    {
+      label: "Curriculum",
+      value: `${data.catalog.total_courses} courses`,
+      detail: `${data.catalog.total_lessons} sequenced lessons`
+    },
+    {
+      label: "Practice",
+      value: `${stats.labs.length} labs`,
+      detail: `${averageLabMinutes(stats.labs)} min average drill`
+    },
+    {
+      label: "Artifacts",
+      value: `${stats.resources.length} resources`,
+      detail: `${stats.domains.length} domains with commands`
+    },
+    {
+      label: "Progress",
+      value: `${stats.completionPercent}% ready`,
+      detail: `${stats.totalCompleted} completed / ${data.dashboard.xp.total} XP`
+    }
+  ];
+
+  return (
+    <dl className="design-proof-strip" aria-label="Academy proof points">
+      {items.map((item) => (
+        <div key={item.label}>
+          <dt>{item.label}</dt>
+          <dd>{item.value}</dd>
+          <span>{item.detail}</span>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function DesignLabBrief({ lab, title = "Featured lab" }: { lab?: PlatformLab; title?: string }) {
+  if (!lab) return null;
+  return (
+    <article className="design-lab-brief">
+      <p className="design-kicker">{title}</p>
+      <h2>{lab.title}</h2>
+      <p>{lab.scenario}</p>
+      <div>
+        {lab.skills.slice(0, 4).map((skill) => (
+          <span key={skill}>{skill}</span>
+        ))}
+      </div>
+      <pre>
+        <code>{lab.commands.slice(0, 2).join("\n")}</code>
+      </pre>
+      <ul>
+        {lab.checklist.slice(0, 3).map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
+function DesignResourceBrief({ resource }: { resource?: PlatformResource }) {
+  if (!resource) return null;
+  return (
+    <article className="design-resource-brief">
+      <p className="design-kicker">Reusable artifact</p>
+      <h2>{resource.title}</h2>
+      <p>{resource.summary}</p>
+      <div>
+        <span>{resource.resource_type}</span>
+        <span>{resource.safety_level}</span>
+        <span>{resource.estimated_minutes} min</span>
+      </div>
+      <strong>{resource.artifacts.slice(0, 2).join(" / ")}</strong>
+    </article>
   );
 }
 
@@ -730,6 +821,19 @@ function DesignsIndexPage({ data }: { data: AcademyData }) {
           </div>
         </dl>
       </header>
+
+      <DesignEvidenceStrip data={data} stats={stats} />
+
+      <section className="design-research-notes" aria-label="Research lens">
+        <article>
+          <span>Research lens</span>
+          <p>Benchmarked in May 2026 against official docs, cloud learning hubs, hands-on lab platforms, and certification simulators.</p>
+        </article>
+        <article>
+          <span>Product bar</span>
+          <p>Senior learners need command surfaces, timed labs, source freshness, progress state, and artifacts they can reuse at work.</p>
+        </article>
+      </section>
 
       <section className="design-index-grid" aria-label="Design routes">
         {designBriefs.map((brief) => (
@@ -786,6 +890,7 @@ function DesignVariantPage({ data }: { data: AcademyData }) {
 function DesignControlRoom({ data, stats }: { data: AcademyData; stats: DesignStats }) {
   const leadCourse = stats.courses[0];
   const leadStage = stats.stages[0];
+  const leadLab = stats.labs[0];
   return (
     <section className="design-page design-control-room">
       <DesignFrameNav activeId={1} />
@@ -814,6 +919,13 @@ function DesignControlRoom({ data, stats }: { data: AcademyData; stats: DesignSt
             <i />
             <b />
           </div>
+          {leadLab && (
+            <div className="control-current-lab">
+              <span>Current drill</span>
+              <strong>{leadLab.title}</strong>
+              <code>{leadLab.commands[0]}</code>
+            </div>
+          )}
           <div className="control-status-list">
             {stats.tracks.slice(0, 4).map((track) => (
               <div key={track.slug}>
@@ -824,6 +936,7 @@ function DesignControlRoom({ data, stats }: { data: AcademyData; stats: DesignSt
           </div>
         </div>
       </div>
+      <DesignEvidenceStrip data={data} stats={stats} />
       <section className="control-mission-strip" aria-label="Mission metrics">
         <article>
           <span>Active courses</span>
@@ -852,6 +965,7 @@ function DesignEditorialAcademy({ data, stats }: { data: AcademyData; stats: Des
         <h1>Production judgment, taught in sequence.</h1>
         <span>{data.catalog.total_lessons} lessons across Kubernetes, GitOps, SRE, and cloud operations.</span>
       </header>
+      <DesignEvidenceStrip data={data} stats={stats} />
       <section className="editorial-layout">
         <article className="editorial-feature">
           <p className="design-kicker">Featured syllabus</p>
@@ -881,6 +995,10 @@ function DesignEditorialAcademy({ data, stats }: { data: AcademyData; stats: Des
               {resource.title}
             </Link>
           ))}
+          <div className="editorial-source-note">
+            <span>Source posture</span>
+            <p>Every serious course page should expose upstream docs, version context, and last-reviewed dates next to the lesson.</p>
+          </div>
         </aside>
       </section>
     </section>
@@ -901,6 +1019,7 @@ function DesignTerminalCockpit({ data, stats }: { data: AcademyData; stats: Desi
           <span>academyctl session --profile sre</span>
           <strong>{data.dashboard.xp.total} xp</strong>
         </header>
+        <DesignEvidenceStrip data={data} stats={stats} />
         <div className="terminal-grid">
           <article className="terminal-hero">
             <p>demo-user@platform-academy:~$ ./start-learning</p>
@@ -940,6 +1059,15 @@ function DesignTerminalCockpit({ data, stats }: { data: AcademyData; stats: Desi
               </div>
             ))}
           </article>
+          <article className="terminal-panel terminal-lab-panel">
+            <h2>Verification gates</h2>
+            {stats.labs[0]?.checklist.slice(0, 4).map((item) => (
+              <div key={item}>
+                <span>assert</span>
+                <strong>{item}</strong>
+              </div>
+            ))}
+          </article>
         </div>
       </div>
     </section>
@@ -955,6 +1083,7 @@ function DesignCloudAtlas({ data, stats }: { data: AcademyData; stats: DesignSta
         <h1>Navigate the platform curriculum by domain.</h1>
         <p>{data.catalog.promise}</p>
       </header>
+      <DesignEvidenceStrip data={data} stats={stats} />
       <section className="atlas-layout">
         <div className="atlas-map" aria-label="Course atlas">
           {stats.tracks.slice(0, 6).map((track, index) => (
@@ -986,6 +1115,7 @@ function DesignCloudAtlas({ data, stats }: { data: AcademyData; stats: DesignSta
               <dd>{stats.labs.length}</dd>
             </div>
           </dl>
+          <DesignLabBrief lab={stats.labs.find((lab) => lab.level_group === "Advanced") ?? stats.labs[0]} title="Map waypoint" />
         </aside>
       </section>
     </section>
@@ -1009,6 +1139,7 @@ function DesignObservabilityWall({ data, stats }: { data: AcademyData; stats: De
         </div>
         <Gauge aria-hidden="true" />
       </header>
+      <DesignEvidenceStrip data={data} stats={stats} />
       <section className="obs-metric-grid">
         {metricRows.map((metric) => (
           <article key={metric.label}>
@@ -1044,6 +1175,7 @@ function DesignObservabilityWall({ data, stats }: { data: AcademyData; stats: De
           <strong>{stats.recommended?.title ?? "Select a lesson"}</strong>
           {stats.recommended && <Link to={`/lessons/${stats.recommended.id}`}>Resume lesson</Link>}
         </article>
+        <DesignLabBrief lab={stats.labs.find((lab) => lab.track === "SRE") ?? stats.labs[0]} title="Runbook drill" />
       </section>
     </section>
   );
@@ -1060,11 +1192,17 @@ function DesignInfraBlueprint({ data, stats }: { data: AcademyData; stats: Desig
         </div>
         <Hexagon aria-hidden="true" />
       </header>
+      <DesignEvidenceStrip data={data} stats={stats} />
       <section className="blueprint-sheet">
         <div className="blueprint-spec">
           <span>Spec PA-2026</span>
           <strong>{data.catalog.total_courses} courses / {data.catalog.total_lessons} lessons</strong>
           <p>{data.catalog.promise}</p>
+          <ul>
+            <li>Each lab is tied to a lesson ID.</li>
+            <li>Resources produce reusable runbooks, diagrams, worksheets, or review artifacts.</li>
+            <li>AWS commands remain sandbox-first or read-only.</li>
+          </ul>
         </div>
         <div className="blueprint-plan">
           {stats.stages.map((stage) => (
@@ -1108,6 +1246,7 @@ function DesignSaasDashboard({ data, stats }: { data: AcademyData; stats: Design
             </div>
             <Link to="/labs">Review labs</Link>
           </header>
+          <DesignEvidenceStrip data={data} stats={stats} />
           <section className="saas-kpis">
             <article>
               <Database aria-hidden="true" />
@@ -1138,6 +1277,19 @@ function DesignSaasDashboard({ data, stats }: { data: AcademyData; stats: Design
               </Link>
             ))}
           </section>
+          <section className="saas-evidence" id="resources">
+            <div className="saas-table-head">
+              <h2>Evidence gates</h2>
+              <span>{stats.resources.length} reusable artifacts</span>
+            </div>
+            {stats.resources.slice(0, 4).map((resource) => (
+              <article key={resource.slug}>
+                <span>{resource.resource_type}</span>
+                <strong>{resource.domain}</strong>
+                <p>{resource.artifacts.slice(0, 2).join(" / ")}</p>
+              </article>
+            ))}
+          </section>
         </div>
       </div>
     </section>
@@ -1160,6 +1312,7 @@ function DesignCommandCenterMap({ data, stats }: { data: AcademyData; stats: Des
         <h1>Deploy learning routes across the platform map.</h1>
         <p>{data.catalog.promise}</p>
       </header>
+      <DesignEvidenceStrip data={data} stats={stats} />
       <section className="command-layout">
         <div className="command-map-board" aria-label="Platform course map">
           <span className="map-line map-line-a" />
@@ -1181,6 +1334,7 @@ function DesignCommandCenterMap({ data, stats }: { data: AcademyData; stats: Des
               <div>
                 <strong>{lab.title}</strong>
                 <span>{lab.estimated_minutes} min / {lab.level_group}</span>
+                <p>{lab.scenario}</p>
               </div>
             </article>
           ))}
@@ -1211,6 +1365,7 @@ function DesignBootcamp({ data, stats }: { data: AcademyData; stats: DesignStats
           <span>readiness score</span>
         </aside>
       </header>
+      <DesignEvidenceStrip data={data} stats={stats} />
       <section className="bootcamp-timeline" aria-label="Bootcamp progression">
         {data.catalog.levels.map((level, index) => (
           <article key={level.slug}>
@@ -1230,12 +1385,17 @@ function DesignBootcamp({ data, stats }: { data: AcademyData; stats: DesignStats
           </article>
         ))}
       </section>
+      <section className="bootcamp-assessment" aria-label="Assessment gates">
+        <DesignLabBrief lab={stats.labs.find((lab) => lab.level_group === "Advanced") ?? stats.labs[0]} title="Timed assessment" />
+        <DesignResourceBrief resource={firstResourceForLab(stats.resources, stats.labs[0])} />
+      </section>
     </section>
   );
 }
 
 function DesignResourceLibrary({ data, stats }: { data: AcademyData; stats: DesignStats }) {
   const leadResource = stats.resources[0];
+  const leadLab = stats.labs.find((lab) => leadResource?.related_labs.includes(lab.slug)) ?? stats.labs[0];
   return (
     <section className="design-page design-library">
       <DesignFrameNav activeId={10} />
@@ -1244,12 +1404,19 @@ function DesignResourceLibrary({ data, stats }: { data: AcademyData; stats: Desi
         <h1>Runbooks, briefs, and references for every platform domain.</h1>
         <p>{data.catalog.promise}</p>
       </header>
+      <DesignEvidenceStrip data={data} stats={stats} />
       <section className="library-layout">
         <article className="library-feature">
           <BookMarked aria-hidden="true" />
           <span>{leadResource?.resource_type ?? "resource"}</span>
           <h2>{leadResource?.title ?? "Platform resource collection"}</h2>
           <p>{leadResource?.summary ?? "Curated support material for the academy."}</p>
+          {leadResource && (
+            <pre>
+              <code>{leadResource.commands.slice(0, 2).join("\n")}</code>
+            </pre>
+          )}
+          {leadLab && <small>Related lab: {leadLab.title}</small>}
           <Link to="/resources">Open resource library</Link>
         </article>
         <div className="library-stack">

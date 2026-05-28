@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -157,6 +157,7 @@ function stubAcademyFetch() {
 
 describe("Platform Academy app", () => {
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -233,6 +234,8 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByText("Resource library for comprehensive platform mastery")).toBeInTheDocument();
+    expect(screen.getByText("Runbooks, projects, rubrics, references")).toBeInTheDocument();
+    expect(screen.queryByText(/Codex gap audit/i)).not.toBeInTheDocument();
     expect(screen.getByText("Kubernetes Debugging Cheatsheet")).toBeInTheDocument();
     expect(screen.getByText("FinOps")).toBeInTheDocument();
   });
@@ -271,6 +274,7 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByText("Ten visual systems for Platform Academy.")).toBeInTheDocument();
+    expect(screen.getByText("Benchmarked in May 2026 against official docs, cloud learning hubs, hands-on lab platforms, and certification simulators.")).toBeInTheDocument();
     expect(screen.getByText("Cinematic Cloud Control Room")).toBeInTheDocument();
     expect(screen.getByText("Terminal Ops Cockpit")).toBeInTheDocument();
     expect(screen.getByText("Resource Magazine Library")).toBeInTheDocument();
@@ -292,5 +296,20 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByText(expectedText)).toBeInTheDocument();
+  });
+
+  it("renders design evidence and lab validation surfaces", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/designs/3"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("Verification gates")).toBeInTheDocument();
+    expect(screen.getByText("1 labs")).toBeInTheDocument();
+    expect(screen.getByText("30 min average drill")).toBeInTheDocument();
+    expect(screen.getByText(/kubectl describe svc checkout -n payments/)).toBeInTheDocument();
   });
 });
