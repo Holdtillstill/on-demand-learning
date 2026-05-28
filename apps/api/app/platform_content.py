@@ -28,6 +28,66 @@ FRESHER_LEVEL = "Fresher / Beginner"
 INTERMEDIATE_LEVEL = "Intermediate"
 ADVANCED_LEVEL = "Advanced"
 
+
+def platform_foundation_course(slug: str, title: str, level: str, category: str, description: str, lesson_specs: list[tuple[str, str, str, str, str]]) -> dict:
+    lessons = []
+    for lesson_title, summary, concept, practice, capstone in lesson_specs:
+        lessons.append(
+            platform_lesson(
+                lesson_title,
+                summary,
+                f"""
+## Mental model
+{concept}
+
+## What to practice
+{practice}
+
+## Zero-to-hero checkpoint
+{capstone}
+
+## Operator habit
+Write down the symptom, the evidence, the suspected owner, and the safest next command before changing any live object. This turns scattered platform knowledge into a repeatable engineering workflow.
+                """,
+                """
+Scenario: You are the platform engineer on call for a realistic team environment.
+Checklist:
+- State the user impact in one sentence.
+- Identify the system boundary and owner.
+- Collect read-only evidence first.
+- Propose the smallest reversible change.
+- Capture what should become a dashboard, alert, runbook, or automation.
+Commands:
+$ kubectl get events -A --sort-by=.lastTimestamp
+$ kubectl describe pod POD_NAME -n NAMESPACE
+$ kubectl logs deploy/APP -n NAMESPACE --since=15m
+                """,
+                [
+                    (title, title, category, description),
+                    ("Evidence", "Evidence", "Debugging", "Observed facts from commands, dashboards, logs, traces, events, or cloud APIs."),
+                    ("Blast radius", "Blast radius", "Reliability", "The set of users, tenants, workloads, or systems affected by a failure or change."),
+                    ("Rollback", "Rollback", "Operations", "A planned path to return to a known-good state when a change causes harm."),
+                    ("Runbook", "Runbook", "Operations", "A step-by-step guide that helps responders diagnose and mitigate an incident safely."),
+                ],
+                [
+                    (f"What is the main goal of {lesson_title}?", summary, "platform"),
+                    ("Why collect evidence before changing live systems?", "It reduces guessing, protects users, and makes the fix reviewable.", "platform"),
+                    ("What should a zero-to-hero learner produce after each lab?", "A clear diagnosis, a safe action plan, and a reusable note for future incidents.", "platform"),
+                ],
+            )
+        )
+    return {
+        "slug": slug,
+        "title": title,
+        "era": PLATFORM_ACADEMY_ERA,
+        "level": level,
+        "category": category,
+        "description": description,
+        "subscription_tier": "free",
+        "lessons": lessons,
+    }
+
+
 PLATFORM_COURSES = [
     {
         "slug": "platform-kubernetes-fundamentals",
@@ -1754,6 +1814,89 @@ $ argocd app set checkout-prod --sync-policy none
     },
 ]
 
+PLATFORM_COURSES.extend(
+    [
+        platform_foundation_course(
+            "platform-linux-command-line-foundations",
+            "Linux and Command Line Foundations",
+            FRESHER_LEVEL,
+            "Linux",
+            "Learn the shell, files, processes, permissions, logs, and package basics every Kubernetes operator needs before touching clusters.",
+            [
+                ("Shell Navigation and File Inspection", "Move around Linux systems and inspect files safely.", "Most platform work starts with reading: paths, permissions, config files, logs, and generated artifacts. The shell is not just a typing surface; it is how you build small, repeatable investigations.", "Practice pwd, ls, cd, find alternatives, less, wc, diff, and checksums on sample manifests and logs. Prefer read-only commands until you know the boundary.", "Given a mystery project directory, identify app code, deployment manifests, generated build outputs, and logs without editing anything."),
+                ("Processes, Exit Codes, and Logs", "Understand running processes and what failures leave behind.", "Containers make Linux processes look packaged, but PID, stdout, stderr, exit code, and signal behavior still drive Kubernetes status. A CrashLoopBackOff is often just a process repeatedly exiting.", "Practice ps, top, env, journalctl concepts, process signals, and interpreting exit code 1 versus 137.", "Explain whether a workload failed because the app exited, the kernel killed it, or the platform could not start it."),
+                ("Users, Groups, Permissions, and Sudo", "Reason about file access and least privilege.", "Linux permissions shape container securityContext decisions, mounted volume access, SSH access, and CI runner behavior. Running everything as root hides ownership bugs and increases blast radius.", "Practice chmod/chown concepts, mode bits, executable permissions, and why containers should use non-root users.", "Review a Dockerfile or Pod securityContext and identify whether the app can read its config without unnecessary root privileges."),
+                ("Text Pipelines for Operators", "Use grep, sort, uniq, jq, and yq-style thinking to extract evidence.", "Production debugging produces too much text. Operators need pipelines that reduce output into counts, suspicious fields, and exact resource names without deleting context.", "Practice filtering events by reason, extracting image tags, counting namespaces, and comparing rendered YAML sections.", "Turn raw kubectl JSON or logs into a short incident note with commands and evidence."),
+            ],
+        ),
+        platform_foundation_course(
+            "platform-networking-fundamentals",
+            "Networking Foundations for Kubernetes",
+            FRESHER_LEVEL,
+            "Networking",
+            "Build the TCP/IP, DNS, HTTP, TLS, load-balancing, and firewall mental model needed for Kubernetes and AWS troubleshooting.",
+            [
+                ("IP, Ports, and Routing Basics", "Understand what actually connects clients to services.", "Every request crosses source IP, destination IP, protocol, port, route, and policy decisions. Kubernetes adds abstractions, but packets still need a path.", "Practice reading local interfaces, listening ports, service ports, targetPorts, node ports, and route-table concepts.", "Draw how a request travels from browser to load balancer to Service to Pod containerPort."),
+                ("DNS and Service Discovery", "Debug names before assuming apps are down.", "Many outages look like application errors but begin as DNS failures, wrong search domains, stale records, or split-horizon assumptions.", "Practice nslookup/dig concepts, Kubernetes service DNS names, CoreDNS role, and TTL tradeoffs.", "Given a connection failure, decide whether the next check is DNS, port reachability, TLS, or application logs."),
+                ("HTTP, TLS, and Ingress", "Read request symptoms across L7 boundaries.", "Ingress, ALB, Nginx, app servers, and clients all speak in status codes, headers, certificates, and timeouts. You need to locate which hop generated the symptom.", "Practice curl-style checks for status, headers, SNI, redirects, and health endpoints.", "Classify 404, 502, 503, TLS handshake failure, and timeout into likely ownership areas."),
+                ("Network Policies and Firewalls", "Separate connectivity design from accidental openness.", "Security groups, NACLs, Kubernetes NetworkPolicies, and service meshes all constrain traffic at different layers. Default allow is easy, but production platforms need intentional paths.", "Practice reading allowed sources, destinations, ports, and policy selectors.", "Design a minimal allowed path for frontend to API to database plus DNS, then name how you would test it."),
+            ],
+        ),
+        platform_foundation_course(
+            "platform-terraform-aws-infrastructure",
+            "Terraform for AWS Platform Infrastructure",
+            INTERMEDIATE_LEVEL,
+            "Terraform",
+            "Learn reproducible infrastructure workflows for VPCs, EKS modules, state, plans, reviews, drift, and environment promotion.",
+            [
+                ("Terraform Workflow and State", "Understand init, plan, apply, state, locking, and remote backends.", "Terraform is an infrastructure change engine backed by state. The plan is only meaningful when provider config, variables, workspace, and state are the intended ones.", "Practice reading plan output, state addresses, backend config, and lock behavior without applying changes.", "Explain what could go wrong if two engineers apply against the same state or the wrong workspace."),
+                ("Modules, Variables, and Environment Promotion", "Design reusable infrastructure without hiding risk.", "Good modules expose stable inputs and outputs while keeping provider-specific complexity reviewable. Promotion means using the same module with controlled values, not copy-pasting random stacks.", "Practice comparing dev/stage/prod tfvars, module versions, outputs, and dependency boundaries.", "Review an EKS module call and identify which variables affect security, capacity, and cost."),
+                ("AWS VPC and EKS Resources in Terraform", "Connect Terraform resources to platform architecture decisions.", "Subnets, route tables, NAT gateways, security groups, IAM roles, node groups, and add-ons become the substrate for EKS. Small IaC choices can create large reliability or cost outcomes.", "Practice tracing an EKS cluster from module inputs to created AWS resources and Kubernetes bootstrap dependencies.", "Name the Terraform-owned resources involved when Pods cannot reach the internet or the API endpoint is unreachable."),
+                ("Plan Review, Drift, and Safe Changes", "Turn terraform plan into an engineering review artifact.", "A plan is not a rubber stamp. Replacements, broad IAM policy changes, route changes, and security group openings need explicit review and rollback thinking.", "Practice spotting replace/destroy actions, unknown values, sensitive outputs, and drift signals.", "Write a plan review summary that calls out blast radius, rollback, validation, and cost impact."),
+            ],
+        ),
+        platform_foundation_course(
+            "platform-aws-iam-for-eks",
+            "AWS IAM for EKS and Platform Teams",
+            INTERMEDIATE_LEVEL,
+            "AWS IAM",
+            "Learn IAM policies, roles, trust relationships, STS, IRSA, Pod Identity, and least-privilege reviews for EKS workloads.",
+            [
+                ("IAM Principals, Policies, and Evaluation", "Understand who can do what and why AWS denied or allowed it.", "IAM decisions combine identity policies, resource policies, permission boundaries, SCPs, session policies, and explicit deny. Debugging starts by identifying the principal and action.", "Practice reading policy statements, actions, resources, conditions, and CloudTrail access denied events.", "Explain why a role with an apparent allow can still be denied by boundary, SCP, condition, or resource policy."),
+                ("STS, AssumeRole, and Trust Policies", "Follow identity handoffs across accounts and automation.", "Trust policies decide who can assume a role; permission policies decide what the role can do after assumption. CI, EKS controllers, and human break-glass flows depend on this separation.", "Practice reading assume-role events, external IDs, conditions, and session names.", "Review a cross-account deploy role and identify who can assume it and what they can change."),
+                ("IRSA and EKS Pod Identity", "Give Pods AWS access without node-wide secrets.", "EKS workloads should not inherit broad node instance profile permissions. IRSA and Pod Identity connect Kubernetes service accounts to scoped AWS roles.", "Practice matching service account annotations, OIDC provider, trust policy subject, and SDK credential behavior.", "Diagnose a Pod that gets AccessDenied even though the IAM role looks correct."),
+                ("Least Privilege Reviews for Controllers", "Review powerful add-ons before production install.", "Controllers like ALB, external-dns, cert-manager, cluster-autoscaler, and Karpenter need AWS permissions that can affect infrastructure. Platform teams must scope and monitor them.", "Practice comparing recommended policies to actual resource patterns and tagging conditions.", "Write a review note for an ALB controller policy including required actions, risky actions, and monitoring signals."),
+            ],
+        ),
+        platform_foundation_course(
+            "platform-cicd-release-engineering",
+            "CI/CD and Release Engineering",
+            ADVANCED_LEVEL,
+            "CI/CD",
+            "Build safe pipelines for container builds, tests, image signing, environment promotion, progressive delivery, and rollback.",
+            [
+                ("Pipeline Stages and Quality Gates", "Design pipelines that catch defects before users do.", "A release pipeline should prove source quality, artifact integrity, rendered manifest safety, deployment success, and user-impact health. Speed matters, but uncontrolled speed ships incidents.", "Practice mapping lint, unit, integration, image scan, helm template, deploy, smoke, and rollback gates.", "Design a pipeline for a Kubernetes app and name which failures block promotion."),
+                ("Artifact Promotion and Supply Chain", "Promote trusted artifacts rather than rebuilding surprises.", "The image digest that passed tests should be the image promoted. Signing, SBOMs, provenance, and vulnerability policy make releases auditable.", "Practice reading image tags versus digests, registry metadata, signatures, and scan reports.", "Explain why rebuilding per environment can break reproducibility and incident rollback."),
+                ("Progressive Delivery and Rollback", "Release with canaries, blue/green, feature flags, and measured rollback.", "Progressive delivery limits blast radius by exposing changes gradually and watching real signals. Rollback must be rehearsed before the incident.", "Practice defining canary metrics, pause conditions, automated rollback, and ArgoCD sync behavior.", "Write a canary decision rule using latency, error rate, saturation, and business signal."),
+                ("Pipeline Security and Secrets", "Protect deploy permissions and credentials in automation.", "CI/CD systems are production control planes. Runner isolation, secret scoping, OIDC federation, approvals, and audit logs prevent pipelines from becoming a backdoor.", "Practice reviewing repo permissions, environment protection, deploy roles, and secret exposure paths.", "Threat-model a pipeline that can deploy to prod and list the minimum guardrails before launch."),
+            ],
+        ),
+        platform_foundation_course(
+            "platform-engineering-product-operating-model",
+            "Platform Engineering Operating Model",
+            ADVANCED_LEVEL,
+            "Platform Engineering",
+            "Learn how senior platform teams define golden paths, service ownership, paved-road APIs, SLOs, cost guardrails, and internal developer experience.",
+            [
+                ("Golden Paths and Developer Experience", "Turn platform complexity into supported self-service workflows.", "A platform is a product for internal teams. Golden paths should make the safe way the easy way while still allowing explicit exceptions.", "Practice designing a service template with CI, Helm, observability, security defaults, and docs.", "Describe the first-run developer experience for launching a new service without opening a ticket."),
+                ("Service Ownership and Production Readiness", "Define what teams own before incidents happen.", "Production readiness connects ownership, runbooks, dashboards, alerts, dependencies, data handling, and support expectations. Ambiguous ownership becomes incident drag.", "Practice building a readiness checklist and ownership metadata model.", "Review a service and decide whether it is ready for shared-cluster production."),
+                ("Platform APIs, Backstage, and Templates", "Expose infrastructure capabilities through stable interfaces.", "Platform teams should publish versioned interfaces: templates, modules, charts, APIs, scorecards, and docs. Consumers need contracts, not tribal knowledge.", "Practice defining template inputs, outputs, validation, and lifecycle support.", "Sketch a self-service workflow for creating an EKS-backed service with Terraform, Helm, and ArgoCD."),
+                ("Cost, Reliability, and Adoption Metrics", "Measure whether the platform is improving outcomes.", "Senior platform work is judged by lead time, deployment frequency, reliability, cost efficiency, security posture, and user satisfaction. Dashboards should guide investment decisions.", "Practice defining KPIs, cost allocation tags, idle resource reports, SLO rollups, and developer surveys.", "Create a quarterly platform review outline that connects technical work to business outcomes."),
+            ],
+        ),
+    ]
+)
+
 
 PLATFORM_LEVELS = [
     {
@@ -1765,6 +1908,8 @@ PLATFORM_LEVELS = [
             "platform-kubernetes-fundamentals",
             "platform-kubectl-debugging-basics",
             "platform-cloud-native-foundations",
+            "platform-linux-command-line-foundations",
+            "platform-networking-fundamentals",
         ],
     },
     {
@@ -1776,6 +1921,8 @@ PLATFORM_LEVELS = [
             "platform-eks-operations",
             "platform-helm-application-delivery",
             "platform-argocd-gitops",
+            "platform-terraform-aws-infrastructure",
+            "platform-aws-iam-for-eks",
         ],
     },
     {
@@ -1787,6 +1934,8 @@ PLATFORM_LEVELS = [
             "platform-production-eks-architecture",
             "platform-kubernetes-security-multitenancy",
             "platform-sre-observability-kubernetes",
+            "platform-cicd-release-engineering",
+            "platform-engineering-product-operating-model",
         ],
     },
 ]
@@ -1921,6 +2070,95 @@ PLATFORM_TRACKS = [
     },
 ]
 
+PLATFORM_TRACKS.extend(
+    [
+        {
+            "slug": "linux-command-line-foundations",
+            "title": "Linux Command Line Track",
+            "role": "Fresher learner becoming comfortable inside servers, containers, and CI runners",
+            "summary": "Build shell and Linux fluency so Kubernetes debugging commands make sense instead of feeling magical.",
+            "course_slug": "platform-linux-command-line-foundations",
+            "level_group": "Fresher",
+            "audience": "Learners starting from zero or coming from non-Linux backgrounds.",
+            "outcomes": [
+                "Inspect files, logs, processes, permissions, and text output safely.",
+                "Connect Linux process failure signals to Kubernetes Pod states.",
+                "Create repeatable evidence-gathering command notes for incidents.",
+            ],
+        },
+        {
+            "slug": "networking-fundamentals",
+            "title": "Networking Foundations Track",
+            "role": "Fresher learner building the packet, DNS, HTTP, and firewall mental model",
+            "summary": "Understand connectivity before debugging Services, Ingress, ALBs, NetworkPolicies, and timeouts.",
+            "course_slug": "platform-networking-fundamentals",
+            "level_group": "Fresher",
+            "audience": "Learners who need practical networking for cloud-native operations.",
+            "outcomes": [
+                "Trace requests across IPs, ports, DNS names, Services, and Ingress.",
+                "Classify DNS, TLS, timeout, 502, and 503 failures by likely owner.",
+                "Design minimal allowed network paths with testable assumptions.",
+            ],
+        },
+        {
+            "slug": "terraform-aws-infrastructure",
+            "title": "Terraform AWS Infrastructure Track",
+            "role": "Intermediate engineer making EKS and AWS infrastructure reproducible",
+            "summary": "Use Terraform state, modules, plans, and reviews to ship platform infrastructure safely.",
+            "course_slug": "platform-terraform-aws-infrastructure",
+            "level_group": INTERMEDIATE_LEVEL,
+            "audience": "Engineers moving from kubectl changes to reproducible AWS platform ownership.",
+            "outcomes": [
+                "Read Terraform plans for security, reliability, replacement, and cost risk.",
+                "Structure modules and environment promotion without copy-paste drift.",
+                "Connect EKS behavior back to Terraform-owned VPC, IAM, and node resources.",
+            ],
+        },
+        {
+            "slug": "aws-iam-for-eks",
+            "title": "AWS IAM for EKS Track",
+            "role": "Intermediate operator securing AWS access for controllers, workloads, and automation",
+            "summary": "Learn IAM evaluation, trust policies, STS, IRSA, Pod Identity, and least-privilege reviews.",
+            "course_slug": "platform-aws-iam-for-eks",
+            "level_group": INTERMEDIATE_LEVEL,
+            "audience": "Engineers responsible for secure workload and controller AWS permissions.",
+            "outcomes": [
+                "Explain allow, explicit deny, conditions, boundaries, SCPs, and resource policies.",
+                "Trace AssumeRole and IRSA failures from Kubernetes service account to AWS CloudTrail.",
+                "Review powerful controller policies before production installation.",
+            ],
+        },
+        {
+            "slug": "cicd-release-engineering",
+            "title": "CI/CD Release Engineering Track",
+            "role": "Advanced engineer designing safe pipelines and production release controls",
+            "summary": "Build artifact promotion, quality gates, progressive delivery, rollback, and pipeline security habits.",
+            "course_slug": "platform-cicd-release-engineering",
+            "level_group": ADVANCED_LEVEL,
+            "audience": "Engineers accountable for shipping changes quickly without sacrificing reliability.",
+            "outcomes": [
+                "Design quality gates across tests, image scans, rendered manifests, smoke checks, and SLO signals.",
+                "Promote immutable artifacts with signatures, SBOMs, and digest-based rollbacks.",
+                "Threat-model CI/CD systems as production control planes.",
+            ],
+        },
+        {
+            "slug": "platform-engineering-operating-model",
+            "title": "Platform Engineering Operating Model Track",
+            "role": "Advanced platform owner building golden paths and measurable internal developer experience",
+            "summary": "Turn platform technology into a product with ownership, readiness, self-service APIs, and outcome metrics.",
+            "course_slug": "platform-engineering-product-operating-model",
+            "level_group": ADVANCED_LEVEL,
+            "audience": "Senior engineers shaping platform strategy, adoption, and operational standards.",
+            "outcomes": [
+                "Design golden paths that make secure, observable service delivery easy.",
+                "Define service ownership and production-readiness expectations before launch.",
+                "Measure platform success through reliability, cost, speed, security, and developer experience metrics.",
+            ],
+        },
+    ]
+)
+
 
 PLATFORM_ROADMAP = [
     {
@@ -2041,6 +2279,111 @@ PLATFORM_ROADMAP = [
         ],
     },
 ]
+
+PLATFORM_ROADMAP.extend(
+    [
+        {
+            "sequence": 10,
+            "title": "Linux Operator Foundations",
+            "role": "You can inspect servers, containers, logs, processes, permissions, and text output without panic.",
+            "focus": "Shell fluency for every later Kubernetes and CI/CD troubleshooting workflow.",
+            "level_group": "Fresher",
+            "course_slugs": ["platform-linux-command-line-foundations"],
+            "checkpoints": [
+                "Find relevant files and logs in a project or container filesystem.",
+                "Explain process exit codes and permission failures.",
+                "Build a short text pipeline that extracts incident evidence.",
+            ],
+        },
+        {
+            "sequence": 11,
+            "title": "Networking Mental Model",
+            "role": "You can locate failures across DNS, ports, TLS, HTTP, Ingress, Services, and policies.",
+            "focus": "Practical packet-path reasoning before cloud load balancers and service meshes.",
+            "level_group": "Fresher",
+            "course_slugs": ["platform-networking-fundamentals"],
+            "checkpoints": [
+                "Draw browser to ALB to Ingress to Service to Pod traffic.",
+                "Classify timeout, 502, 503, TLS, and DNS symptoms.",
+                "Design a minimal allowlist for a three-tier service.",
+            ],
+        },
+        {
+            "sequence": 12,
+            "title": "Terraform AWS Platform Builder",
+            "role": "You can review and evolve EKS infrastructure through reproducible Terraform changes.",
+            "focus": "State, modules, plans, VPC, EKS, environment promotion, drift, and safe applies.",
+            "level_group": INTERMEDIATE_LEVEL,
+            "course_slugs": ["platform-terraform-aws-infrastructure"],
+            "checkpoints": [
+                "Identify risky replacements and IAM changes in a Terraform plan.",
+                "Explain backend, state locking, modules, variables, and outputs.",
+                "Trace an EKS networking or node issue back to Terraform-owned AWS resources.",
+            ],
+        },
+        {
+            "sequence": 13,
+            "title": "AWS IAM and EKS Identity",
+            "role": "You can debug and review AWS permissions for humans, CI/CD, controllers, and Pods.",
+            "focus": "Policy evaluation, AssumeRole, trust policies, IRSA, Pod Identity, and least privilege.",
+            "level_group": INTERMEDIATE_LEVEL,
+            "course_slugs": ["platform-aws-iam-for-eks"],
+            "checkpoints": [
+                "Trace AccessDenied from principal to policy statement and condition.",
+                "Validate an IRSA or Pod Identity setup end to end.",
+                "Review controller permissions for blast radius before install.",
+            ],
+        },
+        {
+            "sequence": 14,
+            "title": "Release Engineering Lead",
+            "role": "You can design CI/CD systems that promote trusted artifacts and protect production.",
+            "focus": "Quality gates, supply chain, progressive delivery, rollback, and pipeline security.",
+            "level_group": ADVANCED_LEVEL,
+            "course_slugs": ["platform-cicd-release-engineering"],
+            "checkpoints": [
+                "Define a pipeline with blocking gates and post-deploy smoke checks.",
+                "Promote image digests with scan, signature, and SBOM evidence.",
+                "Write canary and rollback rules tied to user-impact signals.",
+            ],
+        },
+        {
+            "sequence": 15,
+            "title": "Platform Product Owner",
+            "role": "You can turn platform capabilities into golden paths that teams adopt and trust.",
+            "focus": "Developer experience, service ownership, production readiness, platform APIs, cost, and adoption metrics.",
+            "level_group": ADVANCED_LEVEL,
+            "course_slugs": ["platform-engineering-product-operating-model"],
+            "checkpoints": [
+                "Design a new-service golden path with Terraform, Helm, ArgoCD, observability, and docs.",
+                "Define ownership and production readiness for a service before launch.",
+                "Measure platform value with reliability, cost, delivery, security, and developer-experience KPIs.",
+            ],
+        },
+    ]
+)
+
+
+_PLATFORM_ROADMAP_SEQUENCE = {
+    "Linux Operator Foundations": 1,
+    "Networking Mental Model": 2,
+    "Kubernetes Object Mental Model": 3,
+    "kubectl First Responder": 4,
+    "Cloud Native Base Layer": 5,
+    "EKS Operator": 6,
+    "Helm Release Builder": 7,
+    "GitOps Operator": 8,
+    "Terraform AWS Platform Builder": 9,
+    "AWS IAM and EKS Identity": 10,
+    "Production EKS Architect": 11,
+    "Shared Cluster Security Owner": 12,
+    "Kubernetes Reliability Lead": 13,
+    "Release Engineering Lead": 14,
+    "Platform Product Owner": 15,
+}
+for stage in PLATFORM_ROADMAP:
+    stage["sequence"] = _PLATFORM_ROADMAP_SEQUENCE[stage["title"]]
+PLATFORM_ROADMAP.sort(key=lambda stage: stage["sequence"])
 
 
 PLATFORM_LABS = [
@@ -2252,6 +2595,149 @@ PLATFORM_LABS = [
         ],
     },
 ]
+
+PLATFORM_LABS.extend(
+    [
+        {
+            "slug": "inspect-linux-failure-evidence",
+            "title": "Inspect Linux failure evidence",
+            "track": "Linux",
+            "difficulty": FRESHER_LEVEL,
+            "level_group": "Fresher",
+            "estimated_minutes": 35,
+            "course_slug": "platform-linux-command-line-foundations",
+            "lesson_title": "Processes, Exit Codes, and Logs",
+            "scenario": "A container exits repeatedly and you need to decide whether it is an app crash, permission issue, or resource kill.",
+            "skills": ["processes", "exit codes", "logs", "permissions", "evidence notes"],
+            "commands": [
+                "kubectl describe pod checkout-abc123 -n payments",
+                "kubectl logs checkout-abc123 -n payments --previous",
+                "kubectl exec checkout-abc123 -n payments -- id",
+            ],
+            "checklist": [
+                "Capture Last State and exit code.",
+                "Compare logs with process and permission assumptions.",
+                "Separate OOMKilled, permission denied, and application exception symptoms.",
+                "Write the next safest diagnostic command before proposing a fix.",
+            ],
+        },
+        {
+            "slug": "trace-network-path",
+            "title": "Trace an HTTP request across the network path",
+            "track": "Networking",
+            "difficulty": FRESHER_LEVEL,
+            "level_group": "Fresher",
+            "estimated_minutes": 40,
+            "course_slug": "platform-networking-fundamentals",
+            "lesson_title": "HTTP, TLS, and Ingress",
+            "scenario": "Users see intermittent 503 responses and you need to locate whether the error starts at DNS, ALB, Ingress, Service, or Pod readiness.",
+            "skills": ["DNS", "HTTP status", "TLS", "Ingress", "Service endpoints"],
+            "commands": [
+                "curl -I https://app.example.com/healthz",
+                "kubectl describe ingress checkout -n payments",
+                "kubectl get svc,endpointslice -n payments",
+            ],
+            "checklist": [
+                "Resolve the hostname and confirm the expected endpoint.",
+                "Identify which hop emits the HTTP status code.",
+                "Compare Service endpoints with Pod readiness.",
+                "Document whether the next owner is DNS, ingress, app, or platform networking.",
+            ],
+        },
+        {
+            "slug": "review-terraform-eks-plan",
+            "title": "Review a Terraform EKS plan",
+            "track": "Terraform",
+            "difficulty": INTERMEDIATE_LEVEL,
+            "level_group": INTERMEDIATE_LEVEL,
+            "estimated_minutes": 50,
+            "course_slug": "platform-terraform-aws-infrastructure",
+            "lesson_title": "Plan Review, Drift, and Safe Changes",
+            "scenario": "A Terraform plan changes node groups, security groups, and IAM roles before a production EKS upgrade.",
+            "skills": ["terraform plan", "state", "replacement risk", "IAM diff", "cost review"],
+            "commands": [
+                "terraform init -backend=false",
+                "terraform plan -out=tfplan",
+                "terraform show -no-color tfplan",
+            ],
+            "checklist": [
+                "Find create, update, replace, and destroy actions.",
+                "Call out IAM and security group blast radius.",
+                "Identify validation and rollback steps.",
+                "Estimate cost impact before approval.",
+            ],
+        },
+        {
+            "slug": "debug-irsa-access-denied",
+            "title": "Debug IRSA AccessDenied for a Pod",
+            "track": "AWS IAM",
+            "difficulty": INTERMEDIATE_LEVEL,
+            "level_group": INTERMEDIATE_LEVEL,
+            "estimated_minutes": 45,
+            "course_slug": "platform-aws-iam-for-eks",
+            "lesson_title": "IRSA and EKS Pod Identity",
+            "scenario": "A workload can start but AWS SDK calls fail with AccessDenied after a service-account change.",
+            "skills": ["IRSA", "service accounts", "trust policy", "CloudTrail", "STS"],
+            "commands": [
+                "kubectl get sa checkout -n payments -o yaml",
+                "kubectl describe pod checkout-abc123 -n payments",
+                "aws sts get-caller-identity",
+            ],
+            "checklist": [
+                "Match service account annotation or Pod Identity association to the expected role.",
+                "Review trust policy subject, audience, and OIDC provider.",
+                "Confirm the denied action and resource in CloudTrail or SDK output.",
+                "Decide whether the fix belongs in Kubernetes, IAM trust, or IAM permissions.",
+            ],
+        },
+        {
+            "slug": "design-safe-release-pipeline",
+            "title": "Design a safe Kubernetes release pipeline",
+            "track": "CI/CD",
+            "difficulty": ADVANCED_LEVEL,
+            "level_group": ADVANCED_LEVEL,
+            "estimated_minutes": 55,
+            "course_slug": "platform-cicd-release-engineering",
+            "lesson_title": "Pipeline Stages and Quality Gates",
+            "scenario": "A team wants push-to-prod for a Kubernetes service, and you need to add the minimum gates that protect users without blocking every release.",
+            "skills": ["quality gates", "artifact promotion", "smoke tests", "canary", "rollback"],
+            "commands": [
+                "docker build -t checkout:sha .",
+                "helm template checkout charts/checkout -f values/prod.yaml",
+                "kubectl rollout status deploy/checkout -n payments",
+            ],
+            "checklist": [
+                "Define build, test, render, scan, deploy, smoke, and SLO gates.",
+                "Promote immutable image digests rather than rebuilding per environment.",
+                "Name automatic rollback criteria and manual approval points.",
+                "Threat-model who can deploy and where secrets live.",
+            ],
+        },
+        {
+            "slug": "create-platform-golden-path",
+            "title": "Create a service golden path",
+            "track": "Platform Engineering",
+            "difficulty": ADVANCED_LEVEL,
+            "level_group": ADVANCED_LEVEL,
+            "estimated_minutes": 60,
+            "course_slug": "platform-engineering-product-operating-model",
+            "lesson_title": "Golden Paths and Developer Experience",
+            "scenario": "Your platform team needs a self-service path for launching a new service with CI, Terraform, Helm, ArgoCD, dashboards, and runbooks.",
+            "skills": ["golden path", "service template", "production readiness", "developer experience", "platform metrics"],
+            "commands": [
+                "cookiecutter platform-service-template",
+                "helm template new-service charts/service",
+                "argocd app get new-service-dev",
+            ],
+            "checklist": [
+                "Define required inputs and generated artifacts.",
+                "Include observability, ownership, security, and rollback defaults.",
+                "Document the first-run developer experience.",
+                "Pick adoption and reliability metrics to review after launch.",
+            ],
+        },
+    ]
+)
 
 
 PLATFORM_COURSE_SLUGS = [course["slug"] for course in PLATFORM_COURSES]
