@@ -2919,6 +2919,32 @@ RESOURCE_DOMAIN_BLUEPRINTS = [
 ]
 
 
+RESOURCE_OFFICIAL_SOURCES = {
+    "Linux": ("https://www.gnu.org/software/bash/manual/bash.html", "GNU Bash reference manual"),
+    "Networking": ("https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Web_mechanics/What_is_a_domain_name", "MDN web networking docs"),
+    "Docker": ("https://docs.docker.com/reference/", "Docker official reference"),
+    "Kubernetes": ("https://kubernetes.io/docs/tasks/debug/", "Kubernetes official debugging docs"),
+    "kubectl": ("https://kubernetes.io/docs/reference/kubectl/", "kubectl official reference"),
+    "Cloud Native": ("https://kubernetes.io/docs/concepts/", "Kubernetes concepts docs"),
+    "EKS": ("https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html", "Amazon EKS user guide"),
+    "Terraform": ("https://developer.hashicorp.com/terraform/docs", "Terraform official docs"),
+    "AWS IAM": ("https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html", "AWS IAM user guide"),
+    "Helm": ("https://helm.sh/docs/", "Helm official docs"),
+    "ArgoCD": ("https://argo-cd.readthedocs.io/en/stable/", "Argo CD official docs"),
+    "CI/CD": ("https://docs.github.com/en/actions", "GitHub Actions official docs"),
+    "Security": ("https://kubernetes.io/docs/concepts/security/", "Kubernetes security docs"),
+    "SRE": ("https://sre.google/sre-book/table-of-contents/", "Google SRE book"),
+    "Incident Response": ("https://sre.google/sre-book/managing-incidents/", "Google SRE incident management"),
+    "FinOps": ("https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-pillar/welcome.html", "AWS cost optimization pillar"),
+    "Platform Engineering": ("https://tag-app-delivery.cncf.io/whitepapers/platforms/", "CNCF platforms whitepaper"),
+    "Career": ("https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html", "AWS Well-Architected Framework"),
+}
+
+
+def official_source_for_domain(domain: str) -> tuple[str, str]:
+    return RESOURCE_OFFICIAL_SOURCES.get(domain, ("https://kubernetes.io/docs/home/", "Official platform reference"))
+
+
 def platform_resource_slug(domain: str, resource_type: str) -> str:
     return f"{domain}-{resource_type}".lower().replace("/", " ").replace("&", "and").replace(" ", "-")
 
@@ -2926,6 +2952,7 @@ def platform_resource_slug(domain: str, resource_type: str) -> str:
 def build_platform_resources() -> list[dict]:
     resources: list[dict] = []
     for domain in RESOURCE_DOMAIN_BLUEPRINTS:
+        source_url, source_label = official_source_for_domain(domain["domain"])
         for resource_type, type_summary, minutes in RESOURCE_TYPE_BLUEPRINTS:
             title = f"{domain['domain']} {resource_type.title()}"
             resources.append(
@@ -2955,6 +2982,9 @@ def build_platform_resources() -> list[dict]:
                         "Open the related lab and collect evidence before changing anything.",
                         "Convert the artifact into a portfolio-ready README section.",
                     ],
+                    "source_url": source_url,
+                    "source_label": source_label,
+                    "reviewed_at": "2026-05-20",
                 }
             )
     return resources

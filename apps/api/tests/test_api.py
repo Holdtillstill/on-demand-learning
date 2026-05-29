@@ -107,6 +107,14 @@ def test_platform_academy_catalog_roadmap_and_labs():
     }
     assert set(resource_payload["types"]) >= must_have_types
     assert all(resource["related_lessons"] or resource["related_labs"] for resource in resource_payload["resources"])
+    assert all(resource["source_url"].startswith("https://") for resource in resource_payload["resources"])
+    assert all(resource["source_label"] for resource in resource_payload["resources"])
+    assert all(resource["reviewed_at"] for resource in resource_payload["resources"])
+    kubernetes_reference = next(
+        resource for resource in resource_payload["resources"] if resource["slug"] == "kubernetes-official-reference"
+    )
+    assert kubernetes_reference["source_url"] == "https://kubernetes.io/docs/tasks/debug/"
+    assert kubernetes_reference["source_label"] == "Kubernetes official debugging docs"
 
 
 def test_course_domain_filters_keep_zhongwen_and_platform_separate():

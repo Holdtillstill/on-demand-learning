@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -209,6 +210,9 @@ class PlatformResourceOut(BaseModel):
     related_lessons: list[int] = Field(default_factory=list)
     related_labs: list[str] = Field(default_factory=list)
     next_steps: list[str]
+    source_url: Optional[str] = None
+    source_label: Optional[str] = None
+    reviewed_at: Optional[str] = None
 
 
 class PlatformResourcesOut(BaseModel):

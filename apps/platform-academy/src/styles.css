@@ -607,6 +607,7 @@ main {
 .command-console-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   min-height: 38px;
   border-bottom: 1px solid #263a33;
@@ -614,6 +615,29 @@ main {
   padding: 9px 12px;
   font-size: 0.82rem;
   font-weight: 900;
+}
+
+.command-console-header > div,
+.copy-command-button,
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copy-command-button {
+  border: 1px solid #34564a;
+  border-radius: 999px;
+  background: #15231f;
+  color: #dff8ed;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.copy-command-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .command-console pre {
@@ -671,11 +695,38 @@ main {
   border-top: 0;
 }
 
-.resource-limit-note {
+.resource-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   border-top: 1px solid #e1e6e2;
   color: #52625c;
   padding: 16px 4px 4px;
   font-weight: 850;
+}
+
+.resource-pagination button {
+  border: 1px solid #b8c5be;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #17211d;
+  padding: 8px 12px;
+  font-weight: 900;
+}
+
+.source-review-panel {
+  gap: 10px;
+}
+
+.source-link {
+  width: fit-content;
+  color: #1d684f;
+  font-weight: 900;
+}
+
+.source-link:hover {
+  text-decoration: underline;
 }
 
 .resource-mini-row {

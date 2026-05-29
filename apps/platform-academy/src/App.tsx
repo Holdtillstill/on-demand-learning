@@ -9,8 +9,10 @@ import {
   Clock,
   Cloud,
   Compass,
+  Copy,
   Cpu,
   Database,
+  ExternalLink,
   FileText,
   Filter,
   Gauge,
@@ -273,15 +275,35 @@ function resourcesForLesson(data: AcademyData, lessonId: number) {
   );
 }
 
+function formatReviewDate(value?: string | null) {
+  if (!value) return undefined;
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 function CommandBlock({ commands, title = "Command surface" }: { commands: string[]; title?: string }) {
+  const [copied, setCopied] = useState(false);
+  const commandText = commands.length > 0 ? commands.join("\n") : "No command snippet is seeded for this item.";
+  const copyCommands = async () => {
+    if (!commands.length || !navigator.clipboard?.writeText) return;
+    await navigator.clipboard.writeText(commandText);
+    setCopied(true);
+  };
   return (
     <div className="command-console">
       <div className="command-console-header">
-        <Terminal aria-hidden="true" />
-        <span>{title}</span>
+        <div>
+          <Terminal aria-hidden="true" />
+          <span>{title}</span>
+        </div>
+        <button className="copy-command-button" disabled={!commands.length} onClick={copyCommands} type="button">
+          {copied ? <CheckCircle2 aria-hidden="true" /> : <Copy aria-hidden="true" />}
+          {copied ? `Copied ${title}` : `Copy ${title}`}
+        </button>
       </div>
       <pre>
-        <code>{commands.length > 0 ? commands.join("\n") : "No command snippet is seeded for this item."}</code>
+        <code>{commandText}</code>
       </pre>
     </div>
   );
@@ -859,7 +881,7 @@ function LabDetailPage({ data }: { data: AcademyData }) {
             <p className="eyebrow">Related resources</p>
             {relatedResources.length > 0 ? (
               relatedResources.slice(0, 4).map((resource) => (
-                <Link className="resource-mini-row" to={`/resources/${resource.slug}`} key={resource.slug}>
+                <Link className="resource-mini-row" aria-label={resource.title} to={`/resources/${resource.slug}`} key={resource.slug}>
                   <span>{resource.resource_type}</span>
                   <strong>{resource.title}</strong>
                 </Link>
@@ -882,6 +904,7 @@ function ResourcesPage({ data }: { data: AcademyData }) {
   const [selectedDomain, setSelectedDomain] = useState("All");
   const [selectedType, setSelectedType] = useState("All");
   const [query, setQuery] = useState("");
+  const [visibleLimit, setVisibleLimit] = useState(36);
   const filteredResources = data.resources.resources.filter((resource) => {
     const text = `${resource.title} ${resource.summary} ${resource.domain} ${resource.resource_type}`.toLowerCase();
     return (
@@ -891,9 +914,14 @@ function ResourcesPage({ data }: { data: AcademyData }) {
     );
   });
   const featuredResource = filteredResources[0];
-  const visibleResources = filteredResources.slice(0, 36);
+  const visibleResources = filteredResources.slice(0, visibleLimit);
   const hiddenResourceCount = Math.max(filteredResources.length - visibleResources.length, 0);
+  const nextPageCount = Math.min(36, hiddenResourceCount);
   const featuredLab = featuredResource ? data.catalog.labs.find((lab) => featuredResource.related_labs.includes(lab.slug)) : undefined;
+
+  useEffect(() => {
+    setVisibleLimit(36);
+  }, [selectedDomain, selectedType, query]);
 
   return (
     <section className="page canonical-page resources-page">
@@ -976,8 +1004,11 @@ function ResourcesPage({ data }: { data: AcademyData }) {
             <ResourceCard resource={resource} data={data} key={resource.slug} />
           ))}
           {hiddenResourceCount > 0 && (
-            <div className="resource-limit-note">
-              Refine domain, type, or search filters to inspect the remaining {hiddenResourceCount} matching artifacts.
+            <div className="resource-pagination">
+              <span>{hiddenResourceCount} matching artifacts remain.</span>
+              <button type="button" onClick={() => setVisibleLimit((current) => current + 36)}>
+                Load {nextPageCount} more resources
+              </button>
             </div>
           )}
         </section>
@@ -1083,7 +1114,7 @@ function ResourceDetailPage({ data }: { data: AcademyData }) {
             <p className="eyebrow">Related labs</p>
             {relatedLabs.length > 0 ? (
               relatedLabs.map((lab) => (
-                <Link className="resource-mini-row" to={`/labs/${lab.slug}`} key={lab.slug}>
+                <Link className="resource-mini-row" aria-label={lab.title} to={`/labs/${lab.slug}`} key={lab.slug}>
                   <span>{lab.level_group}</span>
                   <strong>{lab.title}</strong>
                 </Link>
@@ -1105,9 +1136,22 @@ function ResourceDetailPage({ data }: { data: AcademyData }) {
               <p>No related course could be inferred from seeded labs.</p>
             )}
           </section>
-          <section className="workspace-panel">
+          <section className="workspace-panel source-review-panel">
             <p className="eyebrow">Source and review posture</p>
-            <p>No external source URL or review timestamp is seeded for this resource. Use the safety label and prerequisites as local guidance, then verify live commands against current official docs.</p>
+            {resource.source_url ? (
+              <a className="source-link" href={resource.source_url} target="_blank" rel="noreferrer">
+                <ExternalLink aria-hidden="true" />
+                {resource.source_label ?? "Official source"}
+              </a>
+            ) : (
+              <p>No external source URL is seeded for this resource yet.</p>
+            )}
+            <p>
+              {resource.reviewed_at
+                ? `Reviewed ${formatReviewDate(resource.reviewed_at)}`
+                : "No review timestamp is seeded for this resource yet."}
+            </p>
+            <p>Use the safety label and prerequisites as local guidance, then verify live commands against current official docs.</p>
           </section>
         </aside>
       </section>
@@ -2029,7 +2073,7 @@ function CoursePage({ data }: { data: AcademyData }) {
             <p className="eyebrow">Lab gates</p>
             {courseLabs.length > 0 ? (
               courseLabs.slice(0, 5).map((lab) => (
-                <Link className="resource-mini-row" to={`/labs/${lab.slug}`} key={lab.slug}>
+                <Link className="resource-mini-row" aria-label={lab.title} to={`/labs/${lab.slug}`} key={lab.slug}>
                   <span>{lab.estimated_minutes} min</span>
                   <strong>{lab.title}</strong>
                 </Link>
@@ -2042,7 +2086,7 @@ function CoursePage({ data }: { data: AcademyData }) {
             <p className="eyebrow">Reusable artifacts</p>
             {courseResources.length > 0 ? (
               courseResources.slice(0, 6).map((resource) => (
-                <Link className="resource-mini-row" to={`/resources/${resource.slug}`} key={resource.slug}>
+                <Link className="resource-mini-row" aria-label={resource.title} to={`/resources/${resource.slug}`} key={resource.slug}>
                   <span>{resource.resource_type}</span>
                   <strong>{resource.title}</strong>
                 </Link>
@@ -2158,7 +2202,7 @@ function LessonPage({ data, onProgressSaved }: { data: AcademyData; onProgressSa
             <p className="eyebrow">Related lab gates</p>
             {relatedLabs.length > 0 ? (
               relatedLabs.map((lab) => (
-                <Link className="resource-mini-row" to={`/labs/${lab.slug}`} key={lab.slug}>
+                <Link className="resource-mini-row" aria-label={lab.title} to={`/labs/${lab.slug}`} key={lab.slug}>
                   <span>{lab.level_group}</span>
                   <strong>{lab.title}</strong>
                 </Link>
@@ -2171,7 +2215,7 @@ function LessonPage({ data, onProgressSaved }: { data: AcademyData; onProgressSa
             <p className="eyebrow">Related resources</p>
             {relatedResources.length > 0 ? (
               relatedResources.slice(0, 5).map((resource) => (
-                <Link className="resource-mini-row" to={`/resources/${resource.slug}`} key={resource.slug}>
+                <Link className="resource-mini-row" aria-label={resource.title} to={`/resources/${resource.slug}`} key={resource.slug}>
                   <span>{resource.resource_type}</span>
                   <strong>{resource.title}</strong>
                 </Link>

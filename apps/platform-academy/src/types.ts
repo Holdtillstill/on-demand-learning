@@ -166,6 +166,9 @@ export interface PlatformResource {
   related_lessons: number[];
   related_labs: string[];
   next_steps: string[];
+  source_url?: string | null;
+  source_label?: string | null;
+  reviewed_at?: string | null;
 }
 
 export interface PlatformResources {

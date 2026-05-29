@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -90,6 +90,24 @@ const catalog = {
   ]
 };
 
+const lesson202 = {
+  id: 202,
+  course_id: 101,
+  title: "Services, Labels, Selectors, and Namespaces",
+  summary: "Connect traffic to Pods.",
+  sequence: 2,
+  body_simplified: "## Service routing\nServices select ready Pods by label.",
+  body_traditional: "## Service routing\nServices select ready Pods by label.",
+  pinyin: "- Compare selector labels\n$ kubectl describe svc checkout -n payments",
+  audio_url: null,
+  video_url: null,
+  course_slug: "platform-kubernetes-fundamentals",
+  course_category: "Kubernetes",
+  course_era: "Platform Academy",
+  vocabulary: [{ id: 1, simplified: "Service", traditional: "Service", pinyin: "service", definition: "Stable cluster networking abstraction." }],
+  flashcards: [{ id: 1, lesson_id: 202, prompt: "What connects a Service to Pods?", answer: "Selectors and labels.", pinyin: "", difficulty: "beginner" }]
+};
+
 const roadmap = {
   stages: [
     {
@@ -123,7 +141,10 @@ const resources = {
       artifacts: ["debugging checklist"],
       related_lessons: [201],
       related_labs: ["trace-service-to-pod"],
-      next_steps: ["Practice a lab"]
+      next_steps: ["Practice a lab"],
+      source_url: "https://kubernetes.io/docs/tasks/debug/",
+      source_label: "Kubernetes official debugging docs",
+      reviewed_at: "2026-05-20"
     }
   ]
 };
@@ -146,6 +167,7 @@ function stubAcademyFetch() {
       if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
       if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
       if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+      if (url.includes("/api/lessons/202")) return jsonResponse(lesson202);
       if (url.includes("/api/progress/demo-user")) {
         return jsonResponse([{ id: 1, user_id: "demo-user", lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
       }
@@ -311,5 +333,99 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("1 labs")).toBeInTheDocument();
     expect(screen.getByText("30 min average drill")).toBeInTheDocument();
     expect(screen.getByText(/kubectl describe svc checkout -n payments/)).toBeInTheDocument();
+  });
+
+  it("copies command snippets from lab and resource detail command surfaces", async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    Object.assign(navigator, { clipboard: { writeText } });
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/labs/trace-service-to-pod"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    const copyButton = await screen.findByRole("button", { name: /copy runbook commands/i });
+    fireEvent.click(copyButton);
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("kubectl describe svc checkout -n payments"));
+    expect(screen.getByRole("button", { name: /copied runbook commands/i })).toBeInTheDocument();
+  });
+
+  it("loads additional resource pages instead of requiring filter refinement", async () => {
+    const manyResources = Array.from({ length: 40 }, (_, index) => ({
+      ...resources.resources[0],
+      slug: `kubernetes-debugging-cheatsheet-${index + 1}`,
+      title: `Kubernetes Debugging Cheatsheet ${index + 1}`
+    }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
+        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (url.includes("/api/platform-academy/resources")) return jsonResponse({ ...resources, resources: manyResources });
+        if (url.includes("/api/progress/demo-user")) return jsonResponse([]);
+        if (url.includes("/api/users/demo-user/dashboard")) return jsonResponse(dashboard);
+        return jsonResponse([]);
+      })
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/resources"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("36 shown / 40 matching artifacts")).toBeInTheDocument();
+    expect(screen.queryByText("Kubernetes Debugging Cheatsheet 40")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /load 4 more resources/i }));
+    expect(screen.getByText("40 shown / 40 matching artifacts")).toBeInTheDocument();
+    expect(screen.getByText("Kubernetes Debugging Cheatsheet 40")).toBeInTheDocument();
+  });
+
+  it("renders official source URLs and reviewed dates on resource detail pages", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/resources/kubernetes-debugging-cheatsheet"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Kubernetes Debugging Cheatsheet" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /kubernetes official debugging docs/i })).toHaveAttribute(
+      "href",
+      "https://kubernetes.io/docs/tasks/debug/"
+    );
+    expect(screen.getByText("Reviewed May 20, 2026")).toBeInTheDocument();
+  });
+
+  it("covers lab and lesson detail routes with linked artifacts", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/labs/trace-service-to-pod"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Trace Service traffic to ready Pods" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open linked lesson/i })).toHaveAttribute("href", "/lessons/202");
+    expect(screen.getByRole("link", { name: /kubernetes debugging cheatsheet/i })).toHaveAttribute("href", "/resources/kubernetes-debugging-cheatsheet");
+
+    cleanup();
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/lessons/202"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Services, Labels, Selectors, and Namespaces" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /trace service traffic to ready pods/i })).toHaveAttribute("href", "/labs/trace-service-to-pod");
+    expect(screen.getByRole("link", { name: /kubernetes debugging cheatsheet/i })).toHaveAttribute("href", "/resources/kubernetes-debugging-cheatsheet");
   });
 });
