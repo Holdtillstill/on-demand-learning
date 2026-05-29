@@ -297,7 +297,7 @@ function CommandBlock({ commands, title = "Command surface" }: { commands: strin
           <Terminal aria-hidden="true" />
           <span>{title}</span>
         </div>
-        <button className="copy-command-button" disabled={!commands.length} onClick={copyCommands} type="button">
+        <button className={`copy-command-button${copied ? " copied" : ""}`} disabled={!commands.length} onClick={copyCommands} type="button">
           {copied ? <CheckCircle2 aria-hidden="true" /> : <Copy aria-hidden="true" />}
           {copied ? `Copied ${title}` : `Copy ${title}`}
         </button>
