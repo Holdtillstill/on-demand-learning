@@ -12,6 +12,7 @@
   --pa-border-strong: rgba(80, 227, 181, 0.36);
   --pa-text: #edfdf6;
   --pa-text-soft: #c7dad3;
+  --pa-readable-secondary: #d6e7e1;
   --pa-muted: #a8bdb6;
   --pa-faint: #8da39b;
   --pa-accent: #33d6a6;
@@ -1742,7 +1743,6 @@ pre {
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.86), transparent 88%);
 }
 
-.product-sidebar,
 .product-frame {
   position: relative;
   z-index: 1;
@@ -1762,6 +1762,14 @@ pre {
 }
 
 .product-sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  align-self: start;
+  height: 100vh;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
   border-right: 1px solid var(--pa-border);
   background:
     linear-gradient(180deg, rgba(12, 24, 22, 0.95), rgba(8, 17, 16, 0.9)),
@@ -2135,6 +2143,10 @@ pre {
 .lab-card p,
 .resource-card p,
 .roadmap-stage p,
+.roadmap-stage ul,
+.lab-card ul,
+.resource-card ul,
+.outcome-panel ul,
 .lesson-row p,
 .outcome-panel p,
 .lesson-body p,
@@ -2143,7 +2155,16 @@ pre {
 .review-list p,
 .state-panel p,
 .check-list {
-  color: var(--pa-text-soft);
+  color: var(--pa-readable-secondary);
+  font-weight: 520;
+}
+
+.roadmap-stage li::marker,
+.lab-card li::marker,
+.resource-card li::marker,
+.outcome-panel li::marker,
+.check-list li::marker {
+  color: #84f7dc;
 }
 
 .lesson-body p,
@@ -2291,6 +2312,14 @@ pre {
   border: 1px solid rgba(158, 187, 177, 0.16);
   background: rgba(255, 255, 255, 0.065);
   color: var(--pa-text-soft);
+}
+
+.stage-courses a {
+  color: var(--pa-readable-secondary);
+}
+
+.stage-courses a svg {
+  color: #84f7dc;
 }
 
 .gate-state {
@@ -2494,6 +2523,12 @@ pre {
 
 @media (max-width: 840px) {
   .product-sidebar {
+    position: static;
+    align-self: auto;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
     border-right: 0;
     border-bottom: 1px solid var(--pa-border);
   }
