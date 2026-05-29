@@ -2146,6 +2146,26 @@ pre {
   color: var(--pa-text-soft);
 }
 
+.lesson-body p,
+.lesson-body li,
+.practice-panel p,
+.practice-panel li {
+  color: #f2fff9;
+  font-weight: 520;
+  line-height: 1.72;
+}
+
+.lesson-body ul,
+.practice-panel ul {
+  color: #f2fff9;
+}
+
+.lesson-body h2,
+.practice-panel h2 {
+  color: #ffffff;
+  text-shadow: 0 0 30px rgba(51, 214, 166, 0.16);
+}
+
 .ops-summary article {
   overflow: hidden;
 }
