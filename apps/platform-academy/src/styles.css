@@ -520,18 +520,65 @@ main {
   background: #f7faf7;
 }
 
-.readiness-panel {
+.readiness-panel,
+.level-readiness {
   display: grid;
   gap: 13px;
 }
 
-.readiness-panel > div,
-.level-readiness > div,
-.evidence-row {
+.level-readiness {
+  gap: 8px;
+  padding: 14px;
+}
+
+.level-readiness .eyebrow {
+  margin-bottom: 0;
+}
+
+.level-readiness .level-badge {
+  padding: 4px 7px;
+  font-size: 0.68rem;
+}
+
+.readiness-panel > div {
   display: grid;
   gap: 7px;
   border-top: 1px solid #e1e6e2;
   padding-top: 12px;
+}
+
+.evidence-row {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid #e1e6e2;
+  padding: 16px 0 14px;
+}
+
+.evidence-row:first-of-type {
+  margin-top: 4px;
+}
+
+.level-readiness > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e1e6e2;
+  border-radius: 12px;
+  background: #f8fbf9;
+  padding: 7px 9px;
+}
+
+.level-readiness > div strong {
+  font-size: 0.92rem;
+  line-height: 1.15;
+}
+
+.level-readiness > div > span:not(.level-badge) {
+  justify-self: end;
+  color: #607068;
+  font-size: 0.78rem;
+  font-weight: 850;
 }
 
 .gate-state {
@@ -2248,6 +2295,38 @@ pre {
   border-left-color: var(--pa-border);
 }
 
+.readiness-panel > div,
+.evidence-row {
+  border-top-color: rgba(158, 187, 177, 0.2);
+}
+
+.evidence-row {
+  gap: 12px;
+  padding: 18px 0 16px;
+}
+
+.level-readiness {
+  gap: 10px;
+}
+
+.level-readiness > div {
+  border-color: rgba(158, 187, 177, 0.18);
+  background:
+    linear-gradient(135deg, rgba(51, 214, 166, 0.08), rgba(34, 211, 238, 0.035)),
+    rgba(255, 255, 255, 0.04);
+  padding: 7px 9px;
+}
+
+.level-readiness > div strong {
+  color: #f2fff9;
+}
+
+.level-readiness > div > span:not(.level-badge) {
+  color: var(--pa-readable-secondary);
+  font-size: 0.76rem;
+  font-weight: 760;
+}
+
 .readiness-score .progress-track {
   max-width: 280px;
 }
@@ -2598,6 +2677,15 @@ pre {
   .learner-reset-button {
     grid-column: 1 / -1;
     justify-content: center;
+  }
+
+  .level-readiness > div {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .level-readiness > div > span:not(.level-badge) {
+    grid-column: 2;
+    justify-self: start;
   }
 }
 

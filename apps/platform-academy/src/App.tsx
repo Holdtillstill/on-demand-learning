@@ -588,6 +588,19 @@ function DashboardPage({ data }: { data: AcademyData }) {
         </div>
 
         <aside className="dashboard-rail">
+          <section className="workspace-panel level-readiness">
+            <p className="eyebrow">Level coverage</p>
+            {data.catalog.levels.map((level) => (
+              <div key={level.slug}>
+                <LevelBadge level={level.level_group} />
+                <strong>{level.title}</strong>
+                <span>
+                  {level.total_courses} courses / {level.total_lessons} lessons
+                </span>
+              </div>
+            ))}
+          </section>
+
           <section className="workspace-panel readiness-panel">
             <p className="eyebrow">Readiness gates</p>
             <h2>Evidence before progress</h2>
@@ -608,19 +621,6 @@ function DashboardPage({ data }: { data: AcademyData }) {
               <strong>Source posture</strong>
               <p>Seeded content exposes commands, artifacts, safety labels, and related labs; external source URLs are not seeded.</p>
             </div>
-          </section>
-
-          <section className="workspace-panel level-readiness">
-            <p className="eyebrow">Level coverage</p>
-            {data.catalog.levels.map((level) => (
-              <div key={level.slug}>
-                <LevelBadge level={level.level_group} />
-                <strong>{level.title}</strong>
-                <span>
-                  {level.total_courses} courses / {level.total_lessons} lessons
-                </span>
-              </div>
-            ))}
           </section>
         </aside>
       </section>
