@@ -2127,28 +2127,60 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const saveInFlight = useRef(false);
+  const savedLessonId = useRef<number | null>(null);
 
   useEffect(() => {
     setLesson(null);
+    setSaved(false);
     setError("");
+    saveInFlight.current = false;
+    savedLessonId.current = null;
     api.lesson(id).then(setLesson).catch((err) => setError(err.message));
   }, [id]);
 
-  const save = async () => {
+  useEffect(() => {
     if (!lesson) return;
+    const isCompleted = completedLessonIds(data.progress).has(lesson.id);
+    if (isCompleted) savedLessonId.current = lesson.id;
+    setSaved(isCompleted || savedLessonId.current === lesson.id);
+  }, [data.progress, lesson]);
+
+  const save = useCallback(async () => {
+    if (!lesson || saved || savedLessonId.current === lesson.id || saveInFlight.current) return;
+    saveInFlight.current = true;
     setSaving(true);
     try {
       await api.saveProgress(lesson.id, true, 1, learnerId);
+      savedLessonId.current = lesson.id;
       setSaved(true);
       onProgressSaved();
     } finally {
+      saveInFlight.current = false;
       setSaving(false);
     }
-  };
+  }, [learnerId, lesson, onProgressSaved, saved]);
+
+  useEffect(() => {
+    if (!lesson || saved) return;
+    const handleScroll = () => {
+      const documentHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+      const viewportBottom = window.scrollY + window.innerHeight;
+      if (documentHeight > 0 && viewportBottom >= documentHeight - 120) {
+        void save();
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lesson, save, saved]);
 
   if (error) return <EmptyState title="Lesson unavailable." detail={error} />;
   if (!lesson) return <EmptyState title="Loading lesson..." />;
   const course = courseForLesson(data, lesson.id);
+  const courseLessons = [...(course?.lessons ?? [])].sort((left, right) => left.sequence - right.sequence);
+  const lessonIndex = courseLessons.findIndex((item) => item.id === lesson.id);
+  const previousLesson = lessonIndex > 0 ? courseLessons[lessonIndex - 1] : undefined;
+  const nextLessonItem = lessonIndex >= 0 ? courseLessons[lessonIndex + 1] : undefined;
   const relatedLabs = data.catalog.labs.filter((lab) => lab.lesson_id === lesson.id);
   const relatedResources = resourcesForLesson(data, lesson.id);
 
@@ -2167,6 +2199,18 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
           <p className="lead">{lesson.summary}</p>
         </div>
         <div className="workspace-actions">
+          {previousLesson && (
+            <Link className="secondary-action" aria-label={`Previous lesson ${previousLesson.title}`} to={`/lessons/${previousLesson.id}`}>
+              <ChevronLeft aria-hidden="true" />
+              Previous lesson
+            </Link>
+          )}
+          {nextLessonItem && (
+            <Link className="secondary-action" aria-label={`Next lesson ${nextLessonItem.title}`} to={`/lessons/${nextLessonItem.id}`}>
+              Next lesson
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          )}
           <button className="primary-action" disabled={saving} onClick={save}>
             <CheckCircle2 aria-hidden="true" />
             {saved ? "Progress saved" : saving ? "Saving..." : "Mark complete"}

@@ -91,6 +91,24 @@ const catalog = {
   ]
 };
 
+const lesson201 = {
+  id: 201,
+  course_id: 101,
+  title: "Containers, Images, and Pods",
+  summary: "Understand the unit Kubernetes runs.",
+  sequence: 1,
+  body_simplified: "## Pod model\nKubernetes schedules Pods, not bare containers.",
+  body_traditional: "## Pod model\nKubernetes schedules Pods, not bare containers.",
+  pinyin: "- Inspect Pods\n$ kubectl get pods -A",
+  audio_url: null,
+  video_url: null,
+  course_slug: "platform-kubernetes-fundamentals",
+  course_category: "Kubernetes",
+  course_era: "Platform Academy",
+  vocabulary: [{ id: 2, simplified: "Pod", traditional: "Pod", pinyin: "pod", definition: "Smallest schedulable Kubernetes workload." }],
+  flashcards: [{ id: 2, lesson_id: 201, prompt: "What does Kubernetes schedule?", answer: "Pods.", pinyin: "", difficulty: "beginner" }]
+};
+
 const lesson202 = {
   id: 202,
   course_id: 101,
@@ -170,6 +188,7 @@ function stubAcademyFetch() {
       if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
       if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
       if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+      if (url.includes("/api/lessons/201")) return jsonResponse(lesson201);
       if (url.includes("/api/lessons/202")) return jsonResponse(lesson202);
       if (url.includes(`/api/progress/${testLearnerId}`)) {
         return jsonResponse([{ id: 1, user_id: testLearnerId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
@@ -443,6 +462,47 @@ describe("Platform Academy app", () => {
       completed: true,
       score: 1
     });
+  });
+
+  it("offers direct next lesson navigation from lesson pages", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/lessons/201"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Containers, Images, and Pods" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /next lesson services, labels, selectors, and namespaces/i })).toHaveAttribute("href", "/lessons/202");
+  });
+
+  it("automatically saves lesson progress after the learner scrolls to the bottom", async () => {
+    stubAcademyFetch();
+    Object.defineProperty(document.documentElement, "scrollHeight", { configurable: true, value: 1600 });
+    Object.defineProperty(document.documentElement, "clientHeight", { configurable: true, value: 600 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 600 });
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 980 });
+
+    render(
+      <MemoryRouter initialEntries={["/lessons/202"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Services, Labels, Selectors, and Namespaces" })).toBeInTheDocument();
+    fireEvent.scroll(window);
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /progress saved/i })).toBeInTheDocument());
+    fireEvent.scroll(window);
+    const fetchMock = vi.mocked(fetch);
+    await waitFor(() => {
+      const postCalls = fetchMock.mock.calls.filter(([input, init]) => String(input).endsWith("/api/progress") && (init as RequestInit | undefined)?.method === "POST");
+      expect(postCalls).toHaveLength(1);
+    });
+    const postCall = fetchMock.mock.calls.find(([input, init]) => String(input).endsWith("/api/progress") && (init as RequestInit | undefined)?.method === "POST");
+    expect(postCall).toBeDefined();
+    expect(JSON.parse(String((postCall?.[1] as RequestInit).body))).toMatchObject({ user_id: testLearnerId, lesson_id: 202, completed: true });
   });
 
   it("loads additional resource pages instead of requiring filter refinement", async () => {
