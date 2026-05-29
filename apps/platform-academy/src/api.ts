@@ -36,8 +36,8 @@ export const api = {
   labs: () => getJson<PlatformLab[]>("/api/platform-academy/labs"),
   course: (id: string) => getJson<Course>(`/api/courses/${id}`),
   lesson: (id: string) => getJson<Lesson>(`/api/lessons/${id}`),
-  progress: (userId = "demo-user") => getJson<Progress[]>(`/api/progress/${userId}`),
-  dashboard: (userId = "demo-user") => getJson<UserDashboard>(`/api/users/${userId}/dashboard`),
+  progress: (userId = "demo-user") => getJson<Progress[]>(`/api/progress/${encodeURIComponent(userId)}`),
+  dashboard: (userId = "demo-user") => getJson<UserDashboard>(`/api/users/${encodeURIComponent(userId)}/dashboard`),
   saveProgress: (lessonId: number, completed: boolean, score: number, userId = "demo-user") =>
     postJson<Progress>("/api/progress", { user_id: userId, lesson_id: lessonId, completed, score })
 };

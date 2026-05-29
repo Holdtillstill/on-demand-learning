@@ -1898,6 +1898,64 @@ pre {
   transform: translateY(-1px);
 }
 
+.product-topline > .learner-profile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  min-width: 0;
+}
+
+.learner-profile > svg {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 7px;
+  border: 1px solid rgba(125, 243, 211, 0.28);
+  border-radius: 10px;
+  background: rgba(51, 214, 166, 0.14);
+  color: #9ff9df;
+}
+
+.learner-profile > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.learner-profile strong {
+  max-width: 24ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learner-reset-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  border: 1px solid rgba(158, 187, 177, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--pa-text-soft);
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.learner-reset-button svg {
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+.learner-reset-button:hover {
+  border-color: rgba(34, 211, 238, 0.34);
+  background: rgba(34, 211, 238, 0.11);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 .canonical-page {
   color: var(--pa-text);
 }
@@ -2438,6 +2496,19 @@ pre {
   .secondary-action,
   .text-link {
     width: 100%;
+  }
+
+  .product-topline > .learner-profile,
+  .product-topline > .topline-actions {
+    width: 100%;
+  }
+
+  .learner-profile > div {
+    flex: 1 1 180px;
+  }
+
+  .learner-reset-button {
+    justify-content: center;
   }
 }
 

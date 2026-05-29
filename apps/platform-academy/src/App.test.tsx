@@ -1,8 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "./App";
+import { getOrCreateLocalLearnerId, LOCAL_LEARNER_ID_KEY } from "./learnerIdentity";
 
 function jsonResponse(payload: unknown) {
   return Promise.resolve({
@@ -149,8 +150,10 @@ const resources = {
   ]
 };
 
+const testLearnerId = "guest-test-learner";
+
 const dashboard = {
-  user_id: "demo-user",
+  user_id: testLearnerId,
   xp: { total: 20, lesson_completion_xp: 20, quiz_xp: 0, review_xp: 0 },
   daily_goal: { target_xp: 50, earned_xp_today: 20, met: false },
   streak: { current_days: 1, freeze_available: false, last_activity_date: "2026-05-28" },
@@ -168,20 +171,38 @@ function stubAcademyFetch() {
       if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
       if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
       if (url.includes("/api/lessons/202")) return jsonResponse(lesson202);
-      if (url.includes("/api/progress/demo-user")) {
-        return jsonResponse([{ id: 1, user_id: "demo-user", lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
+      if (url.includes(`/api/progress/${testLearnerId}`)) {
+        return jsonResponse([{ id: 1, user_id: testLearnerId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
       }
-      if (url.includes("/api/users/demo-user/dashboard")) return jsonResponse(dashboard);
+      if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
+      if (url.endsWith("/api/progress")) {
+        return jsonResponse({ id: 2, user_id: testLearnerId, lesson_id: 202, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" });
+      }
       return jsonResponse([]);
     })
   );
 }
 
 describe("Platform Academy app", () => {
+  beforeEach(() => {
+    localStorage.setItem(LOCAL_LEARNER_ID_KEY, testLearnerId);
+  });
+
   afterEach(() => {
     cleanup();
+    localStorage.clear();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it("creates and reuses a browser-local guest learner id", () => {
+    localStorage.clear();
+
+    const learnerId = getOrCreateLocalLearnerId();
+
+    expect(learnerId).toMatch(/^guest-[a-z0-9]+$/i);
+    expect(localStorage.getItem(LOCAL_LEARNER_ID_KEY)).toBe(learnerId);
+    expect(getOrCreateLocalLearnerId()).toBe(learnerId);
   });
 
   it("renders the standalone academy dashboard from mocked API data", async () => {
@@ -192,8 +213,8 @@ describe("Platform Academy app", () => {
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
-        if (url.includes("/api/progress/demo-user")) return jsonResponse([{ id: 1, user_id: "demo-user", lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
-        if (url.includes("/api/users/demo-user/dashboard")) return jsonResponse(dashboard);
+        if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([{ id: 1, user_id: testLearnerId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
+        if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
         return jsonResponse([]);
       })
     );
@@ -209,6 +230,48 @@ describe("Platform Academy app", () => {
     expect(screen.getAllByText("Kubernetes Fundamentals").length).toBeGreaterThan(0);
     expect(screen.getByText("Track pipeline")).toBeInTheDocument();
     expect(screen.getByText("Readiness gates")).toBeInTheDocument();
+    expect(screen.getByText(testLearnerId)).toBeInTheDocument();
+    expect(screen.getByText("Local guest workspace in this browser")).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/progress/${testLearnerId}`));
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/users/${testLearnerId}/dashboard`));
+  });
+
+  it("regenerates the local guest profile and reloads progress for the new id", async () => {
+    const requestedProgressIds: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        const progressMatch = url.match(/\/api\/progress\/([^/]+)$/);
+        const dashboardMatch = url.match(/\/api\/users\/([^/]+)\/dashboard$/);
+
+        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
+        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+        if (progressMatch) {
+          requestedProgressIds.push(decodeURIComponent(progressMatch[1]));
+          return jsonResponse([]);
+        }
+        if (dashboardMatch) return jsonResponse({ ...dashboard, user_id: decodeURIComponent(dashboardMatch[1]), completed_lessons: 0 });
+        return jsonResponse([]);
+      })
+    );
+
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Platform Academy" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /start a new local guest workspace/i }));
+
+    const regeneratedLearnerId = localStorage.getItem(LOCAL_LEARNER_ID_KEY) ?? "";
+    expect(regeneratedLearnerId).toMatch(/^guest-[a-z0-9]+$/i);
+    expect(regeneratedLearnerId).not.toBe(testLearnerId);
+    await waitFor(() => expect(requestedProgressIds).toContain(regeneratedLearnerId));
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/users/${regeneratedLearnerId}/dashboard`));
   });
 
   it("renders a comprehensive resources library", async () => {
@@ -243,8 +306,8 @@ describe("Platform Academy app", () => {
             ]
           });
         }
-        if (url.includes("/api/progress/demo-user")) return jsonResponse([]);
-        if (url.includes("/api/users/demo-user/dashboard")) return jsonResponse(dashboard);
+        if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
+        if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
         return jsonResponse([]);
       })
     );
@@ -270,8 +333,8 @@ describe("Platform Academy app", () => {
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
-        if (url.includes("/api/progress/demo-user")) return jsonResponse([]);
-        if (url.includes("/api/users/demo-user/dashboard")) return jsonResponse(dashboard);
+        if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
+        if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
         return jsonResponse([]);
       })
     );
@@ -353,6 +416,35 @@ describe("Platform Academy app", () => {
     expect(screen.getByRole("button", { name: /copied runbook commands/i })).toBeInTheDocument();
   });
 
+  it("saves lesson progress under the browser-local guest id", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/lessons/202"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /mark complete/i }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /progress saved/i })).toBeInTheDocument());
+
+    const fetchMock = vi.mocked(fetch);
+    const postCall = fetchMock.mock.calls.find(([input, init]) => {
+      const requestInit = init as RequestInit | undefined;
+      return String(input).endsWith("/api/progress") && requestInit?.method === "POST";
+    });
+    expect(postCall).toBeDefined();
+
+    const requestInit = postCall?.[1] as RequestInit;
+    expect(JSON.parse(String(requestInit.body))).toMatchObject({
+      user_id: testLearnerId,
+      lesson_id: 202,
+      completed: true,
+      score: 1
+    });
+  });
+
   it("loads additional resource pages instead of requiring filter refinement", async () => {
     const manyResources = Array.from({ length: 40 }, (_, index) => ({
       ...resources.resources[0],
@@ -366,8 +458,8 @@ describe("Platform Academy app", () => {
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse({ ...resources, resources: manyResources });
-        if (url.includes("/api/progress/demo-user")) return jsonResponse([]);
-        if (url.includes("/api/users/demo-user/dashboard")) return jsonResponse(dashboard);
+        if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
+        if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
         return jsonResponse([]);
       })
     );

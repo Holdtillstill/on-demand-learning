@@ -27,19 +27,22 @@ import {
   MonitorDot,
   Network,
   RadioTower,
+  RefreshCcw,
   Route,
   Search,
   Server,
   ShieldCheck,
   Sparkles,
   Target,
-  Terminal
+  Terminal,
+  UserRound
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, Navigate, Route as RouterRoute, Routes, useLocation, useParams } from "react-router-dom";
 
 import { api } from "./api";
+import { getOrCreateLocalLearnerId, resetLocalLearnerId } from "./learnerIdentity";
 import type {
   Course,
   Lesson,
@@ -309,7 +312,7 @@ function CommandBlock({ commands, title = "Command surface" }: { commands: strin
   );
 }
 
-function AppShell({ children }: { children: React.ReactNode }) {
+function AppShell({ children, learnerId, onResetLearner }: { children: React.ReactNode; learnerId: string; onResetLearner: () => void }) {
   const location = useLocation();
 
   if (!location.pathname.startsWith("/designs")) {
@@ -348,11 +351,24 @@ function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
         <div className="product-frame">
           <header className="product-topline">
-            <div>
-              <strong>demo-user workspace</strong>
-              <span>Seeded curriculum data only</span>
+            <div className="learner-profile" aria-label="Active learner profile">
+              <UserRound aria-hidden="true" />
+              <div>
+                <strong>{learnerId}</strong>
+                <span>Local guest workspace in this browser</span>
+              </div>
+              <button
+                aria-label="Start a new local guest workspace"
+                className="learner-reset-button"
+                onClick={onResetLearner}
+                title="Switch this browser to a fresh local progress profile. Existing backend progress remains stored under the old guest id."
+                type="button"
+              >
+                <RefreshCcw aria-hidden="true" />
+                New local profile
+              </button>
             </div>
-            <div>
+            <div className="topline-actions">
               <Link to="/labs">
                 <Terminal aria-hidden="true" />
                 Lab queue
@@ -584,7 +600,7 @@ function DashboardPage({ data }: { data: AcademyData }) {
             <div>
               <span className={stats.totalCompleted > 0 ? "gate-state met" : "gate-state"}>{stats.totalCompleted > 0 ? "Started" : "Not started"}</span>
               <strong>Lesson completion</strong>
-              <p>{stats.totalCompleted} completed lessons are recorded for demo-user.</p>
+              <p>{stats.totalCompleted} completed lessons are recorded for this local guest profile.</p>
             </div>
             <div>
               <span className="gate-state">Review</span>
@@ -1583,7 +1599,7 @@ function DesignTerminalCockpit({ data, stats }: { data: AcademyData; stats: Desi
         <DesignEvidenceStrip data={data} stats={stats} />
         <div className="terminal-grid">
           <article className="terminal-hero">
-            <p>demo-user@platform-academy:~$ ./start-learning</p>
+            <p>local-guest@platform-academy:~$ ./start-learning</p>
             <h1>Ops cockpit for Kubernetes practice.</h1>
             <span>{data.catalog.promise}</span>
           </article>
@@ -2105,7 +2121,7 @@ function CoursePage({ data }: { data: AcademyData }) {
   );
 }
 
-function LessonPage({ data, onProgressSaved }: { data: AcademyData; onProgressSaved: () => void }) {
+function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; learnerId: string; onProgressSaved: () => void }) {
   const { id = "" } = useParams();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [error, setError] = useState("");
@@ -2122,7 +2138,7 @@ function LessonPage({ data, onProgressSaved }: { data: AcademyData; onProgressSa
     if (!lesson) return;
     setSaving(true);
     try {
-      await api.saveProgress(lesson.id, true, 1);
+      await api.saveProgress(lesson.id, true, 1, learnerId);
       setSaved(true);
       onProgressSaved();
     } finally {
@@ -2236,22 +2252,41 @@ function LessonPage({ data, onProgressSaved }: { data: AcademyData; onProgressSa
 }
 
 export default function App() {
+  const [learnerId, setLearnerId] = useState(getOrCreateLocalLearnerId);
   const [data, setData] = useState<AcademyData | null>(null);
   const [error, setError] = useState("");
+  const loadRequestId = useRef(0);
 
-  const loadData = () => {
-    Promise.all([api.catalog(), api.roadmap(), api.resources(), api.progress(), api.dashboard()])
-      .then(([catalog, roadmap, resources, progress, dashboard]) => setData({ catalog, roadmap, resources, progress, dashboard }))
-      .catch((err) => setError(err.message));
+  const loadData = useCallback(() => {
+    const requestId = loadRequestId.current + 1;
+    loadRequestId.current = requestId;
+    setError("");
+
+    return Promise.all([api.catalog(), api.roadmap(), api.resources(), api.progress(learnerId), api.dashboard(learnerId)])
+      .then(([catalog, roadmap, resources, progress, dashboard]) => {
+        if (requestId !== loadRequestId.current) return;
+        setData({ catalog, roadmap, resources, progress, dashboard });
+      })
+      .catch((err) => {
+        if (requestId !== loadRequestId.current) return;
+        setError(err.message);
+      });
+  }, [learnerId]);
+
+  const resetLearner = () => {
+    loadRequestId.current += 1;
+    setData(null);
+    setError("");
+    setLearnerId(resetLocalLearnerId());
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    void loadData();
+  }, [loadData]);
 
   if (error) {
     return (
-      <AppShell>
+      <AppShell learnerId={learnerId} onResetLearner={resetLearner}>
         <EmptyState title="Platform Academy is unavailable." detail={error} />
       </AppShell>
     );
@@ -2259,14 +2294,14 @@ export default function App() {
 
   if (!data) {
     return (
-      <AppShell>
+      <AppShell learnerId={learnerId} onResetLearner={resetLearner}>
         <EmptyState title="Loading Platform Academy..." />
       </AppShell>
     );
   }
 
   return (
-    <AppShell>
+    <AppShell learnerId={learnerId} onResetLearner={resetLearner}>
       <Routes>
         <RouterRoute path="/" element={<DashboardPage data={data} />} />
         <RouterRoute path="/dashboard/home" element={<DashboardPage data={data} />} />
@@ -2278,7 +2313,7 @@ export default function App() {
         <RouterRoute path="/designs" element={<DesignsIndexPage data={data} />} />
         <RouterRoute path="/designs/:id" element={<DesignVariantPage data={data} />} />
         <RouterRoute path="/courses/:id" element={<CoursePage data={data} />} />
-        <RouterRoute path="/lessons/:id" element={<LessonPage data={data} onProgressSaved={loadData} />} />
+        <RouterRoute path="/lessons/:id" element={<LessonPage data={data} learnerId={learnerId} onProgressSaved={loadData} />} />
         <RouterRoute path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>
