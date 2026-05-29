@@ -182,11 +182,11 @@ describe("Platform Academy app", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText("Cloud Native Platform Academy")).toBeInTheDocument();
-    expect(screen.getByText("Kubernetes Fundamentals")).toBeInTheDocument();
-    expect(screen.getByText("Fresher / Beginner")).toBeInTheDocument();
-    expect(screen.getByText("Continue learning")).toBeInTheDocument();
-    expect(screen.getByText("Resources")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Platform Academy" })).toBeInTheDocument();
+    expect(screen.getByText("Production learning workspace")).toBeInTheDocument();
+    expect(screen.getAllByText("Kubernetes Fundamentals").length).toBeGreaterThan(0);
+    expect(screen.getByText("Track pipeline")).toBeInTheDocument();
+    expect(screen.getByText("Readiness gates")).toBeInTheDocument();
   });
 
   it("renders a comprehensive resources library", async () => {
@@ -233,11 +233,11 @@ describe("Platform Academy app", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText("Resource library for comprehensive platform mastery")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Resource library" })).toBeInTheDocument();
     expect(screen.getByText("Runbooks, projects, rubrics, references")).toBeInTheDocument();
     expect(screen.queryByText(/Codex gap audit/i)).not.toBeInTheDocument();
-    expect(screen.getByText("Kubernetes Debugging Cheatsheet")).toBeInTheDocument();
-    expect(screen.getByText("FinOps")).toBeInTheDocument();
+    expect(screen.getAllByText("Kubernetes Debugging Cheatsheet").length).toBeGreaterThan(0);
+    expect(screen.getByText("Library index")).toBeInTheDocument();
   });
 
   it("renders roadmap stages", async () => {

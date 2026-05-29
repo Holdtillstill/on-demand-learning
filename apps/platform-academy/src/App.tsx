@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, NavLink, Navigate, Route as RouterRoute, Routes, useParams } from "react-router-dom";
+import { Link, NavLink, Navigate, Route as RouterRoute, Routes, useLocation, useParams } from "react-router-dom";
 
 import { api } from "./api";
 import type {
@@ -201,7 +201,152 @@ function LevelBadge({ level }: { level: string }) {
   return <span className={`level-badge level-${level.toLowerCase().replace(/[^a-z]+/g, "-")}`}>{level}</span>;
 }
 
+type AcademyStats = {
+  courses: Course[];
+  lessons: Course["lessons"][number][];
+  completed: Set<number>;
+  totalCompleted: number;
+  completionPercent: number;
+  recommended?: Course["lessons"][number];
+};
+
+const productNavItems = [
+  {
+    to: "/dashboard/home",
+    label: "Home",
+    icon: LayoutDashboard,
+    match: (path: string) => path === "/" || path.startsWith("/dashboard") || path.startsWith("/courses") || path.startsWith("/lessons")
+  },
+  { to: "/roadmap", label: "Roadmap", icon: Map, match: (path: string) => path.startsWith("/roadmap") },
+  { to: "/labs", label: "Labs", icon: Terminal, match: (path: string) => path.startsWith("/labs") },
+  { to: "/resources", label: "Resources", icon: BookMarked, match: (path: string) => path.startsWith("/resources") }
+] as const;
+
+function getAcademyStats(data: AcademyData): AcademyStats {
+  const courses = allCourses(data.catalog);
+  const lessons = courses.flatMap((course) => course.lessons);
+  const completed = completedLessonIds(data.progress);
+  const totalCompleted = lessons.filter((lesson) => completed.has(lesson.id)).length;
+  return {
+    courses,
+    lessons,
+    completed,
+    totalCompleted,
+    completionPercent: data.catalog.total_lessons > 0 ? Math.round((totalCompleted / data.catalog.total_lessons) * 100) : 0,
+    recommended: nextLesson(courses, completed)
+  };
+}
+
+function courseForLesson(data: AcademyData, lessonId: number) {
+  return allCourses(data.catalog).find((course) => course.lessons.some((lesson) => lesson.id === lessonId));
+}
+
+function labForSlug(data: AcademyData, slug: string) {
+  return data.catalog.labs.find((lab) => lab.slug === slug);
+}
+
+function resourceForSlug(data: AcademyData, slug: string) {
+  return data.resources.resources.find((resource) => resource.slug === slug);
+}
+
+function labsForCourse(data: AcademyData, course: Course) {
+  return data.catalog.labs.filter((lab) => lab.course_slug === course.slug);
+}
+
+function resourcesForCourse(data: AcademyData, course: Course) {
+  const lessonIds = new Set(course.lessons.map((lesson) => lesson.id));
+  const labSlugs = new Set(labsForCourse(data, course).map((lab) => lab.slug));
+  return data.resources.resources.filter(
+    (resource) =>
+      resource.related_lessons.some((lessonId) => lessonIds.has(lessonId)) || resource.related_labs.some((labSlug) => labSlugs.has(labSlug))
+  );
+}
+
+function resourcesForLab(data: AcademyData, lab: PlatformLab) {
+  return data.resources.resources.filter((resource) => resource.related_labs.includes(lab.slug));
+}
+
+function resourcesForLesson(data: AcademyData, lessonId: number) {
+  const labs = data.catalog.labs.filter((lab) => lab.lesson_id === lessonId).map((lab) => lab.slug);
+  return data.resources.resources.filter(
+    (resource) => resource.related_lessons.includes(lessonId) || resource.related_labs.some((labSlug) => labs.includes(labSlug))
+  );
+}
+
+function CommandBlock({ commands, title = "Command surface" }: { commands: string[]; title?: string }) {
+  return (
+    <div className="command-console">
+      <div className="command-console-header">
+        <Terminal aria-hidden="true" />
+        <span>{title}</span>
+      </div>
+      <pre>
+        <code>{commands.length > 0 ? commands.join("\n") : "No command snippet is seeded for this item."}</code>
+      </pre>
+    </div>
+  );
+}
+
 function AppShell({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+
+  if (!location.pathname.startsWith("/designs")) {
+    return (
+      <div className="product-shell">
+        <aside className="product-sidebar">
+          <Link className="product-brand" to="/dashboard/home">
+            <span>PA</span>
+            <div>
+              <strong>Platform Academy</strong>
+              <small>AWS / Kubernetes / SRE</small>
+            </div>
+          </Link>
+          <nav className="product-nav" aria-label="Platform Academy navigation">
+            {productNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  to={item.to}
+                  key={item.to}
+                  className={({ isActive }) => (isActive || item.match(location.pathname) ? "active" : undefined)}
+                >
+                  <Icon aria-hidden="true" />
+                  {item.label}
+                </NavLink>
+              );
+            })}
+          </nav>
+          <div className="product-sidebar-footer">
+            <span>Exploration routes</span>
+            <Link to="/designs">
+              <Sparkles aria-hidden="true" />
+              Designs
+            </Link>
+          </div>
+        </aside>
+        <div className="product-frame">
+          <header className="product-topline">
+            <div>
+              <strong>demo-user workspace</strong>
+              <span>Seeded curriculum data only</span>
+            </div>
+            <div>
+              <Link to="/labs">
+                <Terminal aria-hidden="true" />
+                Lab queue
+              </Link>
+              <Link to="/resources">
+                <Search aria-hidden="true" />
+                Resource index
+              </Link>
+            </div>
+          </header>
+          <main>{children}</main>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="academy-shell">
       <header className="topbar">
@@ -241,16 +386,15 @@ function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 function DashboardPage({ data }: { data: AcademyData }) {
-  const completed = useMemo(() => completedLessonIds(data.progress), [data.progress]);
-  const courses = useMemo(() => allCourses(data.catalog), [data.catalog]);
+  const stats = useMemo(() => getAcademyStats(data), [data]);
+  const courses = stats.courses;
   const topics = useMemo(() => Array.from(new Set(courses.map((course) => course.category))), [courses]);
   const [selectedLevel, setSelectedLevel] = useState("All");
   const [selectedTopic, setSelectedTopic] = useState("All");
   const [query, setQuery] = useState("");
-
-  const totalCompleted = courses.flatMap((course) => course.lessons).filter((lesson) => completed.has(lesson.id)).length;
-  const completionPercent = data.catalog.total_lessons > 0 ? Math.round((totalCompleted / data.catalog.total_lessons) * 100) : 0;
-  const recommended = nextLesson(courses, completed);
+  const recommendedCourse = stats.recommended ? courseForLesson(data, stats.recommended.id) : undefined;
+  const upcomingLab = data.catalog.labs.find((lab) => (stats.recommended ? lab.lesson_id === stats.recommended.id : false)) ?? data.catalog.labs[0];
+  const featuredResource = upcomingLab ? resourcesForLab(data, upcomingLab)[0] ?? data.resources.resources[0] : data.resources.resources[0];
 
   const filteredCourses = courses.filter((course) => {
     const levelGroup = data.catalog.tracks.find((track) => track.course.slug === course.slug)?.level_group ?? course.level;
@@ -263,156 +407,271 @@ function DashboardPage({ data }: { data: AcademyData }) {
   });
 
   return (
-    <section className="page">
-      <header className="dashboard-hero">
+    <section className="page canonical-page dashboard-home">
+      <header className="workspace-header">
         <div>
-          <p className="eyebrow">Platform Academy</p>
-          <h1>Build real Kubernetes platform judgment from fresher basics to production architecture.</h1>
+          <p className="eyebrow">Production learning workspace</p>
+          <h1>Platform Academy</h1>
           <p className="lead">{data.catalog.promise}</p>
-          <div className="hero-actions">
-            {recommended && (
-              <Link className="primary-action" to={`/lessons/${recommended.id}`}>
-                <Compass aria-hidden="true" />
-                {totalCompleted > 0 ? "Continue learning" : "Start learning"}
-              </Link>
-            )}
-            <Link className="secondary-action" to="/roadmap">
-              <Route aria-hidden="true" />
-              View roadmap
-            </Link>
-          </div>
         </div>
-        <aside className="progress-panel" aria-label="Learner progress">
-          <span>Overall progress</span>
-          <strong>{completionPercent}%</strong>
-          <ProgressBar value={completionPercent} />
-          <dl>
-            <div>
-              <dt>Courses</dt>
-              <dd>{data.catalog.total_courses}</dd>
-            </div>
-            <div>
-              <dt>Lessons</dt>
-              <dd>{data.catalog.total_lessons}</dd>
-            </div>
-            <div>
-              <dt>Completed</dt>
-              <dd>{totalCompleted}</dd>
-            </div>
-            <div>
-              <dt>XP</dt>
-              <dd>{data.dashboard.xp.total}</dd>
-            </div>
-          </dl>
-        </aside>
+        <div className="workspace-actions">
+          {stats.recommended && (
+            <Link className="primary-action" to={`/lessons/${stats.recommended.id}`}>
+              <Compass aria-hidden="true" />
+              {stats.totalCompleted > 0 ? "Continue lesson" : "Start path"}
+            </Link>
+          )}
+          <Link className="secondary-action" to="/roadmap">
+            <Route aria-hidden="true" />
+            Roadmap
+          </Link>
+        </div>
       </header>
 
-      <section className="level-strip" aria-label="Curriculum levels">
-        {data.catalog.levels.map((level) => (
-          <article key={level.slug}>
-            <LevelBadge level={level.level_group} />
-            <h2>{level.title}</h2>
-            <p>{level.audience}</p>
-            <strong>
-              {level.total_courses} courses / {level.total_lessons} lessons
-            </strong>
-          </article>
-        ))}
+      <section className="ops-summary" aria-label="Academy operating summary">
+        <article>
+          <span>Readiness</span>
+          <strong>{stats.completionPercent}%</strong>
+          <ProgressBar value={stats.completionPercent} />
+          <small>
+            {stats.totalCompleted} of {data.catalog.total_lessons} lessons complete
+          </small>
+        </article>
+        <article>
+          <span>Curriculum</span>
+          <strong>{data.catalog.total_courses}</strong>
+          <small>{data.catalog.total_lessons} sequenced lessons</small>
+        </article>
+        <article>
+          <span>Lab inventory</span>
+          <strong>{data.catalog.labs.length}</strong>
+          <small>{averageLabMinutes(data.catalog.labs)} min average drill</small>
+        </article>
+        <article>
+          <span>Review state</span>
+          <strong>{data.dashboard.due_reviews}</strong>
+          <small>{data.dashboard.daily_goal.earned_xp_today} / {data.dashboard.daily_goal.target_xp} XP today</small>
+        </article>
       </section>
 
-      <section className="toolbar" aria-label="Course filters">
-        <div className="search-box">
-          <Search aria-hidden="true" />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Kubernetes, Helm, IRSA..." />
-        </div>
-        <div className="segmented">
-          <Filter aria-hidden="true" />
-          {["All", ...levelOrder].map((level) => (
-            <button key={level} className={selectedLevel === level ? "selected" : ""} onClick={() => setSelectedLevel(level)}>
-              {level}
-            </button>
-          ))}
-        </div>
-        <div className="segmented topics">
-          {["All", ...topics].map((topic) => (
-            <button key={topic} className={selectedTopic === topic ? "selected" : ""} onClick={() => setSelectedTopic(topic)}>
-              {topic}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="course-board" aria-label="Platform Academy courses">
-        {filteredCourses.map((course) => {
-          const progress = courseProgress(course, completed);
-          const Icon = iconForCategory(course.category);
-          const track = data.catalog.tracks.find((item) => item.course.slug === course.slug);
-          return (
-            <Link className="course-card" to={`/courses/${course.id}`} key={course.id}>
-              <div className="course-card-top">
-                <Icon aria-hidden="true" />
+      <section className="dashboard-layout">
+        <div className="dashboard-main">
+          <section className="workspace-panel next-work">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Next best action</p>
+                <h2>{stats.recommended?.title ?? "Select a lesson"}</h2>
+              </div>
+              {stats.recommended && (
+                <Link className="text-link" to={`/lessons/${stats.recommended.id}`}>
+                  Open lesson <ArrowRight aria-hidden="true" />
+                </Link>
+              )}
+            </div>
+            <div className="next-work-grid">
+              <div>
+                <span>Course</span>
+                <strong>{recommendedCourse?.title ?? "No course selected"}</strong>
+                <p>{recommendedCourse?.description ?? "The seeded catalog has no available lessons."}</p>
+              </div>
+              {upcomingLab && (
                 <div>
-                  <LevelBadge level={track?.level_group ?? course.level} />
-                  <span>{course.category}</span>
+                  <span>Lab gate</span>
+                  <strong>{upcomingLab.title}</strong>
+                  <p>{upcomingLab.scenario}</p>
                 </div>
+              )}
+              {featuredResource && (
+                <div>
+                  <span>Reference artifact</span>
+                  <strong>{featuredResource.title}</strong>
+                  <p>{featuredResource.summary}</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="workspace-panel">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Track pipeline</p>
+                <h2>Courses by operating level</h2>
               </div>
-              <h2>{course.title}</h2>
-              <p>{course.description}</p>
-              <div className="course-progress">
+              <span>
+                {filteredCourses.length} of {courses.length} visible
+              </span>
+            </div>
+            <section className="toolbar canonical-toolbar" aria-label="Course filters">
+              <div className="search-box">
+                <Search aria-hidden="true" />
+                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Kubernetes, Helm, IRSA..." />
+              </div>
+              <div className="segmented">
+                <Filter aria-hidden="true" />
+                {["All", ...levelOrder].map((level) => (
+                  <button key={level} className={selectedLevel === level ? "selected" : ""} onClick={() => setSelectedLevel(level)}>
+                    {level}
+                  </button>
+                ))}
+              </div>
+              <div className="segmented topics">
+                {["All", ...topics].map((topic) => (
+                  <button key={topic} className={selectedTopic === topic ? "selected" : ""} onClick={() => setSelectedTopic(topic)}>
+                    {topic}
+                  </button>
+                ))}
+              </div>
+            </section>
+            <div className="course-table" aria-label="Platform Academy courses">
+              {filteredCourses.map((course) => {
+                const progress = courseProgress(course, stats.completed);
+                const track = data.catalog.tracks.find((item) => item.course.slug === course.slug);
+                return (
+                  <Link className="course-row" to={`/courses/${course.id}`} key={course.id}>
+                    <div>
+                      <LevelBadge level={track?.level_group ?? course.level} />
+                      <strong>{course.title}</strong>
+                      <p>{course.description}</p>
+                    </div>
+                    <span>{course.category}</span>
+                    <span>{course.lessons.length} lessons</span>
+                    <div>
+                      <b>{progress.percent}%</b>
+                      <ProgressBar value={progress.percent} />
+                    </div>
+                    <ArrowRight aria-hidden="true" />
+                  </Link>
+                );
+              })}
+            </div>
+            {filteredCourses.length === 0 && <EmptyState title="No courses match those filters." />}
+          </section>
+        </div>
+
+        <aside className="dashboard-rail">
+          <section className="workspace-panel readiness-panel">
+            <p className="eyebrow">Readiness gates</p>
+            <h2>Evidence before progress</h2>
+            <div>
+              <span className={data.dashboard.daily_goal.met ? "gate-state met" : "gate-state"}>{data.dashboard.daily_goal.met ? "Met" : "In progress"}</span>
+              <strong>Daily XP target</strong>
+              <p>
+                {data.dashboard.daily_goal.earned_xp_today} of {data.dashboard.daily_goal.target_xp} XP earned today.
+              </p>
+            </div>
+            <div>
+              <span className={stats.totalCompleted > 0 ? "gate-state met" : "gate-state"}>{stats.totalCompleted > 0 ? "Started" : "Not started"}</span>
+              <strong>Lesson completion</strong>
+              <p>{stats.totalCompleted} completed lessons are recorded for demo-user.</p>
+            </div>
+            <div>
+              <span className="gate-state">Review</span>
+              <strong>Source posture</strong>
+              <p>Seeded content exposes commands, artifacts, safety labels, and related labs; external source URLs are not seeded.</p>
+            </div>
+          </section>
+
+          <section className="workspace-panel level-readiness">
+            <p className="eyebrow">Level coverage</p>
+            {data.catalog.levels.map((level) => (
+              <div key={level.slug}>
+                <LevelBadge level={level.level_group} />
+                <strong>{level.title}</strong>
                 <span>
-                  {progress.done} / {progress.total} lessons
+                  {level.total_courses} courses / {level.total_lessons} lessons
                 </span>
-                <ProgressBar value={progress.percent} />
               </div>
-            </Link>
-          );
-        })}
+            ))}
+          </section>
+        </aside>
       </section>
-      {filteredCourses.length === 0 && <EmptyState title="No courses match those filters." />}
     </section>
   );
 }
 
 function RoadmapPage({ data }: { data: AcademyData }) {
+  const stats = useMemo(() => getAcademyStats(data), [data]);
   const stageCourses = (stage: PlatformRoadmapStage) =>
     stage.course_slugs
       .map((slug) => allCourses(data.catalog).find((course) => course.slug === slug))
       .filter((course): course is Course => Boolean(course));
 
   return (
-    <section className="page">
-      <header className="page-heading">
+    <section className="page canonical-page roadmap-page">
+      <header className="workspace-header">
+        <div>
         <p className="eyebrow">Recommended order</p>
-        <h1>Roadmap from first kubectl habits to production platform ownership</h1>
+          <h1>Roadmap from first kubectl habits to production platform ownership</h1>
+          <p className="lead">Each stage pairs lessons with checkpoints, course evidence, and lab validation before advancing.</p>
+        </div>
+        <div className="readiness-score">
+          <span>Current readiness</span>
+          <strong>{stats.completionPercent}%</strong>
+          <ProgressBar value={stats.completionPercent} />
+        </div>
       </header>
-      <div className="roadmap">
-        {data.roadmap.stages.map((stage) => (
-          <article className="roadmap-stage" key={stage.sequence}>
-            <div className="stage-index">{stage.sequence}</div>
-            <div>
-              <div className="stage-header">
-                <LevelBadge level={stage.level_group} />
-                <h2>{stage.title}</h2>
+
+      <section className="roadmap-layout">
+        <div className="roadmap-timeline">
+          {data.roadmap.stages.map((stage) => {
+            const courses = stageCourses(stage);
+            const stageLessons = courses.flatMap((course) => course.lessons);
+            const completedLessons = stageLessons.filter((lesson) => stats.completed.has(lesson.id)).length;
+            const relatedLabs = data.catalog.labs.filter((lab) => courses.some((course) => course.slug === lab.course_slug));
+            return (
+              <article className="roadmap-stage canonical-stage" key={stage.sequence}>
+                <div className="stage-index">{stage.sequence}</div>
+                <div className="stage-body">
+                  <div className="stage-header">
+                    <LevelBadge level={stage.level_group} />
+                    <span>{stage.role}</span>
+                  </div>
+                  <h2>{stage.title}</h2>
+                  <p>{stage.focus}</p>
+                  <div className="stage-metrics">
+                    <span>{courses.length} courses</span>
+                    <span>{stageLessons.length} lessons</span>
+                    <span>{relatedLabs.length} labs</span>
+                    <span>{completedLessons} complete</span>
+                  </div>
+                  <h3>Promotion checkpoints</h3>
+                  <ul>
+                    {stage.checkpoints.map((checkpoint) => (
+                      <li key={checkpoint}>{checkpoint}</li>
+                    ))}
+                  </ul>
+                  <div className="stage-courses">
+                    {courses.map((course) => (
+                      <Link to={`/courses/${course.id}`} key={course.id}>
+                        <BookOpen aria-hidden="true" />
+                        {course.title}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <aside className="roadmap-rail">
+          <section className="workspace-panel">
+            <p className="eyebrow">Source and review posture</p>
+            <h2>Trust model</h2>
+            <p>Roadmap gates use seeded courses, labs, checkpoints, and resources. External official-source links and review timestamps are not in the current payload.</p>
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Evidence gates</p>
+            {data.catalog.levels.map((level) => (
+              <div className="evidence-row" key={level.slug}>
+                <LevelBadge level={level.level_group} />
+                <strong>{level.total_lessons} lessons</strong>
+                <span>{level.audience}</span>
               </div>
-              <p>{stage.role}</p>
-              <strong>{stage.focus}</strong>
-              <ul>
-                {stage.checkpoints.map((checkpoint) => (
-                  <li key={checkpoint}>{checkpoint}</li>
-                ))}
-              </ul>
-              <div className="stage-courses">
-                {stageCourses(stage).map((course) => (
-                  <Link to={`/courses/${course.id}`} key={course.id}>
-                    <BookOpen aria-hidden="true" />
-                    {course.title}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+            ))}
+          </section>
+        </aside>
+      </section>
     </section>
   );
 }
@@ -424,14 +683,25 @@ function LabsPage({ data }: { data: AcademyData }) {
   const filteredLabs = data.catalog.labs.filter(
     (lab) => (selectedLevel === "All" || lab.level_group === selectedLevel) && (selectedTopic === "All" || lab.track === selectedTopic)
   );
+  const activeLab = filteredLabs[0];
+  const activeResource = activeLab ? resourcesForLab(data, activeLab)[0] : undefined;
 
   return (
-    <section className="page">
-      <header className="page-heading">
-        <p className="eyebrow">Local-safe practice</p>
-        <h1>Labs for realistic platform incidents and architecture reviews</h1>
+    <section className="page canonical-page labs-page">
+      <header className="workspace-header">
+        <div>
+          <p className="eyebrow">Command workspace</p>
+          <h1>Labs for platform incidents and architecture reviews</h1>
+          <p className="lead">Runbook-style drills expose scenario context, command surfaces, and validation gates before a lesson counts as ready.</p>
+        </div>
+        <div className="readiness-score">
+          <span>Lab inventory</span>
+          <strong>{filteredLabs.length}</strong>
+          <small>{data.catalog.labs.length} total seeded labs</small>
+        </div>
       </header>
-      <section className="toolbar compact" aria-label="Lab filters">
+
+      <section className="toolbar compact canonical-toolbar" aria-label="Lab filters">
         <div className="segmented">
           {["All", ...levelOrder].map((level) => (
             <button key={level} className={selectedLevel === level ? "selected" : ""} onClick={() => setSelectedLevel(level)}>
@@ -447,19 +717,66 @@ function LabsPage({ data }: { data: AcademyData }) {
           ))}
         </div>
       </section>
-      <section className="lab-grid" aria-label="Platform labs">
-        {filteredLabs.map((lab) => (
-          <LabCard lab={lab} key={lab.slug} />
-        ))}
+
+      <section className="lab-workspace">
+        <aside className="lab-queue" aria-label="Platform labs">
+          {filteredLabs.map((lab) => (
+            <LabCard lab={lab} key={lab.slug} />
+          ))}
+        </aside>
+
+        <section className="runbook-workspace">
+          {activeLab ? (
+            <>
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">Selected runbook</p>
+                  <h2>{activeLab.title}</h2>
+                </div>
+                <Link className="text-link" to={`/labs/${activeLab.slug}`}>
+                  Open detail <ArrowRight aria-hidden="true" />
+                </Link>
+              </div>
+              <p>{activeLab.scenario}</p>
+              <div className="runbook-meta">
+                <LevelBadge level={activeLab.level_group} />
+                <span>{activeLab.track}</span>
+                <span>{activeLab.estimated_minutes} min</span>
+                <span>{activeLab.difficulty}</span>
+              </div>
+              <CommandBlock commands={activeLab.commands} />
+              <div className="validation-grid">
+                <div>
+                  <h3>Validation checklist</h3>
+                  <ul>
+                    {activeLab.checklist.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h3>Evidence artifact</h3>
+                  <p>{activeResource?.artifacts.slice(0, 2).join(" / ") ?? "No related resource artifact is seeded for this lab."}</p>
+                  {activeResource && (
+                    <Link className="text-link" to={`/resources/${activeResource.slug}`}>
+                      Open resource <ArrowRight aria-hidden="true" />
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <EmptyState title="No labs match those filters." />
+          )}
+        </section>
       </section>
-      {filteredLabs.length === 0 && <EmptyState title="No labs match those filters." />}
     </section>
   );
 }
 
 function LabCard({ lab }: { lab: PlatformLab }) {
   return (
-    <article className="lab-card">
+    <Link className="lab-card lab-queue-row" to={`/labs/${lab.slug}`}>
       <div className="lab-meta">
         <LevelBadge level={lab.level_group} />
         <span>
@@ -474,22 +791,90 @@ function LabCard({ lab }: { lab: PlatformLab }) {
           <span key={skill}>{skill}</span>
         ))}
       </div>
-      <h3>Command surface</h3>
-      <pre>
-        <code>{lab.commands.join("\n")}</code>
-      </pre>
-      <h3>Validation checklist</h3>
-      <ul>
-        {lab.checklist.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-      {lab.lesson_id && (
-        <Link className="text-link" to={`/lessons/${lab.lesson_id}`}>
-          Open lesson <ArrowRight aria-hidden="true" />
-        </Link>
-      )}
-    </article>
+    </Link>
+  );
+}
+
+function LabDetailPage({ data }: { data: AcademyData }) {
+  const { slug = "" } = useParams();
+  const lab = labForSlug(data, slug);
+  if (!lab) return <EmptyState title="Lab not found." detail="The lab slug is not present in the seeded catalog." />;
+  const course = allCourses(data.catalog).find((item) => item.slug === lab.course_slug);
+  const relatedResources = resourcesForLab(data, lab);
+
+  return (
+    <section className="page canonical-page lab-detail-page">
+      <Link className="back-link" to="/labs">
+        <ChevronLeft aria-hidden="true" />
+        Labs
+      </Link>
+      <header className="workspace-header">
+        <div>
+          <p className="eyebrow">
+            {lab.track} / {lab.difficulty}
+          </p>
+          <h1>{lab.title}</h1>
+          <p className="lead">{lab.scenario}</p>
+        </div>
+        <div className="readiness-score">
+          <span>Estimated time</span>
+          <strong>{lab.estimated_minutes}</strong>
+          <small>minutes</small>
+        </div>
+      </header>
+
+      <section className="detail-layout">
+        <article className="workspace-panel">
+          <div className="runbook-meta">
+            <LevelBadge level={lab.level_group} />
+            <span>{lab.track}</span>
+            {course && <span>{course.title}</span>}
+          </div>
+          <CommandBlock commands={lab.commands} title="Runbook commands" />
+          <h2>Validation checklist</h2>
+          <ul className="check-list">
+            {lab.checklist.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <h2>Skills covered</h2>
+          <div className="chip-list">
+            {lab.skills.map((skill) => (
+              <span key={skill}>{skill}</span>
+            ))}
+          </div>
+        </article>
+
+        <aside className="detail-rail">
+          <section className="workspace-panel">
+            <p className="eyebrow">Lesson linkage</p>
+            <h2>{course?.title ?? "Course not found"}</h2>
+            {lab.lesson_id && (
+              <Link className="text-link" to={`/lessons/${lab.lesson_id}`}>
+                Open linked lesson <ArrowRight aria-hidden="true" />
+              </Link>
+            )}
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Related resources</p>
+            {relatedResources.length > 0 ? (
+              relatedResources.slice(0, 4).map((resource) => (
+                <Link className="resource-mini-row" to={`/resources/${resource.slug}`} key={resource.slug}>
+                  <span>{resource.resource_type}</span>
+                  <strong>{resource.title}</strong>
+                </Link>
+              ))
+            ) : (
+              <p>No related resource is seeded for this lab.</p>
+            )}
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Source and review posture</p>
+            <p>This lab is seeded with local-safe scenario data and command snippets. Verify cloud-provider commands against current official docs before live-cluster use.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
   );
 }
 
@@ -505,15 +890,21 @@ function ResourcesPage({ data }: { data: AcademyData }) {
       text.includes(query.toLowerCase())
     );
   });
+  const featuredResource = filteredResources[0];
+  const visibleResources = filteredResources.slice(0, 36);
+  const hiddenResourceCount = Math.max(filteredResources.length - visibleResources.length, 0);
+  const featuredLab = featuredResource ? data.catalog.labs.find((lab) => featuredResource.related_labs.includes(lab.slug)) : undefined;
 
   return (
-    <section className="page">
-      <header className="page-heading resources-heading">
-        <p className="eyebrow">Runbooks, projects, rubrics, references</p>
-        <h1>Resource library for comprehensive platform mastery</h1>
-        <p className="lead">
-          Cheatsheets, runbooks, worksheets, project briefs, templates, references, diagrams, assessments, and interview drills for every academy domain.
-        </p>
+    <section className="page canonical-page resources-page">
+      <header className="workspace-header resources-heading">
+        <div>
+          <p className="eyebrow">Runbooks, projects, rubrics, references</p>
+          <h1>Resource library</h1>
+          <p className="lead">
+            Searchable operational artifacts for Kubernetes, EKS, Helm, ArgoCD, SRE, platform engineering, security, Terraform, and FinOps practice.
+          </p>
+        </div>
         <dl className="resource-stats">
           <div>
             <dt>Resources</dt>
@@ -524,12 +915,12 @@ function ResourcesPage({ data }: { data: AcademyData }) {
             <dd>{data.resources.domains.length}</dd>
           </div>
           <div>
-            <dt>Artifact types</dt>
+            <dt>Types</dt>
             <dd>{data.resources.types.length}</dd>
           </div>
         </dl>
       </header>
-      <section className="toolbar" aria-label="Resource filters">
+      <section className="toolbar canonical-toolbar" aria-label="Resource filters">
         <div className="search-box">
           <Search aria-hidden="true" />
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search resources, runbooks, projects..." />
@@ -549,10 +940,47 @@ function ResourcesPage({ data }: { data: AcademyData }) {
           ))}
         </div>
       </section>
-      <section className="resource-grid" aria-label="Platform Academy resources">
-        {filteredResources.map((resource) => (
-          <ResourceCard resource={resource} data={data} key={resource.slug} />
-        ))}
+
+      <section className="resource-layout">
+        <article className="resource-feature">
+          {featuredResource ? (
+            <>
+              <div className="resource-card-top">
+                <LevelBadge level={featuredResource.level_group} />
+                <span>{featuredResource.resource_type}</span>
+                <span>{featuredResource.safety_level}</span>
+              </div>
+              <h2>{featuredResource.title}</h2>
+              <p>{featuredResource.summary}</p>
+              <CommandBlock commands={featuredResource.commands.slice(0, 3)} title="Primary snippets" />
+              <div className="resource-feature-footer">
+                {featuredLab && <span>Related lab: {featuredLab.title}</span>}
+                <Link className="primary-action" to={`/resources/${featuredResource.slug}`}>
+                  Open resource <ArrowRight aria-hidden="true" />
+                </Link>
+              </div>
+            </>
+          ) : (
+            <EmptyState title="No resources match those filters." />
+          )}
+        </article>
+
+        <section className="resource-index" aria-label="Platform Academy resources">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Library index</p>
+              <h2>{visibleResources.length} shown / {filteredResources.length} matching artifacts</h2>
+            </div>
+          </div>
+          {visibleResources.map((resource) => (
+            <ResourceCard resource={resource} data={data} key={resource.slug} />
+          ))}
+          {hiddenResourceCount > 0 && (
+            <div className="resource-limit-note">
+              Refine domain, type, or search filters to inspect the remaining {hiddenResourceCount} matching artifacts.
+            </div>
+          )}
+        </section>
       </section>
       {filteredResources.length === 0 && <EmptyState title="No resources match those filters." />}
     </section>
@@ -562,7 +990,7 @@ function ResourcesPage({ data }: { data: AcademyData }) {
 function ResourceCard({ resource, data }: { resource: PlatformResource; data: AcademyData }) {
   const lab = data.catalog.labs.find((item) => resource.related_labs.includes(item.slug));
   return (
-    <article className="resource-card">
+    <Link className="resource-card resource-row" to={`/resources/${resource.slug}`}>
       <div className="resource-card-top">
         <LevelBadge level={resource.level_group} />
         <span>{resource.resource_type}</span>
@@ -570,31 +998,120 @@ function ResourceCard({ resource, data }: { resource: PlatformResource; data: Ac
       </div>
       <h2>{resource.title}</h2>
       <p>{resource.summary}</p>
-      <div className="chip-list">
+      <div className="resource-links">
         <span>{resource.domain}</span>
         <span>{resource.safety_level}</span>
-      </div>
-      <h3>Outcomes</h3>
-      <ul>
-        {resource.outcomes.slice(0, 2).map((outcome) => (
-          <li key={outcome}>{outcome}</li>
-        ))}
-      </ul>
-      <h3>Artifact</h3>
-      <p>{resource.artifacts.join(" • ")}</p>
-      <h3>Command surface</h3>
-      <pre>
-        <code>{resource.commands.join("\n")}</code>
-      </pre>
-      <div className="resource-links">
-        {lab?.lesson_id && (
-          <Link className="text-link" to={`/lessons/${lab.lesson_id}`}>
-            Related lesson <ArrowRight aria-hidden="true" />
-          </Link>
-        )}
         {lab && <span>Lab: {lab.title}</span>}
       </div>
-    </article>
+    </Link>
+  );
+}
+
+function ResourceDetailPage({ data }: { data: AcademyData }) {
+  const { slug = "" } = useParams();
+  const resource = resourceForSlug(data, slug);
+  if (!resource) return <EmptyState title="Resource not found." detail="The resource slug is not present in the seeded library." />;
+  const relatedLabs = data.catalog.labs.filter((lab) => resource.related_labs.includes(lab.slug));
+  const relatedCourses: Course[] = Array.from(
+    new globalThis.Map<number, Course>(
+      relatedLabs
+        .map((lab) => allCourses(data.catalog).find((course) => course.slug === lab.course_slug))
+        .filter((course): course is Course => Boolean(course))
+        .map((course) => [course.id, course])
+    ).values()
+  );
+
+  return (
+    <section className="page canonical-page resource-detail-page">
+      <Link className="back-link" to="/resources">
+        <ChevronLeft aria-hidden="true" />
+        Resources
+      </Link>
+      <header className="workspace-header">
+        <div>
+          <p className="eyebrow">
+            {resource.domain} / {resource.resource_type}
+          </p>
+          <h1>{resource.title}</h1>
+          <p className="lead">{resource.summary}</p>
+        </div>
+        <div className="readiness-score">
+          <span>Estimated time</span>
+          <strong>{resource.estimated_minutes}</strong>
+          <small>minutes</small>
+        </div>
+      </header>
+
+      <section className="detail-layout">
+        <article className="workspace-panel resource-detail-main">
+          <div className="runbook-meta">
+            <LevelBadge level={resource.level_group} />
+            <span>{resource.safety_level}</span>
+            <span>{resource.domain}</span>
+          </div>
+          <CommandBlock commands={resource.commands} title="Command surface" />
+          <h2>Outcomes</h2>
+          <ul className="check-list">
+            {resource.outcomes.map((outcome) => (
+              <li key={outcome}>{outcome}</li>
+            ))}
+          </ul>
+          <h2>Expected artifacts</h2>
+          <div className="chip-list">
+            {resource.artifacts.map((artifact) => (
+              <span key={artifact}>{artifact}</span>
+            ))}
+          </div>
+          <h2>Next steps</h2>
+          <ul className="check-list">
+            {resource.next_steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ul>
+        </article>
+
+        <aside className="detail-rail">
+          <section className="workspace-panel">
+            <p className="eyebrow">Prerequisites</p>
+            <ul className="check-list">
+              {resource.prerequisites.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Related labs</p>
+            {relatedLabs.length > 0 ? (
+              relatedLabs.map((lab) => (
+                <Link className="resource-mini-row" to={`/labs/${lab.slug}`} key={lab.slug}>
+                  <span>{lab.level_group}</span>
+                  <strong>{lab.title}</strong>
+                </Link>
+              ))
+            ) : (
+              <p>No related lab is seeded for this resource.</p>
+            )}
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Related courses</p>
+            {relatedCourses.length > 0 ? (
+              relatedCourses.map((course) => (
+                <Link className="resource-mini-row" to={`/courses/${course.id}`} key={course.id}>
+                  <span>{course.category}</span>
+                  <strong>{course.title}</strong>
+                </Link>
+              ))
+            ) : (
+              <p>No related course could be inferred from seeded labs.</p>
+            )}
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Source and review posture</p>
+            <p>No external source URL or review timestamp is seeded for this resource. Use the safety label and prerequisites as local guidance, then verify live commands against current official docs.</p>
+          </section>
+        </aside>
+      </section>
+    </section>
   );
 }
 
@@ -1441,57 +1958,110 @@ function CoursePage({ data }: { data: AcademyData }) {
   const Icon = iconForCategory(course.category);
   const progress = courseProgress(course, completed);
   const track = data.catalog.tracks.find((item) => item.course.id === course.id);
+  const courseLabs = labsForCourse(data, course);
+  const courseResources = resourcesForCourse(data, course);
 
   return (
-    <section className="page">
+    <section className="page canonical-page course-detail-page">
       <Link className="back-link" to="/">
         <ChevronLeft aria-hidden="true" />
         Courses
       </Link>
-      <header className="course-hero">
-        <Icon aria-hidden="true" />
+      <header className="workspace-header course-header">
         <div>
-          <LevelBadge level={track?.level_group ?? course.level} />
+          <div className="course-title-line">
+            <Icon aria-hidden="true" />
+            <LevelBadge level={track?.level_group ?? course.level} />
+            <span>{course.category}</span>
+          </div>
           <h1>{course.title}</h1>
           <p className="lead">{course.description}</p>
         </div>
-        <aside>
-          <span>{course.category}</span>
+        <div className="readiness-score">
+          <span>Course progress</span>
           <strong>{progress.percent}%</strong>
           <ProgressBar value={progress.percent} />
-          <p>
+          <small>
             {progress.done} of {progress.total} lessons complete
-          </p>
-        </aside>
+          </small>
+        </div>
       </header>
-      {track && (
-        <section className="outcome-panel">
-          <h2>{track.title}</h2>
-          <p>{track.summary}</p>
-          <ul>
-            {track.outcomes.map((outcome) => (
-              <li key={outcome}>{outcome}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-      <section className="lesson-list" aria-label={`${course.title} lessons`}>
-        {course.lessons.map((lesson) => (
-          <Link className="lesson-row" to={`/lessons/${lesson.id}`} key={lesson.id}>
-            <span>{lesson.sequence}</span>
-            <div>
-              <h2>{lesson.title}</h2>
-              <p>{lesson.summary}</p>
+
+      <section className="detail-layout">
+        <div className="detail-main">
+          {track && (
+            <section className="workspace-panel">
+              <p className="eyebrow">Track outcome</p>
+              <h2>{track.title}</h2>
+              <p>{track.summary}</p>
+              <ul className="check-list">
+                {track.outcomes.map((outcome) => (
+                  <li key={outcome}>{outcome}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section className="workspace-panel">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Lesson sequence</p>
+                <h2>{course.lessons.length} lessons</h2>
+              </div>
             </div>
-            {completed.has(lesson.id) ? <CheckCircle2 aria-label="Completed" /> : <ArrowRight aria-hidden="true" />}
-          </Link>
-        ))}
+            <div className="lesson-list" aria-label={`${course.title} lessons`}>
+              {course.lessons.map((lesson) => (
+                <Link className="lesson-row canonical-lesson-row" to={`/lessons/${lesson.id}`} key={lesson.id}>
+                  <span>{lesson.sequence}</span>
+                  <div>
+                    <h2>{lesson.title}</h2>
+                    <p>{lesson.summary}</p>
+                  </div>
+                  {completed.has(lesson.id) ? <CheckCircle2 aria-label="Completed" /> : <ArrowRight aria-hidden="true" />}
+                </Link>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <aside className="detail-rail">
+          <section className="workspace-panel">
+            <p className="eyebrow">Lab gates</p>
+            {courseLabs.length > 0 ? (
+              courseLabs.slice(0, 5).map((lab) => (
+                <Link className="resource-mini-row" to={`/labs/${lab.slug}`} key={lab.slug}>
+                  <span>{lab.estimated_minutes} min</span>
+                  <strong>{lab.title}</strong>
+                </Link>
+              ))
+            ) : (
+              <p>No labs are seeded for this course.</p>
+            )}
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Reusable artifacts</p>
+            {courseResources.length > 0 ? (
+              courseResources.slice(0, 6).map((resource) => (
+                <Link className="resource-mini-row" to={`/resources/${resource.slug}`} key={resource.slug}>
+                  <span>{resource.resource_type}</span>
+                  <strong>{resource.title}</strong>
+                </Link>
+              ))
+            ) : (
+              <p>No resources are linked to this course in the seeded data.</p>
+            )}
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Source and review posture</p>
+            <p>Course metadata is seeded from the local catalog. External docs links, vendor version context, and last-reviewed dates are not exposed by the current API.</p>
+          </section>
+        </aside>
       </section>
     </section>
   );
 }
 
-function LessonPage({ onProgressSaved }: { onProgressSaved: () => void }) {
+function LessonPage({ data, onProgressSaved }: { data: AcademyData; onProgressSaved: () => void }) {
   const { id = "" } = useParams();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [error, setError] = useState("");
@@ -1518,14 +2088,17 @@ function LessonPage({ onProgressSaved }: { onProgressSaved: () => void }) {
 
   if (error) return <EmptyState title="Lesson unavailable." detail={error} />;
   if (!lesson) return <EmptyState title="Loading lesson..." />;
+  const course = courseForLesson(data, lesson.id);
+  const relatedLabs = data.catalog.labs.filter((lab) => lab.lesson_id === lesson.id);
+  const relatedResources = resourcesForLesson(data, lesson.id);
 
   return (
-    <section className="page lesson-page">
-      <Link className="back-link" to="/">
+    <section className="page canonical-page lesson-page">
+      <Link className="back-link" to={course ? `/courses/${course.id}` : "/"}>
         <ChevronLeft aria-hidden="true" />
-        Academy
+        {course?.title ?? "Academy"}
       </Link>
-      <header className="page-heading lesson-heading">
+      <header className="workspace-header lesson-heading">
         <div>
           <p className="eyebrow">
             Platform Academy / {lesson.course_category} / Lesson {lesson.sequence}
@@ -1533,48 +2106,86 @@ function LessonPage({ onProgressSaved }: { onProgressSaved: () => void }) {
           <h1>{lesson.title}</h1>
           <p className="lead">{lesson.summary}</p>
         </div>
-        <button className="primary-action" disabled={saving} onClick={save}>
-          <CheckCircle2 aria-hidden="true" />
-          {saved ? "Progress saved" : saving ? "Saving..." : "Mark complete"}
-        </button>
+        <div className="workspace-actions">
+          <button className="primary-action" disabled={saving} onClick={save}>
+            <CheckCircle2 aria-hidden="true" />
+            {saved ? "Progress saved" : saving ? "Saving..." : "Mark complete"}
+          </button>
+        </div>
       </header>
 
-      <article className="lesson-body">
-        <RichContent text={lesson.body_simplified} />
-      </article>
+      <section className="detail-layout lesson-layout">
+        <div className="detail-main">
+          <article className="lesson-body workspace-panel">
+            <RichContent text={lesson.body_simplified} />
+          </article>
 
-      <section className="practice-panel">
-        <div>
-          <p className="eyebrow">Lab scenario</p>
-          <h2>Practice the lesson</h2>
-        </div>
-        <RichContent text={lesson.pinyin} />
-      </section>
+          <section className="practice-panel workspace-panel">
+            <div>
+              <p className="eyebrow">Lab scenario</p>
+              <h2>Practice the lesson</h2>
+            </div>
+            <RichContent text={lesson.pinyin} />
+          </section>
 
-      <section className="detail-grid">
-        <div>
-          <h2>Key terms</h2>
-          <div className="term-grid">
-            {lesson.vocabulary.map((term) => (
-              <article className="term-card" key={term.id}>
-                <strong>{term.simplified}</strong>
-                <span>{term.pinyin}</span>
-                <p>{term.definition}</p>
-              </article>
-            ))}
-          </div>
+          <section className="workspace-panel">
+            <h2>Key terms</h2>
+            <div className="term-grid">
+              {lesson.vocabulary.map((term) => (
+                <article className="term-card" key={term.id}>
+                  <strong>{term.simplified}</strong>
+                  <span>{term.pinyin}</span>
+                  <p>{term.definition}</p>
+                </article>
+              ))}
+            </div>
+          </section>
         </div>
-        <div>
-          <h2>Review flashcards</h2>
-          <div className="review-list">
-            {lesson.flashcards.map((card) => (
-              <article key={card.id}>
-                <strong>{card.prompt}</strong>
-                <p>{card.answer}</p>
-              </article>
-            ))}
-          </div>
-        </div>
+
+        <aside className="detail-rail">
+          <section className="workspace-panel">
+            <p className="eyebrow">Review flashcards</p>
+            <div className="review-list">
+              {lesson.flashcards.map((card) => (
+                <article key={card.id}>
+                  <strong>{card.prompt}</strong>
+                  <p>{card.answer}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Related lab gates</p>
+            {relatedLabs.length > 0 ? (
+              relatedLabs.map((lab) => (
+                <Link className="resource-mini-row" to={`/labs/${lab.slug}`} key={lab.slug}>
+                  <span>{lab.level_group}</span>
+                  <strong>{lab.title}</strong>
+                </Link>
+              ))
+            ) : (
+              <p>No lab is linked to this lesson in the seeded data.</p>
+            )}
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Related resources</p>
+            {relatedResources.length > 0 ? (
+              relatedResources.slice(0, 5).map((resource) => (
+                <Link className="resource-mini-row" to={`/resources/${resource.slug}`} key={resource.slug}>
+                  <span>{resource.resource_type}</span>
+                  <strong>{resource.title}</strong>
+                </Link>
+              ))
+            ) : (
+              <p>No resource is linked to this lesson in the seeded data.</p>
+            )}
+          </section>
+          <section className="workspace-panel">
+            <p className="eyebrow">Source and review posture</p>
+            <p>Lesson content is loaded from the local API. No external source URL, version target, or last-reviewed timestamp is present in the lesson payload.</p>
+            <p>Use the linked lab checklist and resource artifacts as the completion evidence.</p>
+          </section>
+        </aside>
       </section>
     </section>
   );
@@ -1614,13 +2225,16 @@ export default function App() {
     <AppShell>
       <Routes>
         <RouterRoute path="/" element={<DashboardPage data={data} />} />
+        <RouterRoute path="/dashboard/home" element={<DashboardPage data={data} />} />
         <RouterRoute path="/roadmap" element={<RoadmapPage data={data} />} />
         <RouterRoute path="/labs" element={<LabsPage data={data} />} />
+        <RouterRoute path="/labs/:slug" element={<LabDetailPage data={data} />} />
         <RouterRoute path="/resources" element={<ResourcesPage data={data} />} />
+        <RouterRoute path="/resources/:slug" element={<ResourceDetailPage data={data} />} />
         <RouterRoute path="/designs" element={<DesignsIndexPage data={data} />} />
         <RouterRoute path="/designs/:id" element={<DesignVariantPage data={data} />} />
         <RouterRoute path="/courses/:id" element={<CoursePage data={data} />} />
-        <RouterRoute path="/lessons/:id" element={<LessonPage onProgressSaved={loadData} />} />
+        <RouterRoute path="/lessons/:id" element={<LessonPage data={data} onProgressSaved={loadData} />} />
         <RouterRoute path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>
