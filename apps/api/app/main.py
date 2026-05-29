@@ -112,6 +112,7 @@ ACHIEVEMENTS = [
 def ensure_user(db: Session, user_id: str) -> None:
     if not db.get(User, user_id):
         db.add(User(id=user_id, display_name=user_id, subscription_status="mock_active"))
+        db.flush()
 
 
 def add_xp_event(db: Session, user_id: str, source: str, source_id: int, xp: int) -> None:

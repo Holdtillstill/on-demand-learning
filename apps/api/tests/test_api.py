@@ -172,6 +172,26 @@ def test_progress_and_quiz_attempt():
     assert attempt.json()["score"] == 0.8
 
 
+def test_progress_creates_guest_user_before_progress_rows():
+    courses = client.get("/api/courses?domain=platform").json()
+    lesson_id = courses[0]["lessons"][0]["id"]
+    user_id = "guest-api-progress-regression"
+
+    progress = client.post("/api/progress", json={"user_id": user_id, "lesson_id": lesson_id, "completed": True, "score": 1})
+    assert progress.status_code == 200
+    assert progress.json()["user_id"] == user_id
+    assert progress.json()["completed"] is True
+
+    rows = client.get(f"/api/progress/{user_id}")
+    assert rows.status_code == 200
+    assert any(row["lesson_id"] == lesson_id and row["completed"] for row in rows.json())
+
+    dashboard = client.get(f"/api/users/{user_id}/dashboard")
+    assert dashboard.status_code == 200
+    assert dashboard.json()["completed_lessons"] >= 1
+    assert dashboard.json()["xp"]["lesson_completion_xp"] >= 20
+
+
 def test_search_and_metrics():
     search = client.get("/api/search?q=Tang")
     assert search.status_code == 200
