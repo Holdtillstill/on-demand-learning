@@ -354,8 +354,9 @@ function AppShell({ children, learnerId, onResetLearner }: { children: React.Rea
             <div className="learner-profile" aria-label="Active learner profile">
               <UserRound aria-hidden="true" />
               <div>
+                <span className="learner-profile-label">Guest workspace</span>
                 <strong>{learnerId}</strong>
-                <span>Local guest workspace in this browser</span>
+                <span>Browser-local progress</span>
               </div>
               <button
                 aria-label="Start a new local guest workspace"
@@ -365,7 +366,7 @@ function AppShell({ children, learnerId, onResetLearner }: { children: React.Rea
                 type="button"
               >
                 <RefreshCcw aria-hidden="true" />
-                New local profile
+                New profile
               </button>
             </div>
             <div className="topline-actions">

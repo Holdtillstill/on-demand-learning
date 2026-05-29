@@ -250,7 +250,8 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("Track pipeline")).toBeInTheDocument();
     expect(screen.getByText("Readiness gates")).toBeInTheDocument();
     expect(screen.getByText(testLearnerId)).toBeInTheDocument();
-    expect(screen.getByText("Local guest workspace in this browser")).toBeInTheDocument();
+    expect(screen.getByText("Guest workspace")).toBeInTheDocument();
+    expect(screen.getByText("Browser-local progress")).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/progress/${testLearnerId}`));
     expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/users/${testLearnerId}/dashboard`));
   });
