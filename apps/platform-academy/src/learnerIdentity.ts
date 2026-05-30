@@ -1,6 +1,7 @@
 export const LOCAL_LEARNER_ID_KEY = "platform-academy-learner-id";
 
 const LEARNER_ID_PREFIX = "guest-";
+const RECOVERABLE_LEARNER_ID_PATTERN = /^guest-[a-z0-9]{12}$/i;
 const RANDOM_BYTE_COUNT = 6;
 
 function randomIdPart() {
@@ -49,4 +50,19 @@ export function resetLocalLearnerId() {
   const learnerId = createLocalLearnerId();
   storeLocalLearnerId(learnerId);
   return learnerId;
+}
+
+export function normalizeLocalLearnerId(learnerId: string) {
+  return learnerId.trim().toLowerCase();
+}
+
+export function isRecoverableLocalLearnerId(learnerId: string) {
+  return RECOVERABLE_LEARNER_ID_PATTERN.test(normalizeLocalLearnerId(learnerId));
+}
+
+export function restoreLocalLearnerId(learnerId: string) {
+  const normalizedLearnerId = normalizeLocalLearnerId(learnerId);
+  if (!isRecoverableLocalLearnerId(normalizedLearnerId)) return "";
+  storeLocalLearnerId(normalizedLearnerId);
+  return normalizedLearnerId;
 }

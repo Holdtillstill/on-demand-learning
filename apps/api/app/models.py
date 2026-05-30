@@ -124,6 +124,18 @@ class Progress(Base):
     lesson: Mapped[Lesson] = relationship()
 
 
+class PlatformActivity(Base):
+    __tablename__ = "platform_activity"
+    __table_args__ = (UniqueConstraint("user_id", "target_type", "target_id", name="uq_platform_activity_target"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    target_type: Mapped[str] = mapped_column(String(80), index=True)
+    target_id: Mapped[str] = mapped_column(String(240), index=True)
+    state: Mapped[str] = mapped_column(String(40), default="completed", index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class XpEvent(Base):
     __tablename__ = "xp_events"
     __table_args__ = (UniqueConstraint("user_id", "source", "source_id", name="uq_xp_event_source"),)

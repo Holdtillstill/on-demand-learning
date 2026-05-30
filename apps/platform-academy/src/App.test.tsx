@@ -143,7 +143,7 @@ const roadmap = {
 
 const resources = {
   domains: ["Kubernetes", "EKS", "Terraform", "FinOps"],
-  types: ["cheatsheet", "runbook", "project brief"],
+  types: ["cheatsheet", "runbook", "project brief", "official reference"],
   resources: [
     {
       slug: "kubernetes-debugging-cheatsheet",
@@ -164,6 +164,62 @@ const resources = {
       source_url: "https://kubernetes.io/docs/tasks/debug/",
       source_label: "Kubernetes official debugging docs",
       reviewed_at: "2026-05-20"
+    },
+    {
+      slug: "kubernetes-official-reference",
+      title: "Kubernetes Official Reference",
+      domain: "Kubernetes",
+      level_group: "Fresher",
+      resource_type: "official reference",
+      estimated_minutes: 25,
+      summary: "Curated official docs reading path for Kubernetes operations.",
+      outcomes: ["Anchor answers in official Kubernetes docs."],
+      prerequisites: ["Kubernetes object basics"],
+      safety_level: "local-safe",
+      commands: ["kubectl explain pod"],
+      artifacts: ["official source trail"],
+      related_lessons: [201, 202],
+      related_labs: ["trace-service-to-pod"],
+      next_steps: ["Pair docs with a lab"],
+      source_url: "https://kubernetes.io/docs/tasks/debug/",
+      source_label: "Kubernetes official debugging docs",
+      reviewed_at: "2026-05-20"
+    }
+  ]
+};
+
+const interviewPrep = {
+  domains: ["Kubernetes"],
+  levels: ["Fresher"],
+  total_questions: 2,
+  packs: [
+    {
+      slug: "kubernetes-debugging-interview-pack",
+      title: "Kubernetes Debugging Interview Pack",
+      domain: "Kubernetes",
+      level_group: "Fresher",
+      focus: "Service routing, rollouts, Pods, probes, requests, and safe kubectl evidence collection.",
+      related_course_slug: "platform-kubernetes-fundamentals",
+      related_labs: ["trace-service-to-pod"],
+      official_sources: [{ label: "Kubernetes official debugging docs", url: "https://kubernetes.io/docs/tasks/debug/" }],
+      questions: [
+        {
+          question: "A Service returns 503 after a label cleanup. Walk me through your diagnosis.",
+          scenario: "A deployment is running, the Service exists, and users get intermittent 503s.",
+          answer_outline: ["Read the Service selector.", "Compare Pod labels.", "Inspect EndpointSlices."],
+          strong_signals: ["Mentions EndpointSlices"],
+          red_flags: ["Deletes Pods first"],
+          practice_task: "Use the trace-service-to-pod lab."
+        },
+        {
+          question: "What evidence do you collect before restarting a failing workload?",
+          scenario: "On-call wants to restart checkout during an incident.",
+          answer_outline: ["Capture describe output.", "Save previous logs."],
+          strong_signals: ["Preserves previous logs"],
+          red_flags: ["Restarts before evidence"],
+          practice_task: "Write a restart decision note."
+        }
+      ]
     }
   ]
 };
@@ -183,17 +239,23 @@ const dashboard = {
 function stubAcademyFetch() {
   vi.stubGlobal(
     "fetch",
-    vi.fn((input: RequestInfo | URL) => {
+    vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
       if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
       if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+      if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
       if (url.includes("/api/lessons/201")) return jsonResponse(lesson201);
       if (url.includes("/api/lessons/202")) return jsonResponse(lesson202);
+      if (url.includes(`/api/platform-academy/activity/${testLearnerId}`)) return jsonResponse([]);
       if (url.includes(`/api/progress/${testLearnerId}`)) {
         return jsonResponse([{ id: 1, user_id: testLearnerId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
       }
       if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
+      if (url.endsWith("/api/platform-academy/activity")) {
+        const body = JSON.parse(String(init?.body ?? "{}"));
+        return jsonResponse({ id: 42, ...body, updated_at: "2026-05-28T00:00:00" });
+      }
       if (url.endsWith("/api/progress")) {
         return jsonResponse({ id: 2, user_id: testLearnerId, lesson_id: 202, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" });
       }
@@ -232,6 +294,7 @@ describe("Platform Academy app", () => {
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([{ id: 1, user_id: testLearnerId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
         if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
         return jsonResponse([]);
@@ -249,11 +312,63 @@ describe("Platform Academy app", () => {
     expect(screen.getAllByText("Kubernetes Fundamentals").length).toBeGreaterThan(0);
     expect(screen.getByText("Track pipeline")).toBeInTheDocument();
     expect(screen.getByText("Readiness gates")).toBeInTheDocument();
+    expect(screen.getByText("Interview bank")).toBeInTheDocument();
+    expect(screen.getByText("Interview sprint")).toBeInTheDocument();
+    expect(screen.getByText("Resume profile")).toBeInTheDocument();
+    expect(screen.getByText("Kubernetes Fundamentals: Containers, Images, and Pods")).toBeInTheDocument();
+    expect(screen.getAllByRole("progressbar").length).toBeGreaterThan(0);
     expect(screen.getByText(testLearnerId)).toBeInTheDocument();
     expect(screen.getByText("Guest workspace")).toBeInTheDocument();
     expect(screen.getByText("Browser-local progress")).toBeInTheDocument();
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/progress/${testLearnerId}`));
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/users/${testLearnerId}/dashboard`));
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/progress/${testLearnerId}`), expect.objectContaining({ cache: "no-store" }));
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining(`/api/platform-academy/activity/${testLearnerId}`),
+      expect.objectContaining({ cache: "no-store" })
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining(`/api/users/${testLearnerId}/dashboard?domain=platform`),
+      expect.objectContaining({ cache: "no-store" })
+    );
+  });
+
+  it("renders source-backed interview preparation packs", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/interview-prep"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Interview prep command center" })).toBeInTheDocument();
+    expect(screen.getAllByText("Kubernetes Debugging Interview Pack").length).toBeGreaterThan(0);
+    expect(screen.getByText("Study links")).toBeInTheDocument();
+    expect(screen.getByText("A Service returns 503 after a label cleanup. Walk me through your diagnosis.")).toBeInTheDocument();
+    expect(screen.getAllByText("Strong signals").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Red flags").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Study this").length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /course: kubernetes fundamentals/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /resource: kubernetes official reference/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /lab: trace service traffic to ready pods/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /kubernetes official debugging docs/i })[0]).toHaveAttribute(
+      "href",
+      "https://kubernetes.io/docs/tasks/debug/"
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: /mark practiced/i })[0]);
+    await waitFor(() => expect(screen.getByRole("button", { name: /practiced/i })).toBeInTheDocument());
+    const fetchMock = vi.mocked(fetch);
+    const postCall = fetchMock.mock.calls.find(([input, init]) => {
+      const requestInit = init as RequestInit | undefined;
+      return String(input).endsWith("/api/platform-academy/activity") && requestInit?.method === "POST";
+    });
+    expect(postCall).toBeDefined();
+    expect(JSON.parse(String((postCall?.[1] as RequestInit).body))).toMatchObject({
+      user_id: testLearnerId,
+      target_type: "interview_question",
+      target_id: "kubernetes-debugging-interview-pack:1",
+      state: "completed"
+    });
   });
 
   it("regenerates the local guest profile and reloads progress for the new id", async () => {
@@ -263,11 +378,12 @@ describe("Platform Academy app", () => {
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
         const progressMatch = url.match(/\/api\/progress\/([^/]+)$/);
-        const dashboardMatch = url.match(/\/api\/users\/([^/]+)\/dashboard$/);
+        const dashboardMatch = url.match(/\/api\/users\/([^/?]+)\/dashboard(?:\?.*)?$/);
 
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (progressMatch) {
           requestedProgressIds.push(decodeURIComponent(progressMatch[1]));
           return jsonResponse([]);
@@ -291,7 +407,49 @@ describe("Platform Academy app", () => {
     expect(regeneratedLearnerId).toMatch(/^guest-[a-z0-9]+$/i);
     expect(regeneratedLearnerId).not.toBe(testLearnerId);
     await waitFor(() => expect(requestedProgressIds).toContain(regeneratedLearnerId));
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/users/${regeneratedLearnerId}/dashboard`));
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/users/${regeneratedLearnerId}/dashboard`), expect.objectContaining({ cache: "no-store" }));
+  });
+
+  it("restores a saved guest recovery key and reloads progress", async () => {
+    const restoredLearnerId = "guest-abc123def456";
+    const requestedProgressIds: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        const progressMatch = url.match(/\/api\/progress\/([^/]+)$/);
+        const dashboardMatch = url.match(/\/api\/users\/([^/?]+)\/dashboard(?:\?.*)?$/);
+
+        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
+        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
+        if (progressMatch) {
+          const userId = decodeURIComponent(progressMatch[1]);
+          requestedProgressIds.push(userId);
+          return jsonResponse([{ id: 7, user_id: userId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
+        }
+        if (dashboardMatch) return jsonResponse({ ...dashboard, user_id: decodeURIComponent(dashboardMatch[1]), completed_lessons: 1 });
+        return jsonResponse([]);
+      })
+    );
+
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Platform Academy" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /open guest recovery key/i }));
+    expect(screen.getByRole("dialog", { name: /save or restore progress/i })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/restore saved key/i), { target: { value: restoredLearnerId.toUpperCase() } });
+    fireEvent.click(screen.getByRole("button", { name: /restore profile/i }));
+
+    await waitFor(() => expect(requestedProgressIds).toContain(restoredLearnerId));
+    expect(localStorage.getItem(LOCAL_LEARNER_ID_KEY)).toBe(restoredLearnerId);
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/users/${restoredLearnerId}/dashboard`), expect.objectContaining({ cache: "no-store" }));
   });
 
   it("renders a comprehensive resources library", async () => {
@@ -301,6 +459,7 @@ describe("Platform Academy app", () => {
         const url = String(input);
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (url.includes("/api/platform-academy/resources")) {
           return jsonResponse({
             domains: ["Kubernetes", "EKS", "Terraform", "FinOps"],
@@ -353,6 +512,7 @@ describe("Platform Academy app", () => {
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
         if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
         return jsonResponse([]);
@@ -475,7 +635,24 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Containers, Images, and Pods" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /next lesson services, labels, selectors, and namespaces/i })).toHaveAttribute("href", "/lessons/202");
+    expect(screen.getByRole("link", { name: /next lesson services, labels, selectors, and namespaces/i })).toHaveAttribute(
+      "href",
+      "/courses/platform-kubernetes-fundamentals/lessons/2"
+    );
+  });
+
+  it("blocks lessons outside the Platform Academy catalog", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/lessons/1"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Lesson outside Platform Academy." })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /mark complete/i })).not.toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalledWith(expect.stringContaining("/api/lessons/1"));
   });
 
   it("automatically saves lesson progress after the learner scrolls to the bottom", async () => {
@@ -495,6 +672,7 @@ describe("Platform Academy app", () => {
     fireEvent.scroll(window);
 
     await waitFor(() => expect(screen.getByRole("button", { name: /progress saved/i })).toBeInTheDocument());
+    expect(screen.getByText("Completed automatically after reading.")).toBeInTheDocument();
     fireEvent.scroll(window);
     const fetchMock = vi.mocked(fetch);
     await waitFor(() => {
@@ -519,6 +697,7 @@ describe("Platform Academy app", () => {
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse({ ...resources, resources: manyResources });
+        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
         if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
         return jsonResponse([]);
@@ -553,6 +732,9 @@ describe("Platform Academy app", () => {
       "https://kubernetes.io/docs/tasks/debug/"
     );
     expect(screen.getByText("Reviewed May 20, 2026")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /mark reviewed/i }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /review saved/i })).toBeInTheDocument());
   });
 
   it("covers lab and lesson detail routes with linked artifacts", async () => {
@@ -565,7 +747,7 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Trace Service traffic to ready Pods" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /open linked lesson/i })).toHaveAttribute("href", "/lessons/202");
+    expect(screen.getByRole("link", { name: /open linked lesson/i })).toHaveAttribute("href", "/courses/platform-kubernetes-fundamentals/lessons/2");
     expect(screen.getByRole("link", { name: /kubernetes debugging cheatsheet/i })).toHaveAttribute("href", "/resources/kubernetes-debugging-cheatsheet");
 
     cleanup();

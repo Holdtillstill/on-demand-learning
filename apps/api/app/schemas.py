@@ -194,6 +194,11 @@ class PlatformAcademyRoadmapOut(BaseModel):
     stages: list[PlatformRoadmapStageOut]
 
 
+class PlatformOfficialSourceOut(BaseModel):
+    label: str
+    url: str
+
+
 class PlatformResourceOut(BaseModel):
     slug: str
     title: str
@@ -210,6 +215,10 @@ class PlatformResourceOut(BaseModel):
     related_lessons: list[int] = Field(default_factory=list)
     related_labs: list[str] = Field(default_factory=list)
     next_steps: list[str]
+    source_takeaways: list[str] = Field(default_factory=list)
+    study_tasks: list[str] = Field(default_factory=list)
+    interview_prompts: list[str] = Field(default_factory=list)
+    official_sources: list[PlatformOfficialSourceOut] = Field(default_factory=list)
     source_url: Optional[str] = None
     source_label: Optional[str] = None
     reviewed_at: Optional[str] = None
@@ -219,6 +228,34 @@ class PlatformResourcesOut(BaseModel):
     domains: list[str]
     types: list[str]
     resources: list[PlatformResourceOut]
+
+
+class PlatformInterviewQuestionOut(BaseModel):
+    question: str
+    scenario: str
+    answer_outline: list[str]
+    strong_signals: list[str]
+    red_flags: list[str]
+    practice_task: str
+
+
+class PlatformInterviewPrepOut(BaseModel):
+    slug: str
+    title: str
+    domain: str
+    level_group: str
+    focus: str
+    related_course_slug: str
+    related_labs: list[str]
+    official_sources: list[PlatformOfficialSourceOut]
+    questions: list[PlatformInterviewQuestionOut]
+
+
+class PlatformInterviewPrepIndexOut(BaseModel):
+    domains: list[str]
+    levels: list[str]
+    total_questions: int
+    packs: list[PlatformInterviewPrepOut]
 
 
 class VocabularyIn(BaseModel):
@@ -266,6 +303,20 @@ class ProgressIn(BaseModel):
 
 
 class ProgressOut(ProgressIn):
+    id: int
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PlatformActivityIn(BaseModel):
+    user_id: str = "demo-user"
+    target_type: str = Field(min_length=1, max_length=80)
+    target_id: str = Field(min_length=1, max_length=240)
+    state: str = Field(default="completed", min_length=1, max_length=40)
+
+
+class PlatformActivityOut(PlatformActivityIn):
     id: int
     updated_at: datetime
 

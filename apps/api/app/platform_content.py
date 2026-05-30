@@ -1897,6 +1897,233 @@ PLATFORM_COURSES.extend(
     ]
 )
 
+PLATFORM_COURSES.extend(
+    [
+        platform_foundation_course(
+            "platform-docker-image-supply-chain",
+            "Docker Image and Supply Chain Operations",
+            FRESHER_LEVEL,
+            "Docker",
+            "Build production-ready container images with clear runtime contracts, multi-stage builds, immutable promotion, scanning, SBOMs, and safe registry habits.",
+            [
+                (
+                    "Dockerfile Foundations and Runtime Contract",
+                    "Write Dockerfiles that make the application runtime obvious, repeatable, and inspectable.",
+                    "A production Dockerfile is an operations document as much as a build recipe. Base image choice, working directory, copied files, user, exposed port, entrypoint, healthcheck, and build context all shape how the image behaves in CI, Kubernetes, and incidents.",
+                    "Practice reading Dockerfiles for hidden assumptions: root user, broad COPY statements, unpinned package installs, secret leakage, missing CA certificates, and startup commands that differ from the app contract.",
+                    "Review one Dockerfile and produce a runtime contract: process, port, filesystem writes, required env vars, user, health endpoint, and how to collect logs.",
+                ),
+                (
+                    "Multi-stage Builds and Image Size",
+                    "Separate build tooling from runtime images without losing debuggability.",
+                    "Multi-stage builds let you compile or package in one stage and copy only required runtime artifacts into the final image. The goal is not just smaller images; it is fewer packages, fewer vulnerabilities, faster pulls, clearer provenance, and less accidental state.",
+                    "Practice comparing single-stage and multi-stage outputs with image history, file listings, package inventory, and rebuild cache behavior. Look for compilers, package managers, tests, credentials, and temporary files that should not reach runtime.",
+                    "Convert a single-stage app Dockerfile into a two-stage build and write a short note explaining size, security, cache, and rollback impact.",
+                ),
+                (
+                    "Tags, Digests, Registries, and Promotion",
+                    "Promote exact image content through environments instead of relying on movable labels.",
+                    "Tags are convenient names, but digests identify immutable content. A release process should preserve the exact artifact that passed tests and make it easy to answer what changed, who promoted it, and how to roll back.",
+                    "Practice tracing an image from local build to registry to Kubernetes manifest. Compare tags, digests, OCI labels, registry retention, pull secrets, and environment promotion records.",
+                    "Write an artifact promotion record that includes source commit, image digest, scan status, target environment, approver, deployment timestamp, and rollback digest.",
+                ),
+                (
+                    "Image Scanning, SBOMs, and Runtime User",
+                    "Treat image security findings as operational risk instead of dashboard noise.",
+                    "Image security combines vulnerability scanning, software bill of materials, base image updates, non-root runtime, least privilege, and registry governance. The platform team should define which findings block release and which become tracked risk.",
+                    "Practice reviewing a scan result and separating exploitable runtime risk from irrelevant build-only noise. Check USER, file ownership, writable paths, package inventory, and whether scanners can map findings to actual runtime components.",
+                    "Create an image review checklist that a hiring manager could believe: severity policy, exception owner, SBOM location, runtime user, exposed ports, update cadence, and proof of promotion by digest.",
+                ),
+            ],
+        ),
+        platform_foundation_course(
+            "platform-aws-operations-foundations",
+            "AWS Operations Foundations for Platform Engineers",
+            INTERMEDIATE_LEVEL,
+            "AWS Operations",
+            "Operate AWS-backed platforms through Well-Architected thinking, CloudWatch signals, VPC request paths, load balancer health, backups, and change safety.",
+            [
+                (
+                    "AWS Operational Excellence and Ownership",
+                    "Translate AWS service sprawl into owned, observable, reviewable operations.",
+                    "Operational excellence means teams know who owns each workload, how changes are made, which signals matter, what risks are accepted, and how lessons improve the system. In AWS interviews, strong answers connect account structure, IAM, networking, telemetry, and recovery into one operating model.",
+                    "Practice writing an ownership map for one service: account, region, VPC, load balancer, compute, database, DNS, alarms, runbook, deploy path, and escalation owner.",
+                    "Create an AWS operations readiness review with owner, blast radius, backup expectation, alarm strategy, deployment path, and break-glass notes.",
+                ),
+                (
+                    "CloudWatch Metrics, Logs, Alarms, and Dashboards",
+                    "Use CloudWatch as a hypothesis tool, not a pile of disconnected alarms.",
+                    "CloudWatch gives metrics, logs, alarms, dashboards, synthetics, application signals, and cross-account visibility. Good operators decide which signal confirms user impact, which signal explains a dependency, and which signal belongs in a ticket instead of a page.",
+                    "Practice reviewing an alarm inventory for missing owners, no runbook, no datapoint window, noisy thresholds, duplicate cause alerts, and dashboards that cannot show user impact.",
+                    "Design one dashboard for an ALB-backed EKS service that starts with request count, 5xx, latency, target health, pod readiness, deploy timestamp, and dependency saturation.",
+                ),
+                (
+                    "VPC, Load Balancer, Route 53, and Health Paths",
+                    "Debug cloud connectivity by tracing one request path end to end.",
+                    "A request can fail at DNS, TLS, load balancer listener, target group health, security group, subnet route, node, Service, EndpointSlice, Pod readiness, or application dependency. AWS operations skill is knowing which layer produced the symptom.",
+                    "Practice drawing Route 53 to ALB to target group to node or Pod IP to Kubernetes Service to Pod. Include security groups, subnets, route tables, NAT, and health check paths.",
+                    "Given an unhealthy target group, produce a read-only investigation plan that checks AWS target health, ALB logs, security groups, Ingress events, EndpointSlices, and pod readiness.",
+                ),
+                (
+                    "Reliability Reviews, Backups, and Change Safety",
+                    "Protect AWS workloads with explicit recovery objectives and reversible changes.",
+                    "Reliability is designed through failure isolation, quotas, scaling, backups, restore tests, deployment safety, and known rollback paths. Backups without restore drills are promises, not evidence.",
+                    "Practice defining RTO, RPO, backup ownership, restore proof, single-AZ risk, quota headroom, deployment rollback, and a game-day scenario for one platform service.",
+                    "Write a reliability review that explains what happens when one AZ fails, a bad deploy ships, a database restore is needed, or CloudWatch alarms become noisy.",
+                ),
+            ],
+        ),
+        platform_foundation_course(
+            "platform-observability-telemetry-engineering",
+            "Observability and Telemetry Engineering",
+            ADVANCED_LEVEL,
+            "Observability",
+            "Design metrics, logs, traces, OpenTelemetry pipelines, Prometheus alerts, dashboards, and ownership rules that reduce incident time instead of creating telemetry noise.",
+            [
+                (
+                    "Metrics, Logs, Traces, and OpenTelemetry Signals",
+                    "Choose the right signal for the question under pressure.",
+                    "Metrics show trends and alert conditions, logs explain discrete events, traces connect request hops, and OpenTelemetry provides a vendor-neutral model for producing and moving those signals. Interview-ready answers explain when each signal changes the next action.",
+                    "Practice taking one latency incident and mapping which question is answered by RED metrics, which by logs, which by traces, and which by Kubernetes events.",
+                    "Create a signal decision table for one service: user symptom, metric panel, log field, trace span, owner, retention, and cost risk.",
+                ),
+                (
+                    "Instrumentation, Context Propagation, and Sampling",
+                    "Make telemetry coherent across services without collecting everything forever.",
+                    "Instrumentation must preserve context across service boundaries so a request can be followed. Sampling decides which traces to keep. Poor propagation, unbounded attributes, and inconsistent service names turn observability into expensive guesswork.",
+                    "Practice reviewing instrumentation for service.name, environment, version, route, status, trace ID in logs, baggage boundaries, and attributes that could explode cardinality.",
+                    "Write an instrumentation review for a checkout path that includes propagation, sampling, semantic attributes, logs correlation, and privacy redaction.",
+                ),
+                (
+                    "Prometheus Alert Quality and Cardinality",
+                    "Build alerts that are actionable and metrics that stay affordable.",
+                    "Prometheus-style systems reward clear metric names and stable labels. Alerts should represent urgent, actionable conditions tied to user pain or imminent resource exhaustion. High-cardinality labels and cause-only pages make systems slower and responders tired.",
+                    "Practice reviewing a PrometheusRule for `for` duration, severity labels, owner, runbook URL, grouping, inhibition, symptom-versus-cause, and labels that include user IDs or request IDs.",
+                    "Rewrite one noisy alert into a better symptom alert with routing labels, runbook, threshold reasoning, and dashboard link.",
+                ),
+                (
+                    "Dashboards, Runbooks, and Telemetry Operations",
+                    "Operate telemetry as a production dependency with owners and budgets.",
+                    "Dashboards should answer whether users are hurt, where the blast radius is, what changed, and which dependency is saturated. Telemetry platforms also need retention policy, access control, cost review, pipeline health, and incident runbooks.",
+                    "Practice designing a dashboard hierarchy: executive symptom view, service drilldown, dependency view, Kubernetes capacity view, and deployment/change timeline.",
+                    "Create an observability readiness artifact with dashboards, alert inventory, log fields, trace coverage, ownership, retention, and telemetry cost guardrails.",
+                ),
+            ],
+        ),
+        platform_foundation_course(
+            "platform-incident-response-reliability",
+            "Incident Response and Reliability Leadership",
+            ADVANCED_LEVEL,
+            "Incident Response",
+            "Practice incident command, severity, mitigation, communications, timelines, postmortems, corrective actions, and game days for platform roles.",
+            [
+                (
+                    "Incident Roles, Severity, and First Response",
+                    "Declare incidents early and give responders clear roles before coordination fails.",
+                    "Incident response is a social and technical system. Clear incident command, operations, communications, planning, severity, and decision logging prevent freelancing during stress. Strong responders separate user impact, mitigation, diagnosis, and long-term fix.",
+                    "Practice receiving a page and writing the first five minutes: declare or not, severity, commander, comms channel, symptom, affected users, current mitigation, next update time.",
+                    "Run a tabletop where one person is incident commander, one handles operations, one writes comms, and one maintains the timeline.",
+                ),
+                (
+                    "Timeline, Communications, and Mitigation",
+                    "Keep users and responders aligned while reducing blast radius.",
+                    "During incidents, communication is part of mitigation. A timeline records what changed and when. Mitigation choices should stop the bleeding while preserving evidence and avoiding uncoordinated production changes.",
+                    "Practice writing stakeholder updates that are honest about impact, action, uncertainty, next update time, and owner without dumping raw debugging details.",
+                    "Produce a live incident document with status, impact, suspected trigger, actions taken, commands run, decisions, owners, and handoff notes.",
+                ),
+                (
+                    "Postmortems and Corrective Actions",
+                    "Turn painful failures into system improvements without blame.",
+                    "A postmortem should explain impact, contributing factors, detection gaps, response behavior, mitigation, root causes, and corrective actions. The best actions reduce recurrence or impact; they are owned, dated, and reviewable.",
+                    "Practice converting a vague action like 'be more careful' into specific work: add canary gate, tighten alert, fix dashboard, change runbook, add test, reduce timeout, improve rollback.",
+                    "Write a postmortem summary that includes what went well, what made response harder, action owners, and how the platform will verify improvement.",
+                ),
+                (
+                    "Game Days and Incident Readiness",
+                    "Rehearse failure before the real outage writes the exam.",
+                    "Game days test people, dashboards, runbooks, automation, and recovery assumptions. They should be scoped, safe, and measured. The goal is not theater; it is finding gaps while the stakes are lower.",
+                    "Practice designing a game day for DNS failure, bad deploy, unavailable AZ, exhausted Pod IPs, or noisy alerts. Include abort criteria and customer-safety boundaries.",
+                    "Create an incident readiness calendar with quarterly scenarios, owners, expected evidence, and improvement backlog review.",
+                ),
+            ],
+        ),
+        platform_foundation_course(
+            "platform-finops-kubernetes-aws",
+            "FinOps for Kubernetes and AWS Platforms",
+            ADVANCED_LEVEL,
+            "FinOps",
+            "Learn cost visibility, ownership, right-sizing, Kubernetes waste, AWS EKS cost drivers, guardrails, and finance-friendly tradeoff communication.",
+            [
+                (
+                    "Cost Visibility, Tags, and Ownership",
+                    "Make cloud cost explainable before trying to optimize it.",
+                    "FinOps starts with visibility and accountability: accounts, tags, labels, allocation rules, shared platform costs, owner reviews, and business context. A platform team needs to show not only spend, but why spend exists.",
+                    "Practice building a cost ownership model that maps AWS account, cluster, namespace, service, owner, environment, team, and cost center.",
+                    "Create a cost review artifact with top drivers, owner, trend, unit metric, avoidable waste, and reliability constraints.",
+                ),
+                (
+                    "Kubernetes Requests, Waste, and Right-sizing",
+                    "Reduce idle capacity without creating noisy neighbors or outages.",
+                    "Kubernetes cost is shaped by requests, limits, node shape, autoscaling, bin packing, topology constraints, DaemonSets, and workload schedules. Right-sizing is a reliability decision as well as a finance decision.",
+                    "Practice comparing requested CPU/memory with actual usage, restart history, throttling, OOMKilled events, HPA behavior, and PDB constraints.",
+                    "Write a right-sizing recommendation that includes expected savings, risk, validation window, rollback plan, and owner approval.",
+                ),
+                (
+                    "AWS Cost Drivers for EKS Platforms",
+                    "Find the cloud bill surprises that hide outside worker nodes.",
+                    "EKS platform costs include EC2 or Fargate compute, EBS, snapshots, load balancers, NAT Gateways, cross-AZ data, logs, metrics, traces, public IPs, support, and third-party tooling. The surprise is often network or observability, not Pods.",
+                    "Practice building a cost driver map for one EKS service from request path to compute, network, storage, and telemetry usage.",
+                    "Produce an EKS cost investigation note that ranks compute, storage, load balancer, NAT, data transfer, and telemetry hypotheses.",
+                ),
+                (
+                    "FinOps Review Cadence and Guardrails",
+                    "Make cost optimization a durable operating habit instead of a panic exercise.",
+                    "FinOps works when teams have a regular review cadence, guardrails, budgets, anomaly detection, exception process, and a way to evaluate savings against reliability and delivery impact.",
+                    "Practice writing cost guardrails: required tags, namespace quotas, idle resource reports, log retention tiers, load balancer review, budget alerts, and exception expiry.",
+                    "Build a monthly platform FinOps review agenda with business context, technical recommendations, risks, owners, and follow-up evidence.",
+                ),
+            ],
+        ),
+        platform_foundation_course(
+            "platform-career-job-search-sprint",
+            "Platform Engineering Job Search Sprint",
+            ADVANCED_LEVEL,
+            "Career",
+            "Turn learning into interview-ready proof: skill gap maps, portfolio narratives, resume bullets, recruiter screens, STAR stories, and a 30-day prep operating plan.",
+            [
+                (
+                    "Skill Gap Map for Platform Roles",
+                    "Prioritize learning by job descriptions instead of panic-scrolling tutorials.",
+                    "A laid-off DevOps/SRE/cloud engineer needs ruthless focus. Most platform interviews cluster around Linux, networking, Kubernetes, AWS, Terraform, CI/CD, observability, incident response, security, and communication. A gap map turns that into a weekly plan.",
+                    "Practice collecting five target job descriptions and scoring yourself across must-have skills, nice-to-have skills, evidence you already have, and labs you need to complete.",
+                    "Create a gap map that chooses your next 10 study blocks and ties each block to one interview story or portfolio artifact.",
+                ),
+                (
+                    "Portfolio Evidence and Project Narratives",
+                    "Make hiring managers believe you can operate real systems.",
+                    "Portfolio-grade proof is not a screenshot. It shows constraints, architecture, commands, decisions, validation, rollback, cost, security, and what you would improve next. The goal is credible judgment, not pretending a lab is production.",
+                    "Practice turning a Platform Academy lab into a README section with problem, environment, commands, evidence, tradeoffs, diagram, and interview talking points.",
+                    "Produce a proof pack with one Kubernetes debug story, one Terraform/AWS story, one CI/CD story, one incident story, and one platform-product story.",
+                ),
+                (
+                    "Resume Bullets, Recruiter Screens, and STAR Stories",
+                    "Translate engineering work into clear job-search signal.",
+                    "Recruiters scan for keywords and scope. Hiring managers listen for judgment. Strong prep means having concise bullets and deeper STAR stories for the same work: situation, task, action, result, tradeoffs, and what you learned.",
+                    "Practice rewriting vague resume lines into specific platform outcomes with action, technology, scale, risk, and result. Prepare recruiter answers for layoffs, gaps, compensation, relocation, and role fit.",
+                    "Create a question bank of 12 STAR stories covering incidents, conflict, automation, cost, security, failed project, learning fast, and leading without authority.",
+                ),
+                (
+                    "30-Day Interview Prep Operating Plan",
+                    "Run job search like an incident response and learning system.",
+                    "A strong 30-day plan balances applications, networking, daily drills, mock interviews, hands-on labs, resume iteration, rest, and feedback loops. Track leading indicators so the search does not become a fog.",
+                    "Practice scheduling blocks for Kubernetes debugging, Terraform plan review, AWS/IAM, CI/CD design, SRE incidents, behavioral stories, and company-specific prep.",
+                    "Build a 30-day tracker with target roles, study blocks, completed labs, mock results, applications, referrals, follow-ups, weak areas, and next actions.",
+                ),
+            ],
+        ),
+    ]
+)
+
 
 PLATFORM_LEVELS = [
     {
@@ -1910,6 +2137,7 @@ PLATFORM_LEVELS = [
             "platform-cloud-native-foundations",
             "platform-linux-command-line-foundations",
             "platform-networking-fundamentals",
+            "platform-docker-image-supply-chain",
         ],
     },
     {
@@ -1923,6 +2151,7 @@ PLATFORM_LEVELS = [
             "platform-argocd-gitops",
             "platform-terraform-aws-infrastructure",
             "platform-aws-iam-for-eks",
+            "platform-aws-operations-foundations",
         ],
     },
     {
@@ -1936,6 +2165,10 @@ PLATFORM_LEVELS = [
             "platform-sre-observability-kubernetes",
             "platform-cicd-release-engineering",
             "platform-engineering-product-operating-model",
+            "platform-observability-telemetry-engineering",
+            "platform-incident-response-reliability",
+            "platform-finops-kubernetes-aws",
+            "platform-career-job-search-sprint",
         ],
     },
 ]
@@ -2159,6 +2392,95 @@ PLATFORM_TRACKS.extend(
     ]
 )
 
+PLATFORM_TRACKS.extend(
+    [
+        {
+            "slug": "docker-image-supply-chain",
+            "title": "Docker Image Supply Chain Track",
+            "role": "Fresher learner turning Dockerfiles into production-grade artifacts",
+            "summary": "Build smaller, safer, traceable images and promote exact digests through environments.",
+            "course_slug": "platform-docker-image-supply-chain",
+            "level_group": "Fresher",
+            "audience": "Learners who need container image judgment before Kubernetes releases.",
+            "outcomes": [
+                "Review Dockerfiles for base image, user, entrypoint, build context, and runtime contract risk.",
+                "Use multi-stage builds to keep build tools out of runtime images.",
+                "Explain tag, digest, registry, scan, SBOM, and artifact promotion tradeoffs.",
+            ],
+        },
+        {
+            "slug": "aws-operations-foundations",
+            "title": "AWS Operations Foundations Track",
+            "role": "Intermediate engineer debugging AWS-backed service paths and operational readiness",
+            "summary": "Connect Well-Architected thinking, CloudWatch, VPCs, load balancers, Route 53, reliability, and backups.",
+            "course_slug": "platform-aws-operations-foundations",
+            "level_group": INTERMEDIATE_LEVEL,
+            "audience": "Cloud and platform engineers who need AWS operational interview fluency.",
+            "outcomes": [
+                "Create an AWS ownership and readiness review for one production-facing service.",
+                "Design CloudWatch dashboards and alarms that start from user impact.",
+                "Trace request failures across DNS, ALB, target groups, security groups, subnets, Services, and Pods.",
+            ],
+        },
+        {
+            "slug": "observability-telemetry-engineering",
+            "title": "Observability Telemetry Engineering Track",
+            "role": "Advanced engineer designing telemetry systems that reduce incident time",
+            "summary": "Use OpenTelemetry, Prometheus, logs, traces, dashboards, and alert quality rules with cost and ownership in mind.",
+            "course_slug": "platform-observability-telemetry-engineering",
+            "level_group": ADVANCED_LEVEL,
+            "audience": "Engineers preparing for SRE and platform observability design interviews.",
+            "outcomes": [
+                "Choose metrics, logs, traces, and events based on the question being answered.",
+                "Review instrumentation for propagation, sampling, semantic attributes, redaction, and cardinality.",
+                "Improve alerts and dashboards so responders can confirm impact and act quickly.",
+            ],
+        },
+        {
+            "slug": "incident-response-reliability",
+            "title": "Incident Response Reliability Track",
+            "role": "Advanced responder practicing incident command and post-incident improvement",
+            "summary": "Build incident command, comms, timeline, mitigation, postmortem, corrective-action, and game-day habits.",
+            "course_slug": "platform-incident-response-reliability",
+            "level_group": ADVANCED_LEVEL,
+            "audience": "SRE, DevOps, and platform engineers who need to sound calm and credible in incident interviews.",
+            "outcomes": [
+                "Declare and structure incidents with clear commander, ops, comms, planning, severity, and update cadence.",
+                "Write useful incident timelines, stakeholder updates, mitigation notes, and handoffs.",
+                "Turn postmortem findings into owned, dated corrective actions and rehearsed game days.",
+            ],
+        },
+        {
+            "slug": "finops-kubernetes-aws",
+            "title": "FinOps Kubernetes and AWS Track",
+            "role": "Advanced platform owner reducing waste without damaging reliability",
+            "summary": "Map cost ownership, Kubernetes requests, AWS EKS cost drivers, guardrails, and review cadence.",
+            "course_slug": "platform-finops-kubernetes-aws",
+            "level_group": ADVANCED_LEVEL,
+            "audience": "Engineers who need cloud cost stories with technical and business credibility.",
+            "outcomes": [
+                "Map AWS and Kubernetes spend to service owners, environments, labels, tags, and shared platform costs.",
+                "Write right-sizing recommendations with validation windows, rollback plans, and reliability risk.",
+                "Explain EKS cost drivers beyond nodes: NAT, load balancers, storage, telemetry, transfer, and tooling.",
+            ],
+        },
+        {
+            "slug": "career-job-search-sprint",
+            "title": "Platform Job Search Sprint Track",
+            "role": "Laid-off or job-searching DevOps/SRE/cloud engineer turning practice into interview proof",
+            "summary": "Build skill gap maps, proof packs, resume bullets, STAR stories, and a 30-day prep plan.",
+            "course_slug": "platform-career-job-search-sprint",
+            "level_group": ADVANCED_LEVEL,
+            "audience": "Engineers who need to convert learning into interviews, confidence, and credible job-search artifacts fast.",
+            "outcomes": [
+                "Prioritize study from real platform job descriptions instead of tutorial drift.",
+                "Turn labs into portfolio proof with commands, evidence, tradeoffs, diagrams, and rollback thinking.",
+                "Prepare recruiter answers and STAR stories across incidents, automation, cost, security, and leadership.",
+            ],
+        },
+    ]
+)
+
 
 PLATFORM_ROADMAP = [
     {
@@ -2363,6 +2685,89 @@ PLATFORM_ROADMAP.extend(
     ]
 )
 
+PLATFORM_ROADMAP.extend(
+    [
+        {
+            "sequence": 16,
+            "title": "Docker Image Operator",
+            "role": "You can review Dockerfiles, build runtime images, and promote immutable artifacts safely.",
+            "focus": "Dockerfiles, multi-stage builds, tags, digests, registries, scans, SBOMs, and runtime users.",
+            "level_group": "Fresher",
+            "course_slugs": ["platform-docker-image-supply-chain"],
+            "checkpoints": [
+                "Review a Dockerfile for runtime contract and root-user risk.",
+                "Explain why multi-stage builds reduce operational and security risk.",
+                "Promote an image by digest with scan, SBOM, and rollback evidence.",
+            ],
+        },
+        {
+            "sequence": 17,
+            "title": "AWS Operations Operator",
+            "role": "You can trace AWS service failures from user symptom through cloud and Kubernetes signals.",
+            "focus": "CloudWatch, Well-Architected operations, VPC paths, Route 53, ALB health, backups, and change safety.",
+            "level_group": INTERMEDIATE_LEVEL,
+            "course_slugs": ["platform-aws-operations-foundations"],
+            "checkpoints": [
+                "Build an AWS service ownership and readiness review.",
+                "Design a CloudWatch dashboard that starts with user impact.",
+                "Debug unhealthy ALB targets across AWS and Kubernetes evidence.",
+            ],
+        },
+        {
+            "sequence": 18,
+            "title": "Observability Telemetry Engineer",
+            "role": "You can design telemetry that helps responders act instead of merely storing more data.",
+            "focus": "OpenTelemetry signals, context propagation, sampling, Prometheus alerts, cardinality, dashboards, and telemetry operations.",
+            "level_group": ADVANCED_LEVEL,
+            "course_slugs": ["platform-observability-telemetry-engineering"],
+            "checkpoints": [
+                "Choose metrics, logs, traces, and events for one latency incident.",
+                "Review instrumentation for propagation, sampling, labels, and privacy.",
+                "Rewrite a noisy alert into an actionable symptom alert.",
+            ],
+        },
+        {
+            "sequence": 19,
+            "title": "Incident Response Lead",
+            "role": "You can coordinate incidents, communicate clearly, mitigate safely, and turn failures into improvements.",
+            "focus": "Incident command, severity, timelines, comms, mitigation, postmortems, corrective actions, and game days.",
+            "level_group": ADVANCED_LEVEL,
+            "course_slugs": ["platform-incident-response-reliability"],
+            "checkpoints": [
+                "Run the first five minutes of an incident with clear roles and update cadence.",
+                "Write stakeholder and technical updates from the same incident state.",
+                "Convert postmortem findings into owned, dated, verifiable corrective actions.",
+            ],
+        },
+        {
+            "sequence": 20,
+            "title": "FinOps Platform Steward",
+            "role": "You can reduce AWS and Kubernetes waste while protecting reliability and team trust.",
+            "focus": "Cost ownership, tags and labels, Kubernetes requests, EKS cost drivers, right-sizing, guardrails, and review cadence.",
+            "level_group": ADVANCED_LEVEL,
+            "course_slugs": ["platform-finops-kubernetes-aws"],
+            "checkpoints": [
+                "Map EKS service spend across compute, network, storage, load balancing, and telemetry.",
+                "Write a right-sizing recommendation with validation and rollback.",
+                "Run a monthly FinOps review with owners, risks, and follow-up evidence.",
+            ],
+        },
+        {
+            "sequence": 21,
+            "title": "Platform Career Sprint",
+            "role": "You can convert platform study into interview stories, portfolio evidence, and a focused 30-day search plan.",
+            "focus": "Skill gap mapping, proof packs, resume bullets, recruiter screens, STAR stories, mock interviews, and job-search metrics.",
+            "level_group": ADVANCED_LEVEL,
+            "course_slugs": ["platform-career-job-search-sprint"],
+            "checkpoints": [
+                "Score five job descriptions against your current evidence and gaps.",
+                "Turn labs into README-ready proof with commands, evidence, and tradeoffs.",
+                "Prepare STAR stories for incidents, automation, cost, security, and leadership.",
+            ],
+        },
+    ]
+)
+
 
 _PLATFORM_ROADMAP_SEQUENCE = {
     "Linux Operator Foundations": 1,
@@ -2370,16 +2775,22 @@ _PLATFORM_ROADMAP_SEQUENCE = {
     "Kubernetes Object Mental Model": 3,
     "kubectl First Responder": 4,
     "Cloud Native Base Layer": 5,
-    "EKS Operator": 6,
-    "Helm Release Builder": 7,
-    "GitOps Operator": 8,
-    "Terraform AWS Platform Builder": 9,
-    "AWS IAM and EKS Identity": 10,
-    "Production EKS Architect": 11,
-    "Shared Cluster Security Owner": 12,
-    "Kubernetes Reliability Lead": 13,
-    "Release Engineering Lead": 14,
-    "Platform Product Owner": 15,
+    "Docker Image Operator": 6,
+    "EKS Operator": 7,
+    "Helm Release Builder": 8,
+    "GitOps Operator": 9,
+    "Terraform AWS Platform Builder": 10,
+    "AWS IAM and EKS Identity": 11,
+    "AWS Operations Operator": 12,
+    "Production EKS Architect": 13,
+    "Shared Cluster Security Owner": 14,
+    "Kubernetes Reliability Lead": 15,
+    "Observability Telemetry Engineer": 16,
+    "Release Engineering Lead": 17,
+    "Incident Response Lead": 18,
+    "FinOps Platform Steward": 19,
+    "Platform Product Owner": 20,
+    "Platform Career Sprint": 21,
 }
 for stage in PLATFORM_ROADMAP:
     stage["sequence"] = _PLATFORM_ROADMAP_SEQUENCE[stage["title"]]
@@ -2739,6 +3150,150 @@ PLATFORM_LABS.extend(
     ]
 )
 
+PLATFORM_LABS.extend(
+    [
+        {
+            "slug": "review-docker-image-supply-chain",
+            "title": "Review a Docker image supply chain",
+            "track": "Docker",
+            "difficulty": FRESHER_LEVEL,
+            "level_group": "Fresher",
+            "estimated_minutes": 45,
+            "course_slug": "platform-docker-image-supply-chain",
+            "lesson_title": "Tags, Digests, Registries, and Promotion",
+            "scenario": "A team wants to promote an image tagged `latest` to production, and you need to prove which artifact will actually run.",
+            "skills": ["Dockerfile review", "multi-stage builds", "image digests", "registry promotion", "SBOM review"],
+            "commands": [
+                "docker build -t checkout:local .",
+                "docker image inspect checkout:local",
+                "docker history checkout:local",
+            ],
+            "checklist": [
+                "Identify base image, runtime user, entrypoint, exposed port, and copied files.",
+                "Compare tag-based release notes with immutable digest evidence.",
+                "Check whether build-only tools or secrets reached the runtime image.",
+                "Write a promotion note with digest, scan status, SBOM location, and rollback image.",
+            ],
+        },
+        {
+            "slug": "debug-aws-alb-health-path",
+            "title": "Debug an AWS ALB health path",
+            "track": "AWS Operations",
+            "difficulty": INTERMEDIATE_LEVEL,
+            "level_group": INTERMEDIATE_LEVEL,
+            "estimated_minutes": 50,
+            "course_slug": "platform-aws-operations-foundations",
+            "lesson_title": "VPC, Load Balancer, Route 53, and Health Paths",
+            "scenario": "An ALB target group turns unhealthy after a Kubernetes deployment and users see intermittent 503 responses.",
+            "skills": ["CloudWatch", "ALB target health", "Route 53", "security groups", "EndpointSlices"],
+            "commands": [
+                "aws elbv2 describe-target-health --target-group-arn TARGET_GROUP_ARN",
+                "aws cloudwatch describe-alarms --state-value ALARM",
+                "kubectl describe ingress checkout -n payments",
+                "kubectl get svc,endpointslice,pods -n payments",
+            ],
+            "checklist": [
+                "Confirm which target group and health path are failing.",
+                "Compare ALB target health with Kubernetes readiness and EndpointSlices.",
+                "Check security group and subnet assumptions before changing application code.",
+                "Write the owner and next action for AWS networking, ingress controller, or app team.",
+            ],
+        },
+        {
+            "slug": "design-opentelemetry-signal-path",
+            "title": "Design an OpenTelemetry signal path",
+            "track": "Observability",
+            "difficulty": ADVANCED_LEVEL,
+            "level_group": ADVANCED_LEVEL,
+            "estimated_minutes": 55,
+            "course_slug": "platform-observability-telemetry-engineering",
+            "lesson_title": "Metrics, Logs, Traces, and OpenTelemetry Signals",
+            "scenario": "Checkout latency is hard to debug because metrics, logs, and traces disagree and no one owns the telemetry path.",
+            "skills": ["OpenTelemetry", "context propagation", "sampling", "Prometheus rules", "telemetry cost"],
+            "commands": [
+                "kubectl get servicemonitor,podmonitor,prometheusrule -A",
+                "kubectl get otelcol -A",
+                "kubectl logs deploy/otel-collector -n observability --since=15m",
+            ],
+            "checklist": [
+                "Map the user symptom to metric, log, trace, and Kubernetes event evidence.",
+                "Check service names, route labels, trace IDs in logs, and sampling policy.",
+                "Flag high-cardinality labels and sensitive attributes.",
+                "Write owners for instrumentation, collector, storage, dashboard, and alert policy.",
+            ],
+        },
+        {
+            "slug": "run-incident-commander-tabletop",
+            "title": "Run an incident commander tabletop",
+            "track": "Incident Response",
+            "difficulty": ADVANCED_LEVEL,
+            "level_group": ADVANCED_LEVEL,
+            "estimated_minutes": 60,
+            "course_slug": "platform-incident-response-reliability",
+            "lesson_title": "Incident Roles, Severity, and First Response",
+            "scenario": "A canary release causes elevated checkout errors and the team needs coordinated mitigation, communication, and timeline discipline.",
+            "skills": ["incident command", "severity", "stakeholder communication", "timeline", "mitigation"],
+            "commands": [
+                "kubectl get events -n payments --sort-by=.lastTimestamp",
+                "kubectl rollout history deploy/checkout -n payments",
+                "kubectl get pods,svc,endpointslice -n payments",
+            ],
+            "checklist": [
+                "Assign incident commander, operations, communications, and planning roles.",
+                "Write impact, severity, current mitigation, and next update time.",
+                "Record timeline entries for alerts, deploys, commands, decisions, and handoff.",
+                "End with postmortem triggers and corrective-action owners.",
+            ],
+        },
+        {
+            "slug": "audit-eks-cost-drivers",
+            "title": "Audit EKS cost drivers",
+            "track": "FinOps",
+            "difficulty": ADVANCED_LEVEL,
+            "level_group": ADVANCED_LEVEL,
+            "estimated_minutes": 60,
+            "course_slug": "platform-finops-kubernetes-aws",
+            "lesson_title": "AWS Cost Drivers for EKS Platforms",
+            "scenario": "Cloud spend jumped after a platform migration, and you need to separate real growth from Kubernetes and AWS waste.",
+            "skills": ["FinOps", "Kubernetes requests", "EKS cost drivers", "NAT costs", "telemetry spend"],
+            "commands": [
+                "kubectl top pods -A --containers",
+                "kubectl get pods -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,CPU:.spec.containers[*].resources.requests.cpu,MEM:.spec.containers[*].resources.requests.memory",
+                "kubectl get svc,pv,pvc -A",
+            ],
+            "checklist": [
+                "Rank compute, storage, load balancer, NAT, data transfer, and telemetry hypotheses.",
+                "Compare requested resources with actual usage and restart/OOM evidence.",
+                "Map each recommendation to an owner, expected savings, reliability risk, and rollback.",
+                "Decide which savings are quick wins and which require architecture changes.",
+            ],
+        },
+        {
+            "slug": "build-platform-career-proof-pack",
+            "title": "Build a platform career proof pack",
+            "track": "Career",
+            "difficulty": ADVANCED_LEVEL,
+            "level_group": ADVANCED_LEVEL,
+            "estimated_minutes": 75,
+            "course_slug": "platform-career-job-search-sprint",
+            "lesson_title": "Portfolio Evidence and Project Narratives",
+            "scenario": "You need interview-ready proof that your platform skills are practical, current, and credible after a layoff.",
+            "skills": ["portfolio", "resume bullets", "STAR stories", "job description analysis", "mock interview prep"],
+            "commands": [
+                "git log --oneline --decorate -5",
+                "find . -maxdepth 3 -iname '*README*' -o -iname '*runbook*'",
+                "grep -R \"rollback\\|SLO\\|Terraform\\|Kubernetes\" -n docs apps || true",
+            ],
+            "checklist": [
+                "Choose five target job descriptions and extract repeated skill demands.",
+                "Turn one lab into a README proof section with commands, evidence, tradeoffs, and rollback.",
+                "Write resume bullets for implementation, operations, and business impact.",
+                "Prepare STAR stories for incident response, automation, cost, security, and influence.",
+            ],
+        },
+    ]
+)
+
 
 RESOURCE_TYPE_BLUEPRINTS = [
     ("cheatsheet", "Compact command/reference sheet", 20),
@@ -2751,7 +3306,400 @@ RESOURCE_TYPE_BLUEPRINTS = [
     ("template", "Reusable starter artifact or review template", 30),
     ("assessment", "Self-check quiz and practical grading rubric", 35),
     ("troubleshooting guide", "Symptom-to-signal debugging map", 40),
+    ("decision record", "Architecture decision record with options and consequences", 35),
+    ("production readiness checklist", "Launch-readiness checklist for reliability, security, and support", 45),
+    ("failure mode drill", "Guided failure scenario with diagnosis and rollback criteria", 50),
+    ("security review", "Threat-model and least-privilege review workbook", 50),
+    ("cost review", "Cost, capacity, and ownership review worksheet", 45),
+    ("portfolio artifact", "Portfolio-ready evidence builder with narrative prompts", 55),
 ]
+
+RESOURCE_TYPE_PROFILES = {
+    "cheatsheet": {
+        "title_template": "{domain} Field Cheatsheet",
+        "summary_template": "A compact operator map for {domain}: commands, object relationships, evidence to capture, and the traps that turn quick fixes into production risk.",
+        "outcomes": [
+            "Choose the first safe read-only checks before touching a live system.",
+            "Name the high-risk fields, ownership boundaries, and rollback signals for this domain.",
+            "Convert command output into a short evidence note someone else can review.",
+        ],
+        "study_tasks": [
+            "Build a one-page quick-reference table: symptom, command, evidence, likely owner, and escalation path.",
+            "Mark every command as local-safe, read-only production, sandbox mutation, or production mutation.",
+            "Add one real screenshot or terminal capture to a portfolio note and explain why it matters.",
+        ],
+        "next_steps": [
+            "Use the related lab to validate every command against a controlled scenario.",
+            "Turn the cheatsheet into a pinned incident-room note with owners and unsafe actions called out.",
+        ],
+        "artifacts": ["field command map", "symptom-to-evidence table", "safe action legend"],
+        "commands": ["# Start with read-only evidence, then decide whether mutation is justified.", "{command}"],
+        "interview_prompts": [
+            "Which command would you run first, and what answer would make you stop?",
+            "What evidence would convince you the issue belongs outside this domain?",
+        ],
+    },
+    "runbook": {
+        "title_template": "{domain} Production Runbook",
+        "summary_template": "An incident-ready procedure for {domain} with triage, blast-radius checks, mitigation choices, escalation notes, and post-incident follow-up.",
+        "outcomes": [
+            "Separate diagnosis, mitigation, recovery, and learning so responders do not mix goals.",
+            "Capture customer impact, system state, owner, and rollback evidence before proposing changes.",
+            "Write a runbook that a teammate can execute under pressure without guessing intent.",
+        ],
+        "study_tasks": [
+            "Draft severity triggers, first five checks, mitigation options, rollback checks, and escalation owners.",
+            "Add a 'do not do this first' section for risky commands or irreversible changes.",
+            "Run a tabletop drill and record where the runbook was ambiguous.",
+        ],
+        "next_steps": [
+            "Pair the runbook with alert links, dashboards, logs, and the related lab.",
+            "Schedule a quarterly review so commands, owners, and dashboards do not drift.",
+        ],
+        "artifacts": ["incident runbook", "mitigation decision tree", "post-incident action register"],
+        "commands": ["# Incident evidence baseline", "{command}", "# Record timeline entries as facts change."],
+        "interview_prompts": [
+            "How do you decide between mitigation and root-cause investigation during an incident?",
+            "What does a good runbook include that a generic wiki page usually misses?",
+        ],
+    },
+    "lab worksheet": {
+        "title_template": "{domain} Evidence Lab Worksheet",
+        "summary_template": "A hands-on worksheet for practicing {domain} with scenario setup, expected observations, evidence prompts, and grading criteria.",
+        "outcomes": [
+            "Practice a realistic failure without relying on production access.",
+            "Collect proof in a repeatable order and explain each observation.",
+            "Produce a lab note that shows thinking, not just successful commands.",
+        ],
+        "study_tasks": [
+            "Write the scenario, starting state, constraints, commands, expected evidence, and cleanup steps.",
+            "Capture one misleading signal and explain how you ruled it out.",
+            "Score the lab using evidence quality, safety, speed, and explanation clarity.",
+        ],
+        "next_steps": [
+            "Repeat the lab once from memory and once with a timer.",
+            "Convert the worksheet into a public-safe portfolio walkthrough with sanitized output.",
+        ],
+        "artifacts": ["lab worksheet", "evidence transcript", "grading rubric"],
+        "commands": ["# Run only in a local cluster or approved sandbox.", "{command}", "# Save observations before changing state."],
+        "interview_prompts": [
+            "What did the lab teach that reading alone would not?",
+            "Which signal was most misleading and how did you disprove it?",
+        ],
+    },
+    "project brief": {
+        "title_template": "{domain} Portfolio Project Brief",
+        "summary_template": "A scoped portfolio project for {domain} with goals, architecture, acceptance criteria, operational proof, and README prompts.",
+        "outcomes": [
+            "Turn study into a concrete artifact that demonstrates platform judgment.",
+            "Define acceptance criteria covering reliability, security, cost, supportability, and rollback.",
+            "Explain tradeoffs in a README reviewers can scan quickly.",
+        ],
+        "study_tasks": [
+            "Write a project charter with user, problem, constraints, non-goals, and success metrics.",
+            "Define the minimum demo plus one production-hardening extension.",
+            "Include a 'what I would do differently in production' section.",
+        ],
+        "next_steps": [
+            "Link the project to one course, one lab, and at least two official sources.",
+            "Prepare a five-minute walkthrough that explains decisions before showing commands.",
+        ],
+        "artifacts": ["project README", "acceptance criteria", "demo transcript"],
+        "commands": ["# Project bootstrap evidence", "{command}", "git status --short"],
+        "interview_prompts": [
+            "What tradeoff did you make, and what would change at production scale?",
+            "How would you explain the project to a developer who only wants the paved road?",
+        ],
+    },
+    "interview prep": {
+        "title_template": "{domain} Interview Drill Packet",
+        "summary_template": "A scenario-driven interview pack for {domain}: prompts, answer signals, red flags, follow-ups, and practice tasks grounded in official docs.",
+        "outcomes": [
+            "Answer with systems thinking instead of memorized definitions.",
+            "Show evidence collection, blast-radius reasoning, and user-impact awareness.",
+            "Recognize red flags that signal unsafe production instincts.",
+        ],
+        "study_tasks": [
+            "Answer five prompts aloud, then rewrite each answer with stronger evidence and tradeoffs.",
+            "Add a follow-up question that tests senior judgment rather than trivia.",
+            "Record one two-minute answer and remove filler until the reasoning is crisp.",
+        ],
+        "next_steps": [
+            "Open the interview prep command center for deeper drills in this domain.",
+            "Pair each answer with a lab or project artifact you can cite as proof.",
+        ],
+        "artifacts": ["answer rubric", "red flag list", "practice prompt bank"],
+        "commands": ["# Use this command as the evidence anchor for at least one scenario.", "{command}"],
+        "interview_prompts": [
+            "What is the first question you ask before proposing a fix?",
+            "How do you explain the same problem to an engineer, an incident lead, and a product manager?",
+        ],
+    },
+    "official reference": {
+        "title_template": "{domain} Official Reading Path",
+        "summary_template": "A curated official-source reading path for {domain}, organized by concept, operational decision, practice task, and interview-ready takeaway.",
+        "outcomes": [
+            "Use primary documentation as the source of truth before copying examples.",
+            "Separate evergreen concepts from version-specific behavior.",
+            "Turn official docs into operating checklists and design reviews.",
+        ],
+        "study_tasks": [
+            "Read the source trail and write five operational takeaways with page links.",
+            "Identify which guidance is conceptual, procedural, versioned, or safety-critical.",
+            "Create flashcards for the terms you would expect in an interview or review.",
+        ],
+        "next_steps": [
+            "Attach source links to the related lab notes so future readers can audit your reasoning.",
+            "Re-review this resource after platform version upgrades or major provider changes.",
+        ],
+        "artifacts": ["annotated reading path", "source takeaway log", "version watchlist"],
+        "commands": ["# Before implementation, open the official source trail and note current version assumptions.", "{command}"],
+        "interview_prompts": [
+            "Which official page would you trust for this decision, and what does it not answer?",
+            "How do you keep source-backed notes current as the platform changes?",
+        ],
+    },
+    "architecture diagram": {
+        "title_template": "{domain} Architecture Review Diagram",
+        "summary_template": "A diagram brief for {domain} that maps actors, trust boundaries, network paths, ownership, failure modes, and evidence points.",
+        "outcomes": [
+            "Draw the system in a way that exposes risk, not just components.",
+            "Make implicit ownership, data flow, and failure boundaries visible.",
+            "Use the diagram as a review tool before implementation.",
+        ],
+        "study_tasks": [
+            "Create a box-and-arrow diagram with users, control planes, data planes, secrets, and observability signals.",
+            "Annotate every edge with protocol, identity, policy, and failure implication.",
+            "Add a review checklist for what must be true before launch.",
+        ],
+        "next_steps": [
+            "Use the diagram to drive a design review or mock interview system-design answer.",
+            "Store the diagram next to the runbook and update it after incidents.",
+        ],
+        "artifacts": ["architecture diagram", "boundary legend", "review checklist"],
+        "commands": ["# Validate the diagram against live or sandbox evidence.", "{command}"],
+        "interview_prompts": [
+            "Where is the trust boundary, and what crosses it?",
+            "Which part of the diagram fails closed and which fails open?",
+        ],
+    },
+    "template": {
+        "title_template": "{domain} Operating Template",
+        "summary_template": "A reusable template for {domain} reviews, launch notes, handoffs, and incident follow-up.",
+        "outcomes": [
+            "Standardize the information engineers need before a risky change.",
+            "Reduce review fatigue by making evidence, owners, and decisions explicit.",
+            "Create a reusable artifact that can live in repos or runbooks.",
+        ],
+        "study_tasks": [
+            "Create headings for context, scope, risk, commands, evidence, rollback, owners, and source links.",
+            "Pre-fill examples for one happy path and one failure path.",
+            "Test the template by asking another person to find the rollback plan in under thirty seconds.",
+        ],
+        "next_steps": [
+            "Attach the template to the related course project.",
+            "Use it for one real review and tighten fields that felt vague.",
+        ],
+        "artifacts": ["review template", "handoff checklist", "rollback section"],
+        "commands": ["# Template evidence placeholder", "{command}"],
+        "interview_prompts": [
+            "What fields must be present before you approve this change?",
+            "How do templates help without becoming process theater?",
+        ],
+    },
+    "assessment": {
+        "title_template": "{domain} Practical Assessment",
+        "summary_template": "A graded practical assessment for {domain} covering concepts, command fluency, scenario reasoning, and portfolio evidence.",
+        "outcomes": [
+            "Measure applied capability rather than passive familiarity.",
+            "Identify gaps across concepts, diagnosis, safety, and communication.",
+            "Decide which course, lab, or project should come next.",
+        ],
+        "study_tasks": [
+            "Answer ten short questions and complete one scenario without looking at notes.",
+            "Score yourself against evidence quality, safety, explanation, and recovery plan.",
+            "Write a gap list with one next practice action for each weak area.",
+        ],
+        "next_steps": [
+            "Retake the assessment after two labs and compare the evidence quality.",
+            "Use missed questions to seed flashcards and interview prompts.",
+        ],
+        "artifacts": ["assessment scorecard", "gap list", "next practice plan"],
+        "commands": ["# Practical assessment command anchor", "{command}"],
+        "interview_prompts": [
+            "What would make your answer production-ready?",
+            "Which gap would be most dangerous on call?",
+        ],
+    },
+    "troubleshooting guide": {
+        "title_template": "{domain} Symptom-to-Signal Guide",
+        "summary_template": "A troubleshooting map for {domain} that moves from symptoms to evidence, likely causes, owner boundaries, and safe mitigation.",
+        "outcomes": [
+            "Avoid random-walk debugging by following a clear evidence sequence.",
+            "Separate user symptom, platform signal, probable cause, and mitigation.",
+            "Know when to escalate because evidence crosses a boundary.",
+        ],
+        "study_tasks": [
+            "Create branches for the top five symptoms and the safest first checks for each.",
+            "Add false-positive notes so learners do not overfit to one metric or event.",
+            "Write a minimal incident update based on the evidence collected.",
+        ],
+        "next_steps": [
+            "Practice the guide with a timer and compare the order of checks to the runbook.",
+            "Turn recurring symptoms into dashboard panels or automation ideas.",
+        ],
+        "artifacts": ["troubleshooting tree", "symptom map", "incident update examples"],
+        "commands": ["# Symptom-to-signal first pass", "{command}"],
+        "interview_prompts": [
+            "What evidence changes your hypothesis?",
+            "How do you avoid fixing the loudest symptom instead of the real cause?",
+        ],
+    },
+    "decision record": {
+        "title_template": "{domain} Architecture Decision Record",
+        "summary_template": "An ADR-style decision exercise for {domain}: context, options, tradeoffs, decision, consequences, and revisit triggers.",
+        "outcomes": [
+            "Compare options with operational consequences instead of preference.",
+            "Document why a decision was made and when it should be revisited.",
+            "Connect platform choices to reliability, security, cost, and developer experience.",
+        ],
+        "study_tasks": [
+            "Write three options with pros, cons, risks, migration cost, and rollback implications.",
+            "Define what evidence would invalidate the decision later.",
+            "Add an owner and review date so the ADR does not freeze the platform in time.",
+        ],
+        "next_steps": [
+            "Use the ADR as a system-design interview story.",
+            "Link the chosen option to a project brief or production readiness checklist.",
+        ],
+        "artifacts": ["ADR", "options matrix", "revisit trigger list"],
+        "commands": ["# Gather facts before writing the decision.", "{command}"],
+        "interview_prompts": [
+            "What alternatives did you reject, and why?",
+            "What new evidence would make you reverse the decision?",
+        ],
+    },
+    "production readiness checklist": {
+        "title_template": "{domain} Production Readiness Checklist",
+        "summary_template": "A launch checklist for {domain} covering ownership, SLOs, alerts, security, scaling, rollback, docs, and support paths.",
+        "outcomes": [
+            "Define what must be true before production exposure.",
+            "Make reliability, security, cost, and operability visible before launch.",
+            "Give reviewers a repeatable acceptance gate for platform work.",
+        ],
+        "study_tasks": [
+            "Write readiness checks for ownership, telemetry, capacity, failure behavior, access, and rollback.",
+            "Classify each check as must-have, should-have, or follow-up with owner and due date.",
+            "Run the checklist against a sample service and record launch blockers.",
+        ],
+        "next_steps": [
+            "Attach the checklist to the related project brief and lab evidence.",
+            "Promote high-value checks into automated gates only after they are stable.",
+        ],
+        "artifacts": ["readiness checklist", "launch blocker log", "follow-up tracker"],
+        "commands": ["# Readiness evidence anchor", "{command}"],
+        "interview_prompts": [
+            "What would block launch, and what could safely follow later?",
+            "How do you keep production readiness useful instead of bureaucratic?",
+        ],
+    },
+    "failure mode drill": {
+        "title_template": "{domain} Failure Mode Drill",
+        "summary_template": "A guided failure drill for {domain} with injected symptoms, expected signals, mitigation choices, and learning questions.",
+        "outcomes": [
+            "Practice failure before production pressure makes learning expensive.",
+            "Connect failure symptoms to guardrails, dashboards, and rollback behavior.",
+            "Improve runbooks and alerts from observed confusion.",
+        ],
+        "study_tasks": [
+            "Define the injected failure, expected customer symptom, first alert, and desired mitigation.",
+            "Run the drill in a sandbox and capture timeline, evidence, and decision points.",
+            "Write two improvements: one technical and one documentation or training improvement.",
+        ],
+        "next_steps": [
+            "Add the drill to an incident game-day backlog.",
+            "Update the runbook with anything responders had to infer.",
+        ],
+        "artifacts": ["failure drill plan", "timeline", "improvement backlog"],
+        "commands": ["# Failure drill evidence checkpoint", "{command}"],
+        "interview_prompts": [
+            "What failure have you practiced, and what changed afterward?",
+            "How do you keep a drill safe while still making it realistic?",
+        ],
+    },
+    "security review": {
+        "title_template": "{domain} Security Review Workbook",
+        "summary_template": "A security workbook for {domain} covering identities, secrets, network paths, policy boundaries, supply chain, audit, and exceptions.",
+        "outcomes": [
+            "Threat-model the domain with concrete trust boundaries and abuse cases.",
+            "Review least privilege, secret handling, network exposure, and auditability.",
+            "Document exceptions with expiry, owner, compensating control, and evidence.",
+        ],
+        "study_tasks": [
+            "List actors, privileges, data, network edges, and mutation paths.",
+            "Find one overly broad permission or policy and propose a safer scope.",
+            "Write an exception record that would pass a serious review.",
+        ],
+        "next_steps": [
+            "Pair this review with the production readiness checklist.",
+            "Convert repeated manual checks into policy-as-code candidates.",
+        ],
+        "artifacts": ["threat model", "least-privilege review", "exception register"],
+        "commands": ["# Security review evidence anchor", "{command}"],
+        "interview_prompts": [
+            "Where could privilege escalation happen?",
+            "How do you balance developer speed with a meaningful control?",
+        ],
+    },
+    "cost review": {
+        "title_template": "{domain} Cost and Capacity Review",
+        "summary_template": "A cost review for {domain} connecting usage, requested capacity, waste, reliability tradeoffs, and owner-facing recommendations.",
+        "outcomes": [
+            "Find cost signals without creating reliability regressions.",
+            "Tie spend to ownership, capacity, SLOs, and platform adoption.",
+            "Write recommendations that teams can act on without blame.",
+        ],
+        "study_tasks": [
+            "List cost drivers, utilization signals, idle resources, and reliability constraints.",
+            "Write one safe optimization and one risky optimization with rollback criteria.",
+            "Create a cost note that explains impact, owner, action, and validation signal.",
+        ],
+        "next_steps": [
+            "Pair cost findings with production readiness and SLO context.",
+            "Use the review to seed a FinOps dashboard or backlog item.",
+        ],
+        "artifacts": ["cost review worksheet", "capacity evidence", "recommendation note"],
+        "commands": ["# Cost and capacity evidence anchor", "{command}"],
+        "interview_prompts": [
+            "How do you reduce waste without hurting reliability?",
+            "What cost metric would you show a service owner?",
+        ],
+    },
+    "portfolio artifact": {
+        "title_template": "{domain} Portfolio Artifact Builder",
+        "summary_template": "A portfolio builder for {domain} that turns labs, diagrams, decisions, and source-backed notes into a credible engineering story.",
+        "outcomes": [
+            "Show applied platform engineering judgment with evidence.",
+            "Connect problem, constraints, decisions, commands, and outcomes in one story.",
+            "Prepare a clean artifact for interviews, resume bullets, or project reviews.",
+        ],
+        "study_tasks": [
+            "Write the before-state, investigation, implementation, validation, and tradeoff sections.",
+            "Add source links, screenshots, command output, and a rollback or safety note.",
+            "Create three resume bullets: beginner, intermediate, and senior framing.",
+        ],
+        "next_steps": [
+            "Use the artifact as your answer to a behavioral or system-design prompt.",
+            "Ask whether the artifact proves judgment, not just tool usage, then revise.",
+        ],
+        "artifacts": ["portfolio README", "evidence gallery", "interview story"],
+        "commands": ["# Portfolio evidence anchor", "{command}", "git log --oneline -5"],
+        "interview_prompts": [
+            "What does this artifact prove you can do on a real platform team?",
+            "Which part demonstrates judgment rather than following a tutorial?",
+        ],
+    },
+}
 
 RESOURCE_DOMAIN_BLUEPRINTS = [
     {
@@ -2775,8 +3723,8 @@ RESOURCE_DOMAIN_BLUEPRINTS = [
     {
         "domain": "Docker",
         "level_group": "Fresher",
-        "course_slug": "platform-cloud-native-foundations",
-        "lab_slug": "review-yaml-before-apply",
+        "course_slug": "platform-docker-image-supply-chain",
+        "lab_slug": "review-docker-image-supply-chain",
         "topics": "Dockerfiles, layers, multi-stage builds, tags, digests, registries, image scanning",
         "command": "docker image inspect IMAGE:TAG",
         "artifact": "container image review checklist",
@@ -2836,6 +3784,15 @@ RESOURCE_DOMAIN_BLUEPRINTS = [
         "artifact": "IAM access decision worksheet",
     },
     {
+        "domain": "AWS Operations",
+        "level_group": "Intermediate",
+        "course_slug": "platform-aws-operations-foundations",
+        "lab_slug": "debug-aws-alb-health-path",
+        "topics": "VPC design, subnets, routing, load balancers, Route 53, CloudWatch, autoscaling, blast radius, and operational readiness",
+        "command": "aws cloudwatch describe-alarms --state-value ALARM",
+        "artifact": "AWS operations review worksheet",
+    },
+    {
         "domain": "Helm",
         "level_group": "Intermediate",
         "course_slug": "platform-helm-application-delivery",
@@ -2881,10 +3838,19 @@ RESOURCE_DOMAIN_BLUEPRINTS = [
         "artifact": "SLO and alert review worksheet",
     },
     {
+        "domain": "Observability",
+        "level_group": "Advanced",
+        "course_slug": "platform-observability-telemetry-engineering",
+        "lab_slug": "design-opentelemetry-signal-path",
+        "topics": "metrics, logs, traces, OpenTelemetry, Prometheus, CloudWatch, dashboards, sampling, cardinality, and alert quality",
+        "command": "kubectl get servicemonitor,prometheusrule -A",
+        "artifact": "observability signal design review",
+    },
+    {
         "domain": "Incident Response",
         "level_group": "Advanced",
-        "course_slug": "platform-sre-observability-kubernetes",
-        "lab_slug": "write-slo-backed-runbook",
+        "course_slug": "platform-incident-response-reliability",
+        "lab_slug": "run-incident-commander-tabletop",
         "topics": "severity, incident commander, comms, mitigation, escalation, timelines, postmortems, game days",
         "command": "kubectl get events -n payments --sort-by=.lastTimestamp",
         "artifact": "incident timeline and postmortem template",
@@ -2892,8 +3858,8 @@ RESOURCE_DOMAIN_BLUEPRINTS = [
     {
         "domain": "FinOps",
         "level_group": "Advanced",
-        "course_slug": "platform-production-eks-architecture",
-        "lab_slug": "design-production-eks-review",
+        "course_slug": "platform-finops-kubernetes-aws",
+        "lab_slug": "audit-eks-cost-drivers",
         "topics": "OpenCost, AWS CUR, budgets, NAT costs, load balancers, spot, right-sizing, chargeback, cost per service",
         "command": "kubectl top pods -A --containers",
         "artifact": "EKS cost review worksheet",
@@ -2910,8 +3876,8 @@ RESOURCE_DOMAIN_BLUEPRINTS = [
     {
         "domain": "Career",
         "level_group": "Advanced",
-        "course_slug": "platform-engineering-product-operating-model",
-        "lab_slug": "create-platform-golden-path",
+        "course_slug": "platform-career-job-search-sprint",
+        "lab_slug": "build-platform-career-proof-pack",
         "topics": "skill matrix, portfolio projects, interview scenarios, CKA/CKAD/CKS, AWS, Terraform Associate, resume proof",
         "command": "git log --oneline --decorate -5",
         "artifact": "portfolio proof and interview rubric",
@@ -2929,20 +3895,514 @@ RESOURCE_OFFICIAL_SOURCES = {
     "EKS": ("https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html", "Amazon EKS user guide"),
     "Terraform": ("https://developer.hashicorp.com/terraform/docs", "Terraform official docs"),
     "AWS IAM": ("https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html", "AWS IAM user guide"),
+    "AWS Operations": ("https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html", "Amazon CloudWatch user guide"),
     "Helm": ("https://helm.sh/docs/", "Helm official docs"),
     "ArgoCD": ("https://argo-cd.readthedocs.io/en/stable/", "Argo CD official docs"),
     "CI/CD": ("https://docs.github.com/en/actions", "GitHub Actions official docs"),
     "Security": ("https://kubernetes.io/docs/concepts/security/", "Kubernetes security docs"),
     "SRE": ("https://sre.google/sre-book/table-of-contents/", "Google SRE book"),
+    "Observability": ("https://opentelemetry.io/docs/concepts/signals/", "OpenTelemetry signal concepts"),
     "Incident Response": ("https://sre.google/sre-book/managing-incidents/", "Google SRE incident management"),
-    "FinOps": ("https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-pillar/welcome.html", "AWS cost optimization pillar"),
+    "FinOps": ("https://www.finops.org/framework/", "FinOps Framework"),
     "Platform Engineering": ("https://tag-app-delivery.cncf.io/whitepapers/platforms/", "CNCF platforms whitepaper"),
     "Career": ("https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html", "AWS Well-Architected Framework"),
 }
 
+RESOURCE_OFFICIAL_SOURCE_SETS = {
+    "Linux": [
+        {"label": "GNU Bash Reference Manual", "url": "https://www.gnu.org/software/bash/manual/bash.html"},
+        {"label": "GNU Coreutils Manual", "url": "https://www.gnu.org/software/coreutils/manual/coreutils.html"},
+        {"label": "systemd journalctl manual", "url": "https://www.freedesktop.org/software/systemd/man/latest/journalctl.html"},
+    ],
+    "Networking": [
+        {"label": "MDN Domain Names", "url": "https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Web_mechanics/What_is_a_domain_name"},
+        {"label": "MDN HTTP Overview", "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview"},
+        {"label": "Kubernetes Services", "url": "https://kubernetes.io/docs/concepts/services-networking/service/"},
+    ],
+    "Docker": [
+        {"label": "Docker Build Best Practices", "url": "https://docs.docker.com/build/building/best-practices/"},
+        {"label": "Docker Multi-stage Builds", "url": "https://docs.docker.com/build/building/multi-stage/"},
+        {"label": "Docker Reference", "url": "https://docs.docker.com/reference/"},
+    ],
+    "Kubernetes": [
+        {"label": "Kubernetes Debugging Tasks", "url": "https://kubernetes.io/docs/tasks/debug/"},
+        {"label": "Kubernetes Services", "url": "https://kubernetes.io/docs/concepts/services-networking/service/"},
+        {"label": "Kubernetes Probes", "url": "https://kubernetes.io/docs/concepts/workloads/pods/probes/"},
+        {"label": "Kubernetes Deployments", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/"},
+    ],
+    "kubectl": [
+        {"label": "kubectl Reference", "url": "https://kubernetes.io/docs/reference/kubectl/"},
+        {"label": "Debug Running Pods", "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/"},
+        {"label": "Debug Pods", "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/"},
+    ],
+    "Cloud Native": [
+        {"label": "Kubernetes Concepts", "url": "https://kubernetes.io/docs/concepts/"},
+        {"label": "Kubernetes Configuration Best Practices", "url": "https://kubernetes.io/docs/concepts/configuration/overview/"},
+        {"label": "Kubernetes Workloads", "url": "https://kubernetes.io/docs/concepts/workloads/"},
+    ],
+    "EKS": [
+        {"label": "Amazon EKS User Guide", "url": "https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html"},
+        {"label": "Amazon VPC CNI Best Practices", "url": "https://docs.aws.amazon.com/eks/latest/best-practices/vpc-cni.html"},
+        {"label": "EKS Pod Identity", "url": "https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html"},
+        {"label": "EKS Add-ons", "url": "https://docs.aws.amazon.com/eks/latest/userguide/workloads-add-ons-available-eks.html"},
+    ],
+    "Terraform": [
+        {"label": "Terraform State", "url": "https://developer.hashicorp.com/terraform/language/state"},
+        {"label": "Terraform Plan Command", "url": "https://developer.hashicorp.com/terraform/cli/commands/plan"},
+        {"label": "Terraform Module Development", "url": "https://developer.hashicorp.com/terraform/language/modules/develop"},
+    ],
+    "AWS IAM": [
+        {"label": "AWS IAM User Guide", "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html"},
+        {"label": "IAM Policy Evaluation Logic", "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"},
+        {"label": "EKS Pod Identity", "url": "https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html"},
+    ],
+    "AWS Operations": [
+        {"label": "Amazon CloudWatch User Guide", "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"},
+        {"label": "AWS Operational Excellence Pillar", "url": "https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-pillar/welcome.html"},
+        {"label": "AWS Reliability Pillar", "url": "https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html"},
+        {"label": "Amazon VPC User Guide", "url": "https://docs.aws.amazon.com/vpc/latest/userguide/how-it-works.html"},
+    ],
+    "Helm": [
+        {"label": "Helm Best Practices", "url": "https://helm.sh/docs/chart_best_practices/"},
+        {"label": "Helm Values Best Practices", "url": "https://helm.sh/docs/chart_best_practices/values/"},
+        {"label": "Helm Charts", "url": "https://helm.sh/docs/topics/charts/"},
+    ],
+    "ArgoCD": [
+        {"label": "Argo CD Documentation", "url": "https://argo-cd.readthedocs.io/en/stable/"},
+        {"label": "Argo CD Projects", "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/projects/"},
+        {"label": "Argo CD Sync Waves", "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/"},
+        {"label": "Argo CD Diffing", "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/"},
+    ],
+    "CI/CD": [
+        {"label": "GitHub Actions Secure Use", "url": "https://docs.github.com/en/actions/reference/security/secure-use"},
+        {"label": "GitHub Actions OIDC", "url": "https://docs.github.com/en/actions/concepts/security/openid-connect"},
+        {"label": "Deployments and Environments", "url": "https://docs.github.com/en/actions/reference/deployments-and-environments"},
+    ],
+    "Security": [
+        {"label": "Kubernetes Security Concepts", "url": "https://kubernetes.io/docs/concepts/security/"},
+        {"label": "Pod Security Standards", "url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/"},
+        {"label": "Network Policies", "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/"},
+        {"label": "Using RBAC Authorization", "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/"},
+    ],
+    "SRE": [
+        {"label": "Google SRE Service Level Objectives", "url": "https://sre.google/sre-book/service-level-objectives/"},
+        {"label": "Google SRE Practical Alerting", "url": "https://sre.google/sre-book/practical-alerting/"},
+        {"label": "Google Incident Management Guide", "url": "https://sre.google/resources/practices-and-processes/incident-management-guide/"},
+    ],
+    "Observability": [
+        {"label": "OpenTelemetry Signals", "url": "https://opentelemetry.io/docs/concepts/signals/"},
+        {"label": "OpenTelemetry Collector", "url": "https://opentelemetry.io/docs/collector/"},
+        {"label": "Prometheus Alerting Practices", "url": "https://prometheus.io/docs/practices/alerting/"},
+        {"label": "Amazon CloudWatch User Guide", "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"},
+    ],
+    "Incident Response": [
+        {"label": "Google SRE Managing Incidents", "url": "https://sre.google/sre-book/managing-incidents/"},
+        {"label": "Google Incident Management Guide", "url": "https://sre.google/resources/practices-and-processes/incident-management-guide/"},
+        {"label": "Google SRE Postmortem Culture", "url": "https://sre.google/sre-book/postmortem-culture/"},
+    ],
+    "FinOps": [
+        {"label": "FinOps Framework", "url": "https://www.finops.org/framework/"},
+        {"label": "AWS Cost Optimization Pillar", "url": "https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/welcome.html"},
+        {"label": "AWS Cost Optimization Foundation", "url": "https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-laying-the-foundation/welcome.html"},
+    ],
+    "Platform Engineering": [
+        {"label": "CNCF Platforms Whitepaper", "url": "https://tag-app-delivery.cncf.io/whitepapers/platforms/"},
+        {"label": "AWS Well-Architected Framework", "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"},
+        {"label": "Kubernetes Documentation", "url": "https://kubernetes.io/docs/"},
+    ],
+    "Career": [
+        {"label": "AWS Well-Architected Framework", "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"},
+        {"label": "Certified Kubernetes Administrator", "url": "https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/"},
+        {"label": "Terraform Associate Certification", "url": "https://developer.hashicorp.com/certifications/infrastructure-automation"},
+    ],
+}
+
+
+RESOURCE_RESEARCH_PROFILES = {
+    "Kubernetes": {
+        "source_takeaways": [
+            "Services route to Pods through label selectors and EndpointSlices, so selector drift is a first-class incident cause.",
+            "Deployments manage ReplicaSets during rollouts; the durable fix belongs in the controller template, chart, or Git source.",
+            "Probes, requests, events, and owner references usually explain more than a restart button.",
+        ],
+        "study_tasks": [
+            "Draw Deployment -> ReplicaSet -> Pod -> Service -> EndpointSlice for one workload.",
+            "Write a failure note for a Service with no endpoints and include the exact labels you compared.",
+            "Practice explaining readiness versus liveness without using memorized definitions.",
+        ],
+        "interview_prompts": [
+            "A Service returns 503 after a label cleanup. Walk through your first five checks.",
+            "A rollout is stuck with unavailable replicas. What Kubernetes objects do you inspect and why?",
+            "How do you decide whether a probe failure is protecting users or creating a restart storm?",
+        ],
+    },
+    "kubectl": {
+        "source_takeaways": [
+            "The fastest safe loop is get, describe, logs, and events before mutation.",
+            "Previous logs are often the only durable evidence for a CrashLoopBackOff container.",
+            "Interactive tools like exec and port-forward are diagnostics, not long-term operating models.",
+        ],
+        "study_tasks": [
+            "Build a one-page command tree for Pending, CrashLoopBackOff, ImagePullBackOff, and probe failures.",
+            "Capture an incident timeline from events sorted by timestamp.",
+            "Write a rule for when restart is mitigation versus evidence loss.",
+        ],
+        "interview_prompts": [
+            "What evidence do you collect before deleting a broken Pod?",
+            "How do you separate ImagePullBackOff from CrashLoopBackOff under time pressure?",
+            "When would you use exec, and what would make it unsafe?",
+        ],
+    },
+    "EKS": {
+        "source_takeaways": [
+            "The Amazon VPC CNI assigns VPC addresses to Pods on AWS infrastructure, making subnet planning part of Kubernetes capacity.",
+            "EKS add-ons and controllers have versions, IAM permissions, and failure modes like any production dependency.",
+            "Capacity choice is workload fit: EC2 nodes, managed node groups, Fargate, and dynamic provisioning each change observability and operations.",
+        ],
+        "study_tasks": [
+            "Model Pod IP demand for a node group and compare it with subnet headroom.",
+            "Write a preflight checklist for ALB controller installation.",
+            "Compare Fargate and EC2 nodes for a workload that needs a DaemonSet.",
+        ],
+        "interview_prompts": [
+            "Pods are Pending and CNI logs mention allocation errors. What do you inspect?",
+            "When is Fargate a poor fit for a platform workload?",
+            "What should be versioned and monitored for EKS add-ons?",
+        ],
+    },
+    "AWS IAM": {
+        "source_takeaways": [
+            "Workload identity should map AWS permissions to a specific Kubernetes service account instead of relying on broad node roles.",
+            "EKS Pod Identity and IRSA both need a trust boundary plus narrowly scoped permission policy.",
+            "AccessDenied debugging starts with principal, action, resource, condition, and which policy layer denied it.",
+        ],
+        "study_tasks": [
+            "Trace an AWS SDK call from Pod service account to role and policy decision.",
+            "Write a trust-policy review checklist for a controller.",
+            "List how CloudTrail evidence would confirm the actual caller.",
+        ],
+        "interview_prompts": [
+            "A Pod can call S3 in staging but gets AccessDenied in prod. Where do you look?",
+            "What is the risk of letting Pods use the node instance profile?",
+            "How do you review an AWS Load Balancer Controller IAM policy?",
+        ],
+    },
+    "Helm": {
+        "source_takeaways": [
+            "A chart's values file is an API surface; changing names or shapes can break users and pipelines.",
+            "Rendered manifests are the review artifact, not the template intent in someone's head.",
+            "Upgrade safety means checking selectors, immutable fields, hooks, CRDs, and rollback limits.",
+        ],
+        "study_tasks": [
+            "Render dev and prod values, then diff selectors, probes, resources, and RBAC.",
+            "Document five chart values with user-facing comments and defaults.",
+            "Write an upgrade review note for a chart that changes labels.",
+        ],
+        "interview_prompts": [
+            "What makes a Helm values file easy or dangerous to operate?",
+            "How do you review a third-party chart before installation?",
+            "Why can helm rollback fail to restore service behavior?",
+        ],
+    },
+    "ArgoCD": {
+        "source_takeaways": [
+            "Projects restrict source repositories, destinations, and resource kinds; the default project is intentionally broad for early use.",
+            "Sync waves and hooks control apply order, but they need health and rollback thinking.",
+            "Prune, self-heal, and ignoreDifferences are governance choices, not checkboxes.",
+        ],
+        "study_tasks": [
+            "Design an AppProject for one tenant namespace and one allowed repo.",
+            "Write an HPA drift decision: Git-owned field or controller-owned field?",
+            "Map rollback steps when auto-sync would otherwise reapply the bad commit.",
+        ],
+        "interview_prompts": [
+            "How would you prevent a tenant ArgoCD app from creating ClusterRoles?",
+            "What can go wrong with auto-sync plus prune in production?",
+            "When should ignoreDifferences be used, and how narrow should it be?",
+        ],
+    },
+    "Terraform": {
+        "source_takeaways": [
+            "State is Terraform's record of managed infrastructure, so backend, workspace, and lock correctness matter before plan review.",
+            "A plan is a proposal: replacements, deletes, route changes, IAM changes, and unknowns need human review.",
+            "Reusable modules should expose stable inputs without hiding high-risk cloud decisions.",
+        ],
+        "study_tasks": [
+            "Annotate a plan with create, update, replace, destroy, unknown, and sensitive sections.",
+            "Write a state/backend safety checklist for production applies.",
+            "Review an EKS module call for subnet, IAM, endpoint, and node-group risk.",
+        ],
+        "interview_prompts": [
+            "What does Terraform state do, and why is locking important?",
+            "How do you review a plan that replaces a node group?",
+            "What makes a platform Terraform module too abstract?",
+        ],
+    },
+    "Security": {
+        "source_takeaways": [
+            "NetworkPolicy only protects traffic when the network plugin enforces it.",
+            "Pod Security Standards define privileged, baseline, and restricted guardrail levels.",
+            "Least privilege has to include users, service accounts, controllers, secrets, and exceptions.",
+        ],
+        "study_tasks": [
+            "Write a default-deny rollout plan that keeps DNS working.",
+            "Audit one namespace for secret access, cluster-admin paths, and risky Pod settings.",
+            "Create an exception record for a privileged observability agent.",
+        ],
+        "interview_prompts": [
+            "How do you roll out NetworkPolicy without breaking production?",
+            "What Pod settings should an admission policy block by default?",
+            "How do you test whether a developer can read Secrets?",
+        ],
+    },
+    "SRE": {
+        "source_takeaways": [
+            "SLOs should begin with user-visible service behavior rather than component vanity metrics.",
+            "Alerting should page on urgent, actionable symptoms and use tickets for slower operational work.",
+            "Runbooks should start with safe diagnostics, then mitigation, escalation, and learning loops.",
+        ],
+        "study_tasks": [
+            "Define one availability SLI and one latency SLI for checkout traffic.",
+            "Write a burn-rate alert explanation in human incident language.",
+            "Turn a repeated Kubernetes incident into an automation or dashboard improvement.",
+        ],
+        "interview_prompts": [
+            "How do you choose an SLI for an API?",
+            "What makes an alert page-worthy?",
+            "How do you keep a runbook from becoming stale?",
+        ],
+    },
+    "CI/CD": {
+        "source_takeaways": [
+            "CI/CD systems are production control planes because they can build, sign, approve, and deploy code.",
+            "Immutable artifact promotion is stronger than rebuilding per environment.",
+            "Progressive delivery needs measurable pause and rollback conditions.",
+        ],
+        "study_tasks": [
+            "Map a pipeline from commit to image digest to Helm render to ArgoCD sync.",
+            "Define smoke, canary, and SLO gates for a checkout service.",
+            "Threat-model who can push, approve, and deploy to production.",
+        ],
+        "interview_prompts": [
+            "What gates would you require before prod deployment?",
+            "Why promote digests instead of tags?",
+            "How would you secure a pipeline with production deploy permissions?",
+        ],
+    },
+    "AWS Operations": {
+        "source_takeaways": [
+            "AWS operational interviews often test whether you can reason from user symptom to VPC path, load balancer health, IAM, telemetry, and ownership.",
+            "CloudWatch, VPC flow, load balancer, Route 53, and Well-Architected signals are most useful when tied to one explicit failure hypothesis.",
+            "A good cloud engineer balances blast radius, cost, security, and recovery time instead of treating every AWS issue as a console-clicking exercise.",
+        ],
+        "study_tasks": [
+            "Draw one request path through Route 53, ALB, subnets, security groups, nodes, Services, and Pods.",
+            "Write a CloudWatch alarm review that distinguishes symptom alarms from noisy component alarms.",
+            "Create an AWS readiness checklist covering identity, network path, observability, backups, and rollback.",
+        ],
+        "interview_prompts": [
+            "An ALB has unhealthy targets after a deploy. Which AWS and Kubernetes signals do you inspect first?",
+            "How do you explain a private subnet, route table, NAT, and security group to a developer debugging egress?",
+            "What CloudWatch alarm would page you, and what would stay as a ticket or dashboard?",
+        ],
+    },
+    "Observability": {
+        "source_takeaways": [
+            "Metrics, logs, and traces are different signals; senior answers explain when each signal changes the next action.",
+            "Prometheus guidance emphasizes symptom-focused alerting tied to user pain and actionable consoles.",
+            "OpenTelemetry interviews often test instrumentation boundaries, context propagation, sampling, cardinality, and ownership.",
+        ],
+        "study_tasks": [
+            "Design one dashboard panel set for checkout latency starting from user-visible symptoms.",
+            "Write a trace investigation checklist covering ingress, service, dependency, database, and external API spans.",
+            "Review one metric for name, labels, cardinality, aggregation, alert usefulness, and owner.",
+        ],
+        "interview_prompts": [
+            "How do you decide whether to use metrics, logs, or traces for a latency issue?",
+            "What makes an alert actionable enough to wake someone up?",
+            "Where can OpenTelemetry instrumentation create cost or cardinality problems?",
+        ],
+    },
+    "Platform Engineering": {
+        "source_takeaways": [
+            "A platform is a product: it should publish paved-road capabilities, supported contracts, and measurable outcomes.",
+            "Golden paths work when they encode security, reliability, observability, and rollback defaults.",
+            "Adoption metrics should connect developer experience with production outcomes.",
+        ],
+        "study_tasks": [
+            "Design a new-service template with ownership, CI, Helm, ArgoCD, dashboards, and runbooks.",
+            "Write production readiness criteria for a shared-cluster service.",
+            "Define quarterly platform KPIs across speed, reliability, cost, security, and satisfaction.",
+        ],
+        "interview_prompts": [
+            "How do you make the secure path the easy path for developers?",
+            "What belongs in a production-readiness checklist?",
+            "How do you know an internal platform is succeeding?",
+        ],
+    },
+}
+
+RESOURCE_RESEARCH_PROFILES.update(
+    {
+        "Linux": {
+            "source_takeaways": [
+                "Linux troubleshooting starts with process state, logs, permissions, filesystem pressure, and recent change context.",
+                "Pipelines with grep, awk, sort, uniq, jq, and xargs are operational force multipliers when output is noisy.",
+                "Journal and process evidence should be captured before restarts erase useful timing and exit-code context.",
+            ],
+            "study_tasks": [
+                "Write a failure note that includes process, port, log, disk, and permission evidence.",
+                "Build three text pipelines that reduce noisy logs into counts, timestamps, and suspect identifiers.",
+                "Explain the difference between a one-off shell fix and a durable service or configuration fix.",
+            ],
+            "interview_prompts": [
+                "A service is failing after deploy and logs are noisy. What is your Linux evidence order?",
+                "How do you know whether a failure is permissions, disk, process crash, or network path?",
+                "What shell pipeline have you used to turn a wall of text into an answer?",
+            ],
+        },
+        "Networking": {
+            "source_takeaways": [
+                "Network diagnosis is a path problem: client, DNS, route, firewall, load balancer, proxy, service, endpoint, and application.",
+                "TLS, HTTP status, DNS answer, and connection timing each point to different layers.",
+                "A good network diagram includes who initiates traffic, which port/protocol is used, and where policy is enforced.",
+            ],
+            "study_tasks": [
+                "Trace one request from browser or client to Pod and mark every DNS, load balancer, and policy boundary.",
+                "Compare curl, dig, nc, and traceroute output for the same failure and explain what each proves.",
+                "Write a false-positive note for a case where DNS worked but the application still failed.",
+            ],
+            "interview_prompts": [
+                "A health check passes from inside the cluster but fails from the internet. Where do you look?",
+                "How do you separate DNS failure from TLS failure from application failure?",
+                "What belongs on a production network path diagram?",
+            ],
+        },
+        "Docker": {
+            "source_takeaways": [
+                "Image quality is operational quality: base image choice, layers, build context, user, exposed ports, and entrypoint matter.",
+                "Multi-stage builds reduce final image size and attack surface by separating build dependencies from runtime.",
+                "Tags are convenient labels, but digests and attestations give stronger deployment evidence.",
+            ],
+            "study_tasks": [
+                "Review a Dockerfile for base image, user, cache behavior, copied files, and unnecessary packages.",
+                "Convert a single-stage Dockerfile into a multi-stage build and compare image size and runtime files.",
+                "Write an image promotion note that references digest, scan result, and rollback path.",
+            ],
+            "interview_prompts": [
+                "What makes a Dockerfile production-friendly?",
+                "Why are multi-stage builds useful beyond smaller images?",
+                "How do you prevent 'latest' from becoming a release-management problem?",
+            ],
+        },
+        "Cloud Native": {
+            "source_takeaways": [
+                "Cloud-native maturity is about declarative configuration, immutable artifacts, service ownership, observability, and automated recovery.",
+                "YAML is not proof of safety; rendered manifests, permissions, resource requests, and rollout behavior need review.",
+                "The best platform defaults make reliability and security the easiest path for application teams.",
+            ],
+            "study_tasks": [
+                "Map one service from source repo to image to manifest to deployment to dashboard.",
+                "Write a manifest review checklist covering labels, probes, resources, secrets, and rollback.",
+                "Explain what changes when moving from a local demo to a multi-team cluster.",
+            ],
+            "interview_prompts": [
+                "What makes an application cloud-native in an operational sense?",
+                "How do you review a manifest before apply?",
+                "Which defaults should a platform team provide so developers avoid sharp edges?",
+            ],
+        },
+        "Incident Response": {
+            "source_takeaways": [
+                "Incident response needs clear roles, timeline discipline, user-impact framing, and explicit communication channels.",
+                "Mitigation and root cause are different jobs; confusing them slows recovery.",
+                "Postmortems should improve systems and response behavior without blame.",
+            ],
+            "study_tasks": [
+                "Write an incident timeline with detection, impact, mitigation, recovery, and follow-up points.",
+                "Practice a short executive update and a technical update for the same incident.",
+                "Turn one repeated incident class into a game-day drill and backlog item.",
+            ],
+            "interview_prompts": [
+                "What does an incident commander do?",
+                "How do you communicate uncertainty during an incident?",
+                "What makes a postmortem useful instead of performative?",
+            ],
+        },
+        "FinOps": {
+            "source_takeaways": [
+                "Cost optimization starts with visibility, ownership, tagging, usage patterns, and business context.",
+                "Savings that reduce reliability, availability, or team trust are not real platform wins.",
+                "Kubernetes cost work has to connect requests, limits, node shape, storage, load balancers, NAT, and data transfer.",
+            ],
+            "study_tasks": [
+                "Create a cost driver map for one EKS service including compute, network, storage, and shared platform costs.",
+                "Write a recommendation that includes expected savings, reliability risk, owner, validation, and rollback.",
+                "Compare right-sizing, spot, scheduling, and architecture changes for one workload.",
+            ],
+            "interview_prompts": [
+                "How do you explain Kubernetes waste to a service owner?",
+                "What cost optimization would you reject because it risks reliability?",
+                "Which AWS costs surprise teams running EKS?",
+            ],
+        },
+        "Career": {
+            "source_takeaways": [
+                "Strong platform portfolios show judgment: constraints, tradeoffs, evidence, source links, and production thinking.",
+                "Certifications help structure study, but interviews reward applied scenarios and clear explanations.",
+                "A credible story connects technical work to developer experience, reliability, security, and cost outcomes.",
+            ],
+            "study_tasks": [
+                "Turn one lab into a STAR-format interview story with evidence and tradeoffs.",
+                "Write three resume bullets for the same project: implementation, operations, and business-impact versions.",
+                "Create a gap map across AWS, Kubernetes, Terraform, SRE, security, and platform product thinking.",
+            ],
+            "interview_prompts": [
+                "Tell me about a platform project where you changed your mind after seeing evidence.",
+                "How do you keep learning material from becoming tutorial-only experience?",
+                "What proof would make a hiring manager believe you can operate production systems?",
+            ],
+        },
+    }
+)
+
+
+def resource_research_profile(domain: str) -> dict[str, list[str]]:
+    return RESOURCE_RESEARCH_PROFILES.get(
+        domain,
+        {
+            "source_takeaways": [
+                f"Use official {domain} references as the source of truth before turning examples into production changes.",
+                "Separate concepts, commands, safety constraints, and evidence artifacts when studying.",
+                "Convert every learning session into a reusable note, checklist, or portfolio proof point.",
+            ],
+            "study_tasks": [
+                f"Summarize the current official {domain} docs in five operational bullets.",
+                "Write one local-safe practice scenario and one read-only production inspection scenario.",
+                "Create a portfolio artifact showing diagnosis, decision, and rollback thinking.",
+            ],
+            "interview_prompts": [
+                f"What {domain} failure mode have you practiced end to end?",
+                "What evidence would you collect before changing the system?",
+                "How would you explain the tradeoff to a product team?",
+            ],
+        },
+    )
+
 
 def official_source_for_domain(domain: str) -> tuple[str, str]:
+    primary_source = RESOURCE_OFFICIAL_SOURCE_SETS.get(domain, [])
+    if primary_source:
+        return primary_source[0]["url"], primary_source[0]["label"]
     return RESOURCE_OFFICIAL_SOURCES.get(domain, ("https://kubernetes.io/docs/home/", "Official platform reference"))
+
+
+def official_sources_for_domain(domain: str) -> list[dict[str, str]]:
+    sources = RESOURCE_OFFICIAL_SOURCE_SETS.get(domain)
+    if sources:
+        return sources
+    source_url, source_label = official_source_for_domain(domain)
+    return [{"label": source_label, "url": source_url}]
 
 
 def platform_resource_slug(domain: str, resource_type: str) -> str:
@@ -2953,44 +4413,2206 @@ def build_platform_resources() -> list[dict]:
     resources: list[dict] = []
     for domain in RESOURCE_DOMAIN_BLUEPRINTS:
         source_url, source_label = official_source_for_domain(domain["domain"])
+        official_sources = official_sources_for_domain(domain["domain"])
+        research_profile = resource_research_profile(domain["domain"])
         for resource_type, type_summary, minutes in RESOURCE_TYPE_BLUEPRINTS:
-            title = f"{domain['domain']} {resource_type.title()}"
+            type_profile = RESOURCE_TYPE_PROFILES[resource_type]
+            slug = platform_resource_slug(domain["domain"], resource_type)
+            title = type_profile["title_template"].format(domain=domain["domain"])
+            commands = [
+                command.format(command=domain["command"], domain=domain["domain"], slug=slug)
+                for command in type_profile["commands"]
+            ]
             resources.append(
                 {
-                    "slug": platform_resource_slug(domain["domain"], resource_type),
+                    "slug": slug,
                     "title": title,
                     "domain": domain["domain"],
                     "level_group": domain["level_group"],
                     "resource_type": resource_type,
                     "estimated_minutes": minutes,
-                    "summary": f"{type_summary} for {domain['topics']}.",
+                    "summary": type_profile["summary_template"].format(
+                        domain=domain["domain"],
+                        topics=domain["topics"],
+                        type_summary=type_summary,
+                    ),
                     "outcomes": [
+                        *type_profile["outcomes"],
                         f"Explain the core {domain['domain']} mental model in operational language.",
-                        f"Use the resource to make safer {domain['domain']} decisions during reviews or incidents.",
-                        "Produce a reusable artifact that can be attached to a portfolio project or runbook.",
                     ],
                     "prerequisites": [
                         "Read the related Platform Academy lesson.",
                         "Know whether you are using a local cluster, mock data, or an approved sandbox.",
+                        f"Skim the primary source trail for {domain['domain']} and note current version assumptions.",
                     ],
                     "safety_level": "local-safe" if domain["level_group"] == "Fresher" else "read-only / sandbox-first",
-                    "commands": [domain["command"]],
-                    "artifacts": [domain["artifact"], f"{domain['domain']} {resource_type} notes"],
+                    "commands": commands,
+                    "artifacts": [domain["artifact"], *type_profile["artifacts"], f"{domain['domain']} {resource_type} notes"],
                     "related_lessons": [],
                     "related_labs": [domain["lab_slug"]],
                     "next_steps": [
+                        *type_profile["next_steps"],
                         "Open the related lab and collect evidence before changing anything.",
                         "Convert the artifact into a portfolio-ready README section.",
                     ],
+                    "source_takeaways": [*research_profile["source_takeaways"], f"{type_summary} should be anchored to official {domain['domain']} documentation, not copied from stale examples."],
+                    "study_tasks": [*type_profile["study_tasks"], *research_profile["study_tasks"]],
+                    "interview_prompts": [*research_profile["interview_prompts"], *type_profile["interview_prompts"]],
+                    "official_sources": official_sources,
                     "source_url": source_url,
                     "source_label": source_label,
-                    "reviewed_at": "2026-05-20",
+                    "reviewed_at": "2026-05-30",
                 }
             )
     return resources
 
 
 PLATFORM_RESOURCES = build_platform_resources()
+
+
+PLATFORM_INTERVIEW_PREP = [
+    {
+        "slug": "kubernetes-debugging-interview-pack",
+        "title": "Kubernetes Debugging Interview Pack",
+        "domain": "Kubernetes",
+        "level_group": "Fresher",
+        "focus": "Service routing, rollouts, Pods, probes, requests, and safe kubectl evidence collection.",
+        "related_course_slug": "platform-kubernetes-fundamentals",
+        "related_labs": ["trace-service-to-pod", "debug-crashloop-imagepull"],
+        "official_sources": [
+            {"label": "Kubernetes Deployments", "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/"},
+            {"label": "Kubernetes Debug Pods", "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/"},
+            {"label": "Kubernetes Services", "url": "https://kubernetes.io/docs/concepts/services-networking/service/"},
+        ],
+        "questions": [
+            {
+                "question": "A Service returns 503 after a label cleanup. Walk me through your diagnosis.",
+                "scenario": "A deployment is running, the Service exists, and users get intermittent 503s.",
+                "answer_outline": [
+                    "Read the Service selector and namespace first.",
+                    "List Pods with labels and compare selector keys exactly.",
+                    "Inspect EndpointSlices for ready addresses and readiness failures.",
+                    "Trace the source manifest or Helm values so the fix is durable.",
+                ],
+                "strong_signals": ["Mentions EndpointSlices", "Checks readiness before blaming networking", "Keeps fix in source of truth"],
+                "red_flags": ["Deletes Pods first", "Changes random labels live", "Skips namespace and selector comparison"],
+                "practice_task": "Use the trace-service-to-pod lab and write a four-command evidence note.",
+            },
+            {
+                "question": "A rollout is stuck with unavailable replicas. Which objects do you inspect?",
+                "scenario": "A new Deployment image was merged but rollout status never completes.",
+                "answer_outline": [
+                    "Inspect Deployment desired, updated, available, and unavailable counts.",
+                    "Compare old and new ReplicaSets and their Pod status.",
+                    "Describe failing Pods for events, probes, image pull, config, and scheduling.",
+                    "Use rollout history for release context and decide rollback limits.",
+                ],
+                "strong_signals": ["Follows Deployment -> ReplicaSet -> Pod", "Differentiates rollback from data recovery", "Reads events"],
+                "red_flags": ["Only scales replicas", "Confuses Service routing with rollout health", "Rolls back without impact check"],
+                "practice_task": "Create a rollout triage template with status, events, owner, and rollback decision.",
+            },
+            {
+                "question": "How do readiness, liveness, and startup probes differ operationally?",
+                "scenario": "A slow-starting app restarts repeatedly after probe settings changed.",
+                "answer_outline": [
+                    "Readiness decides whether the Pod receives traffic.",
+                    "Liveness decides whether kubelet restarts the container.",
+                    "Startup delays liveness/readiness pressure while slow apps initialize.",
+                    "A bad liveness probe can amplify a dependency issue into a restart storm.",
+                ],
+                "strong_signals": ["Uses traffic gate vs restart gate", "Mentions startup probe", "Treats probes as user-safety controls"],
+                "red_flags": ["Says all probes restart Pods", "Disables probes permanently", "Ignores app startup behavior"],
+                "practice_task": "Write probe review criteria for an HTTP API and a worker process.",
+            },
+            {
+                "question": "A Pod is Pending. What are the highest-value signals?",
+                "scenario": "A release creates Pods that never start, and the team suspects a cluster outage.",
+                "answer_outline": [
+                    "Describe the Pod and read scheduler events.",
+                    "Check requests against node allocatable capacity.",
+                    "Inspect taints, tolerations, node selectors, affinity, and PVC binding.",
+                    "Separate scheduling failure from image pull or CNI allocation failure.",
+                ],
+                "strong_signals": ["Starts with scheduler events", "Knows taints and PVCs", "Separates capacity from runtime"],
+                "red_flags": ["Uses logs for a container that never started", "Lowers requests blindly", "Assumes autoscaler will fix it"],
+                "practice_task": "Create a Pending Pod checklist that maps event messages to likely owners.",
+            },
+            {
+                "question": "What evidence do you collect before restarting a failing workload?",
+                "scenario": "On-call wants to restart checkout during an incident.",
+                "answer_outline": [
+                    "Capture describe output, recent logs, previous logs, and sorted events.",
+                    "Record current rollout revision, owner, and affected namespace.",
+                    "Decide whether restart is mitigation, evidence loss, or both.",
+                    "Document what should become an alert, dashboard, or automation.",
+                ],
+                "strong_signals": ["Preserves previous logs", "Mentions events timeline", "Connects response to learning loop"],
+                "red_flags": ["Restarts before evidence", "No user-impact statement", "No follow-up artifact"],
+                "practice_task": "Write a restart decision runbook for CrashLoopBackOff.",
+            },
+        ],
+    },
+    {
+        "slug": "eks-operations-interview-pack",
+        "title": "EKS Operations Interview Pack",
+        "domain": "EKS",
+        "level_group": INTERMEDIATE_LEVEL,
+        "focus": "VPC CNI, Pod IPs, node models, add-ons, load balancers, and AWS-backed failure modes.",
+        "related_course_slug": "platform-eks-operations",
+        "related_labs": ["diagnose-eks-ip-exhaustion", "design-production-eks-review"],
+        "official_sources": [
+            {"label": "Amazon EKS User Guide", "url": "https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html"},
+            {"label": "Amazon VPC CNI for EKS", "url": "https://docs.aws.amazon.com/eks/latest/userguide/managing-vpc-cni.html"},
+            {"label": "Amazon EKS Best Practices Guide", "url": "https://docs.aws.amazon.com/eks/latest/best-practices/introduction.html"},
+        ],
+        "questions": [
+            {
+                "question": "Pods are Pending and CNI logs mention IP allocation. What is your path?",
+                "scenario": "A traffic spike triggers scale-out, but new Pods cannot start.",
+                "answer_outline": [
+                    "Read Pod events to confirm CNI/IP allocation rather than CPU or memory scheduling.",
+                    "Inspect aws-node logs and VPC CNI configuration.",
+                    "Check subnet available IPs, node max Pods, and prefix delegation settings.",
+                    "Decide between subnet capacity, node shape, prefix delegation, or architecture change.",
+                ],
+                "strong_signals": ["Knows Pods consume VPC IPs with VPC CNI", "Checks subnet headroom", "Avoids one-size-fits-all scaling"],
+                "red_flags": ["Only adds replicas", "Blames CoreDNS first", "Ignores subnet/AZ placement"],
+                "practice_task": "Model Pod IP demand for three node groups and write a scale-out risk note.",
+            },
+            {
+                "question": "When would you choose Fargate, managed node groups, or EC2 nodes?",
+                "scenario": "A team proposes moving every workload to Fargate to remove node operations.",
+                "answer_outline": [
+                    "Use Fargate for compatible workloads where node management reduction matters.",
+                    "Use managed node groups for conservative EC2 lifecycle and DaemonSet-friendly operations.",
+                    "Use custom EC2/Karpenter patterns when workload shape, cost, GPUs, or DaemonSets require control.",
+                    "Separate system and app capacity with labels, taints, and tolerations.",
+                ],
+                "strong_signals": ["Mentions DaemonSet constraints", "Discusses workload fit", "Balances toil, cost, and observability"],
+                "red_flags": ["Says one model fits all", "Ignores logging/monitoring agents", "No placement controls"],
+                "practice_task": "Create a workload placement matrix for API, batch, controller, and observability workloads.",
+            },
+            {
+                "question": "An Ingress exists but no ALB appears. What do you inspect?",
+                "scenario": "A developer created an Ingress and waited, but AWS did not provision a load balancer.",
+                "answer_outline": [
+                    "Check IngressClass and controller ownership.",
+                    "Read Ingress events and AWS Load Balancer Controller logs.",
+                    "Inspect subnet discovery tags, IAM permissions, scheme, target type, and annotations.",
+                    "Confirm security groups and target health after provisioning.",
+                ],
+                "strong_signals": ["Connects Kubernetes events with AWS controller logs", "Mentions subnet tags and IAM", "Checks target type"],
+                "red_flags": ["Only checks DNS", "Creates a manual ALB outside source of truth", "Ignores public/private exposure"],
+                "practice_task": "Build an ALB controller preflight checklist.",
+            },
+            {
+                "question": "How do you run EKS add-ons as production components?",
+                "scenario": "VPC CNI, CoreDNS, and kube-proxy versions drift across clusters.",
+                "answer_outline": [
+                    "Inventory versions, compatibility, owners, alerts, and upgrade windows.",
+                    "Treat add-on IAM and RBAC like application permissions.",
+                    "Read release notes and test upgrades before cluster version changes.",
+                    "Track health with controller metrics, logs, events, and SLO impact.",
+                ],
+                "strong_signals": ["Mentions compatibility order", "Owns alerts and runbooks", "Includes rollback/pause points"],
+                "red_flags": ["Auto-upgrades everything blindly", "No owner per add-on", "Ignores permissions"],
+                "practice_task": "Write an add-on ownership record for VPC CNI.",
+            },
+            {
+                "question": "What EKS signals matter during a cluster upgrade readiness review?",
+                "scenario": "The platform team must approve a Kubernetes minor version upgrade.",
+                "answer_outline": [
+                    "Inventory deprecated APIs, CRDs, admission webhooks, controllers, and Helm renders.",
+                    "Plan control plane, add-on, and node rollout sequence.",
+                    "Test clients and CI/CD compatibility against target version.",
+                    "Define pause, validation, communication, and rollback boundaries.",
+                ],
+                "strong_signals": ["Includes add-ons and nodes", "Checks API deprecations", "Has pause points"],
+                "red_flags": ["Calls it a button click", "Skips CRDs/webhooks", "No workload owner mapping"],
+                "practice_task": "Create a one-page upgrade runbook for a production EKS cluster.",
+            },
+        ],
+    },
+    {
+        "slug": "workload-identity-iam-interview-pack",
+        "title": "AWS IAM and Workload Identity Interview Pack",
+        "domain": "AWS IAM",
+        "level_group": INTERMEDIATE_LEVEL,
+        "focus": "IAM evaluation, STS, trust policies, IRSA, EKS Pod Identity, and controller permission review.",
+        "related_course_slug": "platform-aws-iam-for-eks",
+        "related_labs": ["debug-irsa-access-denied", "audit-tenant-boundaries"],
+        "official_sources": [
+            {"label": "EKS Pod Identity", "url": "https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html"},
+            {"label": "AWS IAM User Guide", "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html"},
+        ],
+        "questions": [
+            {
+                "question": "A Pod gets AccessDenied from AWS after a service account change. How do you debug?",
+                "scenario": "The same code worked yesterday, but now AWS SDK calls fail in production.",
+                "answer_outline": [
+                    "Identify the actual principal with SDK logs, CloudTrail, or sts get-caller-identity where safe.",
+                    "Check service account, annotation or Pod Identity association, and Pod spec serviceAccountName.",
+                    "Review trust policy, OIDC or Pod Identity setup, action, resource, and conditions.",
+                    "Separate trust failure from permission-policy denial.",
+                ],
+                "strong_signals": ["Finds actual principal", "Separates trust and permissions", "Uses CloudTrail evidence"],
+                "red_flags": ["Adds AdministratorAccess", "Only checks Kubernetes YAML", "Ignores conditions and boundaries"],
+                "practice_task": "Write an AccessDenied decision tree from Pod to IAM policy.",
+            },
+            {
+                "question": "Why avoid broad node instance profile permissions for Pods?",
+                "scenario": "A legacy cluster gives every workload the node role because it is simpler.",
+                "answer_outline": [
+                    "Any compromised Pod may reach node credentials if IMDS is not restricted.",
+                    "Least privilege requires mapping permissions to specific service accounts.",
+                    "Auditability improves when each workload has its own role association.",
+                    "Controllers and apps should have distinct roles and blast radius.",
+                ],
+                "strong_signals": ["Mentions IMDS exposure", "Connects identity to service account", "Discusses auditability"],
+                "red_flags": ["Says network isolation is enough", "Shares one role per cluster", "No credential isolation concern"],
+                "practice_task": "Review a node role and propose a migration to workload identity.",
+            },
+            {
+                "question": "How do you review an AWS controller IAM policy before production?",
+                "scenario": "A team wants to install ExternalDNS or AWS Load Balancer Controller.",
+                "answer_outline": [
+                    "Identify required AWS APIs and resources for the controller.",
+                    "Scope resources by ARN, tags, hosted zones, cluster name, and conditions where possible.",
+                    "Review Kubernetes service account, trust policy, and namespace.",
+                    "Add monitoring for high-risk API activity and ownership.",
+                ],
+                "strong_signals": ["Scopes resources", "Reviews trust and permission policy", "Adds monitoring"],
+                "red_flags": ["Accepts cluster-admin plus broad AWS admin", "No owner", "No CloudTrail review"],
+                "practice_task": "Create a policy review note for a load balancer controller.",
+            },
+            {
+                "question": "Explain allow, explicit deny, conditions, and permission boundaries in IAM.",
+                "scenario": "A role has an Allow but still cannot perform the action.",
+                "answer_outline": [
+                    "Evaluate identity, resource, session, boundary, SCP, and explicit deny layers.",
+                    "Explicit deny wins over allow.",
+                    "Conditions can make an allow apply only for matching context.",
+                    "Boundaries and SCPs can cap what identity policies allow.",
+                ],
+                "strong_signals": ["Names multiple policy layers", "Explains explicit deny precedence", "Asks for principal/action/resource"],
+                "red_flags": ["Looks only at one inline policy", "Ignores organizations/SCP", "Cannot identify the principal"],
+                "practice_task": "Annotate a denied CloudTrail event with each policy layer to check.",
+            },
+            {
+                "question": "How do EKS Pod Identity and IRSA change operations?",
+                "scenario": "An organization is deciding between workload identity patterns.",
+                "answer_outline": [
+                    "Both scope AWS permissions to Kubernetes service accounts.",
+                    "IRSA uses the cluster OIDC provider and role trust subjects.",
+                    "EKS Pod Identity uses associations and a node agent, reducing OIDC provider operations.",
+                    "Both still require least-privilege policies, IMDS awareness, and SDK compatibility.",
+                ],
+                "strong_signals": ["Knows both patterns", "Mentions agent/association for Pod Identity", "Does not overstate container isolation"],
+                "red_flags": ["Says identity solves all Pod isolation", "Ignores SDK/default credential chain", "No trust boundary discussion"],
+                "practice_task": "Write a comparison table for IRSA vs EKS Pod Identity for platform onboarding docs.",
+            },
+        ],
+    },
+    {
+        "slug": "helm-gitops-interview-pack",
+        "title": "Helm and GitOps Delivery Interview Pack",
+        "domain": "Helm / ArgoCD",
+        "level_group": INTERMEDIATE_LEVEL,
+        "focus": "Values design, rendered manifests, AppProjects, sync policy, drift, and rollback reality.",
+        "related_course_slug": "platform-helm-application-delivery",
+        "related_labs": ["validate-helm-release-artifact", "trace-argocd-drift"],
+        "official_sources": [
+            {"label": "Helm Values Best Practices", "url": "https://helm.sh/docs/chart_best_practices/values/"},
+            {"label": "Argo CD Projects", "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/projects/"},
+            {"label": "Argo CD Sync Waves", "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/"},
+        ],
+        "questions": [
+            {
+                "question": "What makes a Helm chart values file a good API?",
+                "scenario": "Several teams consume one internal service chart.",
+                "answer_outline": [
+                    "Names should be stable, documented, and easy to override.",
+                    "The chart should expose intent without leaking every template detail.",
+                    "Types should be clear; quote strings where YAML coercion is risky.",
+                    "Breaking values changes need versioning and migration notes.",
+                ],
+                "strong_signals": ["Calls values an API", "Mentions docs and type clarity", "Considers consumers"],
+                "red_flags": ["Adds arbitrary nested knobs", "No docs", "Tests only with one values file"],
+                "practice_task": "Document ten values for an internal app chart.",
+            },
+            {
+                "question": "How do you review a Helm upgrade before it hits production?",
+                "scenario": "A chart change passes unit tests but may alter selectors and RBAC.",
+                "answer_outline": [
+                    "Render exact production values and compare against previous release.",
+                    "Run lint, schema validation, policy checks, and server dry-run where safe.",
+                    "Inspect selectors, immutable fields, resources, probes, hooks, CRDs, and RBAC.",
+                    "Document rollback limits and validation steps.",
+                ],
+                "strong_signals": ["Reviews rendered manifests", "Checks selectors/immutable fields", "Understands rollback limits"],
+                "red_flags": ["Approves because helm lint passes", "No previous-release comparison", "Ignores CRDs"],
+                "practice_task": "Write a release review rubric for rendered Kubernetes YAML.",
+            },
+            {
+                "question": "How would you restrict tenant deployments in ArgoCD?",
+                "scenario": "A shared ArgoCD instance serves multiple application teams.",
+                "answer_outline": [
+                    "Create AppProjects per tenant or boundary.",
+                    "Restrict source repos, destination namespaces/clusters, and resource kinds.",
+                    "Avoid the permissive default project for production tenants.",
+                    "Use project roles and review cluster-scoped exceptions.",
+                ],
+                "strong_signals": ["Mentions source, destination, kinds", "Knows default project is broad", "Uses exceptions"],
+                "red_flags": ["Every app in default project", "Allows all ClusterRoles", "No repo boundary"],
+                "practice_task": "Design an AppProject spec for a tenant namespace.",
+            },
+            {
+                "question": "When does ignoreDifferences help, and when is it dangerous?",
+                "scenario": "ArgoCD reports drift because an HPA changes replicas.",
+                "answer_outline": [
+                    "It helps when a controller intentionally owns a field.",
+                    "It should be scoped to specific group, kind, name, and field.",
+                    "It is dangerous when broad rules hide actual drift or security changes.",
+                    "Ownership should be documented near the Application manifest.",
+                ],
+                "strong_signals": ["Scoped field ownership", "HPA example", "Warns against broad ignores"],
+                "red_flags": ["Ignores entire resources", "Cannot explain who owns field", "Uses it to hide broken sync"],
+                "practice_task": "Write an HPA replica drift decision record.",
+            },
+            {
+                "question": "What can go wrong with auto-sync, prune, and rollback?",
+                "scenario": "A bad commit deploys to prod and someone wants to manually restore objects.",
+                "answer_outline": [
+                    "Auto-sync may reapply the bad desired state.",
+                    "Prune can delete resources removed from Git, including shared or stateful objects.",
+                    "Rollback should usually restore desired state in Git or pause automation first.",
+                    "External state, CRDs, and migrations may need separate recovery.",
+                ],
+                "strong_signals": ["Knows automation can fight manual recovery", "Mentions prune risk", "Separates Git rollback from data rollback"],
+                "red_flags": ["Deletes Application without plan", "No auto-sync awareness", "Assumes rollback covers databases"],
+                "practice_task": "Write a GitOps incident recovery checklist.",
+            },
+        ],
+    },
+    {
+        "slug": "terraform-platform-interview-pack",
+        "title": "Terraform Platform Infrastructure Interview Pack",
+        "domain": "Terraform",
+        "level_group": INTERMEDIATE_LEVEL,
+        "focus": "State, plans, modules, EKS infrastructure, drift, cost, and safe applies.",
+        "related_course_slug": "platform-terraform-aws-infrastructure",
+        "related_labs": ["review-terraform-eks-plan", "design-production-eks-review"],
+        "official_sources": [
+            {"label": "Terraform State", "url": "https://developer.hashicorp.com/terraform/language/state"},
+            {"label": "Terraform Plan", "url": "https://developer.hashicorp.com/terraform/cli/commands/plan"},
+        ],
+        "questions": [
+            {
+                "question": "What is Terraform state and why does locking matter?",
+                "scenario": "Two engineers are about to apply changes to the same EKS stack.",
+                "answer_outline": [
+                    "State maps configuration to real infrastructure objects.",
+                    "Remote state and locking prevent concurrent writes and stale plans.",
+                    "Wrong workspace or backend can target the wrong environment.",
+                    "Sensitive state data needs access control.",
+                ],
+                "strong_signals": ["Explains mapping and locking", "Mentions backend/workspace", "Cares about sensitive data"],
+                "red_flags": ["Says state is just cache", "Runs apply locally in prod", "No lock concern"],
+                "practice_task": "Write a production Terraform backend safety checklist.",
+            },
+            {
+                "question": "How do you review a Terraform plan for EKS changes?",
+                "scenario": "A plan modifies node groups, route tables, security groups, and IAM.",
+                "answer_outline": [
+                    "Find create, update, replace, delete, and unknown sections.",
+                    "Call out security group, route, endpoint, IAM, and node replacement blast radius.",
+                    "Check dependency order and whether validation requires cluster or cloud checks.",
+                    "Document rollback, cost, and communication impact.",
+                ],
+                "strong_signals": ["Reads plan beyond green/red", "Mentions blast radius", "Includes cost"],
+                "red_flags": ["Approves if plan exits 0", "No replacement awareness", "Ignores IAM"],
+                "practice_task": "Annotate a sample EKS plan with risk labels.",
+            },
+            {
+                "question": "What makes an infrastructure module reusable but still safe?",
+                "scenario": "A platform module manages VPC, EKS, node groups, and add-ons.",
+                "answer_outline": [
+                    "Expose stable inputs and outputs with clear ownership.",
+                    "Avoid hiding high-risk defaults such as public endpoints or broad IAM.",
+                    "Version module changes and provide migration notes.",
+                    "Test representative environment values before release.",
+                ],
+                "strong_signals": ["Balances abstraction with visibility", "Mentions versioning", "Reviews defaults"],
+                "red_flags": ["One mega-module with hidden behavior", "No migration path", "No tests"],
+                "practice_task": "Write module contract docs for an EKS node group module.",
+            },
+            {
+                "question": "How do you handle drift in Terraform-managed infrastructure?",
+                "scenario": "Someone changed a security group in the AWS console during an incident.",
+                "answer_outline": [
+                    "Detect drift with plan and cloud evidence.",
+                    "Decide whether the live change should be reverted or codified.",
+                    "Update Terraform source if the change is the new desired state.",
+                    "Avoid importing or tainting blindly without ownership context.",
+                ],
+                "strong_signals": ["Separates desired vs accidental drift", "Keeps source of truth", "Has incident context"],
+                "red_flags": ["Runs apply without review", "Deletes live changes blindly", "No owner discussion"],
+                "practice_task": "Write a drift decision record for an emergency security group change.",
+            },
+            {
+                "question": "Which Terraform changes are highest risk for an EKS platform?",
+                "scenario": "You get ten minutes to scan a plan before a change window.",
+                "answer_outline": [
+                    "Control plane endpoint access, subnets, routes, NAT, security groups, and IAM.",
+                    "Node group replacements, launch templates, add-ons, and Karpenter constraints.",
+                    "Stateful dependencies such as volumes, DNS, and load balancers.",
+                    "Anything marked destroy or replace in production.",
+                ],
+                "strong_signals": ["Prioritizes connectivity/IAM/capacity", "Looks for destroy/replace", "Understands cloud blast radius"],
+                "red_flags": ["Focuses only on resource count", "No network path thinking", "No rollback"],
+                "practice_task": "Build a high-risk resource watchlist for EKS Terraform plans.",
+            },
+        ],
+    },
+    {
+        "slug": "security-multitenancy-interview-pack",
+        "title": "Kubernetes Security and Multi-tenancy Interview Pack",
+        "domain": "Security",
+        "level_group": ADVANCED_LEVEL,
+        "focus": "RBAC, NetworkPolicy, Pod Security Standards, admission controls, secrets, and tenant boundaries.",
+        "related_course_slug": "platform-kubernetes-security-multitenancy",
+        "related_labs": ["audit-tenant-boundaries"],
+        "official_sources": [
+            {"label": "Kubernetes Network Policies", "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/"},
+            {"label": "Kubernetes Pod Security Standards", "url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/"},
+        ],
+        "questions": [
+            {
+                "question": "How do you roll out default-deny NetworkPolicy safely?",
+                "scenario": "A shared cluster has flat Pod networking and tenants ask for isolation.",
+                "answer_outline": [
+                    "Confirm the CNI enforces NetworkPolicy.",
+                    "Inventory dependencies, DNS, ingress, egress, metrics, and health checks.",
+                    "Roll out by namespace with observability and rollback manifests.",
+                    "Test allowed paths and document service ownership.",
+                ],
+                "strong_signals": ["Checks CNI enforcement", "Keeps DNS in mind", "Rolls out gradually"],
+                "red_flags": ["Applies cluster-wide deny at once", "No dependency inventory", "Assumes policy works everywhere"],
+                "practice_task": "Write a namespace default-deny migration plan.",
+            },
+            {
+                "question": "What does least privilege mean in Kubernetes RBAC?",
+                "scenario": "Developers need to restart workloads but should not read Secrets.",
+                "answer_outline": [
+                    "Grant verbs on required resources in required namespaces only.",
+                    "Use Role/RoleBinding where possible and avoid cluster-admin.",
+                    "Test with kubectl auth can-i for users and service accounts.",
+                    "Create an escalation path for exceptional access.",
+                ],
+                "strong_signals": ["Uses can-i", "Separates Role from ClusterRole", "Avoids secrets verbs"],
+                "red_flags": ["Uses cluster-admin for convenience", "No service-account review", "No testing"],
+                "practice_task": "Design a restart-only RBAC role and test matrix.",
+            },
+            {
+                "question": "Which Pod settings should admission policy block or review?",
+                "scenario": "A vendor chart asks for privileged mode and hostPath.",
+                "answer_outline": [
+                    "Review privileged, hostPath, hostNetwork, hostPID, hostIPC, capabilities, and root user.",
+                    "Compare against baseline/restricted Pod Security Standards.",
+                    "Isolate required exceptions with owner, namespace, RBAC, network boundaries, and review date.",
+                    "Audit before enforcement to avoid breaking critical controllers.",
+                ],
+                "strong_signals": ["Names concrete high-risk settings", "Understands exception process", "Mentions audit mode"],
+                "red_flags": ["Approves vendor defaults", "No owner or expiry", "Blocks all controllers without review"],
+                "practice_task": "Create an exception record for a privileged monitoring agent.",
+            },
+            {
+                "question": "How do you design secrets boundaries in a shared cluster?",
+                "scenario": "Multiple teams deploy in one cluster and some controllers watch all namespaces.",
+                "answer_outline": [
+                    "Keep tenant secrets in tenant namespaces with narrow list/watch permissions.",
+                    "Encrypt at rest and audit access.",
+                    "Use External Secrets, CSI driver, SOPS, or Sealed Secrets based on ownership.",
+                    "Plan rotation and application reload behavior.",
+                ],
+                "strong_signals": ["Mentions list/watch risk", "Has source-of-truth strategy", "Includes rotation"],
+                "red_flags": ["Commits plaintext secrets", "Allows broad secret read", "No audit"],
+                "practice_task": "Write a secret access review for one namespace and one controller.",
+            },
+            {
+                "question": "How would you separate tenants in a Kubernetes platform?",
+                "scenario": "A business wants shared clusters but strong team isolation.",
+                "answer_outline": [
+                    "Use namespace boundaries with RBAC, quotas, LimitRanges, NetworkPolicy, and admission policy.",
+                    "Separate high-risk tenants or compliance domains into clusters when needed.",
+                    "Define ownership, cost labels, audit, and exception workflows.",
+                    "Document what isolation Kubernetes does and does not provide.",
+                ],
+                "strong_signals": ["Does not oversell namespaces", "Combines multiple controls", "Knows when separate clusters matter"],
+                "red_flags": ["Says namespaces are hard security boundaries", "No network or RBAC plan", "No exception handling"],
+                "practice_task": "Draft a shared-cluster tenant onboarding checklist.",
+            },
+        ],
+    },
+    {
+        "slug": "sre-observability-interview-pack",
+        "title": "SRE and Observability Interview Pack",
+        "domain": "SRE",
+        "level_group": ADVANCED_LEVEL,
+        "focus": "SLIs, SLOs, burn-rate alerts, dashboards, runbooks, incidents, and post-incident learning.",
+        "related_course_slug": "platform-sre-observability-kubernetes",
+        "related_labs": ["write-slo-backed-runbook"],
+        "official_sources": [
+            {"label": "Google SRE SLOs", "url": "https://sre.google/sre-book/service-level-objectives/"},
+            {"label": "Prometheus Alerting Practices", "url": "https://prometheus.io/docs/practices/alerting/"},
+        ],
+        "questions": [
+            {
+                "question": "How do you choose an SLI for an API?",
+                "scenario": "A checkout API has many internal metrics but no user-facing reliability objective.",
+                "answer_outline": [
+                    "Start with user-visible behavior: availability, latency, correctness, or freshness.",
+                    "Define measurement point, good events, total events, and window.",
+                    "Avoid component-only metrics as primary SLIs.",
+                    "Tie dashboards and alerts to the SLO and error budget.",
+                ],
+                "strong_signals": ["User-visible first", "Defines numerator/denominator", "Connects to error budget"],
+                "red_flags": ["Picks CPU as the SLI", "No measurement window", "No user impact"],
+                "practice_task": "Define availability and latency SLIs for checkout.",
+            },
+            {
+                "question": "What makes an alert page-worthy?",
+                "scenario": "On-call receives noisy alerts for CPU, restarts, and queue length.",
+                "answer_outline": [
+                    "Page on urgent, actionable, user-impacting symptoms.",
+                    "Use tickets or dashboards for slow, non-urgent operational work.",
+                    "Include runbook, severity, owner, and evidence link.",
+                    "Review alerts after incidents and remove noise.",
+                ],
+                "strong_signals": ["Urgent/actionable/user-impact", "Separates page from ticket", "Mentions runbook"],
+                "red_flags": ["Pages on every warning", "No action path", "No ownership"],
+                "practice_task": "Rewrite three noisy alerts into page, ticket, or dashboard categories.",
+            },
+            {
+                "question": "Explain burn-rate alerting in practical terms.",
+                "scenario": "A service is consuming error budget faster than expected.",
+                "answer_outline": [
+                    "Burn rate compares current error consumption to the allowed budget over a window.",
+                    "Fast burns page quickly; slow burns create lower-urgency work.",
+                    "Multi-window alerts reduce noise and catch sustained harm.",
+                    "The alert should point to symptom dashboard and first mitigation choices.",
+                ],
+                "strong_signals": ["Explains budget consumption", "Uses multi-window concept", "Connects alert to action"],
+                "red_flags": ["Only uses raw error count", "No window", "No mitigation"],
+                "practice_task": "Write a burn-rate alert explanation for a product manager.",
+            },
+            {
+                "question": "What should a Kubernetes incident runbook contain?",
+                "scenario": "Checkout latency page fires and a new responder opens the runbook.",
+                "answer_outline": [
+                    "State user impact, SLO, severity, and owner.",
+                    "List safe read-only diagnostics before mutating actions.",
+                    "Provide mitigation options, rollback criteria, and escalation triggers.",
+                    "Include post-incident follow-up and known dashboard links.",
+                ],
+                "strong_signals": ["Starts with impact", "Read-only first", "Includes escalation and learning"],
+                "red_flags": ["Only a command dump", "No mitigation owner", "No stale-doc review"],
+                "practice_task": "Write a runbook section for Service 503 incidents.",
+            },
+            {
+                "question": "How do logs, metrics, and traces complement each other?",
+                "scenario": "A service has high latency but logs look normal.",
+                "answer_outline": [
+                    "Metrics show aggregate trends and alert conditions.",
+                    "Logs provide discrete event detail and context.",
+                    "Traces show request path and dependency timing.",
+                    "Use all three around one user-impact question rather than collecting everything.",
+                ],
+                "strong_signals": ["Understands each signal", "Ties signals to a question", "Mentions dependency timing"],
+                "red_flags": ["Says one signal is enough", "No cardinality/cost awareness", "No user symptom"],
+                "practice_task": "Design an observability panel for a slow checkout request.",
+            },
+        ],
+    },
+    {
+        "slug": "platform-system-design-interview-pack",
+        "title": "Platform Engineering System Design Interview Pack",
+        "domain": "Platform Engineering",
+        "level_group": ADVANCED_LEVEL,
+        "focus": "Golden paths, production readiness, developer experience, cost, governance, and platform product strategy.",
+        "related_course_slug": "platform-engineering-product-operating-model",
+        "related_labs": ["create-platform-golden-path", "design-safe-release-pipeline"],
+        "official_sources": [
+            {"label": "CNCF Platforms Whitepaper", "url": "https://tag-app-delivery.cncf.io/whitepapers/platforms/"},
+            {"label": "AWS Well-Architected Framework", "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"},
+        ],
+        "questions": [
+            {
+                "question": "Design a golden path for a new Kubernetes service.",
+                "scenario": "Developers need to launch services without opening platform tickets for every step.",
+                "answer_outline": [
+                    "Generate repo, CI, Dockerfile, Helm chart, Terraform hooks, ArgoCD app, dashboards, alerts, and runbook.",
+                    "Encode secure defaults and production readiness into templates.",
+                    "Expose clear inputs and supported extension points.",
+                    "Measure adoption, lead time, incidents, and developer satisfaction.",
+                ],
+                "strong_signals": ["Product thinking", "Security and observability defaults", "Measures outcomes"],
+                "red_flags": ["Only scaffolds code", "No ownership/runbook", "No adoption metric"],
+                "practice_task": "Sketch the first-run experience for creating a new service.",
+            },
+            {
+                "question": "What belongs in a production readiness review?",
+                "scenario": "A team wants to go live in the shared EKS platform.",
+                "answer_outline": [
+                    "Ownership, support model, SLOs, dashboards, alerts, runbooks, dependencies, and rollback.",
+                    "Security, secrets, data handling, network paths, resource requests, and cost labels.",
+                    "Load expectations, failure modes, deployment process, and incident escalation.",
+                    "Exception owners and review dates for anything outside the paved road.",
+                ],
+                "strong_signals": ["Covers people and systems", "Includes cost/security/reliability", "Handles exceptions"],
+                "red_flags": ["Only checks manifests", "No owner", "No rollback"],
+                "practice_task": "Build a readiness scorecard for one service.",
+            },
+            {
+                "question": "How do you decide when to build platform automation?",
+                "scenario": "Engineers ask for automation after several manual incidents.",
+                "answer_outline": [
+                    "Look for repeated toil, high-risk manual steps, or long lead-time bottlenecks.",
+                    "Confirm ownership, frequency, blast radius, and maintenance cost.",
+                    "Start with a narrow paved-road workflow and measure adoption.",
+                    "Document escape hatches and support boundaries.",
+                ],
+                "strong_signals": ["Balances automation cost", "Starts narrow", "Measures impact"],
+                "red_flags": ["Automates every request", "No owner", "No lifecycle plan"],
+                "practice_task": "Prioritize five platform backlog items by impact and effort.",
+            },
+            {
+                "question": "How would you measure platform success?",
+                "scenario": "Leadership asks whether the platform team is improving engineering outcomes.",
+                "answer_outline": [
+                    "Track lead time, deployment frequency, reliability, incident load, cost efficiency, security posture, and satisfaction.",
+                    "Tie metrics to platform capabilities rather than vanity adoption.",
+                    "Segment by team maturity and service criticality.",
+                    "Use metrics to guide investment, not punish teams.",
+                ],
+                "strong_signals": ["Balanced scorecard", "Connects to product outcomes", "Avoids vanity metrics"],
+                "red_flags": ["Only counts clusters", "No reliability/cost signal", "Metrics as punishment"],
+                "practice_task": "Draft a quarterly platform review with five KPIs.",
+            },
+            {
+                "question": "How do you handle exceptions to the golden path?",
+                "scenario": "A team needs a privileged workload or unusual networking pattern.",
+                "answer_outline": [
+                    "Validate the business and technical need.",
+                    "Document owner, risk, compensating controls, expiry, and review cadence.",
+                    "Prefer platform-owned shared capability when many teams need the exception.",
+                    "Feed repeated exceptions back into roadmap decisions.",
+                ],
+                "strong_signals": ["Exception lifecycle", "Compensating controls", "Roadmap feedback"],
+                "red_flags": ["No exceptions allowed ever", "Permanent undocumented exceptions", "No risk owner"],
+                "practice_task": "Write an exception template for privileged workloads.",
+            },
+        ],
+    },
+    {
+        "slug": "linux-operator-interview-pack",
+        "title": "Linux Operator Troubleshooting Interview Pack",
+        "domain": "Linux",
+        "level_group": "Fresher",
+        "focus": "Shell navigation, processes, exit codes, permissions, logs, disk pressure, and evidence-first debugging.",
+        "related_course_slug": "platform-linux-command-line-foundations",
+        "related_labs": ["inspect-linux-failure-evidence", "debug-crashloop-imagepull"],
+        "official_sources": [
+            {"label": "GNU Bash Reference Manual", "url": "https://www.gnu.org/software/bash/manual/bash.html"},
+            {"label": "GNU Coreutils Manual", "url": "https://www.gnu.org/software/coreutils/manual/coreutils.html"},
+            {"label": "systemd journalctl manual", "url": "https://www.freedesktop.org/software/systemd/man/latest/journalctl.html"},
+        ],
+        "questions": [
+            {
+                "question": "A Linux service fails after deploy and logs are noisy. What is your evidence order?",
+                "scenario": "A container and a systemd service both report failure, but the team only has a vague user complaint.",
+                "answer_outline": [
+                    "Start with scope: host, container, service name, recent deploy, and user-impact symptom.",
+                    "Check process state, exit code, recent logs, environment, config file path, and permissions.",
+                    "Look for disk, memory, port, dependency, and certificate errors before restarting.",
+                    "Reduce noisy logs into a timestamped evidence note with commands and findings.",
+                ],
+                "strong_signals": ["Separates process state from log text", "Checks permissions and disk", "Creates a concise evidence note"],
+                "red_flags": ["Restarts repeatedly", "Greps one error and stops", "Does not identify the service owner"],
+                "practice_task": "Use the Linux evidence lab and write a five-command failure note.",
+            },
+            {
+                "question": "How do exit codes and signals show up in Kubernetes troubleshooting?",
+                "scenario": "A Pod is CrashLoopBackOff and one container ended with code 137.",
+                "answer_outline": [
+                    "Read container last state, reason, exit code, restart count, and previous logs.",
+                    "Connect exit code 137 to possible SIGKILL or memory pressure rather than app-level return code.",
+                    "Check resource limits, OOMKilled reason, node pressure, and application memory behavior.",
+                    "Decide whether the fix belongs in code, resource requests/limits, or workload placement.",
+                ],
+                "strong_signals": ["Uses last state and previous logs", "Knows 137/OOM path", "Connects Linux process behavior to Pod status"],
+                "red_flags": ["Only increases replicas", "Ignores limits", "Assumes every crash is Kubernetes"],
+                "practice_task": "Write a CrashLoopBackOff note that includes exit code, signal, and next owner.",
+            },
+            {
+                "question": "A process cannot read its config file. How do you debug without weakening permissions?",
+                "scenario": "A service runs as a non-root user and fails after a config volume or file ownership change.",
+                "answer_outline": [
+                    "Identify the runtime user, group, file path, mode bits, owner, and parent directory permissions.",
+                    "Check whether the file is mounted read-only, generated by CI, or owned by another user.",
+                    "Fix the narrow ownership or mode issue rather than making the container root.",
+                    "Record the securityContext, Dockerfile user, and deployment source of truth.",
+                ],
+                "strong_signals": ["Checks parent directories", "Keeps non-root posture", "Finds source of truth"],
+                "red_flags": ["Runs chmod 777", "Switches to root permanently", "Ignores how the file is mounted"],
+                "practice_task": "Review one Dockerfile and Pod securityContext for file access assumptions.",
+            },
+            {
+                "question": "What shell pipeline would you use to turn event noise into an answer?",
+                "scenario": "A namespace has hundreds of events and the team needs the top failure reasons quickly.",
+                "answer_outline": [
+                    "Start with a bounded source such as recent events, logs, or JSON output.",
+                    "Filter by namespace, reason, involved object, or timestamp before counting.",
+                    "Use sort, uniq, awk, jq, or cut-style extraction to group repeated symptoms.",
+                    "Keep the raw command and output snippet so the summary can be audited.",
+                ],
+                "strong_signals": ["Bounds the data", "Groups by reason/object", "Keeps reproducible command history"],
+                "red_flags": ["Pastes a wall of logs", "Deletes context with over-broad filters", "Cannot reproduce the count"],
+                "practice_task": "Build an event summary command for CrashLoopBackOff and ImagePullBackOff cases.",
+            },
+            {
+                "question": "How do you tell disk pressure, log growth, and image storage apart?",
+                "scenario": "Nodes report disk pressure and new Pods fail to start during a rollout.",
+                "answer_outline": [
+                    "Check node condition, kubelet events, filesystem usage, container image storage, and log directories.",
+                    "Separate application log growth from image churn, emptyDir usage, and node root volume sizing.",
+                    "Avoid deleting evidence blindly during an incident.",
+                    "Create cleanup, retention, requests/limits, and capacity follow-up actions.",
+                ],
+                "strong_signals": ["Checks node condition and filesystem", "Separates log/image/emptyDir causes", "Protects evidence"],
+                "red_flags": ["Deletes random files", "Only drains nodes", "No retention or capacity follow-up"],
+                "practice_task": "Draft a disk pressure runbook section with safe read-only checks first.",
+            },
+        ],
+    },
+    {
+        "slug": "networking-debugging-interview-pack",
+        "title": "Networking Debugging Interview Pack",
+        "domain": "Networking",
+        "level_group": "Fresher",
+        "focus": "DNS, ports, TLS, HTTP status codes, Ingress, Services, firewalls, and request-path reasoning.",
+        "related_course_slug": "platform-networking-fundamentals",
+        "related_labs": ["trace-network-path", "trace-service-to-pod"],
+        "official_sources": [
+            {"label": "MDN HTTP Overview", "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview"},
+            {"label": "MDN Domain Names", "url": "https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Web_mechanics/What_is_a_domain_name"},
+            {"label": "Kubernetes Services", "url": "https://kubernetes.io/docs/concepts/services-networking/service/"},
+        ],
+        "questions": [
+            {
+                "question": "A request times out. How do you locate the failing hop?",
+                "scenario": "Users cannot reach checkout, but internal health checks sometimes pass.",
+                "answer_outline": [
+                    "Draw the request path from client to DNS, load balancer, Ingress, Service, Pod, and dependency.",
+                    "Classify the symptom as DNS failure, connect timeout, TLS failure, HTTP response, or application timeout.",
+                    "Test from outside, inside the cluster, and from a Pod when each vantage point is safe.",
+                    "Map each failed hop to the owning system and next evidence source.",
+                ],
+                "strong_signals": ["Draws the path", "Uses vantage points", "Classifies the symptom before changing anything"],
+                "red_flags": ["Only checks app logs", "Blames DNS for every failure", "No owner per hop"],
+                "practice_task": "Use the network path lab and annotate each hop with command, signal, and owner.",
+            },
+            {
+                "question": "How do you separate DNS failure from Service routing failure?",
+                "scenario": "One namespace can reach checkout by IP but not by service name.",
+                "answer_outline": [
+                    "Check the exact name used, namespace, search domain, and fully qualified service DNS name.",
+                    "Resolve the name from a controlled Pod and compare ClusterIP or records.",
+                    "Inspect Service, EndpointSlices, CoreDNS health, and NetworkPolicy around DNS traffic.",
+                    "Avoid changing Service selectors until name resolution and endpoint readiness are understood.",
+                ],
+                "strong_signals": ["Tests FQDN and namespace", "Checks EndpointSlices separately", "Considers DNS NetworkPolicy"],
+                "red_flags": ["Edits CoreDNS first", "Ignores namespace search path", "Confuses DNS resolution with ready endpoints"],
+                "practice_task": "Write a DNS-vs-Service decision tree for Kubernetes troubleshooting.",
+            },
+            {
+                "question": "What do 404, 502, 503, and timeout usually tell you in an Ingress path?",
+                "scenario": "A new route behind an ALB and Ingress returns different errors across environments.",
+                "answer_outline": [
+                    "Use status code, response headers, and timing to identify which hop likely answered.",
+                    "404 often points to route/host/path mismatch; 502 to upstream/proxy issues; 503 to no healthy backend or readiness.",
+                    "Timeout usually means no response path or blocked connectivity.",
+                    "Confirm with Ingress events, controller logs, target health, Service endpoints, and app logs.",
+                ],
+                "strong_signals": ["Uses headers and timing", "Maps status to likely hop", "Checks target health and endpoints"],
+                "red_flags": ["Treats all 5xx as app bugs", "No TLS/host/path check", "No controller evidence"],
+                "practice_task": "Build a status-code triage table for ALB to Ingress to Service to Pod.",
+            },
+            {
+                "question": "How would you design a minimal allowlist for frontend to API to database?",
+                "scenario": "Security wants NetworkPolicy and cloud firewalls without breaking DNS or health checks.",
+                "answer_outline": [
+                    "List required sources, destinations, ports, protocols, namespaces, and labels.",
+                    "Include DNS, metrics, health, and migration paths explicitly.",
+                    "Roll out default deny gradually with observation and rollback manifests.",
+                    "Test allowed and denied paths from controlled clients.",
+                ],
+                "strong_signals": ["Includes DNS and health checks", "Uses labels and ports precisely", "Tests both allow and deny"],
+                "red_flags": ["Allows entire cluster CIDR", "Forgets DNS", "No rollback plan"],
+                "practice_task": "Draft a three-tier NetworkPolicy review with test commands.",
+            },
+            {
+                "question": "A TLS handshake fails only in production. What do you inspect?",
+                "scenario": "Staging works, but production clients see certificate or handshake errors.",
+                "answer_outline": [
+                    "Check SNI, hostname, certificate chain, expiration, issuer, and trust store.",
+                    "Compare load balancer listener, Ingress TLS secret, redirect policy, and protocol versions.",
+                    "Look for proxy or service-mesh termination differences.",
+                    "Record the client command, server certificate details, and owning certificate automation.",
+                ],
+                "strong_signals": ["Mentions SNI and chain", "Compares termination points", "Finds certificate owner"],
+                "red_flags": ["Disables verification as a fix", "Only checks Kubernetes Secret name", "No client-side evidence"],
+                "practice_task": "Create a TLS triage note template with hostname, SNI, issuer, and termination point.",
+            },
+        ],
+    },
+    {
+        "slug": "docker-image-delivery-interview-pack",
+        "title": "Docker and Image Delivery Interview Pack",
+        "domain": "Docker",
+        "level_group": "Fresher",
+        "focus": "Dockerfiles, layers, multi-stage builds, tags, digests, image scanning, runtime users, and reproducible releases.",
+        "related_course_slug": "platform-cloud-native-foundations",
+        "related_labs": ["review-yaml-before-apply", "design-safe-release-pipeline"],
+        "official_sources": [
+            {"label": "Dockerfile Best Practices", "url": "https://docs.docker.com/build/building/best-practices/"},
+            {"label": "Docker Multi-stage Builds", "url": "https://docs.docker.com/build/building/multi-stage/"},
+            {"label": "Docker Reference", "url": "https://docs.docker.com/reference/"},
+        ],
+        "questions": [
+            {
+                "question": "What makes a Dockerfile production-friendly?",
+                "scenario": "A service image builds, but it is huge, slow to scan, and runs as root.",
+                "answer_outline": [
+                    "Use a minimal, maintained base image and pin meaningful versions.",
+                    "Separate build tooling from runtime with multi-stage builds where useful.",
+                    "Run as a non-root user and copy only required runtime files.",
+                    "Make dependency installation cacheable and scanable without hiding provenance.",
+                ],
+                "strong_signals": ["Mentions multi-stage builds", "Runs non-root", "Balances size, cache, and provenance"],
+                "red_flags": ["Ships build tools in runtime", "Uses latest everywhere", "Runs as root without reason"],
+                "practice_task": "Review a Dockerfile for base image, user, layers, copied files, and cache behavior.",
+            },
+            {
+                "question": "Why deploy by image digest instead of only by tag?",
+                "scenario": "Staging and production both say checkout:latest but behave differently.",
+                "answer_outline": [
+                    "Tags are mutable labels; digests identify exact image content.",
+                    "Promotion should carry the tested artifact rather than rebuilding surprises.",
+                    "Digest-based rollbacks are more auditable during incidents.",
+                    "Tags can still be useful as human labels if the digest is recorded.",
+                ],
+                "strong_signals": ["Explains tag mutability", "Promotes tested artifacts", "Connects digest to rollback"],
+                "red_flags": ["Trusts latest", "Rebuilds separately per environment", "Cannot identify what is running"],
+                "practice_task": "Write a release note that records tag, digest, source commit, and scan result.",
+            },
+            {
+                "question": "How do you reason about image vulnerability scan results?",
+                "scenario": "A scan blocks release with critical findings in OS packages.",
+                "answer_outline": [
+                    "Identify package, severity, fix availability, exploitability, and whether the package is reachable at runtime.",
+                    "Prefer base image updates or dependency updates over blanket exceptions.",
+                    "Document temporary exceptions with owner, expiry, compensating controls, and follow-up.",
+                    "Keep runtime images small to reduce scan surface.",
+                ],
+                "strong_signals": ["Reviews fix availability and reachability", "Uses expiring exceptions", "Improves base image hygiene"],
+                "red_flags": ["Ignores scans", "Blocks forever without risk context", "Adds permanent exception"],
+                "practice_task": "Create an image vulnerability triage record for one blocked release.",
+            },
+            {
+                "question": "What can go wrong when copying files into a container image?",
+                "scenario": "A release works locally but fails in Kubernetes because config and executable files are missing or unreadable.",
+                "answer_outline": [
+                    "Check build context, .dockerignore, working directory, COPY paths, file modes, and ownership.",
+                    "Confirm the runtime user can read configs and execute binaries.",
+                    "Separate build-time files from runtime files.",
+                    "Add a smoke test that runs the final image command before pushing.",
+                ],
+                "strong_signals": ["Checks .dockerignore and ownership", "Tests final image", "Knows build vs runtime files"],
+                "red_flags": ["Copies entire repo blindly", "Runs chmod 777", "Only tests outside the image"],
+                "practice_task": "Write a final-image smoke check for an app container.",
+            },
+            {
+                "question": "How would you structure local, CI, and production image workflows?",
+                "scenario": "Developers want fast local builds, security wants repeatable production images.",
+                "answer_outline": [
+                    "Optimize local builds for speed while keeping the production Dockerfile reproducible.",
+                    "Build once in CI, scan and attest the artifact, then promote the same digest.",
+                    "Use separate dev conveniences without leaking them into production runtime.",
+                    "Record source commit, build inputs, base image, and deployment digest.",
+                ],
+                "strong_signals": ["Separates dev convenience from production artifact", "Build once promote digest", "Records provenance"],
+                "red_flags": ["Rebuilds on every deploy", "No scan/attestation", "Debug tools in prod image by default"],
+                "practice_task": "Map image lifecycle from developer laptop to registry to Kubernetes rollout.",
+            },
+        ],
+    },
+    {
+        "slug": "cicd-release-engineering-interview-pack",
+        "title": "CI/CD Release Engineering Interview Pack",
+        "domain": "CI/CD",
+        "level_group": ADVANCED_LEVEL,
+        "focus": "Quality gates, artifact promotion, OIDC, deployment environments, runner trust, canaries, and rollback.",
+        "related_course_slug": "platform-cicd-release-engineering",
+        "related_labs": ["design-safe-release-pipeline", "validate-helm-release-artifact"],
+        "official_sources": [
+            {"label": "GitHub Actions Security", "url": "https://docs.github.com/en/actions/how-tos/secure-your-work"},
+            {"label": "GitHub Actions OIDC", "url": "https://docs.github.com/en/actions/concepts/security/openid-connect"},
+            {"label": "Deployments and Environments", "url": "https://docs.github.com/en/actions/reference/deployments-and-environments"},
+        ],
+        "questions": [
+            {
+                "question": "Design a deployment pipeline for a Kubernetes service.",
+                "scenario": "A team wants faster releases but production incidents increased after pipeline automation.",
+                "answer_outline": [
+                    "Map source checks, tests, image build, scan, SBOM, signing, Helm render, policy checks, deploy, smoke, and SLO gates.",
+                    "Promote the same image digest through environments.",
+                    "Use environment protection, approvals, and rollback rules for production.",
+                    "Measure lead time, deployment frequency, change failure rate, and recovery time.",
+                ],
+                "strong_signals": ["Covers artifact and manifest gates", "Promotes digest", "Measures delivery and reliability"],
+                "red_flags": ["Only adds a deploy job", "No post-deploy validation", "No rollback path"],
+                "practice_task": "Create a quality-gate matrix for dev, stage, and production.",
+            },
+            {
+                "question": "Why use OIDC for cloud deploy credentials in CI?",
+                "scenario": "A repository stores long-lived AWS keys for production deployment.",
+                "answer_outline": [
+                    "OIDC lets workflows request short-lived cloud credentials through a trust relationship.",
+                    "Scope trust by repository, branch, environment, audience, and job context.",
+                    "Remove long-lived static cloud secrets from the CI system where possible.",
+                    "Audit assume-role events and keep deploy roles least privilege.",
+                ],
+                "strong_signals": ["Short-lived credentials", "Scopes trust claims", "Mentions audit and least privilege"],
+                "red_flags": ["Keeps static keys forever", "Allows any branch to deploy", "No CloudTrail review"],
+                "practice_task": "Write an OIDC trust review checklist for a production deploy role.",
+            },
+            {
+                "question": "How do you secure self-hosted runners?",
+                "scenario": "A platform team uses self-hosted runners with network access to private clusters.",
+                "answer_outline": [
+                    "Treat runners as production control-plane infrastructure.",
+                    "Separate runner pools by trust level, repository, environment, and network access.",
+                    "Use ephemeral or frequently recycled runners where possible.",
+                    "Control secrets, outbound access, logs, cache poisoning, and untrusted pull-request execution.",
+                ],
+                "strong_signals": ["Separates trust zones", "Understands runner network risk", "Handles untrusted PRs"],
+                "red_flags": ["Runs all repos on one privileged runner", "Caches secrets", "Lets forks deploy"],
+                "practice_task": "Threat-model a runner group that can deploy to EKS.",
+            },
+            {
+                "question": "What makes a canary release safe enough to automate?",
+                "scenario": "Leadership wants automatic production rollout if the first 5% looks healthy.",
+                "answer_outline": [
+                    "Define canary population, duration, success metrics, and automatic pause/rollback conditions.",
+                    "Use user-impact signals such as error rate, latency, saturation, and business transactions.",
+                    "Compare canary to baseline and watch dependencies, not just pod readiness.",
+                    "Keep manual override and incident communication paths clear.",
+                ],
+                "strong_signals": ["Defines pause criteria", "Uses user-impact metrics", "Compares baseline"],
+                "red_flags": ["Only checks Deployment available", "No rollback trigger", "No business signal"],
+                "practice_task": "Write canary promotion rules for checkout using latency and error-budget signals.",
+            },
+            {
+                "question": "How do you make rollback reliable in a pipeline?",
+                "scenario": "A failed release rolls back Kubernetes objects but the database migration already ran.",
+                "answer_outline": [
+                    "Separate application rollback, data rollback, feature flags, and compatibility windows.",
+                    "Keep immutable artifact history and deployment metadata.",
+                    "Design migrations to be backward compatible or explicitly gated.",
+                    "Practice rollback in non-prod and document the point of no return.",
+                ],
+                "strong_signals": ["Separates app and data rollback", "Uses compatibility windows", "Practices rollback"],
+                "red_flags": ["Assumes helm rollback fixes data", "No artifact history", "No migration strategy"],
+                "practice_task": "Add rollback assumptions and limits to a release runbook.",
+            },
+        ],
+    },
+    {
+        "slug": "production-eks-architecture-interview-pack",
+        "title": "Production EKS and AWS Architecture Interview Pack",
+        "domain": "EKS",
+        "level_group": ADVANCED_LEVEL,
+        "focus": "Private access, endpoint design, multi-AZ resilience, Karpenter, cost guardrails, add-ons, and upgrade risk.",
+        "related_course_slug": "platform-production-eks-architecture",
+        "related_labs": ["design-production-eks-review", "diagnose-eks-ip-exhaustion"],
+        "official_sources": [
+            {"label": "Amazon EKS Best Practices Guide", "url": "https://docs.aws.amazon.com/eks/latest/best-practices/introduction.html"},
+            {"label": "Amazon VPC CNI Best Practices", "url": "https://docs.aws.amazon.com/eks/latest/best-practices/vpc-cni.html"},
+            {"label": "AWS Well-Architected Framework", "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"},
+        ],
+        "questions": [
+            {
+                "question": "How would you design access to a private EKS endpoint?",
+                "scenario": "Security wants no public control-plane endpoint, but operators and CI still need access.",
+                "answer_outline": [
+                    "Define operator, automation, and break-glass paths before disabling public access.",
+                    "Use private networking such as VPN, Direct Connect, bastion, SSM, or private runners based on org constraints.",
+                    "Protect kubeconfig, IAM auth, audit logs, and emergency access.",
+                    "Test failure modes: network outage, identity outage, and incident response outside business hours.",
+                ],
+                "strong_signals": ["Designs access paths", "Includes break-glass", "Tests failure modes"],
+                "red_flags": ["Locks out CI/on-call", "No audit path", "Treats private endpoint as complete security"],
+                "practice_task": "Draw a private EKS access diagram with normal and emergency paths.",
+            },
+            {
+                "question": "How do you review multi-AZ resilience for EKS workloads?",
+                "scenario": "A workload claims high availability but all replicas depend on one zone.",
+                "answer_outline": [
+                    "Check node groups, subnet placement, Pod topology spread, PDBs, storage class, and load balancer targets.",
+                    "Look for zonal volumes, single-AZ NAT, and dependency concentration.",
+                    "Model what happens during one-AZ loss and during maintenance disruption.",
+                    "Tie placement decisions to SLOs and cost tradeoffs.",
+                ],
+                "strong_signals": ["Checks topology spread and storage", "Models AZ loss", "Includes dependencies"],
+                "red_flags": ["Counts replicas only", "Ignores zonal storage", "No disruption budget review"],
+                "practice_task": "Create an AZ-failure review checklist for a stateful and stateless service.",
+            },
+            {
+                "question": "What guardrails would you put around Karpenter or dynamic node provisioning?",
+                "scenario": "Teams want faster scale-out, but finance and reliability worry about surprise capacity.",
+                "answer_outline": [
+                    "Define allowed instance families, architectures, zones, capacity types, taints, labels, and limits.",
+                    "Set disruption budgets, consolidation behavior, and workload compatibility expectations.",
+                    "Monitor pending Pods, provisioning latency, interruption handling, and cost.",
+                    "Keep critical workloads protected from overly aggressive consolidation.",
+                ],
+                "strong_signals": ["Uses NodePool constraints", "Balances cost and disruption", "Monitors provisioning outcomes"],
+                "red_flags": ["Allows every instance type", "No disruption policy", "No cost visibility"],
+                "practice_task": "Write a dynamic capacity policy for critical and batch workloads.",
+            },
+            {
+                "question": "How do you plan an EKS upgrade for a platform with many tenants?",
+                "scenario": "The cluster minor version is nearing support deadlines and tenants own their charts.",
+                "answer_outline": [
+                    "Inventory APIs, CRDs, webhooks, controllers, add-ons, clients, Helm renders, and tenant owners.",
+                    "Test against the target version and publish deadlines for incompatible manifests.",
+                    "Sequence control plane, add-ons, nodes, and workload validation.",
+                    "Define pause criteria, rollback boundaries, communication, and post-upgrade watch windows.",
+                ],
+                "strong_signals": ["Includes tenants and CRDs", "Sequences add-ons and nodes", "Has communication plan"],
+                "red_flags": ["Calls upgrade a button click", "No deprecated API inventory", "No tenant ownership"],
+                "practice_task": "Build a tenant-facing upgrade readiness checklist.",
+            },
+            {
+                "question": "How do you balance NAT gateway, load balancer, and node costs against reliability?",
+                "scenario": "The platform bill is rising, and a team proposes collapsing everything into fewer AZs.",
+                "answer_outline": [
+                    "Break down cost by traffic path, NAT, load balancers, idle requests, node utilization, and storage.",
+                    "Connect savings proposals to availability and failure-mode changes.",
+                    "Use right-sizing, bin-packing, spot where appropriate, and architecture changes before cutting resilience blindly.",
+                    "Track cost per service with ownership labels and review cadence.",
+                ],
+                "strong_signals": ["Explains cost drivers", "Protects resilience tradeoffs", "Uses ownership labels"],
+                "red_flags": ["Cuts AZs without SLO discussion", "Only blames nodes", "No chargeback or review loop"],
+                "practice_task": "Write a cost review note that separates waste from intentional resilience spend.",
+            },
+        ],
+    },
+    {
+        "slug": "incident-response-interview-pack",
+        "title": "Incident Response and Postmortem Interview Pack",
+        "domain": "Incident Response",
+        "level_group": ADVANCED_LEVEL,
+        "focus": "Severity, incident command, communication, mitigation, escalation, timelines, postmortems, and game days.",
+        "related_course_slug": "platform-sre-observability-kubernetes",
+        "related_labs": ["write-slo-backed-runbook"],
+        "official_sources": [
+            {"label": "Google SRE Managing Incidents", "url": "https://sre.google/sre-book/managing-incidents/"},
+            {"label": "Google Incident Management Guide", "url": "https://sre.google/resources/practices-and-processes/incident-management-guide/"},
+            {"label": "Google SRE Postmortem Culture", "url": "https://sre.google/sre-book/postmortem-culture/"},
+        ],
+        "questions": [
+            {
+                "question": "How do you structure an incident response when checkout is down?",
+                "scenario": "Multiple engineers are jumping into Slack with theories while customers cannot pay.",
+                "answer_outline": [
+                    "Name severity, incident commander, communications owner, subject-matter responders, and customer impact.",
+                    "Create a timeline and separate diagnosis from mitigation workstreams.",
+                    "Use safe mitigations first and communicate status at a predictable cadence.",
+                    "Capture decisions and evidence for post-incident learning.",
+                ],
+                "strong_signals": ["Assigns roles", "Separates diagnosis and mitigation", "Communicates predictably"],
+                "red_flags": ["Everyone debugs at once", "No impact statement", "No timeline"],
+                "practice_task": "Draft the first ten minutes of an incident channel transcript.",
+            },
+            {
+                "question": "How do you decide between rollback, failover, scaling, and feature disablement?",
+                "scenario": "Error rate is high after a release, but database latency is also elevated.",
+                "answer_outline": [
+                    "Identify the user-impacting symptom, recent changes, and likely blast radius.",
+                    "Choose mitigation that reduces impact fastest with the least irreversible risk.",
+                    "Check whether rollback is compatible with data/schema state.",
+                    "Keep communication clear about mitigation confidence and validation signal.",
+                ],
+                "strong_signals": ["Compares mitigation tradeoffs", "Checks data compatibility", "Validates user impact"],
+                "red_flags": ["Always rolls back", "Always scales", "No validation signal"],
+                "practice_task": "Write a mitigation decision table for a bad release plus database latency.",
+            },
+            {
+                "question": "What makes a postmortem useful rather than performative?",
+                "scenario": "The organization writes long incident docs but repeats the same failure.",
+                "answer_outline": [
+                    "Focus on contributing factors, detection gaps, decision points, and system improvements.",
+                    "Create small, owned, prioritized follow-up actions with due dates.",
+                    "Include what went well and what signals were missing.",
+                    "Share learning without blaming individuals for normal human decisions under pressure.",
+                ],
+                "strong_signals": ["Actionable follow-ups", "Blameless but accountable", "Finds detection gaps"],
+                "red_flags": ["Names a person as root cause", "No owners", "Only writes narrative"],
+                "practice_task": "Rewrite a blame-heavy incident summary into learning-oriented findings.",
+            },
+            {
+                "question": "How do you keep runbooks current?",
+                "scenario": "On-call responders do not trust the runbook because it failed during the last incident.",
+                "answer_outline": [
+                    "Add ownership, review cadence, last-tested date, and service/version assumptions.",
+                    "Test runbooks in drills, game days, and post-incident reviews.",
+                    "Link commands to dashboards, alerts, and source-of-truth manifests.",
+                    "Remove stale steps and mark risky actions clearly.",
+                ],
+                "strong_signals": ["Includes review cadence", "Tests through drills", "Marks risky actions"],
+                "red_flags": ["Runbook has no owner", "Only updates during incidents", "Command dump without context"],
+                "practice_task": "Add owner, review date, and validation steps to one runbook section.",
+            },
+            {
+                "question": "What would you practice in a platform game day?",
+                "scenario": "The team wants to prove they can handle EKS incidents before the next peak event.",
+                "answer_outline": [
+                    "Choose a realistic failure mode tied to SLOs, such as CNI exhaustion, bad rollout, DNS issue, or noisy alerting.",
+                    "Define scope, abort criteria, observers, and expected evidence.",
+                    "Practice incident roles, dashboards, runbook steps, and customer communication.",
+                    "Turn gaps into platform backlog items and training material.",
+                ],
+                "strong_signals": ["Clear scope and abort criteria", "Exercises roles and evidence", "Feeds backlog"],
+                "red_flags": ["Breaks prod casually", "No learning objective", "No follow-up"],
+                "practice_task": "Design a 45-minute game day for Service 503 debugging.",
+            },
+        ],
+    },
+    {
+        "slug": "finops-capacity-interview-pack",
+        "title": "FinOps and Platform Capacity Interview Pack",
+        "domain": "FinOps",
+        "level_group": ADVANCED_LEVEL,
+        "focus": "Cost allocation, rightsizing, idle resources, NAT and load balancer spend, spot capacity, budgets, and reliability tradeoffs.",
+        "related_course_slug": "platform-production-eks-architecture",
+        "related_labs": ["design-production-eks-review", "review-terraform-eks-plan"],
+        "official_sources": [
+            {"label": "AWS Cost Optimization Pillar", "url": "https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/welcome.html"},
+            {"label": "AWS Cost Optimization Foundation", "url": "https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-laying-the-foundation/welcome.html"},
+            {"label": "AWS Well-Architected Framework", "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"},
+        ],
+        "questions": [
+            {
+                "question": "How do you start a Kubernetes cost review without harming reliability?",
+                "scenario": "Leadership asks for a 25% EKS cost reduction this quarter.",
+                "answer_outline": [
+                    "Segment costs by service, owner, environment, cluster, node group, load balancer, NAT, storage, and data transfer.",
+                    "Separate idle waste from deliberate resilience spend.",
+                    "Review requests versus usage, replica needs, scheduling constraints, and SLOs.",
+                    "Prioritize reversible savings and measure reliability impact.",
+                ],
+                "strong_signals": ["Uses ownership allocation", "Protects SLO tradeoffs", "Distinguishes waste from resilience"],
+                "red_flags": ["Cuts replicas blindly", "No owner labels", "Ignores data transfer/NAT"],
+                "practice_task": "Create a cost review worksheet for one namespace.",
+            },
+            {
+                "question": "How do requests and limits affect both cost and reliability?",
+                "scenario": "A service requests far more CPU than it uses, but latency spikes during load tests.",
+                "answer_outline": [
+                    "Requests drive scheduling and reserved capacity; limits can create throttling or kill behavior depending on resource.",
+                    "Compare usage percentiles, saturation, HPA behavior, and latency under load.",
+                    "Right-size with owners and rollback windows rather than one global ratio.",
+                    "Keep critical workloads protected with enough headroom.",
+                ],
+                "strong_signals": ["Connects requests to bin-packing", "Mentions throttling and OOM", "Uses percentiles"],
+                "red_flags": ["Sets everything tiny", "Ignores load testing", "No owner review"],
+                "practice_task": "Write a right-sizing proposal with p50/p95 usage and SLO context.",
+            },
+            {
+                "question": "Where do hidden AWS costs appear around EKS?",
+                "scenario": "Compute is flat but the AWS bill keeps growing.",
+                "answer_outline": [
+                    "Inspect NAT gateway processing, cross-AZ traffic, load balancers, EBS volumes, snapshots, logs, metrics, and public egress.",
+                    "Connect network architecture to cost paths before deleting resources.",
+                    "Look for orphaned resources and unowned environments.",
+                    "Add tags, budgets, alerts, and cleanup ownership.",
+                ],
+                "strong_signals": ["Names NAT and cross-AZ traffic", "Finds orphaned resources", "Uses tags and budgets"],
+                "red_flags": ["Only reviews EC2", "Deletes shared resources blindly", "No cost owner"],
+                "practice_task": "Build a hidden-cost checklist for an EKS platform account.",
+            },
+            {
+                "question": "When is spot capacity appropriate for platform workloads?",
+                "scenario": "A team wants to run every workload on spot instances to reduce cost.",
+                "answer_outline": [
+                    "Use spot for interruption-tolerant workloads with retry, checkpointing, or replica diversity.",
+                    "Protect critical control-plane-adjacent and latency-sensitive workloads with safer capacity.",
+                    "Mix capacity types and instance families to avoid correlated interruption.",
+                    "Test interruption handling, disruption budgets, and autoscaler behavior.",
+                ],
+                "strong_signals": ["Matches workload tolerance", "Diversifies capacity", "Tests interruptions"],
+                "red_flags": ["All workloads on spot", "No PDB review", "No retry or checkpointing"],
+                "practice_task": "Classify five workloads by spot suitability and required guardrails.",
+            },
+            {
+                "question": "How do you create cost accountability without making teams afraid to use the platform?",
+                "scenario": "Chargeback is proposed after several teams over-provisioned services.",
+                "answer_outline": [
+                    "Start with showback, owner labels, service-level reports, and education before punitive controls.",
+                    "Give teams clear levers: requests, replicas, environment cleanup, storage, and traffic path choices.",
+                    "Set budgets and alerts with context, not surprise bills.",
+                    "Tie platform defaults to efficient choices so good behavior is easy.",
+                ],
+                "strong_signals": ["Uses showback and education", "Gives teams levers", "Improves defaults"],
+                "red_flags": ["Only blames teams", "No data quality", "Cost controls break reliability"],
+                "practice_task": "Draft a team-facing cost report with three recommended actions.",
+            },
+        ],
+    },
+]
+
+
+def interview_question(
+    question: str,
+    scenario: str,
+    answer_outline: list[str],
+    strong_signals: list[str],
+    red_flags: list[str],
+    practice_task: str,
+) -> dict:
+    return {
+        "question": question,
+        "scenario": scenario,
+        "answer_outline": answer_outline,
+        "strong_signals": strong_signals,
+        "red_flags": red_flags,
+        "practice_task": practice_task,
+    }
+
+
+JOB_SEARCH_INTERVIEW_PACKS = [
+    {
+        "slug": "career-recruiter-screen-interview-pack",
+        "title": "DevOps and SRE Recruiter Screen Pack",
+        "domain": "Career",
+        "level_group": INTERMEDIATE_LEVEL,
+        "focus": "Fast, credible answers for recruiter screens, hiring-manager screens, layoff context, salary, scope, and role fit.",
+        "related_course_slug": "platform-engineering-product-operating-model",
+        "related_labs": ["create-platform-golden-path", "write-slo-backed-runbook"],
+        "official_sources": [
+            {"label": "CNCF Platforms Whitepaper", "url": "https://tag-app-delivery.cncf.io/whitepapers/platforms/"},
+            {"label": "Google SRE Service Level Objectives", "url": "https://sre.google/sre-book/service-level-objectives/"},
+            {"label": "AWS Well-Architected Framework", "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"},
+        ],
+        "questions": [
+            interview_question(
+                "Give me your two-minute DevOps/SRE background.",
+                "A recruiter asks for a quick summary before deciding whether to pass you to the hiring manager.",
+                [
+                    "Lead with role identity: systems you operate, cloud/platform scope, and production ownership.",
+                    "Name two or three concrete strengths such as Kubernetes, Terraform, CI/CD, observability, incident response, or AWS.",
+                    "Give one quantified or evidence-backed outcome.",
+                    "Close with the role you are targeting now and why it fits.",
+                ],
+                ["Specific scope", "Evidence-backed outcome", "Clear target role"],
+                ["Tool list with no ownership", "Apologetic layoff framing", "No production examples"],
+                "Write and rehearse a 120-second background answer with one metric and one incident or project artifact.",
+            ),
+            interview_question(
+                "Why are you looking now, and how do you discuss a layoff?",
+                "You were laid off and need to answer directly without sounding defensive.",
+                [
+                    "State the layoff briefly and neutrally without over-explaining.",
+                    "Pivot to what you owned, what you learned, and what you are looking for next.",
+                    "Show active preparation: labs, portfolio artifacts, interview drills, and current platform topics.",
+                    "Avoid blaming prior employers or revealing confidential details.",
+                ],
+                ["Calm concise framing", "Forward-looking", "Shows active preparation"],
+                ["Blames people", "Sounds ashamed", "Turns the answer into a long story"],
+                "Draft a 45-second layoff answer and pair it with a portfolio proof point.",
+            ),
+            interview_question(
+                "What roles are you best matched for?",
+                "A recruiter has DevOps, cloud engineer, SRE, and platform engineer roles open.",
+                [
+                    "Map your experience to role responsibilities rather than job titles.",
+                    "Separate build-and-release, cloud infrastructure, reliability operations, and platform product work.",
+                    "Name must-have and stretch areas honestly.",
+                    "Ask clarifying questions about on-call, cloud scope, Kubernetes maturity, and IaC ownership.",
+                ],
+                ["Clarifies role scope", "Knows adjacent titles", "Honest about depth"],
+                ["Says yes to everything", "Cannot explain SRE vs DevOps", "No questions for recruiter"],
+                "Create a role-fit matrix for DevOps, SRE, platform engineer, and cloud engineer postings.",
+            ),
+            interview_question(
+                "What compensation and availability answer keeps you moving forward?",
+                "The recruiter asks salary expectations and start date early.",
+                [
+                    "Give a researched range or say you are aligned with market for the scope while asking for budget.",
+                    "Separate base, bonus, equity, on-call, remote, and benefits when relevant.",
+                    "Be clear on availability and interview timeline.",
+                    "Avoid negotiating against yourself before role level is known.",
+                ],
+                ["Asks for budget", "Considers full package", "Clear availability"],
+                ["Gives one desperate number", "Ignores on-call load", "Cannot state timeline"],
+                "Write a salary-range answer with a follow-up question about level, on-call, and total compensation.",
+            ),
+            interview_question(
+                "Tell me about your strongest platform project.",
+                "A hiring manager asks for the project that best proves you can help their team quickly.",
+                [
+                    "Frame the business or engineering problem.",
+                    "Explain architecture, tools, tradeoffs, and your direct contribution.",
+                    "Name production evidence: reliability, cost, lead time, security, incident reduction, or adoption.",
+                    "Explain what you would improve with more time.",
+                ],
+                ["Problem-first", "Clear contribution", "Evidence and tradeoffs"],
+                ["Tutorial recap", "No ownership", "Cannot say what changed"],
+                "Convert one project into a STAR answer with architecture, commands, screenshots, and measurable outcome.",
+            ),
+            interview_question(
+                "What is your biggest current skill gap?",
+                "The interviewer wants honesty without hearing that you are unprepared.",
+                [
+                    "Choose a real but bounded gap that does not invalidate the role.",
+                    "Explain what you already know, what you are practicing, and how you close gaps on the job.",
+                    "Tie the gap to a study plan, lab, or official docs.",
+                    "Avoid generic perfectionism or claiming no gaps.",
+                ],
+                ["Bounded gap", "Active plan", "Self-aware"],
+                ["Fatal gap for role", "No learning plan", "Fake weakness"],
+                "Write a skill-gap answer for one tool you are learning and attach a 7-day study plan.",
+            ),
+            interview_question(
+                "How do you communicate during incidents?",
+                "A manager screens for whether you can operate under pressure with product and engineering teams.",
+                [
+                    "State user impact, severity, owners, current hypothesis, next update time, and mitigation path.",
+                    "Separate facts from guesses.",
+                    "Use concise updates for stakeholders and detailed notes for responders.",
+                    "Close the loop with post-incident follow-up.",
+                ],
+                ["Clear impact statement", "Predictable updates", "Facts versus hypotheses"],
+                ["Spams raw logs", "Goes silent", "Blames teams during incident"],
+                "Write three incident updates: initial page, mitigation in progress, and recovery confirmed.",
+            ),
+            interview_question(
+                "What questions do you ask the interviewer?",
+                "The interviewer leaves five minutes for your questions.",
+                [
+                    "Ask about production ownership, on-call health, deployment process, reliability goals, and platform maturity.",
+                    "Ask what success looks like in 30, 60, and 90 days.",
+                    "Ask about current pain: incidents, cloud cost, CI/CD, Kubernetes, observability, or IaC drift.",
+                    "Use the answer to decide whether the role is healthy and aligned.",
+                ],
+                ["Asks operator-level questions", "Learns team pain", "Evaluates role fit"],
+                ["No questions", "Only asks perks", "Asks questions answered earlier"],
+                "Prepare ten questions grouped by role scope, production health, team culture, and first-90-day expectations.",
+            ),
+        ],
+    },
+    {
+        "slug": "behavioral-star-sre-interview-pack",
+        "title": "Behavioral STAR Stories for SRE and DevOps Pack",
+        "domain": "Career",
+        "level_group": INTERMEDIATE_LEVEL,
+        "focus": "Behavioral stories that prove judgment: incidents, conflict, automation, ownership, learning, and communication.",
+        "related_course_slug": "platform-engineering-product-operating-model",
+        "related_labs": ["write-slo-backed-runbook", "create-platform-golden-path"],
+        "official_sources": [
+            {"label": "Google SRE Managing Incidents", "url": "https://sre.google/sre-book/managing-incidents/"},
+            {"label": "Google SRE Postmortem Culture", "url": "https://sre.google/sre-book/postmortem-culture/"},
+            {"label": "CNCF Platforms Whitepaper", "url": "https://tag-app-delivery.cncf.io/whitepapers/platforms/"},
+        ],
+        "questions": [
+            interview_question(
+                "Tell me about a production incident you handled.",
+                "The interviewer wants your operating judgment, not a heroic war story.",
+                [
+                    "Use STAR: situation, task, action, result.",
+                    "Include customer impact, detection, mitigation, communication, and follow-up.",
+                    "Explain what you personally owned and what the team changed afterward.",
+                    "Keep confidential details out while preserving technical credibility.",
+                ],
+                ["Impact and mitigation", "Personal ownership", "Learning loop"],
+                ["Blames one person", "No result", "Only describes commands"],
+                "Write a 3-minute incident story and a 30-second summary version.",
+            ),
+            interview_question(
+                "Describe a time you automated toil.",
+                "A platform team wants to know whether you automate responsibly.",
+                [
+                    "Explain the repeated manual pain and its risk.",
+                    "Describe the smallest useful automation and guardrails.",
+                    "Show adoption, time saved, error reduction, or reliability improvement.",
+                    "Mention maintenance ownership and failure behavior.",
+                ],
+                ["Toil and risk quantified", "Guardrails", "Measured adoption"],
+                ["Automated for novelty", "No owner", "No fallback"],
+                "Turn one script, pipeline, or template into a STAR story with before/after evidence.",
+            ),
+            interview_question(
+                "Tell me about a time you disagreed with a senior engineer or manager.",
+                "The interviewer is testing collaboration and technical courage.",
+                [
+                    "State the shared goal and the risk you saw.",
+                    "Use evidence: metrics, incidents, docs, plan output, or operational constraints.",
+                    "Explain how you listened, proposed options, and reached a decision.",
+                    "Share the outcome and what you learned.",
+                ],
+                ["Evidence-based disagreement", "Respectful collaboration", "Decision outcome"],
+                ["Frames it as winning", "No evidence", "Avoids conflict entirely"],
+                "Prepare a disagreement story involving reliability, cost, security, or release risk.",
+            ),
+            interview_question(
+                "Give an example of learning a new tool quickly.",
+                "You may not match every tool in the posting, so the interviewer tests learning velocity.",
+                [
+                    "Name the tool, deadline, and production or project context.",
+                    "Show how you used official docs, labs, examples, and peer review.",
+                    "Explain the artifact you produced and how you validated it.",
+                    "Connect the learning method to the current role's stack.",
+                ],
+                ["Structured learning", "Validated artifact", "Transferable method"],
+                ["Claims instant mastery", "No validation", "Only watched tutorials"],
+                "Write a learning story for Terraform, Kubernetes, AWS IAM, or observability.",
+            ),
+            interview_question(
+                "Tell me about a mistake you made.",
+                "The interviewer wants accountability and operational maturity.",
+                [
+                    "Choose a real mistake with bounded impact.",
+                    "Explain detection, communication, correction, and prevention.",
+                    "Own your part without self-destruction.",
+                    "Show the durable change: test, runbook, alert, review checklist, or automation.",
+                ],
+                ["Accountability", "Prevention", "Calm scope"],
+                ["Blames others", "No learning", "Chooses a catastrophic unresolved mistake"],
+                "Write a mistake story that ends with a concrete system improvement.",
+            ),
+            interview_question(
+                "How do you handle being on call?",
+                "A hiring manager wants to know if you understand operational load.",
+                [
+                    "Discuss alert quality, runbooks, escalation, handoff, and incident review.",
+                    "Explain how you protect focus work while meeting support obligations.",
+                    "Name signs of unhealthy on-call and how you improve them.",
+                    "Tie on-call to reliability ownership rather than punishment.",
+                ],
+                ["Understands alert quality", "Mentions handoff", "Improves on-call system"],
+                ["Says on-call is just availability", "Accepts noisy paging", "No learning loop"],
+                "Create a healthy-on-call checklist you can discuss in interviews.",
+            ),
+            interview_question(
+                "How do you explain technical risk to non-engineers?",
+                "Product wants a launch date, but the platform readiness evidence is weak.",
+                [
+                    "Translate risk into user impact, probability, blast radius, and mitigation options.",
+                    "Offer choices with tradeoffs rather than only saying no.",
+                    "Use plain language and one or two concrete examples.",
+                    "Document the decision and revisit trigger.",
+                ],
+                ["Business-language risk", "Options with tradeoffs", "Decision record"],
+                ["Uses jargon", "Only blocks", "No recommendation"],
+                "Write a launch-risk explanation for missing rollback, weak alerts, or unsafe IAM.",
+            ),
+            interview_question(
+                "What makes you a strong teammate during a job transition?",
+                "The interviewer wants confidence that urgency will not turn into chaos.",
+                [
+                    "Show humility, learning discipline, and willingness to own unglamorous work.",
+                    "Describe how you ask questions, document findings, and ramp up without creating risk.",
+                    "Explain how your recent preparation maps to their needs.",
+                    "Keep the answer grounded and specific.",
+                ],
+                ["Mature ramp-up plan", "Documentation habit", "Role-specific preparation"],
+                ["Sounds desperate", "Overpromises", "Dismisses team context"],
+                "Prepare a first-30-days answer for a team with Kubernetes, Terraform, and AWS incidents.",
+            ),
+        ],
+    },
+    {
+        "slug": "live-troubleshooting-pairing-interview-pack",
+        "title": "Live Troubleshooting and Pairing Interview Pack",
+        "domain": "Platform Engineering",
+        "level_group": ADVANCED_LEVEL,
+        "focus": "How to think aloud in practical interviews: commands, hypotheses, safety, prioritization, and communication.",
+        "related_course_slug": "platform-kubectl-debugging-basics",
+        "related_labs": ["trace-service-to-pod", "debug-crashloop-imagepull", "review-terraform-eks-plan"],
+        "official_sources": [
+            {"label": "Kubernetes Debugging Tasks", "url": "https://kubernetes.io/docs/tasks/debug/"},
+            {"label": "Terraform Plan Command", "url": "https://developer.hashicorp.com/terraform/cli/commands/plan"},
+            {"label": "Prometheus Alerting Practices", "url": "https://prometheus.io/docs/practices/alerting/"},
+        ],
+        "questions": [
+            interview_question(
+                "How do you start a live troubleshooting exercise when the prompt is vague?",
+                "The interviewer says, 'the app is down,' and waits.",
+                [
+                    "Clarify user symptom, scope, timeline, recent changes, and allowed environment.",
+                    "State your first hypothesis and first safe read-only checks.",
+                    "Think aloud in short loops: command, expected signal, interpretation, next step.",
+                    "Avoid making destructive changes unless the exercise explicitly allows it.",
+                ],
+                ["Clarifies scope", "Read-only first", "Explains reasoning aloud"],
+                ["Runs random commands", "Goes silent", "Mutates without permission"],
+                "Practice a five-minute troubleshooting monologue for a Service 503.",
+            ),
+            interview_question(
+                "What do you say when you do not know the exact command?",
+                "A practical interview uses a tool variant you have not used recently.",
+                [
+                    "State the concept you need and the command shape you expect.",
+                    "Use help, docs, examples, or safer read-only alternatives.",
+                    "Explain what output you are trying to obtain.",
+                    "Keep confidence in the reasoning even if syntax needs lookup.",
+                ],
+                ["Concept over memorization", "Uses help safely", "Explains desired output"],
+                ["Bluffs wrong syntax", "Panics", "Abandons the investigation"],
+                "Write fallback phrases for kubectl, terraform, aws, helm, and git commands.",
+            ),
+            interview_question(
+                "How do you avoid rabbit holes in a live debug?",
+                "Ten minutes remain and there are many possible causes.",
+                [
+                    "Anchor on user impact and the most discriminating next signal.",
+                    "Time-box each branch and summarize what has been ruled out.",
+                    "Prefer evidence that changes the decision tree.",
+                    "Ask for constraints or hints when the exercise clearly lacks data.",
+                ],
+                ["Time-boxes", "Summarizes ruled-out paths", "Chooses discriminating checks"],
+                ["Chases every clue", "Repeats same command", "Never updates hypothesis"],
+                "Create a time-boxed debug checklist for Pod Pending, AccessDenied, and failed rollout.",
+            ),
+            interview_question(
+                "How would you review a Terraform plan live?",
+                "The interviewer gives you a plan with IAM, security group, and node group changes.",
+                [
+                    "Scan for create, update, replace, destroy, unknown, and sensitive changes.",
+                    "Prioritize blast radius: IAM, network, data, capacity, and deletion.",
+                    "Ask what environment, backend, workspace, and recent incident context apply.",
+                    "Summarize approve, block, or needs-more-evidence with validation steps.",
+                ],
+                ["Prioritizes blast radius", "Asks backend/environment", "Gives decision summary"],
+                ["Reads every line equally", "Approves because plan succeeded", "No validation"],
+                "Practice a two-minute plan review summary using risk categories.",
+            ),
+            interview_question(
+                "How do you debug AccessDenied in a pairing interview?",
+                "A Pod or CI job fails with AWS AccessDenied and the interviewer expects structured reasoning.",
+                [
+                    "Identify actual principal, action, resource, condition, and request context.",
+                    "Separate trust failure from permission-policy denial.",
+                    "Check service account, OIDC or Pod Identity, assume-role path, and CloudTrail where available.",
+                    "Propose least-privilege fix and verification command.",
+                ],
+                ["Finds actual principal", "Trust versus permission", "Least-privilege fix"],
+                ["Adds admin", "Only reads Kubernetes YAML", "Cannot state action/resource"],
+                "Build an AccessDenied live-debug script from symptom to verified fix.",
+            ),
+            interview_question(
+                "How do you debug a noisy alert in a live interview?",
+                "The interviewer shows an alert that fired five times this week without user impact.",
+                [
+                    "Ask whether it is urgent, actionable, user-impacting, and owned.",
+                    "Check labels, thresholds, duration, route, runbook, and dashboard links.",
+                    "Decide page, ticket, dashboard, or delete.",
+                    "Suggest a symptom-based replacement if the current alert is cause-only noise.",
+                ],
+                ["Alert quality framework", "Route and owner review", "Suggests replacement"],
+                ["Accepts all pages", "Deletes without replacement", "No user-impact question"],
+                "Rewrite one noisy resource alert into a symptom-focused alert or ticket.",
+            ),
+            interview_question(
+                "How do you communicate partial progress in a live exercise?",
+                "You are not finished, but the interviewer asks where you are.",
+                [
+                    "Summarize known facts, ruled-out causes, current hypothesis, and next check.",
+                    "State confidence level and what evidence would change your mind.",
+                    "Avoid pretending the investigation is complete.",
+                    "Keep the answer short enough to preserve time.",
+                ],
+                ["Clear facts and hypothesis", "States confidence", "Next evidence"],
+                ["Overstates certainty", "Lists commands without meaning", "No next step"],
+                "Practice a 20-second debug checkpoint update.",
+            ),
+            interview_question(
+                "How do you close a troubleshooting exercise strongly?",
+                "The clock ends before the entire system is fixed.",
+                [
+                    "State likely cause, evidence, safest next action, validation, and follow-up artifact.",
+                    "Name remaining uncertainty and how you would resolve it.",
+                    "Mention source-of-truth fix, runbook, alert, or test improvement.",
+                    "Do not invent evidence you did not collect.",
+                ],
+                ["Evidence-based close", "Names uncertainty", "Suggests durable follow-up"],
+                ["Pretends complete fix", "No validation", "No source-of-truth plan"],
+                "Write closing summaries for Service 503, bad rollout, and Terraform drift scenarios.",
+            ),
+        ],
+    },
+    {
+        "slug": "aws-core-operations-interview-pack",
+        "title": "AWS Core Operations Interview Pack",
+        "domain": "AWS Operations",
+        "level_group": INTERMEDIATE_LEVEL,
+        "focus": "VPC paths, ALB health, Route 53, CloudWatch, IAM context, autoscaling, backups, and operational readiness.",
+        "related_course_slug": "platform-eks-operations",
+        "related_labs": ["design-production-eks-review", "diagnose-eks-ip-exhaustion"],
+        "official_sources": [
+            {"label": "Amazon CloudWatch User Guide", "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"},
+            {"label": "Amazon VPC User Guide", "url": "https://docs.aws.amazon.com/vpc/latest/userguide/how-it-works.html"},
+            {"label": "AWS Well-Architected Framework", "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"},
+        ],
+        "questions": [
+            interview_question(
+                "An ALB has unhealthy targets after a deploy. What do you inspect?",
+                "Traffic fails through the load balancer, but Pods look mostly healthy.",
+                [
+                    "Check target group health reason, listener rule, path, port, protocol, and security groups.",
+                    "Compare ALB health check path with Service, Ingress, readiness probe, and app route.",
+                    "Inspect subnet/AZ target registration and controller events if Kubernetes owns the ALB.",
+                    "Validate from both AWS target health and Kubernetes endpoint readiness.",
+                ],
+                ["Connects ALB and Kubernetes signals", "Checks health path/port", "Looks at security groups"],
+                ["Only checks Pods", "Changes health check blindly", "Ignores target group reason"],
+                "Create an ALB unhealthy-target checklist with AWS and Kubernetes evidence.",
+            ),
+            interview_question(
+                "Explain private subnet egress to a developer.",
+                "A workload in a private subnet cannot call an external API.",
+                [
+                    "Explain route table, NAT gateway or egress path, security group, NACL, DNS, and endpoint policies.",
+                    "Check whether failure is DNS, routing, firewall, TLS, or application timeout.",
+                    "Use flow logs or controlled tests when available.",
+                    "Discuss cost and resilience tradeoffs of NAT per AZ versus shared egress.",
+                ],
+                ["Clear network path", "Separates DNS/routing/firewall", "Mentions cost/resilience"],
+                ["Says private subnet has no internet by magic", "Ignores route tables", "No test plan"],
+                "Draw private subnet egress and name one command or console signal per hop.",
+            ),
+            interview_question(
+                "What CloudWatch alarms would you page on for a production API?",
+                "The team has CPU alarms but misses user-visible outages.",
+                [
+                    "Start with availability, latency, error rate, saturation, and dependency symptoms.",
+                    "Use dimensions and thresholds that reflect service ownership and impact.",
+                    "Route urgent actionable symptoms to page; slower risks to tickets.",
+                    "Link alarms to dashboards, runbooks, and mitigation choices.",
+                ],
+                ["Symptom-first alarms", "Actionable route", "Runbook links"],
+                ["Pages on every CPU spike", "No owner", "No dashboard/runbook"],
+                "Rewrite three CloudWatch alarms into page, ticket, or dashboard categories.",
+            ),
+            interview_question(
+                "How do you investigate intermittent DNS issues in AWS?",
+                "Some clients intermittently resolve the wrong endpoint or fail to resolve at all.",
+                [
+                    "Check hosted zone, record type, TTL, health checks, resolver path, split-horizon assumptions, and recent changes.",
+                    "Compare results from affected networks and known-good networks.",
+                    "Look for caching, propagation, conditional forwarding, and private hosted-zone associations.",
+                    "Document whether the failure is resolution, routing, or application health.",
+                ],
+                ["Understands hosted zones and TTL", "Tests multiple vantage points", "Separates DNS from app health"],
+                ["Flushes caches only", "No private hosted-zone check", "Treats DNS as static"],
+                "Write a Route 53 triage note with record, TTL, resolver, and affected clients.",
+            ),
+            interview_question(
+                "How do you review backup and restore readiness?",
+                "A team says backups are enabled but has never restored.",
+                [
+                    "Ask for RPO, RTO, backup scope, retention, encryption, access, and cross-account or cross-region needs.",
+                    "Verify restore procedure, owner, test cadence, and dependency ordering.",
+                    "Check monitoring for backup failures and storage cost growth.",
+                    "Treat untested backups as assumptions, not guarantees.",
+                ],
+                ["RPO/RTO", "Restore testing", "Monitoring and ownership"],
+                ["Only checks backup toggle", "No restore drill", "No owner"],
+                "Create a restore-readiness checklist for a database-backed service.",
+            ),
+            interview_question(
+                "How do you reason about autoscaling in AWS and Kubernetes together?",
+                "An API scales Pods but still runs out of capacity during traffic spikes.",
+                [
+                    "Separate workload autoscaling, node capacity, load balancer behavior, quotas, and downstream dependencies.",
+                    "Check HPA metrics, requests, cluster autoscaler or Karpenter behavior, node launch time, and warm capacity.",
+                    "Account for cooldowns, scale-from-zero, image pull time, and readiness delay.",
+                    "Use load tests and SLO signals to set guardrails.",
+                ],
+                ["Separates Pod and node scaling", "Mentions warm-up delays", "Uses SLO/load test data"],
+                ["Only raises max replicas", "Ignores node launch time", "No dependency capacity"],
+                "Write a scale-out timeline from request spike to ready Pods and healthy targets.",
+            ),
+            interview_question(
+                "What does Well-Architected thinking add to day-to-day operations?",
+                "The team treats architecture reviews as paperwork.",
+                [
+                    "Use pillars as prompts for reliability, security, operational excellence, cost, performance, and sustainability tradeoffs.",
+                    "Turn review findings into backlog, owner, risk, and revisit date.",
+                    "Connect architecture decisions to incidents and operational metrics.",
+                    "Keep reviews lightweight enough to influence real changes.",
+                ],
+                ["Turns review into action", "Balances pillars", "Connects incidents to architecture"],
+                ["Checklist theater", "No owners", "Only done before audit"],
+                "Convert one readiness gap into a Well-Architected-style action item.",
+            ),
+            interview_question(
+                "How do you debug AWS quota or throttling issues?",
+                "A deployment or autoscaling event fails intermittently during peak load.",
+                [
+                    "Identify API, region, account, service quota, throttling error, and retry behavior.",
+                    "Check CloudTrail, CloudWatch metrics, service quota dashboards, and controller logs.",
+                    "Decide whether to request quota increase, reduce API pressure, batch changes, or redesign.",
+                    "Add monitoring so quota headroom is visible before incidents.",
+                ],
+                ["Names API/region/account", "Checks quotas and CloudTrail", "Adds headroom monitoring"],
+                ["Retries forever", "No quota awareness", "Confuses throttling with auth"],
+                "Create a quota headroom review for EKS node scaling and load balancer provisioning.",
+            ),
+        ],
+    },
+    {
+        "slug": "observability-telemetry-design-interview-pack",
+        "title": "Observability and Telemetry Design Interview Pack",
+        "domain": "Observability",
+        "level_group": ADVANCED_LEVEL,
+        "focus": "Metrics, logs, traces, OpenTelemetry, Prometheus, CloudWatch, cardinality, dashboards, and actionable alert design.",
+        "related_course_slug": "platform-sre-observability-kubernetes",
+        "related_labs": ["write-slo-backed-runbook"],
+        "official_sources": [
+            {"label": "OpenTelemetry Signals", "url": "https://opentelemetry.io/docs/concepts/signals/"},
+            {"label": "Prometheus Alerting Practices", "url": "https://prometheus.io/docs/practices/alerting/"},
+            {"label": "Amazon CloudWatch User Guide", "url": "https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html"},
+        ],
+        "questions": [
+            interview_question(
+                "Design observability for a new checkout service.",
+                "A team has logs but no useful dashboards or alerts.",
+                [
+                    "Start with user journeys, SLIs, and critical dependencies.",
+                    "Define metrics for rate, errors, duration, saturation, and business outcomes.",
+                    "Add structured logs and traces for request path and dependency timing.",
+                    "Create dashboards and alerts with owners, runbooks, and review cadence.",
+                ],
+                ["User-journey first", "Combines signals", "Owner and runbook"],
+                ["Collects everything", "No SLI", "No alert action"],
+                "Create an observability launch checklist for checkout.",
+            ),
+            interview_question(
+                "When do metrics, logs, and traces each change your next action?",
+                "An interviewer asks for practical signal selection.",
+                [
+                    "Use metrics to detect aggregate symptoms and trends.",
+                    "Use logs for discrete events, errors, and contextual facts.",
+                    "Use traces for request path, latency breakdown, and dependency calls.",
+                    "Combine signals around a hypothesis instead of browsing dashboards randomly.",
+                ],
+                ["Knows signal strengths", "Hypothesis-driven", "Avoids random dashboarding"],
+                ["Says logs are enough", "No trace use case", "Ignores cost/cardinality"],
+                "Write one latency investigation using one metric, one log query, and one trace.",
+            ),
+            interview_question(
+                "How do you control metric cardinality?",
+                "A Prometheus bill and query latency spike after a new deployment.",
+                [
+                    "Identify labels with unbounded values such as user id, request id, path parameters, or pod churn.",
+                    "Separate useful aggregation labels from high-cardinality debugging detail.",
+                    "Move per-request detail to logs or traces when appropriate.",
+                    "Add metric review and instrumentation ownership.",
+                ],
+                ["Identifies unbounded labels", "Chooses right signal", "Adds review ownership"],
+                ["Keeps every label", "Deletes metrics blindly", "No instrumentation process"],
+                "Review five metric labels and classify safe, risky, or remove.",
+            ),
+            interview_question(
+                "How do you design tracing for a microservice path?",
+                "Checkout calls payment, inventory, fraud, and shipping services.",
+                [
+                    "Propagate trace context across ingress, services, queues, and outbound calls.",
+                    "Name spans consistently and attach useful attributes without sensitive data.",
+                    "Decide sampling strategy based on traffic, incident needs, and cost.",
+                    "Use traces to explain latency breakdown and dependency errors.",
+                ],
+                ["Context propagation", "Sampling strategy", "Sensitive data awareness"],
+                ["No propagation", "Logs PII in spans", "Samples away all errors"],
+                "Sketch a trace for checkout and identify the spans you need during an incident.",
+            ),
+            interview_question(
+                "How do you make dashboards useful during incidents?",
+                "Responders say the dashboard has too many panels and no clear story.",
+                [
+                    "Start with symptom panels tied to SLOs and user impact.",
+                    "Group by service, dependency, saturation, recent deploy, and mitigation signal.",
+                    "Add links to logs, traces, runbooks, deploys, and owners.",
+                    "Remove vanity panels that do not change decisions.",
+                ],
+                ["Incident-oriented layout", "Links to action", "Removes vanity panels"],
+                ["Wall of charts", "No owner", "No deploy context"],
+                "Redesign one dashboard into symptom, cause, and mitigation sections.",
+            ),
+            interview_question(
+                "How do you handle observability for batch jobs and queues?",
+                "A nightly job failure causes stale data but no request errors.",
+                [
+                    "Define freshness, backlog age, successful completion, failure rate, and processing latency.",
+                    "Page only when user impact or business deadline is threatened.",
+                    "Add runbook steps for retry, replay, and data validation.",
+                    "Track dependency and downstream impact.",
+                ],
+                ["Freshness/backlog thinking", "Impact-based paging", "Replay validation"],
+                ["Only monitors CPU", "Pages on every failed retry", "No data freshness SLI"],
+                "Create an alert policy for a four-hour batch job with a ten-hour freshness threshold.",
+            ),
+            interview_question(
+                "How do you migrate from vendor-specific telemetry to OpenTelemetry?",
+                "A company wants portability without breaking current dashboards.",
+                [
+                    "Inventory current metrics, logs, traces, dashboards, alerts, and owners.",
+                    "Introduce OpenTelemetry instrumentation and collector pipeline gradually.",
+                    "Preserve semantic meaning, cardinality controls, and alert compatibility.",
+                    "Run dual-write or comparison periods before cutting over.",
+                ],
+                ["Migration inventory", "Gradual rollout", "Alert compatibility"],
+                ["Big bang rewrite", "Breaks dashboards", "No owner mapping"],
+                "Write a migration plan for one service from vendor SDK to OpenTelemetry.",
+            ),
+            interview_question(
+                "How do you test whether monitoring itself works?",
+                "The team missed an outage because alerts never reached on-call.",
+                [
+                    "Add blackbox checks, synthetic alerts, Alertmanager route tests, and notification audits.",
+                    "Monitor collector, Prometheus, CloudWatch, and dashboard pipeline health.",
+                    "Practice alert delivery in game days.",
+                    "Document failure modes and backup communication paths.",
+                ],
+                ["Metamonitoring", "Route tests", "Game day validation"],
+                ["Assumes alerts work", "No notification test", "No fallback path"],
+                "Create a metamonitoring checklist from scrape target to pager notification.",
+            ),
+        ],
+    },
+    {
+        "slug": "terraform-live-review-interview-pack",
+        "title": "Terraform Live Plan Review Interview Pack",
+        "domain": "Terraform",
+        "level_group": INTERMEDIATE_LEVEL,
+        "focus": "Live IaC review: state, modules, plans, unknowns, replacements, drift, imports, policy checks, and safe applies.",
+        "related_course_slug": "platform-terraform-aws-infrastructure",
+        "related_labs": ["review-terraform-eks-plan", "design-production-eks-review"],
+        "official_sources": [
+            {"label": "Terraform State", "url": "https://developer.hashicorp.com/terraform/language/state"},
+            {"label": "Terraform Plan Command", "url": "https://developer.hashicorp.com/terraform/cli/commands/plan"},
+            {"label": "Terraform Modules", "url": "https://developer.hashicorp.com/terraform/docs/configuration/modules"},
+        ],
+        "questions": [
+            interview_question(
+                "Walk me through your first two minutes with a Terraform plan.",
+                "The interviewer hands you a large plan and asks whether it is safe.",
+                [
+                    "Confirm workspace, backend, variables, provider, environment, and change context.",
+                    "Scan summary for create, update, replace, destroy, unknown, and sensitive values.",
+                    "Prioritize IAM, network, data, capacity, and deletion risks.",
+                    "State approve/block/needs-evidence with validation and rollback notes.",
+                ],
+                ["Environment check", "Risk prioritization", "Decision summary"],
+                ["Reads linearly only", "Ignores backend", "No blast-radius framing"],
+                "Practice a two-minute spoken plan scan using risk buckets.",
+            ),
+            interview_question(
+                "How do unknown values affect plan review?",
+                "A plan has many attributes known after apply.",
+                [
+                    "Identify whether unknowns are harmless computed values or decision-critical values.",
+                    "Look for unknowns that affect IAM, routes, security groups, replacements, or dependencies.",
+                    "Use data sources, outputs, preconditions, or staged applies cautiously when needed.",
+                    "Avoid approving if the unknown hides blast radius.",
+                ],
+                ["Separates harmless from risky unknowns", "Links to blast radius", "Uses staged thinking"],
+                ["Ignores unknowns", "Applies to see what happens", "No validation"],
+                "Mark unknown plan values as safe, needs evidence, or blocker.",
+            ),
+            interview_question(
+                "When would you use import, moved blocks, or state surgery?",
+                "Infrastructure exists outside Terraform and the team wants it under code.",
+                [
+                    "Prefer declarative import and moved blocks where supported.",
+                    "Back up state, lock state, and review addresses before any state operation.",
+                    "Avoid changing real infrastructure accidentally during adoption.",
+                    "Document owner, source of truth, and rollback path.",
+                ],
+                ["State safety", "Avoids accidental mutation", "Documents ownership"],
+                ["Edits state casually", "Imports without config", "No backup"],
+                "Write a safe import checklist for an existing security group.",
+            ),
+            interview_question(
+                "How do you review Terraform changes from a security perspective?",
+                "A plan changes IAM policies, security groups, and KMS access.",
+                [
+                    "Identify new principals, actions, resources, conditions, and trust relationships.",
+                    "Check ingress, egress, public exposure, encryption, and logging changes.",
+                    "Look for wildcard permissions and broad CIDRs.",
+                    "Use policy-as-code or review templates for repeatable checks.",
+                ],
+                ["Principal/action/resource review", "Network exposure", "Repeatable policy checks"],
+                ["Only checks resource count", "Allows 0.0.0.0/0 casually", "No condition review"],
+                "Create a Terraform security-review rubric for IAM and security groups.",
+            ),
+            interview_question(
+                "How do you structure Terraform environments for promotion?",
+                "Dev, stage, and prod drift because engineers copy-pasted stacks.",
+                [
+                    "Use shared modules with versioned releases and environment-specific inputs.",
+                    "Separate state per environment with clear backend and workspace rules.",
+                    "Promote module versions intentionally through environments.",
+                    "Review differences as configuration choices, not accidental drift.",
+                ],
+                ["Module versioning", "State separation", "Intentional promotion"],
+                ["Copy-paste stacks", "Shared prod/dev state", "No version strategy"],
+                "Design a dev-to-prod promotion flow for an EKS module.",
+            ),
+            interview_question(
+                "What should policy-as-code catch before apply?",
+                "The organization wants guardrails without blocking every useful change.",
+                [
+                    "Catch high-risk patterns: public ingress, unencrypted storage, missing tags, broad IAM, and destructive changes.",
+                    "Separate warnings from hard blocks.",
+                    "Allow documented exceptions with owner and expiry.",
+                    "Keep policies understandable to the engineers they affect.",
+                ],
+                ["Risk-based policies", "Exception lifecycle", "Human-readable rules"],
+                ["Blocks everything", "No exceptions", "Opaque policy failures"],
+                "Write five policy checks for EKS infrastructure plans.",
+            ),
+            interview_question(
+                "How do you handle a failed apply?",
+                "Terraform partially applied changes and then failed while updating node groups.",
+                [
+                    "Stop and inspect state, real infrastructure, error, and what completed.",
+                    "Avoid rerunning blindly until drift and partial changes are understood.",
+                    "Decide whether to fix config, import/update state, roll forward, or roll back.",
+                    "Communicate impact, owner, and next validation step.",
+                ],
+                ["Partial-apply awareness", "State and real-world comparison", "Clear recovery path"],
+                ["Runs apply until green", "Deletes resources manually", "No communication"],
+                "Write a failed-apply recovery note with state, live resources, and next action.",
+            ),
+            interview_question(
+                "How do you explain Terraform risk to a non-IaC interviewer?",
+                "A manager asks why plan review takes time when automation exists.",
+                [
+                    "Explain that Terraform automates changes to real infrastructure, including network, IAM, and data paths.",
+                    "Use blast radius, rollback difficulty, and state as plain-language concepts.",
+                    "Give examples of safe quick changes versus changes needing review.",
+                    "Connect review quality to incident prevention.",
+                ],
+                ["Plain language", "Blast radius examples", "Connects to incidents"],
+                ["Too much jargon", "Sounds anti-automation", "No examples"],
+                "Prepare a 60-second explanation of Terraform plan review for a product manager.",
+            ),
+        ],
+    },
+    {
+        "slug": "kubernetes-platform-system-design-drill-pack",
+        "title": "Kubernetes Platform System Design Drill Pack",
+        "domain": "Kubernetes",
+        "level_group": ADVANCED_LEVEL,
+        "focus": "System design interviews for Kubernetes platforms: multi-tenancy, release paths, observability, cost, upgrade strategy, and developer experience.",
+        "related_course_slug": "platform-production-eks-architecture",
+        "related_labs": ["design-production-eks-review", "create-platform-golden-path"],
+        "official_sources": [
+            {"label": "Kubernetes Documentation", "url": "https://kubernetes.io/docs/"},
+            {"label": "CNCF Platforms Whitepaper", "url": "https://tag-app-delivery.cncf.io/whitepapers/platforms/"},
+            {"label": "AWS Well-Architected Framework", "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html"},
+        ],
+        "questions": [
+            interview_question(
+                "Design a Kubernetes platform for 30 product teams.",
+                "The interviewer wants architecture, operating model, and tradeoffs.",
+                [
+                    "Clarify team needs, service criticality, compliance boundaries, and cloud constraints.",
+                    "Choose cluster strategy, tenant boundaries, networking, identity, delivery, observability, and support model.",
+                    "Define golden path defaults plus exception process.",
+                    "Measure reliability, cost, adoption, lead time, and security posture.",
+                ],
+                ["Clarifies requirements", "Combines technical and operating model", "Measures outcomes"],
+                ["Only draws clusters", "No tenancy/security", "No support model"],
+                "Draw a platform architecture with tenant, control-plane, data-plane, and ownership boundaries.",
+            ),
+            interview_question(
+                "How would you design namespace onboarding?",
+                "A team needs self-service access without waiting on platform tickets.",
+                [
+                    "Generate namespace, RBAC, quotas, NetworkPolicy, cost labels, dashboards, alerts, and ArgoCD app scaffold.",
+                    "Require owner, service tier, data classification, and support model.",
+                    "Use policy checks and templates for safe defaults.",
+                    "Expose exceptions as reviewed, expiring records.",
+                ],
+                ["Self-service with guardrails", "Ownership metadata", "Exception process"],
+                ["Manual ticket queue only", "No quotas/RBAC", "No owner"],
+                "Write an onboarding template for a new team namespace.",
+            ),
+            interview_question(
+                "How do you design upgrade strategy for shared clusters?",
+                "Multiple teams deploy CRDs, webhooks, and Helm charts into shared production clusters.",
+                [
+                    "Inventory APIs, CRDs, webhooks, clients, add-ons, and tenant manifests.",
+                    "Provide compatibility windows, test clusters, dry-run checks, and owner deadlines.",
+                    "Sequence control plane, add-ons, nodes, and workloads.",
+                    "Publish pause criteria, rollback limits, and communication plan.",
+                ],
+                ["Tenant-aware upgrade", "CRD/webhook awareness", "Communication plan"],
+                ["Upgrade without inventory", "No test path", "No owner deadlines"],
+                "Create an upgrade program plan with tenant checklist and dates.",
+            ),
+            interview_question(
+                "How do you choose between one shared cluster and many clusters?",
+                "Security and cost teams disagree on platform topology.",
+                [
+                    "Compare isolation, blast radius, compliance, cost, operational complexity, and team autonomy.",
+                    "Use separate clusters for hard isolation, high-risk workloads, or regulatory boundaries.",
+                    "Use shared clusters when guardrails and support model are mature enough.",
+                    "Document tradeoffs and migration path.",
+                ],
+                ["Tradeoff framing", "Knows namespace limits", "Documents migration path"],
+                ["One answer for all orgs", "Oversells namespaces", "Ignores operating cost"],
+                "Write a decision record for shared versus dedicated clusters.",
+            ),
+            interview_question(
+                "How do you design platform observability as a product capability?",
+                "Every team builds dashboards differently and incidents are slow.",
+                [
+                    "Provide default RED/USE dashboards, log/tracing standards, alert templates, and ownership labels.",
+                    "Let teams extend views while preserving core SLO and incident surfaces.",
+                    "Integrate deploy events, runbooks, and service catalog metadata.",
+                    "Measure adoption and incident usefulness.",
+                ],
+                ["Default surfaces", "Extensible but consistent", "Service metadata"],
+                ["Dashboard free-for-all", "No SLO tie", "No runbook links"],
+                "Design a standard observability package for new services.",
+            ),
+            interview_question(
+                "How would you make cost visible without blocking delivery?",
+                "Teams over-request resources and finance wants controls.",
+                [
+                    "Add cost labels, namespace reports, request/usage views, and service-owner showback.",
+                    "Set sane defaults and recommendations in templates.",
+                    "Create review workflows for extreme requests or expensive resources.",
+                    "Tie cost changes to reliability and product context.",
+                ],
+                ["Showback before punishment", "Template defaults", "Reliability tradeoff"],
+                ["Blocks every deploy", "No labels", "Cost without context"],
+                "Create a monthly platform cost review format for service owners.",
+            ),
+            interview_question(
+                "How do you design break-glass access?",
+                "Normal access is least privilege, but incidents sometimes need emergency power.",
+                [
+                    "Define who can request, approve, assume, audit, and revoke emergency access.",
+                    "Make access time-bound, logged, ticket-linked, and reviewed after use.",
+                    "Keep normal workflows least privilege so break-glass is exceptional.",
+                    "Test the process before an actual incident.",
+                ],
+                ["Time-bound access", "Audit and review", "Tested process"],
+                ["Permanent admin", "No audit", "Break-glass never tested"],
+                "Write a break-glass access runbook for production Kubernetes.",
+            ),
+            interview_question(
+                "How do you handle platform deprecation?",
+                "The team needs to retire an old chart, runner, or cluster version that many services still use.",
+                [
+                    "Inventory consumers, risk, replacement path, deadlines, and support burden.",
+                    "Provide migration tooling, docs, office hours, and compatibility checks.",
+                    "Communicate with enough lead time and escalation path.",
+                    "Track adoption and exceptions until the old path is actually gone.",
+                ],
+                ["Consumer inventory", "Migration support", "Tracks completion"],
+                ["Deletes old path suddenly", "No owner map", "No exception handling"],
+                "Create a deprecation plan for an old Helm chart or Kubernetes version.",
+            ),
+        ],
+    },
+]
+
+PLATFORM_INTERVIEW_PREP.extend(JOB_SEARCH_INTERVIEW_PACKS)
+
+
+def add_job_search_layered_questions() -> None:
+    for pack in PLATFORM_INTERVIEW_PREP:
+        domain = pack["domain"]
+        title = pack["title"]
+        course_slug = pack["related_course_slug"]
+        source_label = pack["official_sources"][0]["label"] if pack["official_sources"] else "the primary official source"
+        additions = [
+            interview_question(
+                f"What portfolio proof would you show for {domain}?",
+                f"You need to convince a hiring manager that your {domain} knowledge is applied, not tutorial-only.",
+                [
+                    f"Pick one artifact tied to {title}: lab note, diagram, runbook, Terraform plan review, dashboard, or incident write-up.",
+                    "Explain the problem, constraints, commands or design choices, and validation evidence.",
+                    "Name what would change in a real production environment.",
+                    f"Link the artifact back to {source_label} and the related course {course_slug}.",
+                ],
+                ["Shows evidence", "Explains tradeoffs", "Uses source-backed reasoning"],
+                ["Only lists tools", "No validation", "Cannot explain production differences"],
+                f"Create a portfolio README section proving one {domain} skill with screenshot-safe evidence.",
+            ),
+            interview_question(
+                f"How would you build a seven-day crash plan for {domain} interviews?",
+                f"You have interviews soon and must turn {domain} gaps into answerable scenarios quickly.",
+                [
+                    "Day 1: scan official docs and write the top concepts in operational language.",
+                    "Days 2-3: complete the related lab and produce an evidence note.",
+                    "Days 4-5: answer scenario questions aloud and repair weak answers.",
+                    "Days 6-7: create one portfolio artifact and one STAR story tied to this domain.",
+                ],
+                ["Time-boxed plan", "Docs plus labs", "Practice answers aloud"],
+                ["Only watches videos", "No hands-on artifact", "No interview rehearsal"],
+                f"Turn this {domain} pack into a seven-day study checklist with daily outputs.",
+            ),
+            interview_question(
+                f"How do you answer when an interviewer challenges your {domain} recommendation?",
+                "The interviewer pushes back to see whether you can reason under pressure.",
+                [
+                    "Restate the goal, constraints, and risk the recommendation addresses.",
+                    "Offer alternatives and tradeoffs rather than defending one answer emotionally.",
+                    "Name the evidence that would change your decision.",
+                    "Show willingness to adapt while protecting reliability, security, and user impact.",
+                ],
+                ["Tradeoff thinking", "Evidence changes mind", "Calm collaboration"],
+                ["Gets defensive", "No alternatives", "Ignores user impact"],
+                f"Write two alternative answers for a controversial {domain} decision.",
+            ),
+            interview_question(
+                f"What are the common false positives or misleading signals in {domain}?",
+                f"The interview tests whether you can avoid fixing the loudest symptom in {domain}.",
+                [
+                    "Name one signal that is useful but easy to over-interpret.",
+                    "Pair it with a second signal that confirms or disproves the hypothesis.",
+                    "Explain the safest next read-only check before mutation.",
+                    "Close with the owner boundary and escalation path if evidence points elsewhere.",
+                ],
+                ["Avoids overfitting", "Uses confirming evidence", "Read-only before mutation"],
+                ["Treats one metric as truth", "Mutates immediately", "No owner boundary"],
+                f"Add a false-positive section to your {domain} troubleshooting notes.",
+            ),
+        ]
+        seen = {question["question"] for question in pack["questions"]}
+        pack["questions"].extend(question for question in additions if question["question"] not in seen)
+
+
+add_job_search_layered_questions()
 
 
 PLATFORM_COURSE_SLUGS = [course["slug"] for course in PLATFORM_COURSES]

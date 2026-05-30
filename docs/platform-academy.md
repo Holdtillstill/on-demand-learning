@@ -1,6 +1,6 @@
 # Platform Academy
 
-Platform Academy is a standalone local-first learning app for Kubernetes platform engineering. It shares the FastAPI backend, database, progress, XP, and lesson APIs with the Zhongwen app, but it has its own React/Vite frontend, brand, navigation, and Docker Compose service.
+Platform Academy is a standalone local-first learning app for AWS, Kubernetes, SRE, and platform engineering. It shares the FastAPI backend, database, progress, XP, and lesson APIs with the Zhongwen app, but it has its own React/Vite frontend, brand, navigation, guest profile model, resources, interview prep, and Docker Compose service.
 
 ## Local Use
 
@@ -17,12 +17,14 @@ Open:
 - Catalog API: http://localhost:8000/api/platform-academy/catalog
 - Roadmap API: http://localhost:8000/api/platform-academy/roadmap
 - Labs API: http://localhost:8000/api/platform-academy/labs
+- Resources API: http://localhost:8000/api/platform-academy/resources
+- Interview prep API: http://localhost:8000/api/platform-academy/interview-prep
 
 The academy is instructional and local-first. Do not run `terraform apply`, do not deploy to AWS, and do not add real credentials. AWS CLI examples are labeled as inspection/design examples, not required commands for this repo.
 
 ## Level Structure
 
-The catalog is organized into three learning levels with five courses each, forming a zero-to-hero path from Linux/networking basics through senior platform ownership.
+The catalog is organized into three learning levels, forming a zero-to-hero path from Linux/networking basics through senior platform ownership and job-search readiness.
 
 ### Fresher / Beginner
 
@@ -31,6 +33,7 @@ The catalog is organized into three learning levels with five courses each, form
 - Cloud Native Foundations: Docker images, tags/digests, registries, YAML, dry-run, environment promotion, service DNS, ports, resource requests, and memory failure signals.
 - Linux and Command Line Foundations: shell navigation, file inspection, processes, exit codes, logs, users/groups, permissions, sudo, and text pipelines for evidence gathering.
 - Networking Foundations for Kubernetes: IPs, ports, routing, DNS, HTTP, TLS, Ingress, load balancing, NetworkPolicy, and firewall reasoning.
+- Docker Image and Supply Chain Operations: Dockerfile runtime contracts, multi-stage builds, tags, digests, registries, image scanning, SBOMs, non-root runtime, and artifact promotion.
 
 ### Intermediate
 
@@ -39,6 +42,7 @@ The catalog is organized into three learning levels with five courses each, form
 - ArgoCD GitOps: Applications, desired vs live state, app-of-apps, AppProjects, sync waves, pruning, self-heal, drift, secrets, environments, and rollback through Git.
 - Terraform for AWS Platform Infrastructure: state, backends, locking, modules, variables, VPC/EKS resources, plan review, drift, safe changes, and cost/security blast radius.
 - AWS IAM for EKS and Platform Teams: policy evaluation, AssumeRole, trust policies, STS, IRSA, Pod Identity, CloudTrail, and controller least-privilege reviews.
+- AWS Operations Foundations for Platform Engineers: Well-Architected operations, CloudWatch, VPC paths, Route 53, ALB health, reliability reviews, backups, and change safety.
 
 ### Advanced
 
@@ -47,8 +51,12 @@ The catalog is organized into three learning levels with five courses each, form
 - SRE and Observability for Kubernetes: RED/USE metrics, Prometheus/Grafana, logs, traces, SLOs, error budgets, burn-rate alerts, alert routing, runbooks, and post-incident learning.
 - CI/CD and Release Engineering: quality gates, immutable artifact promotion, image signing, SBOMs, progressive delivery, rollback, canaries, pipeline security, and deploy permissions.
 - Platform Engineering Operating Model: golden paths, internal developer experience, service ownership, production readiness, platform APIs, Backstage-style templates, KPIs, and adoption metrics.
+- Observability and Telemetry Engineering: metrics, logs, traces, OpenTelemetry, context propagation, sampling, Prometheus alert quality, cardinality, dashboards, and telemetry operations.
+- Incident Response and Reliability Leadership: incident command, severity, timelines, communications, mitigation, postmortems, corrective actions, and game days.
+- FinOps for Kubernetes and AWS Platforms: cost visibility, ownership, tags, Kubernetes requests, EKS cost drivers, right-sizing, guardrails, and cost-review cadence.
+- Platform Engineering Job Search Sprint: skill gap maps, portfolio evidence, resume bullets, recruiter screens, STAR stories, and a 30-day interview-prep operating plan.
 
-Current seed count: 15 courses, 60 lessons, 15 labs, and 180 reusable resources.
+Current seed count: 21 courses, 84 lessons, 21 labs, 320 reusable resources, and 219 interview questions.
 
 ## How To Learn From It
 
@@ -67,7 +75,7 @@ For each lesson:
 
 Codex identified the biggest remaining gap as a reusable resources/projects layer: learners need artifacts they can return to while building real portfolio-grade systems. The app now exposes `/resources` and `/api/platform-academy/resources` with filters for domain and artifact type.
 
-Resource domains include Linux, Networking, Docker, Kubernetes, kubectl, Cloud Native, EKS, Terraform, AWS IAM, Helm, ArgoCD, CI/CD, Security, SRE, Incident Response, FinOps, Platform Engineering, and Career.
+Resource domains include Linux, Networking, Docker, Kubernetes, kubectl, Cloud Native, EKS, Terraform, AWS IAM, AWS Operations, Helm, ArgoCD, CI/CD, Security, SRE, Observability, Incident Response, FinOps, Platform Engineering, and Career.
 
 Resource types include:
 
@@ -81,6 +89,12 @@ Resource types include:
 - Templates.
 - Assessments.
 - Troubleshooting guides.
+- Decision records.
+- Production readiness checklists.
+- Failure mode drills.
+- Security reviews.
+- Cost reviews.
+- Portfolio artifacts.
 
 Each resource includes prerequisites, outcomes, safety level, commands, expected artifacts, related labs, and next steps.
 
@@ -93,16 +107,22 @@ Each course has a lab tied to a real lesson ID:
 - Review Kubernetes YAML before apply.
 - Inspect Linux failure evidence.
 - Trace an HTTP request across the network path.
+- Review a Docker image supply chain.
 - Diagnose EKS Pod IP exhaustion.
 - Validate a Helm release artifact.
 - Trace an ArgoCD drift report.
 - Review a Terraform EKS plan.
 - Debug IRSA AccessDenied for a Pod.
+- Debug an AWS ALB health path.
 - Run a production EKS architecture review.
 - Audit Kubernetes tenant boundaries.
 - Write an SLO-backed Kubernetes runbook.
+- Design an OpenTelemetry signal path.
+- Run an incident commander tabletop.
+- Audit EKS cost drivers.
 - Design a safe Kubernetes release pipeline.
 - Create a service golden path.
+- Build a platform career proof pack.
 
 Labs are written as realistic production drills with commands, signals to inspect, and checklists. They avoid cloud mutation and are safe to discuss, rehearse, or adapt to a local kind/minikube cluster.
 
@@ -116,3 +136,5 @@ Platform Academy is no longer a nav item inside the Zhongwen app. The Zhongwen f
 - Add lab worksheet state, answers, and rubric feedback.
 - Add platform-specific achievements such as `cluster_debugger`, `helm_release_operator`, and `gitops_owner`.
 - Add a mock incident simulator that emits local metrics/logs for observability labs.
+- Add Alembic migrations before a production-grade persistent deployment.
+- Add a split static public catalog if a read-only CloudFront/S3 surface becomes useful.

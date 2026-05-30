@@ -57,6 +57,21 @@ export interface Progress {
   updated_at: string;
 }
 
+export interface PlatformActivity {
+  id: number;
+  user_id: string;
+  target_type: string;
+  target_id: string;
+  state: string;
+  updated_at: string;
+}
+
+export interface PlatformActivityInput {
+  target_type: string;
+  target_id: string;
+  state?: string;
+}
+
 export interface Achievement {
   code: string;
   title: string;
@@ -166,6 +181,10 @@ export interface PlatformResource {
   related_lessons: number[];
   related_labs: string[];
   next_steps: string[];
+  source_takeaways?: string[];
+  study_tasks?: string[];
+  interview_prompts?: string[];
+  official_sources?: PlatformOfficialSource[];
   source_url?: string | null;
   source_label?: string | null;
   reviewed_at?: string | null;
@@ -175,4 +194,37 @@ export interface PlatformResources {
   domains: string[];
   types: string[];
   resources: PlatformResource[];
+}
+
+export interface PlatformOfficialSource {
+  label: string;
+  url: string;
+}
+
+export interface PlatformInterviewQuestion {
+  question: string;
+  scenario: string;
+  answer_outline: string[];
+  strong_signals: string[];
+  red_flags: string[];
+  practice_task: string;
+}
+
+export interface PlatformInterviewPrep {
+  slug: string;
+  title: string;
+  domain: string;
+  level_group: string;
+  focus: string;
+  related_course_slug: string;
+  related_labs: string[];
+  official_sources: PlatformOfficialSource[];
+  questions: PlatformInterviewQuestion[];
+}
+
+export interface PlatformInterviewPrepIndex {
+  domains: string[];
+  levels: string[];
+  total_questions: number;
+  packs: PlatformInterviewPrep[];
 }

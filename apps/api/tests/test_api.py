@@ -35,18 +35,19 @@ def test_platform_academy_catalog_roadmap_and_labs():
     assert catalog.status_code == 200
     payload = catalog.json()
     assert payload["title"] == "Platform Academy"
-    assert payload["total_courses"] >= 15
-    assert payload["total_lessons"] >= 60
+    assert payload["total_courses"] >= 21
+    assert payload["total_lessons"] >= 84
     assert {level["level_group"]: level["total_courses"] for level in payload["levels"]} == {
-        "Fresher": 5,
-        "Intermediate": 5,
-        "Advanced": 5,
+        "Fresher": 6,
+        "Intermediate": 6,
+        "Advanced": 9,
     }
-    assert all(level["total_lessons"] >= 20 for level in payload["levels"])
+    assert all(level["total_lessons"] >= 24 for level in payload["levels"])
     expected_categories = {
         "Kubernetes",
         "kubectl",
         "Cloud Native",
+        "Docker",
         "Linux",
         "Networking",
         "EKS",
@@ -54,15 +55,30 @@ def test_platform_academy_catalog_roadmap_and_labs():
         "ArgoCD",
         "Terraform",
         "AWS IAM",
+        "AWS Operations",
         "Security",
         "SRE",
+        "Observability",
+        "Incident Response",
+        "FinOps",
         "CI/CD",
         "Platform Engineering",
+        "Career",
     }
     assert {track["course"]["category"] for track in payload["tracks"]} >= expected_categories
     assert {track["level_group"] for track in payload["tracks"]} == {"Fresher", "Intermediate", "Advanced"}
     kubernetes_track = next(track for track in payload["tracks"] if track["slug"] == "kubernetes-fundamentals")
     assert len(kubernetes_track["course"]["lessons"]) >= 4
+    for slug in [
+        "docker-image-supply-chain",
+        "aws-operations-foundations",
+        "observability-telemetry-engineering",
+        "incident-response-reliability",
+        "finops-kubernetes-aws",
+        "career-job-search-sprint",
+    ]:
+        track = next(track for track in payload["tracks"] if track["slug"] == slug)
+        assert len(track["course"]["lessons"]) == 4
     assert any("CrashLoopBackOff" in lab["title"] for lab in payload["labs"])
     assert {lab["level_group"] for lab in payload["labs"]} == {"Fresher", "Intermediate", "Advanced"}
     assert all(lab["lesson_id"] for lab in payload["labs"])
@@ -70,23 +86,24 @@ def test_platform_academy_catalog_roadmap_and_labs():
     roadmap = client.get("/api/platform-academy/roadmap")
     assert roadmap.status_code == 200
     stages = roadmap.json()["stages"]
-    assert len(stages) >= 15
+    assert len(stages) >= 21
     assert stages[0]["title"] == "Linux Operator Foundations"
     assert stages[1]["title"] == "Networking Mental Model"
     assert stages[2]["title"] == "Kubernetes Object Mental Model"
+    assert stages[-1]["title"] == "Platform Career Sprint"
     assert {stage["level_group"] for stage in stages} == {"Fresher", "Intermediate", "Advanced"}
 
     labs = client.get("/api/platform-academy/labs")
     assert labs.status_code == 200
-    assert len(labs.json()) >= 15
+    assert len(labs.json()) >= 21
     assert {lab["track"] for lab in labs.json()} >= expected_categories
 
     resources = client.get("/api/platform-academy/resources")
     assert resources.status_code == 200
     resource_payload = resources.json()
-    assert len(resource_payload["resources"]) >= 80
+    assert len(resource_payload["resources"]) >= 250
     assert len(resource_payload["domains"]) >= 14
-    assert len(resource_payload["types"]) >= 10
+    assert len(resource_payload["types"]) >= 16
     assert {item["domain"] for item in resource_payload["resources"]} >= expected_categories | {
         "Docker",
         "Incident Response",
@@ -104,17 +121,24 @@ def test_platform_academy_catalog_roadmap_and_labs():
         "template",
         "assessment",
         "troubleshooting guide",
+        "decision record",
+        "production readiness checklist",
+        "failure mode drill",
+        "security review",
+        "cost review",
+        "portfolio artifact",
     }
     assert set(resource_payload["types"]) >= must_have_types
     assert all(resource["related_lessons"] or resource["related_labs"] for resource in resource_payload["resources"])
     assert all(resource["source_url"].startswith("https://") for resource in resource_payload["resources"])
     assert all(resource["source_label"] for resource in resource_payload["resources"])
+    assert all(resource["official_sources"] for resource in resource_payload["resources"])
     assert all(resource["reviewed_at"] for resource in resource_payload["resources"])
     kubernetes_reference = next(
         resource for resource in resource_payload["resources"] if resource["slug"] == "kubernetes-official-reference"
     )
     assert kubernetes_reference["source_url"] == "https://kubernetes.io/docs/tasks/debug/"
-    assert kubernetes_reference["source_label"] == "Kubernetes official debugging docs"
+    assert kubernetes_reference["source_label"] == "Kubernetes Debugging Tasks"
 
 
 def test_course_domain_filters_keep_zhongwen_and_platform_separate():
@@ -190,6 +214,83 @@ def test_progress_creates_guest_user_before_progress_rows():
     assert dashboard.status_code == 200
     assert dashboard.json()["completed_lessons"] >= 1
     assert dashboard.json()["xp"]["lesson_completion_xp"] >= 20
+
+
+def test_platform_activity_tracks_guest_prep_state():
+    user_id = "guest-activity-regression"
+    payload = {
+        "user_id": user_id,
+        "target_type": "interview_question",
+        "target_id": "kubernetes-debugging-interview-pack:1",
+        "state": "completed",
+    }
+
+    first = client.post("/api/platform-academy/activity", json=payload)
+    assert first.status_code == 200
+    assert first.json()["user_id"] == user_id
+    assert first.json()["state"] == "completed"
+
+    updated = client.post("/api/platform-academy/activity", json={**payload, "state": "review"})
+    assert updated.status_code == 200
+    assert updated.json()["id"] == first.json()["id"]
+    assert updated.json()["state"] == "review"
+
+    rows = client.get(f"/api/platform-academy/activity/{user_id}")
+    assert rows.status_code == 200
+    assert rows.json() == [updated.json()]
+
+
+def test_platform_dashboard_scope_excludes_legacy_learning_content():
+    all_courses = client.get("/api/courses").json()
+    platform_courses = client.get("/api/courses?domain=platform").json()
+    legacy_lesson_id = next(course for course in all_courses if course["era"] != "Platform Academy")["lessons"][0]["id"]
+    platform_lesson_id = platform_courses[0]["lessons"][0]["id"]
+    user_id = "guest-platform-scope-regression"
+
+    legacy_progress = client.post("/api/progress", json={"user_id": user_id, "lesson_id": legacy_lesson_id, "completed": True, "score": 1})
+    platform_progress = client.post(
+        "/api/progress",
+        json={"user_id": user_id, "lesson_id": platform_lesson_id, "completed": True, "score": 1},
+    )
+    assert legacy_progress.status_code == 200
+    assert platform_progress.status_code == 200
+
+    global_dashboard = client.get(f"/api/users/{user_id}/dashboard")
+    platform_dashboard = client.get(f"/api/users/{user_id}/dashboard?domain=platform")
+    assert global_dashboard.status_code == 200
+    assert platform_dashboard.status_code == 200
+
+    global_payload = global_dashboard.json()
+    platform_payload = platform_dashboard.json()
+    assert global_payload["completed_lessons"] >= 2
+    assert global_payload["xp"]["lesson_completion_xp"] >= 40
+    assert global_payload["due_reviews"] > platform_payload["due_reviews"]
+    assert platform_payload["completed_lessons"] == 1
+    assert platform_payload["xp"]["lesson_completion_xp"] == 20
+    assert platform_payload["due_reviews"] > 0
+
+
+def test_platform_interview_prep_catalog_is_content_rich():
+    response = client.get("/api/platform-academy/interview-prep")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total_questions"] >= 200
+    assert "Kubernetes" in payload["domains"]
+    assert "AWS Operations" in payload["domains"]
+    assert "CI/CD" in payload["domains"]
+    assert "Career" in payload["domains"]
+    assert "Linux" in payload["domains"]
+    assert "Networking" in payload["domains"]
+    assert "Observability" in payload["domains"]
+    assert "FinOps" in payload["domains"]
+    assert "Advanced" in payload["levels"]
+    assert all(len(pack["questions"]) >= 9 for pack in payload["packs"])
+    pack = next(item for item in payload["packs"] if item["slug"] == "kubernetes-debugging-interview-pack")
+    assert len(pack["questions"]) >= 5
+    assert pack["official_sources"][0]["url"].startswith("https://")
+    assert "EndpointSlices" in " ".join(pack["questions"][0]["answer_outline"] + pack["questions"][0]["strong_signals"])
+    career_pack = next(item for item in payload["packs"] if item["slug"] == "career-recruiter-screen-interview-pack")
+    assert "layoff" in " ".join(question["question"] + " " + question["scenario"] for question in career_pack["questions"]).lower()
 
 
 def test_search_and_metrics():

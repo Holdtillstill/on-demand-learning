@@ -9,6 +9,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from sqlalchemy import or_, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.config import get_settings
@@ -30,6 +31,7 @@ from app.models import (
     Course,
     Flashcard,
     Lesson,
+    PlatformActivity,
     Progress,
     QuizAttempt,
     ReviewState,
@@ -38,7 +40,15 @@ from app.models import (
     VocabularyTerm,
     XpEvent,
 )
-from app.platform_content import PLATFORM_ACADEMY_ERA, PLATFORM_LABS, PLATFORM_LEVELS, PLATFORM_RESOURCES, PLATFORM_ROADMAP, PLATFORM_TRACKS
+from app.platform_content import (
+    PLATFORM_ACADEMY_ERA,
+    PLATFORM_INTERVIEW_PREP,
+    PLATFORM_LABS,
+    PLATFORM_LEVELS,
+    PLATFORM_RESOURCES,
+    PLATFORM_ROADMAP,
+    PLATFORM_TRACKS,
+)
 from app.schemas import (
     CharacterOut,
     CourseCreate,
@@ -49,6 +59,9 @@ from app.schemas import (
     LessonOut,
     PlatformAcademyCatalogOut,
     PlatformAcademyRoadmapOut,
+    PlatformActivityIn,
+    PlatformActivityOut,
+    PlatformInterviewPrepIndexOut,
     PlatformLabOut,
     PlatformResourcesOut,
     ProgressIn,
@@ -112,7 +125,10 @@ ACHIEVEMENTS = [
 def ensure_user(db: Session, user_id: str) -> None:
     if not db.get(User, user_id):
         db.add(User(id=user_id, display_name=user_id, subscription_status="mock_active"))
-        db.flush()
+        try:
+            db.flush()
+        except IntegrityError:
+            db.rollback()
 
 
 def add_xp_event(db: Session, user_id: str, source: str, source_id: int, xp: int) -> None:
@@ -123,11 +139,31 @@ def add_xp_event(db: Session, user_id: str, source: str, source_id: int, xp: int
     XP_AWARDED.labels(source=source).inc(xp)
 
 
-def completed_progress_query(db: Session, user_id: str):
-    return db.query(Progress).join(Lesson, Progress.lesson_id == Lesson.id).join(Course, Lesson.course_id == Course.id).filter(
+def selected_domain(domain: str | None) -> str:
+    selected = (domain or "all").lower()
+    if selected not in {"all", "platform", "zhongwen"}:
+        raise HTTPException(status_code=400, detail="domain must be one of: all, zhongwen, platform")
+    return selected
+
+
+def course_domain_condition(domain: str | None):
+    selected = selected_domain(domain)
+    if selected == "all":
+        return None
+    if selected == "platform":
+        return Course.era == PLATFORM_ACADEMY_ERA
+    return Course.era != PLATFORM_ACADEMY_ERA
+
+
+def completed_progress_query(db: Session, user_id: str, domain: str = "all"):
+    query = db.query(Progress).join(Lesson, Progress.lesson_id == Lesson.id).join(Course, Lesson.course_id == Course.id).filter(
         Progress.user_id == user_id,
         Progress.completed.is_(True),
     )
+    condition = course_domain_condition(domain)
+    if condition is not None:
+        query = query.filter(condition)
+    return query
 
 
 def current_streak_days(activity_dates: set[date]) -> int:
@@ -141,9 +177,13 @@ def current_streak_days(activity_dates: set[date]) -> int:
     return streak
 
 
-def due_review_count(db: Session, user_id: str) -> int:
+def due_review_count(db: Session, user_id: str, domain: str = "all") -> int:
     now = datetime.utcnow()
-    cards = db.query(Flashcard.id).all()
+    query = db.query(Flashcard.id).join(Lesson, Flashcard.lesson_id == Lesson.id).join(Course, Lesson.course_id == Course.id)
+    condition = course_domain_condition(domain)
+    if condition is not None:
+        query = query.filter(condition)
+    cards = query.all()
     count = 0
     for (flashcard_id,) in cards:
         state = db.query(ReviewState).filter(ReviewState.user_id == user_id, ReviewState.flashcard_id == flashcard_id).first()
@@ -153,14 +193,13 @@ def due_review_count(db: Session, user_id: str) -> int:
 
 
 def apply_course_domain_filter(query, domain: str | None):
-    selected = (domain or "all").lower()
+    selected = selected_domain(domain)
     if selected == "all":
         return query
     if selected == "platform":
         return query.filter(Course.era == PLATFORM_ACADEMY_ERA)
     if selected == "zhongwen":
         return query.filter(Course.era != PLATFORM_ACADEMY_ERA)
-    raise HTTPException(status_code=400, detail="domain must be one of: all, zhongwen, platform")
 
 
 def platform_courses(db: Session) -> list[Course]:
@@ -356,6 +395,16 @@ def get_platform_academy_resources():
     }
 
 
+@app.get("/api/platform-academy/interview-prep", response_model=PlatformInterviewPrepIndexOut)
+def get_platform_academy_interview_prep():
+    return {
+        "domains": sorted({pack["domain"] for pack in PLATFORM_INTERVIEW_PREP}),
+        "levels": sorted({pack["level_group"] for pack in PLATFORM_INTERVIEW_PREP}),
+        "total_questions": sum(len(pack["questions"]) for pack in PLATFORM_INTERVIEW_PREP),
+        "packs": PLATFORM_INTERVIEW_PREP,
+    }
+
+
 @app.get("/api/courses/{course_id}", response_model=CourseOut)
 def get_course(course_id: int, db: Session = Depends(get_db)):
     course = db.query(Course).options(joinedload(Course.lessons)).filter(Course.id == course_id).first()
@@ -399,6 +448,33 @@ def upsert_progress(payload: ProgressIn, db: Session = Depends(get_db)):
 @app.get("/api/progress/{user_id}", response_model=list[ProgressOut])
 def get_progress(user_id: str, db: Session = Depends(get_db)):
     return db.query(Progress).filter(Progress.user_id == user_id).order_by(Progress.updated_at.desc()).all()
+
+
+@app.post("/api/platform-academy/activity", response_model=PlatformActivityOut)
+def upsert_platform_activity(payload: PlatformActivityIn, db: Session = Depends(get_db)):
+    ensure_user(db, payload.user_id)
+    activity = (
+        db.query(PlatformActivity)
+        .filter(
+            PlatformActivity.user_id == payload.user_id,
+            PlatformActivity.target_type == payload.target_type,
+            PlatformActivity.target_id == payload.target_id,
+        )
+        .first()
+    )
+    if not activity:
+        activity = PlatformActivity(user_id=payload.user_id, target_type=payload.target_type, target_id=payload.target_id)
+        db.add(activity)
+    activity.state = payload.state
+    db.commit()
+    db.refresh(activity)
+    return activity
+
+
+@app.get("/api/platform-academy/activity/{user_id}", response_model=list[PlatformActivityOut])
+def get_platform_activity(user_id: str, db: Session = Depends(get_db)):
+    ensure_user(db, user_id)
+    return db.query(PlatformActivity).filter(PlatformActivity.user_id == user_id).order_by(PlatformActivity.updated_at.desc()).all()
 
 
 @app.get("/api/search", response_model=SearchResult)
@@ -508,8 +584,50 @@ def get_learning_path(user_id: str = "demo-user", domain: str = "zhongwen", db: 
     return {"user_id": user_id, "recommended_lesson_id": recommended_lesson_id, "modules": modules}
 
 
-def achievement_progress(db: Session, user_id: str, streak_days: int) -> dict[str, int]:
-    completed = completed_progress_query(db, user_id).all()
+def dashboard_xp_events(db: Session, user_id: str, domain: str = "all") -> list[XpEvent]:
+    selected = selected_domain(domain)
+    if selected == "all":
+        return db.query(XpEvent).filter(XpEvent.user_id == user_id).order_by(XpEvent.created_at.desc()).all()
+
+    condition = course_domain_condition(selected)
+    lesson_ids = {
+        lesson_id
+        for (lesson_id,) in db.query(Lesson.id)
+        .join(Course, Lesson.course_id == Course.id)
+        .filter(condition)
+        .all()
+    }
+    flashcard_ids = {
+        flashcard_id
+        for (flashcard_id,) in db.query(Flashcard.id)
+        .join(Lesson, Flashcard.lesson_id == Lesson.id)
+        .join(Course, Lesson.course_id == Course.id)
+        .filter(condition)
+        .all()
+    }
+    quiz_attempt_ids = {
+        attempt_id
+        for (attempt_id,) in db.query(QuizAttempt.id)
+        .join(Lesson, QuizAttempt.lesson_id == Lesson.id)
+        .join(Course, Lesson.course_id == Course.id)
+        .filter(QuizAttempt.user_id == user_id, condition)
+        .all()
+    }
+
+    event_filters = []
+    if lesson_ids:
+        event_filters.append((XpEvent.source == "lesson_completion") & XpEvent.source_id.in_(lesson_ids))
+    if quiz_attempt_ids:
+        event_filters.append((XpEvent.source == "quiz_attempt") & XpEvent.source_id.in_(quiz_attempt_ids))
+    if flashcard_ids:
+        event_filters.append((XpEvent.source == "srs_review") & XpEvent.source_id.in_(flashcard_ids))
+    if not event_filters:
+        return []
+    return db.query(XpEvent).filter(XpEvent.user_id == user_id, or_(*event_filters)).order_by(XpEvent.created_at.desc()).all()
+
+
+def achievement_progress(db: Session, user_id: str, streak_days: int, domain: str = "all") -> dict[str, int]:
+    completed = completed_progress_query(db, user_id, domain).all()
     completed_count = len(completed)
     poetry_count = sum(
         1
@@ -517,7 +635,16 @@ def achievement_progress(db: Session, user_id: str, streak_days: int) -> dict[st
         if progress.lesson.course.category == "Literature" or progress.lesson.course.era == "Tang"
     )
     character_progress = sum(1 for progress in completed if progress.lesson.course.category == "Characters")
-    character_reviews = db.query(ReviewState).filter(ReviewState.user_id == user_id, ReviewState.last_reviewed_at.is_not(None)).count()
+    review_query = (
+        db.query(ReviewState)
+        .join(Flashcard, ReviewState.flashcard_id == Flashcard.id)
+        .join(Lesson, Flashcard.lesson_id == Lesson.id)
+        .join(Course, Lesson.course_id == Course.id)
+    )
+    condition = course_domain_condition(domain)
+    if condition is not None:
+        review_query = review_query.filter(condition)
+    character_reviews = review_query.filter(ReviewState.user_id == user_id, ReviewState.last_reviewed_at.is_not(None)).count()
     return {
         "first_lesson": completed_count,
         "poetry_explorer": poetry_count,
@@ -556,9 +683,9 @@ def award_earned_achievements(db: Session, user_id: str, progress_by_code: dict[
 
 
 @app.get("/api/users/{user_id}/dashboard", response_model=UserDashboard)
-def get_user_dashboard(user_id: str, db: Session = Depends(get_db)):
+def get_user_dashboard(user_id: str, domain: str = "all", db: Session = Depends(get_db)):
     ensure_user(db, user_id)
-    events = db.query(XpEvent).filter(XpEvent.user_id == user_id).order_by(XpEvent.created_at.desc()).all()
+    events = dashboard_xp_events(db, user_id, domain)
     lesson_xp = sum(event.xp for event in events if event.source == "lesson_completion")
     quiz_xp = sum(event.xp for event in events if event.source == "quiz_attempt")
     review_xp = sum(event.xp for event in events if event.source == "srs_review")
@@ -567,10 +694,10 @@ def get_user_dashboard(user_id: str, db: Session = Depends(get_db)):
     earned_today = sum(event.xp for event in events if event.created_at.date() == today)
     activity_dates = {event.created_at.date() for event in events}
     streak_days = current_streak_days(activity_dates)
-    progress_by_code = achievement_progress(db, user_id, streak_days)
+    progress_by_code = achievement_progress(db, user_id, streak_days, domain)
     achievements = award_earned_achievements(db, user_id, progress_by_code)
     completed_lessons = progress_by_code["first_lesson"]
-    due_reviews = due_review_count(db, user_id)
+    due_reviews = due_review_count(db, user_id, domain)
     db.commit()
     return {
         "user_id": user_id,
