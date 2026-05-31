@@ -6,6 +6,7 @@ COPY apps/platform-academy ./
 RUN npm run build
 
 FROM nginx:1.27-alpine
-COPY apps/platform-academy/nginx.conf /etc/nginx/conf.d/default.conf
+ENV PLATFORM_API_UPSTREAM=http://api:8000
+COPY apps/platform-academy/nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
