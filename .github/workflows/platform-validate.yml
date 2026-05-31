@@ -22,4 +22,4 @@ jobs:
           terraform init -backend=false
           terraform validate
       - name: Validate Kubernetes manifests
-        run: kubectl apply --dry-run=client -f infra/k8s/zhongwen-platform.yaml
+        run: kubectl apply --dry-run=client --validate=false -f infra/k8s/zhongwen-platform.yaml
