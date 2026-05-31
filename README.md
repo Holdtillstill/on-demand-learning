@@ -1,6 +1,16 @@
-# Zhongwen Cloud Learning Platform
+# On-Demand Learning / Platform Academy
+
+[![Backend](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/backend.yml/badge.svg?branch=master)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/backend.yml)
+[![Frontend](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/frontend.yml/badge.svg?branch=master)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/frontend.yml)
+[![Docker build](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/docker-build.yml/badge.svg?branch=master)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/docker-build.yml)
+[![Platform validate](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-validate.yml/badge.svg?branch=master)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-validate.yml)
+[![Security](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/security.yml/badge.svg?branch=master)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/security.yml)
 
 Zhongwen Cloud Learning Platform is a local-first, production-style portfolio project with two frontend product surfaces: a Mandarin/Chinese culture learning app and a standalone Cloud Native Platform Academy for Kubernetes, EKS, Helm, ArgoCD, security, and SRE. The portfolio story is the platform around them: Docker Compose, FastAPI, React, PostgreSQL, Redis, a worker, metrics, traces, JSON logs, Kubernetes manifests, Terraform AWS scaffolding, CI/CD, SLOs, and runbooks.
+
+The active portfolio product is Platform Academy: a content-rich AWS/Kubernetes/SRE learning and interview-prep platform for DevOps, SRE, cloud, and platform engineers.
+
+![Platform Academy dashboard](docs/assets/platform-academy-dashboard.png)
 
 ## Quickstart
 
@@ -107,6 +117,16 @@ Open http://localhost:8090 for the standalone Kubernetes/EKS/Helm/ArgoCD/securit
 
 See [docs/platform-academy.md](docs/platform-academy.md) for the curriculum outline and local-safe lab story.
 See [docs/deployment.md](docs/deployment.md) for local, Docker Compose, shared-EKS preview, production API, and smoke-test deployment planning.
+See [docs/smoke-test-checklist.md](docs/smoke-test-checklist.md) for release verification, [docs/cost-notes.md](docs/cost-notes.md) for the low-cost hosting posture, and [docs/backlog.md](docs/backlog.md) for the next improvement queue.
+
+## Deployment and Cost Notes
+
+- Keep Platform Academy full-stack for progress, activity, learner profile recovery, and API-backed catalog data.
+- Use Docker Compose for local demos and a shared EKS preview for Kubernetes proof.
+- Use `academy.ybz.dev` later as the stable public entry and `preview.academy.ybz.dev` for on-demand shared-EKS previews.
+- Do not deploy as pure static S3 unless the public surface is split into a read-only catalog/marketing/docs site.
+- Avoid an always-on dedicated EKS cluster; use shared infrastructure, TTL previews, and budgets.
+- Add reviewed Alembic migrations before true production persistence.
 
 ## Known Limitations
 
@@ -121,3 +141,7 @@ See [docs/deployment.md](docs/deployment.md) for local, Docker Compose, shared-E
 ## Portfolio Narrative
 
 This project demonstrates how to package a real product slice with an operating model: health checks, dependency readiness, SLO thinking, telemetry, CI/CD guardrails, cloud infrastructure planning, Kubernetes deployment design, incident response docs, cost controls, and developer self-service workflows.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
