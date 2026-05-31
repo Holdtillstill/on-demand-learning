@@ -713,8 +713,10 @@ describe("Platform Academy app", () => {
     expect(await screen.findByText("36 shown / 40 matching artifacts")).toBeInTheDocument();
     expect(screen.queryByText("Kubernetes Debugging Cheatsheet 40")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /load 4 more resources/i }));
-    expect(screen.getByText("40 shown / 40 matching artifacts")).toBeInTheDocument();
-    expect(screen.getByText("Kubernetes Debugging Cheatsheet 40")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("40 shown / 40 matching artifacts")).toBeInTheDocument();
+      expect(screen.getByText("Kubernetes Debugging Cheatsheet 40")).toBeInTheDocument();
+    });
   });
 
   it("renders official source URLs and reviewed dates on resource detail pages", async () => {
