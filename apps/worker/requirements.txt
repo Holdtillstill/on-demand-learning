@@ -1,4 +1,4 @@
-sqlalchemy==2.0.36
+sqlalchemy==2.0.50
 psycopg[binary]==3.2.3
 pydantic-settings==2.7.1
 prometheus-client==0.21.1
