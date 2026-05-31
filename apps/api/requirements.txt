@@ -11,6 +11,6 @@ opentelemetry-instrumentation-fastapi==0.50b0
 opentelemetry-instrumentation-sqlalchemy==0.50b0
 python-json-logger==3.2.1
 redis==5.2.1
-pytest==8.3.4
+pytest==9.0.3
 httpx==0.28.1
 ruff==0.8.4

@@ -16,7 +16,7 @@ permissions:
 env:
   AWS_REGION: us-west-2
   ECR_REPOSITORY: platform-academy
-  AWS_ROLE_TO_ASSUME: arn:aws:iam::<AWS_ACCOUNT_ID>:role/bozhi-platform-academy-image-publish
+  AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
 
 jobs:
   publish:
