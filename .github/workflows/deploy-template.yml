@@ -22,6 +22,6 @@ jobs:
           echo "This workflow is a template only."
           echo "Configure AWS OIDC, ECR image promotion, kubeconfig, and environment approval before applying manifests."
       - name: Validate Kubernetes manifests
-        run: kubectl apply --dry-run=client -f infra/k8s/zhongwen-platform.yaml
+        run: docker run --rm -v "${PWD}:/work" ghcr.io/yannh/kubeconform:v0.6.7 -strict -summary /work/infra/k8s/zhongwen-platform.yaml
       - name: Render intended image tag
         run: echo "Would deploy image tag ${{ inputs.image_tag }} after explicit approval."
