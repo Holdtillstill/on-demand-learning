@@ -3,9 +3,12 @@ name: security
 on:
   pull_request:
   push:
-    branches: [main, master]
+    branches: [main]
   schedule:
     - cron: "17 9 * * 1"
+
+permissions:
+  contents: read
 
 jobs:
   dependency-review:
@@ -25,4 +28,4 @@ jobs:
           scan-ref: .
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: "0"
+          exit-code: "1"

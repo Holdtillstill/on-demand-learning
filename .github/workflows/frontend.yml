@@ -3,7 +3,10 @@ name: frontend
 on:
   pull_request:
   push:
-    branches: [main, master]
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -22,7 +25,7 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: ${{ matrix.app.path }}/package-lock.json
-      - run: npm install
+      - run: npm ci
         working-directory: ${{ matrix.app.path }}
       - run: npm run typecheck
         working-directory: ${{ matrix.app.path }}

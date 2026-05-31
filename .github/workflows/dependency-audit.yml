@@ -1,0 +1,55 @@
+name: Dependency Audit
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "43 8 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  python-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: python -m pip install pip-audit
+
+      - name: Audit API dependencies
+        run: pip-audit --no-deps --disable-pip -r apps/api/requirements.txt
+
+      - name: Audit worker dependencies
+        run: pip-audit --no-deps --disable-pip -r apps/worker/requirements.txt
+
+  npm-audit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - apps/frontend
+          - apps/platform-academy
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - run: npm ci
+        working-directory: ${{ matrix.app }}
+
+      - name: Audit npm dependencies
+        run: npm audit --audit-level=high
+        working-directory: ${{ matrix.app }}
