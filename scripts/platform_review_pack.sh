@@ -169,7 +169,7 @@ This pack is a disposable reviewer/deployment handoff bundle for the Platform Ac
 
 1. Read \`platform-academy-handoff.md\` for scope, reviewer routing, deployment coordination, and runtime contracts.
 2. Use \`lab-review-matrix.md\` to split the 21 full labs by portfolio focus, structural gate, mode, track, learner files, source files, and evidence self-check coverage.
-3. Check \`portfolio-artifact-contract.txt\` for the structural verifier result covering the 18 portfolio-grade labs.
+3. Check \`portfolio-artifact-contract.txt\` for the structural verifier result covering the 19 portfolio-grade labs.
 4. Check \`content-count-contract.txt\` for the catalog/resource/interview count verifier result.
 5. Check \`workflow-contracts.txt\` for the GitHub Actions release workflow contract verifier result.
 6. Use \`review-scope.md\`, \`changed-file-review-manifest.md\`, and \`commit-plan.md\` to route subsystem review across API, frontend, labs, release tooling, docs, and deployment surfaces.

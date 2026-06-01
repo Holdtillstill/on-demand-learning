@@ -5660,6 +5660,7 @@ PORTFOLIO_LAB_SLUGS = {
     "review-docker-image-supply-chain",
     "audit-eks-cost-drivers",
     "run-incident-commander-tabletop",
+    "create-platform-golden-path",
 }
 
 PORTFOLIO_LAB_FOCUS = {
@@ -5681,6 +5682,7 @@ PORTFOLIO_LAB_FOCUS = {
     "review-docker-image-supply-chain": "Docker image supply-chain review",
     "audit-eks-cost-drivers": "EKS cost-driver review",
     "run-incident-commander-tabletop": "incident command tabletop",
+    "create-platform-golden-path": "service golden path contract",
 }
 
 EVIDENCE_PACK_LAB_SLUGS: set[str] = set()

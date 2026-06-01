@@ -39,6 +39,7 @@ PORTFOLIO_LABS = [
     "review-docker-image-supply-chain",
     "audit-eks-cost-drivers",
     "run-incident-commander-tabletop",
+    "create-platform-golden-path",
 ]
 
 
@@ -1359,6 +1360,105 @@ def verify_run_incident_commander_tabletop() -> None:
         require(term in setup, f"incident setup should expose {term}")
 
 
+def verify_create_platform_golden_path() -> None:
+    slug = "create-platform-golden-path"
+    start = text_doc(slug, "service-template.md")
+    ready = text_doc(slug, "ready-service-template.md")
+    catalog = yaml_doc(slug, "catalog-info.yaml")
+    fixed_catalog = yaml_doc(slug, "fixed-catalog-info.yaml")
+    decision = text_doc(slug, "decision-record.md")
+    triage = text_doc(slug, "triage-notes.md")
+    template = text_doc(slug, "evidence-template.md")
+    analyzer = text_doc(slug, "golden_path_analyzer.py")
+
+    for term in [
+        "Generated artifacts",
+        "Dockerfile",
+        "Helm chart",
+        "CI workflow",
+        "ArgoCD",
+        "Service SLO dashboard",
+        "Runbook",
+        "Backstage catalog-info.yaml",
+    ]:
+        require(term in start, f"starting golden path template should include {term}")
+    for term in [
+        "Required Inputs",
+        "owner_team",
+        "data_classification",
+        "pager_rotation",
+        "cost_center",
+        "slo_target",
+        "Generated Artifacts",
+        "Secure Defaults",
+        "Run as non-root",
+        "Production readiness review",
+        "Adoption Metrics",
+        "Incident count for golden-path services",
+    ]:
+        require(term in ready, f"ready golden path template should include {term}")
+
+    require(catalog.get("kind") == "Component", "starting catalog should be a Backstage Component")
+    catalog_meta = metadata(catalog, "starting catalog")
+    catalog_annotations = get_map(catalog_meta, "annotations", "starting catalog metadata")
+    require(catalog_meta.get("name") == "checkout", "starting catalog should describe checkout")
+    require(catalog_annotations.get("pagerduty.com/service-id") == "missing", "starting catalog should expose missing pager")
+    require(
+        catalog_annotations.get("platform.example.com/slo-dashboard") == "missing",
+        "starting catalog should expose missing SLO dashboard",
+    )
+    require(spec(catalog, "starting catalog").get("owner") == "payments", "starting catalog should preserve weak owner")
+
+    require(fixed_catalog.get("kind") == "Component", "fixed catalog should be a Backstage Component")
+    fixed_meta = metadata(fixed_catalog, "fixed catalog")
+    fixed_annotations = get_map(fixed_meta, "annotations", "fixed catalog metadata")
+    expected_fixed = {
+        "github.com/project-slug": "platform-academy/checkout",
+        "pagerduty.com/service-id": "P123CHECKOUT",
+        "platform.example.com/slo-dashboard": "https://grafana.example.com/d/checkout-slo",
+        "platform.example.com/runbook": "https://runbooks.example.com/checkout",
+        "platform.example.com/cost-center": "payments-platform",
+    }
+    for key, expected in expected_fixed.items():
+        require(fixed_annotations.get(key) == expected, f"fixed catalog should include {key}: {expected}")
+    require(spec(fixed_catalog, "fixed catalog").get("owner") == "group:payments", "fixed catalog should use group owner")
+    require("missing" not in text_doc(slug, "fixed-catalog-info.yaml"), "fixed catalog should not leave missing placeholders")
+
+    for term in [
+        "Block the starting service template",
+        "ownership, observability, escalation, cost, secure defaults, and launch gates",
+        "Adoption metrics",
+        "Production readiness",
+        "operational debt",
+    ]:
+        require(term in decision, f"golden path decision record should include {term}")
+    for term in [
+        "generates many files",
+        "Backstage catalog presence is not ownership proof",
+        "Secure defaults cannot be delegated",
+        "A smooth first run is not enough",
+        "Optional metadata becomes operational debt",
+    ]:
+        require(term in triage, f"golden path triage notes should include {term}")
+    for heading in [
+        "## Triage Notes And False Leads",
+        "## Template Contract Evidence",
+        "## Ownership Metadata Evidence",
+        "## Product Decision Evidence",
+    ]:
+        require(heading in template, f"golden path evidence template should include {heading}")
+    for term in [
+        "Golden path readiness analysis passed",
+        "Starting gap",
+        "Required inputs",
+        "Generated artifacts",
+        "Secure defaults",
+        "Fixed metadata",
+        "block production onboarding",
+    ]:
+        require(term in analyzer, f"golden path analyzer should include {term}")
+
+
 VERIFY_BY_LAB = {
     "trace-service-to-pod": verify_trace_service_to_pod,
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
@@ -1378,6 +1478,7 @@ VERIFY_BY_LAB = {
     "review-docker-image-supply-chain": verify_review_docker_image_supply_chain,
     "audit-eks-cost-drivers": verify_audit_eks_cost_drivers,
     "run-incident-commander-tabletop": verify_run_incident_commander_tabletop,
+    "create-platform-golden-path": verify_create_platform_golden_path,
 }
 
 
