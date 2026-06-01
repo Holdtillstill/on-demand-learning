@@ -5477,6 +5477,17 @@ for lab in PLATFORM_LABS:
     lab["portfolio_grade"] = lab["slug"] in PORTFOLIO_LAB_SLUGS
     lab["portfolio_focus"] = PORTFOLIO_LAB_FOCUS.get(lab["slug"], "")
     lab["artifact_paths"] = LAB_ARTIFACT_PATHS.get(lab["slug"], [])
+    lab["workspace_archive_name"] = f"{lab['slug']}-learner-workspace.zip"
+    lab["workspace_root"] = lab["slug"]
+    lab["workspace_quickstart_commands"] = [
+        f"unzip {lab['workspace_archive_name']}",
+        f"cd {lab['workspace_root']}",
+        "./setup.sh",
+        "# Fill evidence.md with your investigation notes",
+        "./validate.sh --files-only",
+        "./validate.sh",
+        "./cleanup.sh",
+    ]
     lab.setdefault("worksheet_prompts", [
         f"Starting state: {lab['scenario']}",
         "Which command output or file excerpt proves the failure mode?",

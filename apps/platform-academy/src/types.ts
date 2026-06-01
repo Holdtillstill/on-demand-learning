@@ -199,6 +199,9 @@ export interface PlatformLab {
   no_cluster_fallback?: string[];
   artifact_paths?: string[];
   learner_artifact_paths?: string[];
+  workspace_archive_name?: string;
+  workspace_root?: string;
+  workspace_quickstart_commands?: string[];
   worksheet_prompts?: string[];
   rubric?: string[];
   validation_checks?: string[];

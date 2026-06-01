@@ -284,6 +284,17 @@ def test_platform_academy_catalog_roadmap_and_labs():
     assert trace_lab["setup_commands"]
     assert trace_lab["validation_commands"]
     assert trace_lab["cleanup_commands"] == ["bash labs/platform-academy/trace-service-to-pod/cleanup.sh"]
+    assert trace_lab["workspace_archive_name"] == "trace-service-to-pod-learner-workspace.zip"
+    assert trace_lab["workspace_root"] == "trace-service-to-pod"
+    assert trace_lab["workspace_quickstart_commands"] == [
+        "unzip trace-service-to-pod-learner-workspace.zip",
+        "cd trace-service-to-pod",
+        "./setup.sh",
+        "# Fill evidence.md with your investigation notes",
+        "./validate.sh --files-only",
+        "./validate.sh",
+        "./cleanup.sh",
+    ]
     assert any("run-lab.sh setup trace-service-to-pod" in command for command in trace_lab["setup_commands"])
     assert any("labs/platform-academy/trace-service-to-pod/start.yaml" in command for command in trace_lab["setup_commands"])
     for lab in lab_payloads:
@@ -302,6 +313,11 @@ def test_platform_academy_catalog_roadmap_and_labs():
         assert lab["artifact_paths"], lab["slug"]
         assert lab["learner_artifact_paths"], lab["slug"]
         assert lab["artifact_paths"] == lab["learner_artifact_paths"], lab["slug"]
+        assert lab["workspace_archive_name"] == f"{lab['slug']}-learner-workspace.zip", lab["slug"]
+        assert lab["workspace_root"] == lab["slug"], lab["slug"]
+        assert lab["workspace_quickstart_commands"][0] == f"unzip {lab['slug']}-learner-workspace.zip", lab["slug"]
+        assert lab["workspace_quickstart_commands"][1] == f"cd {lab['slug']}", lab["slug"]
+        assert "./validate.sh --files-only" in lab["workspace_quickstart_commands"], lab["slug"]
         assert set(lab["artifact_paths"]).issubset(set(LAB_ARTIFACT_PATHS[lab["slug"]])), lab["slug"]
         assert not any(path.endswith("/solution.md") for path in lab["learner_artifact_paths"]), lab["slug"]
         assert not any(path.endswith("/README.md") for path in lab["learner_artifact_paths"]), lab["slug"]

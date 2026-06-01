@@ -111,6 +111,17 @@ const catalog = {
         "labs/platform-academy/trace-service-to-pod/validate.sh",
         "labs/platform-academy/trace-service-to-pod/cleanup.sh"
       ],
+      workspace_archive_name: "trace-service-to-pod-learner-workspace.zip",
+      workspace_root: "trace-service-to-pod",
+      workspace_quickstart_commands: [
+        "unzip trace-service-to-pod-learner-workspace.zip",
+        "cd trace-service-to-pod",
+        "./setup.sh",
+        "# Fill evidence.md with your investigation notes",
+        "./validate.sh --files-only",
+        "./validate.sh",
+        "./cleanup.sh"
+      ],
       worksheet_prompts: ["What evidence proves the Service selector mismatch?"],
       rubric: ["Captures selector, Pod label, EndpointSlice, and cleanup evidence."],
       validation_checks: ["Expected evidence captured"],

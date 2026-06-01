@@ -721,19 +721,21 @@ function labContractArtifacts(lab: PlatformLab) {
 }
 
 function labWorkspaceArchiveName(lab: PlatformLab) {
-  return `${lab.slug}-learner-workspace.zip`;
+  return lab.workspace_archive_name || `${lab.slug}-learner-workspace.zip`;
 }
 
 function labWorkspaceQuickstartCommands(lab: PlatformLab) {
-  return [
-    `unzip ${labWorkspaceArchiveName(lab)}`,
-    `cd ${lab.slug}`,
-    "./setup.sh",
-    "# Fill evidence.md with your investigation notes",
-    "./validate.sh --files-only",
-    "./validate.sh",
-    "./cleanup.sh"
-  ];
+  return lab.workspace_quickstart_commands?.length
+    ? lab.workspace_quickstart_commands
+    : [
+        `unzip ${labWorkspaceArchiveName(lab)}`,
+        `cd ${lab.workspace_root || lab.slug}`,
+        "./setup.sh",
+        "# Fill evidence.md with your investigation notes",
+        "./validate.sh --files-only",
+        "./validate.sh",
+        "./cleanup.sh"
+      ];
 }
 
 function compactLabItems(items: Array<string | undefined>, limit = 4) {

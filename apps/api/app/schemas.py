@@ -208,6 +208,9 @@ class PlatformLabOut(BaseModel):
     no_cluster_fallback: list[str] = Field(default_factory=list)
     artifact_paths: list[str] = Field(default_factory=list)
     learner_artifact_paths: list[str] = Field(default_factory=list)
+    workspace_archive_name: str = ""
+    workspace_root: str = ""
+    workspace_quickstart_commands: list[str] = Field(default_factory=list)
     worksheet_prompts: list[str] = Field(default_factory=list)
     rubric: list[str] = Field(default_factory=list)
     validation_checks: list[str] = Field(default_factory=list)
