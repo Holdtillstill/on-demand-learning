@@ -77,7 +77,6 @@ Compose is the fastest credible demo mode because it exercises the real API, per
 Before pushing:
 
 - Keep `apps/platform-academy/public/robots.txt`.
-- Keep `apps/platform-academy/src/designs.css`.
 - Do not commit `.env`, local databases, `dist`, `node_modules`, test reports, screenshots, or Terraform state.
 - Confirm no secrets are present in source, docs, Docker files, workflows, or examples.
 

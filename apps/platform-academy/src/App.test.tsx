@@ -1064,7 +1064,7 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("Trace a Deployment to a Pod.")).toBeInTheDocument();
   });
 
-  it("renders the design exploration index", async () => {
+  it("redirects the removed design exploration routes to the dashboard", async () => {
     stubAcademyFetch();
 
     render(
@@ -1073,44 +1073,8 @@ describe("Platform Academy app", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText("Ten visual systems for Platform Academy.")).toBeInTheDocument();
-    expect(screen.getByText("Compared in May 2026 against official docs, cloud learning hubs, hands-on lab platforms, and certification practice sites.")).toBeInTheDocument();
-    expect(screen.getByText("Cloud Operations Board")).toBeInTheDocument();
-    expect(screen.getByText("Terminal Practice Console")).toBeInTheDocument();
-    expect(screen.getByText("Resource Magazine Library")).toBeInTheDocument();
-  });
-
-  it.each([
-    ["/designs/1", "Platform progress board"],
-    ["/designs/3", "academyctl session --profile sre"],
-    ["/designs/5", "Learning signals for platform operators."],
-    ["/designs/7", "Curriculum health dashboard."],
-    ["/designs/10", "Runbooks, briefs, and references for every platform domain."]
-  ])("renders design route %s", async (route, expectedText) => {
-    stubAcademyFetch();
-
-    render(
-      <MemoryRouter initialEntries={[route]}>
-        <App />
-      </MemoryRouter>
-    );
-
-    expect(await screen.findByText(expectedText)).toBeInTheDocument();
-  });
-
-  it("renders design evidence and lab validation surfaces", async () => {
-    stubAcademyFetch();
-
-    render(
-      <MemoryRouter initialEntries={["/designs/3"]}>
-        <App />
-      </MemoryRouter>
-    );
-
-    expect(await screen.findByText("Checks")).toBeInTheDocument();
-    expect(screen.getByText("1 labs")).toBeInTheDocument();
-    expect(screen.getByText("30 min average drill")).toBeInTheDocument();
-    expect(screen.getByText(/kubectl describe svc checkout -n payments/)).toBeInTheDocument();
+    expect(await screen.findByText("Platform learning workspace")).toBeInTheDocument();
+    expect(screen.queryByText("Design explorations")).not.toBeInTheDocument();
   });
 
   it("surfaces saved workbook status in the lab queue", async () => {

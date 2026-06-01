@@ -10,8 +10,6 @@ export type AppRouterProps = {
   interviewPrep: ReactNode;
   resources: ReactNode;
   resourceDetail: ReactNode;
-  designsIndex: ReactNode;
-  designVariant: ReactNode;
   course: ReactNode;
   lessonByCourseSequence: ReactNode;
   lessonById: ReactNode;
@@ -26,8 +24,6 @@ export function AppRouter({
   interviewPrep,
   resources,
   resourceDetail,
-  designsIndex,
-  designVariant,
   course,
   lessonByCourseSequence,
   lessonById
@@ -43,8 +39,6 @@ export function AppRouter({
       <Route path="/interview-prep" element={interviewPrep} />
       <Route path="/resources" element={resources} />
       <Route path="/resources/:slug" element={resourceDetail} />
-      <Route path="/designs" element={designsIndex} />
-      <Route path="/designs/:id" element={designVariant} />
       <Route path="/courses/:courseRef" element={course} />
       <Route path="/courses/:courseRef/lessons/:sequence" element={lessonByCourseSequence} />
       <Route path="/lessons/:id" element={lessonById} />
