@@ -7,6 +7,10 @@ import type {
   PlatformActivityInput,
   PlatformInterviewPrepIndex,
   PlatformLab,
+  PlatformLearnerStateExport,
+  PlatformLearnerStateImportResult,
+  PlatformLabSubmission,
+  PlatformLabSubmissionInput,
   PlatformResources,
   Progress,
   UserDashboard
@@ -47,14 +51,29 @@ export const api = {
   resources: () => getJson<PlatformResources>("/api/platform-academy/resources"),
   interviewPrep: () => getJson<PlatformInterviewPrepIndex>("/api/platform-academy/interview-prep"),
   labs: () => getJson<PlatformLab[]>("/api/platform-academy/labs"),
+  labPacketUrl: (slug: string) => `${API_BASE}/api/platform-academy/labs/${encodeURIComponent(slug)}/packet`,
+  labBundleUrl: (slug: string) => `${API_BASE}/api/platform-academy/labs/${encodeURIComponent(slug)}/bundle`,
+  labWorkspaceBundleUrl: (slug: string) => `${API_BASE}/api/platform-academy/labs/${encodeURIComponent(slug)}/workspace-bundle`,
   course: (id: string) => getJson<Course>(`/api/courses/${id}`),
   lesson: (id: string) => getJson<Lesson>(`/api/lessons/${id}`),
   progress: (userId = "demo-user") => getJson<Progress[]>(`/api/progress/${encodeURIComponent(userId)}`),
   activity: (userId = "demo-user") => getJson<PlatformActivity[]>(`/api/platform-academy/activity/${encodeURIComponent(userId)}`),
+  labSubmissions: (userId = "demo-user") => getJson<PlatformLabSubmission[]>(`/api/platform-academy/lab-submissions/${encodeURIComponent(userId)}`),
+  labSubmission: (slug: string, userId = "demo-user") =>
+    getJson<PlatformLabSubmission>(`/api/platform-academy/labs/${encodeURIComponent(slug)}/submission/${encodeURIComponent(userId)}`),
   dashboard: (userId = "demo-user", domain = "all") =>
     getJson<UserDashboard>(`/api/users/${encodeURIComponent(userId)}/dashboard?domain=${encodeURIComponent(domain)}`),
   saveProgress: (lessonId: number, completed: boolean, score: number, userId = "demo-user") =>
     postJson<Progress>("/api/progress", { user_id: userId, lesson_id: lessonId, completed, score }),
   saveActivity: (activity: PlatformActivityInput, userId = "demo-user") =>
-    postJson<PlatformActivity>("/api/platform-academy/activity", { user_id: userId, state: "completed", ...activity })
+    postJson<PlatformActivity>("/api/platform-academy/activity", { user_id: userId, state: "completed", ...activity }),
+  saveLabSubmission: (slug: string, submission: PlatformLabSubmissionInput, userId = "demo-user") =>
+    postJson<PlatformLabSubmission>(`/api/platform-academy/labs/${encodeURIComponent(slug)}/submission`, {
+      user_id: userId,
+      status: "in_progress",
+      ...submission
+    }),
+  exportLearnerState: (userId = "demo-user") => getJson<PlatformLearnerStateExport>(`/api/platform-academy/state/${encodeURIComponent(userId)}/export`),
+  importLearnerState: (state: PlatformLearnerStateExport, userId = "demo-user") =>
+    postJson<PlatformLearnerStateImportResult>("/api/platform-academy/state/import", { target_user_id: userId, state })
 };

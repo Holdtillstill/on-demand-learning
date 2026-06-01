@@ -29,7 +29,7 @@ const course = {
 
 const catalog = {
   title: "Platform Academy",
-  promise: "Learn Kubernetes, EKS, Helm, ArgoCD, and SRE through production platform scenarios you can practice locally.",
+  promise: "Practice Kubernetes, EKS, Helm, ArgoCD, and SRE with local lessons, labs, resources, and interview drills.",
   total_courses: 1,
   total_lessons: 2,
   levels: [
@@ -81,12 +81,86 @@ const catalog = {
       difficulty: "Fresher / Beginner",
       level_group: "Fresher",
       estimated_minutes: 30,
+      lab_tier: "full",
+      portfolio_grade: true,
+      portfolio_focus: "Kubernetes Service routing",
       scenario: "A Service exists but traffic returns 503.",
       skills: ["service selectors", "EndpointSlices"],
+      prerequisites: ["A local Kubernetes cluster."],
+      setup_commands: ["kubectl apply -f labs/platform-academy/trace-service-to-pod/start.yaml"],
       commands: ["kubectl describe svc checkout -n payments"],
+      practice_steps: ["Compare the Service selector with Pod labels."],
+      expected_evidence: ["The Service selector does not match the Pod labels."],
+      validation_commands: [
+        "bash labs/platform-academy/trace-service-to-pod/validate.sh",
+        "kubectl apply -f labs/platform-academy/trace-service-to-pod/fixed.yaml"
+      ],
+      cleanup_commands: ["bash labs/platform-academy/trace-service-to-pod/cleanup.sh"],
+      no_cluster_fallback: ["Review start.yaml and find the selector mismatch."],
+      artifact_paths: [
+        "labs/platform-academy/trace-service-to-pod/start.yaml",
+        "labs/platform-academy/trace-service-to-pod/fixed.yaml",
+        "labs/platform-academy/trace-service-to-pod/evidence-template.md",
+        "labs/platform-academy/trace-service-to-pod/validate.sh",
+        "labs/platform-academy/trace-service-to-pod/cleanup.sh"
+      ],
+      learner_artifact_paths: [
+        "labs/platform-academy/trace-service-to-pod/start.yaml",
+        "labs/platform-academy/trace-service-to-pod/fixed.yaml",
+        "labs/platform-academy/trace-service-to-pod/evidence-template.md",
+        "labs/platform-academy/trace-service-to-pod/validate.sh",
+        "labs/platform-academy/trace-service-to-pod/cleanup.sh"
+      ],
+      worksheet_prompts: ["What evidence proves the Service selector mismatch?"],
+      rubric: ["Captures selector, Pod label, EndpointSlice, and cleanup evidence."],
+      validation_checks: ["Expected evidence captured"],
       checklist: ["Read the Service selector."],
       course_slug: "platform-kubernetes-fundamentals",
       lesson_id: 202
+    }
+  ]
+};
+
+const labSubmission = {
+  id: 77,
+  user_id: "guest-test-learner",
+  lab_slug: "trace-service-to-pod",
+  worksheet_answers: {},
+  checked_items: {},
+  status: "in_progress",
+  score: 0,
+  completed_checks: 0,
+  total_checks: 2,
+  answered_prompts: 0,
+  total_prompts: 1,
+  evidence_terms: [],
+  rubric_feedback: [
+    {
+      criterion: "Captures selector, Pod label, EndpointSlice, and cleanup evidence.",
+      status: "missing",
+      feedback: "Capture command output before marking this done.",
+      evidence_terms: []
+    }
+  ],
+  created_at: "2026-05-28T00:00:00",
+  updated_at: "2026-05-28T00:00:00"
+};
+
+const labSubmissionIndex = {
+  ...labSubmission,
+  worksheet_answers: {
+    "worksheet-0": "EndpointSlice is empty because the Service selector app=checkout does not match Pod label app=checkout-api."
+  },
+  score: 50,
+  completed_checks: 1,
+  answered_prompts: 1,
+  evidence_terms: ["endpointslice", "selector"],
+  rubric_feedback: [
+    {
+      criterion: "Captures selector, Pod label, EndpointSlice, and cleanup evidence.",
+      status: "passes",
+      feedback: "The note includes concrete evidence.",
+      evidence_terms: ["endpointslice", "selector"]
     }
   ]
 };
@@ -236,7 +310,8 @@ const dashboard = {
   due_reviews: 0
 };
 
-function stubAcademyFetch() {
+function stubAcademyFetch(overrides: { interviewPrep?: typeof interviewPrep } = {}) {
+  const interviewPrepPayload = overrides.interviewPrep ?? interviewPrep;
   vi.stubGlobal(
     "fetch",
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
@@ -244,9 +319,35 @@ function stubAcademyFetch() {
       if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
       if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
       if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
-      if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
+      if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrepPayload);
       if (url.includes("/api/lessons/201")) return jsonResponse(lesson201);
       if (url.includes("/api/lessons/202")) return jsonResponse(lesson202);
+      if (url.includes(`/api/platform-academy/lab-submissions/${testLearnerId}`)) return jsonResponse([labSubmissionIndex]);
+      if (url.includes(`/api/platform-academy/labs/trace-service-to-pod/submission/${testLearnerId}`)) return jsonResponse(labSubmission);
+      if (url.endsWith("/api/platform-academy/labs/trace-service-to-pod/submission")) {
+        const body = JSON.parse(String(init?.body ?? "{}"));
+        return jsonResponse({
+          id: 77,
+          lab_slug: "trace-service-to-pod",
+          score: 50,
+          completed_checks: Object.values(body.checked_items ?? {}).filter(Boolean).length,
+          total_checks: 2,
+          answered_prompts: Object.values(body.worksheet_answers ?? {}).filter((value) => String(value).trim()).length,
+          total_prompts: 1,
+          evidence_terms: ["endpointslice", "selector"],
+          rubric_feedback: [
+            {
+              criterion: "Captures selector, Pod label, EndpointSlice, and cleanup evidence.",
+              status: "passes",
+              feedback: "The note includes concrete evidence.",
+              evidence_terms: ["endpointslice", "selector"]
+            }
+          ],
+          created_at: "2026-05-28T00:00:00",
+          updated_at: "2026-05-28T00:01:00",
+          ...body
+        });
+      }
       if (url.includes(`/api/platform-academy/activity/${testLearnerId}`)) return jsonResponse([]);
       if (url.includes(`/api/progress/${testLearnerId}`)) {
         return jsonResponse([{ id: 1, user_id: testLearnerId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
@@ -308,13 +409,13 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Platform Academy" })).toBeInTheDocument();
-    expect(screen.getByText("Production learning workspace")).toBeInTheDocument();
+    expect(screen.getByText("Platform learning workspace")).toBeInTheDocument();
     expect(screen.getAllByText("Kubernetes Fundamentals").length).toBeGreaterThan(0);
-    expect(screen.getByText("Track pipeline")).toBeInTheDocument();
-    expect(screen.getByText("Readiness gates")).toBeInTheDocument();
+    expect(screen.getByText("Course list")).toBeInTheDocument();
+    expect(screen.getByText("Learning checks")).toBeInTheDocument();
     expect(screen.getByText("Interview bank")).toBeInTheDocument();
     expect(screen.getByText("Interview sprint")).toBeInTheDocument();
-    expect(screen.getByText("Resume profile")).toBeInTheDocument();
+    expect(screen.getByText("Saved progress")).toBeInTheDocument();
     expect(screen.getByText("Kubernetes Fundamentals: Containers, Images, and Pods")).toBeInTheDocument();
     expect(screen.getAllByRole("progressbar").length).toBeGreaterThan(0);
     expect(screen.getByText(testLearnerId)).toBeInTheDocument();
@@ -331,7 +432,7 @@ describe("Platform Academy app", () => {
     );
   });
 
-  it("renders source-backed interview preparation packs", async () => {
+  it("renders interview preparation packs with docs links", async () => {
     stubAcademyFetch();
 
     render(
@@ -340,12 +441,12 @@ describe("Platform Academy app", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole("heading", { name: "Interview prep command center" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Interview prep" })).toBeInTheDocument();
     expect(screen.getAllByText("Kubernetes Debugging Interview Pack").length).toBeGreaterThan(0);
     expect(screen.getByText("Study links")).toBeInTheDocument();
     expect(screen.getByText("A Service returns 503 after a label cleanup. Walk me through your diagnosis.")).toBeInTheDocument();
-    expect(screen.getAllByText("Strong signals").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Red flags").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Good answers include").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Common mistakes").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Study this").length).toBeGreaterThan(0);
     expect(screen.getAllByRole("link", { name: /course: kubernetes fundamentals/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("link", { name: /resource: kubernetes official reference/i }).length).toBeGreaterThan(0);
@@ -369,6 +470,137 @@ describe("Platform Academy app", () => {
       target_id: "kubernetes-debugging-interview-pack:1",
       state: "completed"
     });
+  });
+
+  it("downloads an interview cram sheet with questions, sources, and linked practice", async () => {
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const createObjectURL = vi.fn((blob: Blob) => {
+      void blob;
+      return "blob:interview-cram-sheet";
+    });
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL,
+      revokeObjectURL: vi.fn()
+    });
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/interview-prep"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /download cram sheet/i }));
+
+    expect(anchorClick).toHaveBeenCalled();
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    const sheet = await (createObjectURL.mock.calls[0][0] as Blob).text();
+    expect(sheet).toContain("# Kubernetes Debugging Interview Pack");
+    expect(sheet).toContain("A Service returns 503 after a label cleanup.");
+    expect(sheet).toContain("Resource: Kubernetes Official Reference - /resources/kubernetes-official-reference");
+    expect(sheet).toContain("Lab: Trace Service traffic to ready Pods - /labs/trace-service-to-pod");
+    expect(sheet).toContain("Docs: Kubernetes official debugging docs - https://kubernetes.io/docs/tasks/debug/");
+    expect(sheet).toContain("reviewed May 20, 2026");
+  });
+
+  it("downloads a filtered multi-pack interview cram sheet", async () => {
+    const multiPackPrep = {
+      ...interviewPrep,
+      total_questions: 3,
+      packs: [
+        ...interviewPrep.packs,
+        {
+          ...interviewPrep.packs[0],
+          slug: "kubernetes-sre-interview-pack",
+          title: "Kubernetes SRE Interview Pack",
+          questions: [
+            {
+              question: "How do you explain a probe-driven rollout stall?",
+              scenario: "A rollout is healthy in CI but never becomes available in the cluster.",
+              answer_outline: ["Compare readiness probe failures.", "Check rollout events.", "Tie symptoms to Service endpoints."],
+              strong_signals: ["Connects readiness to traffic eligibility"],
+              red_flags: ["Scales replicas blindly"],
+              practice_task: "Use the trace-service-to-pod lab and write a rollout note."
+            }
+          ]
+        }
+      ]
+    };
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const createObjectURL = vi.fn((blob: Blob) => {
+      void blob;
+      return "blob:visible-interview-cram-sheets";
+    });
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL,
+      revokeObjectURL: vi.fn()
+    });
+    stubAcademyFetch({ interviewPrep: multiPackPrep });
+
+    render(
+      <MemoryRouter initialEntries={["/interview-prep"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /download 2 visible packs/i }));
+
+    expect(anchorClick).toHaveBeenCalled();
+    const sheet = await (createObjectURL.mock.calls[0][0] as Blob).text();
+    expect(sheet).toContain("# Platform Academy interview cram sheets");
+    expect(sheet).toContain("Packs: 2");
+    expect(sheet).toContain("Questions: 3");
+    expect(sheet).toContain("## Kubernetes Debugging Interview Pack");
+    expect(sheet).toContain("## Kubernetes SRE Interview Pack");
+    expect(sheet).toContain("How do you explain a probe-driven rollout stall?");
+    expect(sheet).toContain("Resource: Kubernetes Official Reference - /resources/kubernetes-official-reference");
+  });
+
+  it("saves and downloads a custom interview study plan", async () => {
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const createObjectURL = vi.fn((blob: Blob) => {
+      void blob;
+      return "blob:custom-interview-study-plan";
+    });
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL,
+      revokeObjectURL: vi.fn()
+    });
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/interview-prep"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Interview prep" })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/study plan name/i), { target: { value: "Kube service interview sprint" } });
+    fireEvent.click(screen.getByRole("button", { name: /new plan/i }));
+
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Study plan saved."));
+    expect(screen.getByText(/2 questions \/ 1 pack/i)).toBeInTheDocument();
+    const savedPlans = JSON.parse(localStorage.getItem("platform-academy-interview-study-plans-v1") ?? "[]");
+    expect(savedPlans[0]).toMatchObject({
+      name: "Kube service interview sprint",
+      questionIds: ["kubernetes-debugging-interview-pack:1", "kubernetes-debugging-interview-pack:2"]
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /download plan/i }));
+
+    expect(anchorClick).toHaveBeenCalled();
+    const sheet = await (createObjectURL.mock.calls[0][0] as Blob).text();
+    expect(sheet).toContain("# Kube service interview sprint study plan");
+    expect(sheet).toContain("Questions: 2");
+    expect(sheet).toContain("A Service returns 503 after a label cleanup.");
+    expect(sheet).toContain("What evidence do you collect before restarting a failing workload?");
+    expect(sheet).toContain("Resource: Kubernetes Official Reference - /resources/kubernetes-official-reference");
+    expect(sheet).toContain("Lab: Trace Service traffic to ready Pods - /labs/trace-service-to-pod");
+    expect(sheet).toContain("Docs: Kubernetes official debugging docs - https://kubernetes.io/docs/tasks/debug/");
   });
 
   it("regenerates the local guest profile and reloads progress for the new id", async () => {
@@ -413,9 +645,10 @@ describe("Platform Academy app", () => {
   it("restores a saved guest recovery key and reloads progress", async () => {
     const restoredLearnerId = "guest-abc123def456";
     const requestedProgressIds: string[] = [];
+    const activityPosts: unknown[] = [];
     vi.stubGlobal(
       "fetch",
-      vi.fn((input: RequestInfo | URL) => {
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
         const progressMatch = url.match(/\/api\/progress\/([^/]+)$/);
         const dashboardMatch = url.match(/\/api\/users\/([^/?]+)\/dashboard(?:\?.*)?$/);
@@ -430,6 +663,11 @@ describe("Platform Academy app", () => {
           return jsonResponse([{ id: 7, user_id: userId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
         }
         if (dashboardMatch) return jsonResponse({ ...dashboard, user_id: decodeURIComponent(dashboardMatch[1]), completed_lessons: 1 });
+        if (url.endsWith("/api/platform-academy/activity") && init?.method === "POST") {
+          const body = JSON.parse(String(init.body));
+          activityPosts.push(body);
+          return jsonResponse({ id: 77, updated_at: "2026-05-28T00:00:00", ...body });
+        }
         return jsonResponse([]);
       })
     );
@@ -448,8 +686,227 @@ describe("Platform Academy app", () => {
     fireEvent.click(screen.getByRole("button", { name: /restore profile/i }));
 
     await waitFor(() => expect(requestedProgressIds).toContain(restoredLearnerId));
+    await waitFor(() =>
+      expect(activityPosts).toContainEqual(
+        expect.objectContaining({
+          user_id: restoredLearnerId,
+          target_type: "guest_recovery",
+          target_id: "profile-restore",
+          state: "completed"
+        })
+      )
+    );
     expect(localStorage.getItem(LOCAL_LEARNER_ID_KEY)).toBe(restoredLearnerId);
     expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/users/${restoredLearnerId}/dashboard`), expect.objectContaining({ cache: "no-store" }));
+  });
+
+  it("exports and imports a guest profile backup from the recovery dialog", async () => {
+    const exportedState = {
+      schema_version: 1,
+      exported_at: "2026-05-28T00:00:00",
+      source_user_id: testLearnerId,
+      progress: [{ lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }],
+      activity: [{ target_type: "resource", target_id: "kubernetes-debugging-cheatsheet", state: "completed", updated_at: "2026-05-28T00:00:00" }],
+      lab_submissions: [
+        {
+          lab_slug: "trace-service-to-pod",
+          worksheet_answers: { "worksheet-0": "selector mismatch" },
+          checked_items: { "validation-0": true },
+          status: "submitted",
+          updated_at: "2026-05-28T00:00:00"
+        }
+      ],
+      interview_study_plans: [
+        {
+          id: "plan-kube",
+          name: "Kube interview sprint",
+          questionIds: ["kubernetes-debugging-interview-pack:1"],
+          createdAt: "2026-05-28T00:00:00",
+          updatedAt: "2026-05-28T00:00:00"
+        }
+      ]
+    };
+    const apiImportedState = JSON.parse(JSON.stringify(exportedState));
+    delete apiImportedState.interview_study_plans;
+    const localStudyPlans = [
+      {
+        id: "plan-local",
+        name: "Local export plan",
+        questionIds: ["kubernetes-debugging-interview-pack:2"],
+        createdAt: "2026-05-28T01:00:00",
+        updatedAt: "2026-05-28T01:00:00"
+      }
+    ];
+    localStorage.setItem("platform-academy-interview-study-plans-v1", JSON.stringify(localStudyPlans));
+    const imports: unknown[] = [];
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const createObjectURL = vi.fn((blob: Blob) => {
+      void blob;
+      return "blob:platform-academy-backup";
+    });
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL,
+      revokeObjectURL: vi.fn()
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
+        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
+        if (url.includes(`/api/platform-academy/lab-submissions/${testLearnerId}`)) return jsonResponse([labSubmissionIndex]);
+        if (url.includes(`/api/platform-academy/activity/${testLearnerId}`)) return jsonResponse([]);
+        if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
+        if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
+        if (url.includes(`/api/platform-academy/state/${testLearnerId}/export`)) return jsonResponse(exportedState);
+        if (url.endsWith("/api/platform-academy/state/import")) {
+          imports.push(JSON.parse(String(init?.body ?? "{}")));
+          return jsonResponse({ user_id: testLearnerId, progress_imported: 1, activity_imported: 1, lab_submissions_imported: 1 });
+        }
+        return jsonResponse([]);
+      })
+    );
+
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Platform Academy" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /open guest recovery key/i }));
+    fireEvent.click(screen.getByRole("button", { name: /export json/i }));
+
+    await waitFor(() => expect(anchorClick).toHaveBeenCalled());
+    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/platform-academy/state/${testLearnerId}/export`), expect.objectContaining({ cache: "no-store" }));
+    const exportedBackup = JSON.parse(await (createObjectURL.mock.calls[0][0] as Blob).text());
+    expect(exportedBackup.interview_study_plans).toEqual(localStudyPlans);
+
+    const fileInput = screen.getByLabelText(/import json/i);
+    fireEvent.change(fileInput, {
+      target: { files: [new File([JSON.stringify(exportedState)], "platform-academy-backup.json", { type: "application/json" })] }
+    });
+
+    await waitFor(() =>
+      expect(imports).toContainEqual(
+        expect.objectContaining({
+          target_user_id: testLearnerId,
+          state: apiImportedState
+        })
+      )
+    );
+    expect(JSON.parse(localStorage.getItem("platform-academy-interview-study-plans-v1") ?? "[]")).toEqual(exportedState.interview_study_plans);
+    expect(screen.getByRole("status")).toHaveTextContent("and 1 interview study plan");
+  });
+
+  it("rejects invalid guest profile backups before posting an import request", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Platform Academy" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /open guest recovery key/i }));
+
+    const fileInput = screen.getByLabelText(/import json/i);
+    fireEvent.change(fileInput, {
+      target: {
+        files: [
+          new File(
+            [
+              JSON.stringify({
+                schema_version: 1,
+                exported_at: "2026-05-28T00:00:00",
+                source_user_id: testLearnerId,
+                progress: [],
+                activity: [],
+                lab_submissions: [
+                  {
+                    lab_slug: "trace-service-to-pod",
+                    worksheet_answers: { "worksheet-0": "x".repeat(4001) },
+                    checked_items: {},
+                    status: "submitted"
+                  }
+                ]
+              })
+            ],
+            "invalid-platform-academy-backup.json",
+            { type: "application/json" }
+          )
+        ]
+      }
+    });
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/backup lab workbook fields exceed the import limit/i);
+    expect(vi.mocked(fetch).mock.calls.some(([input]) => String(input).endsWith("/api/platform-academy/state/import"))).toBe(false);
+  });
+
+  it("sanitizes stale lab workbook keys before saving", async () => {
+    const saves: unknown[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
+        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
+        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
+        if (url.includes(`/api/platform-academy/lab-submissions/${testLearnerId}`)) return jsonResponse([]);
+        if (url.includes(`/api/platform-academy/labs/trace-service-to-pod/submission/${testLearnerId}`)) {
+          return jsonResponse({
+            ...labSubmission,
+            worksheet_answers: {
+              "worksheet-0": "EndpointSlice has no addresses.",
+              "ghost-answer": "stale local data"
+            },
+            checked_items: {
+              "worksheet-0": false,
+              "ghost-check": true
+            }
+          });
+        }
+        if (url.endsWith("/api/platform-academy/labs/trace-service-to-pod/submission")) {
+          const body = JSON.parse(String(init?.body ?? "{}"));
+          saves.push(body);
+          return jsonResponse({
+            ...labSubmission,
+            ...body,
+            score: 25,
+            completed_checks: 0,
+            answered_prompts: 1,
+            evidence_terms: ["endpointslice"]
+          });
+        }
+        if (url.includes(`/api/platform-academy/activity/${testLearnerId}`)) return jsonResponse([]);
+        if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
+        if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
+        return jsonResponse([]);
+      })
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/labs/trace-service-to-pod"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Trace Service traffic to ready Pods" })).toBeInTheDocument();
+    expect(await screen.findByText("Saved to profile")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /save workbook/i }));
+
+    await waitFor(() => expect(saves).toHaveLength(1));
+    expect(saves[0]).toMatchObject({
+      user_id: testLearnerId,
+      worksheet_answers: { "worksheet-0": "EndpointSlice has no addresses." },
+      checked_items: { "worksheet-0": false }
+    });
+    expect(JSON.stringify(saves[0])).not.toContain("ghost");
   });
 
   it("renders a comprehensive resources library", async () => {
@@ -498,7 +955,7 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Resource library" })).toBeInTheDocument();
-    expect(screen.getByText("Runbooks, projects, rubrics, references")).toBeInTheDocument();
+    expect(screen.getByText("Runbooks, projects, checklists, references")).toBeInTheDocument();
     expect(screen.queryByText(/Codex gap audit/i)).not.toBeInTheDocument();
     expect(screen.getAllByText("Kubernetes Debugging Cheatsheet").length).toBeGreaterThan(0);
     expect(screen.getByText("Library index")).toBeInTheDocument();
@@ -539,14 +996,14 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByText("Ten visual systems for Platform Academy.")).toBeInTheDocument();
-    expect(screen.getByText("Benchmarked in May 2026 against official docs, cloud learning hubs, hands-on lab platforms, and certification simulators.")).toBeInTheDocument();
-    expect(screen.getByText("Cinematic Cloud Control Room")).toBeInTheDocument();
-    expect(screen.getByText("Terminal Ops Cockpit")).toBeInTheDocument();
+    expect(screen.getByText("Compared in May 2026 against official docs, cloud learning hubs, hands-on lab platforms, and certification practice sites.")).toBeInTheDocument();
+    expect(screen.getByText("Cloud Operations Board")).toBeInTheDocument();
+    expect(screen.getByText("Terminal Practice Console")).toBeInTheDocument();
     expect(screen.getByText("Resource Magazine Library")).toBeInTheDocument();
   });
 
   it.each([
-    ["/designs/1", "Platform readiness board"],
+    ["/designs/1", "Platform progress board"],
     ["/designs/3", "academyctl session --profile sre"],
     ["/designs/5", "Learning signals for platform operators."],
     ["/designs/7", "Curriculum health dashboard."],
@@ -572,10 +1029,68 @@ describe("Platform Academy app", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText("Verification gates")).toBeInTheDocument();
+    expect(await screen.findByText("Checks")).toBeInTheDocument();
     expect(screen.getByText("1 labs")).toBeInTheDocument();
     expect(screen.getByText("30 min average drill")).toBeInTheDocument();
     expect(screen.getByText(/kubectl describe svc checkout -n payments/)).toBeInTheDocument();
+  });
+
+  it("surfaces saved workbook status in the lab queue", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/labs"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Labs for incidents and architecture reviews" })).toBeInTheDocument();
+    expect(screen.getAllByText(/In progress · 50%/).length).toBeGreaterThan(0);
+    expect(screen.getByText("50% workbook score")).toBeInTheDocument();
+    expect(screen.getByText("1 portfolio-grade / 1 active / 1 full lab")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Portfolio-grade" })).toBeInTheDocument();
+    expect(screen.getAllByText("Kubernetes Service routing").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "All tiers" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Guided lab" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Evidence pack" })).not.toBeInTheDocument();
+  });
+
+  it("renders the saved lab evidence journal", async () => {
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const createObjectURL = vi.fn((blob: Blob) => {
+      void blob;
+      return "blob:lab-evidence-report";
+    });
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL,
+      revokeObjectURL: vi.fn()
+    });
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/labs/history"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Saved workbooks and rubric signals" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Trace Service traffic to ready Pods" })).toBeInTheDocument();
+    expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(screen.getByText("Passes: 1")).toBeInTheDocument();
+    expect(screen.getAllByText("endpointslice").length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /open lab/i }).some((link) => link.getAttribute("href") === "/labs/trace-service-to-pod")).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: /download report/i }));
+    expect(anchorClick).toHaveBeenCalled();
+    const report = await (createObjectURL.mock.calls[0][0] as Blob).text();
+    expect(report).toContain("# Platform Academy Lab Evidence");
+    expect(report).toContain("Saved labs: 1");
+    expect(report).toContain("Route: /labs/trace-service-to-pod");
+    expect(report).toContain("### Worksheet Notes");
+    expect(report).toContain("Service selector app=checkout");
+    expect(report).toContain("### Learner Artifacts");
+    expect(report).toContain("labs/platform-academy/trace-service-to-pod/evidence-template.md");
+    expect(report).toContain("### Rubric Follow-ups");
   });
 
   it("copies command snippets from lab and resource detail command surfaces", async () => {
@@ -710,13 +1225,11 @@ describe("Platform Academy app", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText("36 shown / 40 matching artifacts")).toBeInTheDocument();
+    expect(await screen.findByText("36 shown / 40 matching resources")).toBeInTheDocument();
     expect(screen.queryByText("Kubernetes Debugging Cheatsheet 40")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /load 4 more resources/i }));
-    await waitFor(() => {
-      expect(screen.getByText("40 shown / 40 matching artifacts")).toBeInTheDocument();
-      expect(screen.getByText("Kubernetes Debugging Cheatsheet 40")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("Kubernetes Debugging Cheatsheet 40")).toBeInTheDocument();
+    expect(screen.getByText("40 shown / 40 matching resources")).toBeInTheDocument();
   });
 
   it("renders official source URLs and reviewed dates on resource detail pages", async () => {
@@ -739,6 +1252,24 @@ describe("Platform Academy app", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /review saved/i })).toBeInTheDocument());
   });
 
+  it("shows actionable rubric feedback before workbook save", async () => {
+    stubAcademyFetch();
+
+    render(
+      <MemoryRouter initialEntries={["/labs/trace-service-to-pod"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Trace Service traffic to ready Pods" })).toBeInTheDocument();
+    expect(await screen.findByText("Saved to profile")).toBeInTheDocument();
+    expect(screen.getByText("1 Missing")).toBeInTheDocument();
+    expect(screen.getByText("Criterion 1")).toBeInTheDocument();
+    expect(screen.getByText("No matched evidence terms yet")).toBeInTheDocument();
+    expect(screen.getByText("No matching evidence yet")).toBeInTheDocument();
+    expect(screen.getByText("Update worksheet prompt 1")).toBeInTheDocument();
+  });
+
   it("covers lab and lesson detail routes with linked artifacts", async () => {
     stubAcademyFetch();
 
@@ -749,6 +1280,64 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Trace Service traffic to ready Pods" })).toBeInTheDocument();
+    expect(screen.getAllByText("Full lab").length).toBeGreaterThan(0);
+    expect(screen.getByText("Guided lab run sequence")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Investigate, prove, validate, clean up" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Prepare workspace" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Investigate safely" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Prove the finding" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Reset or hand off" })).toBeInTheDocument();
+    expect(screen.getByText("Evidence artifact map")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Learner-safe files" })).toBeInTheDocument();
+    expect(screen.getByText("Self-check script")).toBeInTheDocument();
+    expect(screen.getAllByText("validate.sh").length).toBeGreaterThan(0);
+    expect(screen.getByText("Prerequisites")).toBeInTheDocument();
+    expect(screen.getByText("Setup commands")).toBeInTheDocument();
+    expect(screen.getByText("Practice steps")).toBeInTheDocument();
+    expect(screen.getByText("Expected evidence")).toBeInTheDocument();
+    expect(screen.getByText("Validation commands")).toBeInTheDocument();
+    expect(screen.getByText("Cleanup commands")).toBeInTheDocument();
+    expect(screen.getByText("No-cluster fallback")).toBeInTheDocument();
+    expect(screen.getByText("Worksheet and validation state")).toBeInTheDocument();
+    expect(screen.getByText("Learner workspace contract")).toBeInTheDocument();
+    expect(screen.getByText("Guide, evidence, verification, cleanup")).toBeInTheDocument();
+    expect(screen.getByText("4 / 4 present")).toBeInTheDocument();
+    expect(screen.getByText("Evidence")).toBeInTheDocument();
+    expect(screen.getByText("Validator")).toBeInTheDocument();
+    expect(screen.queryByText("Solution")).not.toBeInTheDocument();
+    expect(screen.queryByText("labs/platform-academy/trace-service-to-pod/solution.md")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /download lab packet/i })).toHaveAttribute(
+      "href",
+      "/api/platform-academy/labs/trace-service-to-pod/packet"
+    );
+    expect(screen.getByRole("link", { name: /download learner workspace/i })).toHaveAttribute(
+      "href",
+      "/api/platform-academy/labs/trace-service-to-pod/workspace-bundle"
+    );
+    expect(await screen.findByText("Saved to profile")).toBeInTheDocument();
+    expect(screen.getByLabelText("What evidence proves the Service selector mismatch?")).toBeInTheDocument();
+    expect(screen.getByLabelText("Expected evidence captured")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Evidence note: What evidence proves the Service selector mismatch?"), {
+      target: { value: "EndpointSlice has no addresses until the selector is fixed." }
+    });
+    fireEvent.click(screen.getByLabelText("What evidence proves the Service selector mismatch?"));
+    fireEvent.click(screen.getByRole("button", { name: /save workbook/i }));
+    await waitFor(() => expect(screen.getByText("Saved to profile")).toBeInTheDocument());
+    expect(screen.getByText("1 Passes")).toBeInTheDocument();
+    expect(screen.getByText("Passes")).toBeInTheDocument();
+    expect(screen.getByText("The note includes concrete evidence.")).toBeInTheDocument();
+    expect(screen.getByText("Matched evidence")).toBeInTheDocument();
+    const saveCall = vi
+      .mocked(fetch)
+      .mock.calls.find(([url, init]) => String(url).endsWith("/api/platform-academy/labs/trace-service-to-pod/submission") && init?.method === "POST");
+    expect(saveCall).toBeTruthy();
+    expect(JSON.parse(String(saveCall?.[1]?.body))).toMatchObject({
+      user_id: testLearnerId,
+      worksheet_answers: { "worksheet-0": "EndpointSlice has no addresses until the selector is fixed." },
+      checked_items: { "worksheet-0": true }
+    });
+    expect(screen.getByText("Rubric feedback")).toBeInTheDocument();
+    expect(screen.getAllByText("labs/platform-academy/trace-service-to-pod/start.yaml").length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: /open linked lesson/i })).toHaveAttribute("href", "/courses/platform-kubernetes-fundamentals/lessons/2");
     expect(screen.getByRole("link", { name: /kubernetes debugging cheatsheet/i })).toHaveAttribute("href", "/resources/kubernetes-debugging-cheatsheet");
 
