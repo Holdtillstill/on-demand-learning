@@ -637,7 +637,7 @@ async function assertPortfolioLabUi(page, portfolioLabs) {
   for (const lab of portfolioLabs) {
     await expect(queueRows.filter({ hasText: lab.title })).toHaveCount(1, { timeout: TIMEOUT_MS });
   }
-  await expect(page.getByRole("heading", { name: "Review Kubernetes YAML before apply", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Diagnose EKS Pod IP exhaustion", exact: true })).toHaveCount(0);
   await expect(page.getByText("Structurally verified lab")).toBeVisible({ timeout: TIMEOUT_MS });
 
   await page.goto(`${WEB_BASE}/labs/${encodeURIComponent(firstPortfolioLab.slug)}`, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
