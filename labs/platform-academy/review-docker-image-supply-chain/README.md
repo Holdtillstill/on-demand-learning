@@ -15,16 +15,27 @@ The default path does not require Docker. Use the supplied Dockerfile, `image-in
 ## Starting State
 
 ```bash
+bash labs/platform-academy/review-docker-image-supply-chain/setup.sh --evidence /tmp/docker-supply-chain-evidence.md
 sed -n '1,180p' labs/platform-academy/review-docker-image-supply-chain/Dockerfile
 sed -n '1,180p' labs/platform-academy/review-docker-image-supply-chain/image-inspect.json
 sed -n '1,120p' labs/platform-academy/review-docker-image-supply-chain/history.txt
-cp labs/platform-academy/review-docker-image-supply-chain/evidence-template.md /tmp/docker-supply-chain-evidence.md
 ```
 
 Compare with the safer runtime target:
 
 ```bash
 diff -u labs/platform-academy/review-docker-image-supply-chain/Dockerfile labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile || true
+```
+
+Run the local analyzer:
+
+```bash
+python3 labs/platform-academy/review-docker-image-supply-chain/supply_chain_analyzer.py \
+  --dockerfile labs/platform-academy/review-docker-image-supply-chain/Dockerfile \
+  --inspect labs/platform-academy/review-docker-image-supply-chain/image-inspect.json \
+  --history labs/platform-academy/review-docker-image-supply-chain/history.txt \
+  --hardened labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile \
+  --promotion labs/platform-academy/review-docker-image-supply-chain/promotion-note.md
 ```
 
 ## Investigation
@@ -37,6 +48,7 @@ Find:
 - Whether the container runs as root.
 - Whether the image has SBOM and scan evidence before promotion.
 - Which rollback artifact should be referenced in release notes.
+- Whether the local analyzer supports a block-or-promote decision.
 
 ## Remediation Target
 
@@ -54,5 +66,6 @@ bash labs/platform-academy/review-docker-image-supply-chain/validate.sh --eviden
 - You block the unsafe image from production promotion.
 - You explain tag versus digest evidence.
 - You identify secret leakage and root runtime risk.
+- You use analyzer output as evidence for the promotion block.
 - You propose a smaller non-root runtime image with scan, SBOM, digest, and rollback evidence.
 - Your evidence note names tag/digest, secret locations, runtime user, copied build artifacts, SBOM/scan, rollback digest, owner, and promotion decision.

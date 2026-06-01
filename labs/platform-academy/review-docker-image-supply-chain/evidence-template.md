@@ -24,6 +24,7 @@
 
 ## Hardening Decision
 
+- Local Docker supply-chain analyzer result:
 - Decision:
 - Required Dockerfile changes:
 - SBOM and scan evidence:

@@ -9,6 +9,7 @@ HISTORY="$LAB_DIR/history.txt"
 SAFE="$LAB_DIR/hardened.Dockerfile"
 PROMOTION="$LAB_DIR/promotion-note.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/supply_chain_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -41,6 +42,7 @@ grep -q '"RepoDigests": \[\]' "$INSPECT" || fail "image-inspect.json should show
 grep -q '"User": ""' "$INSPECT" || fail "image-inspect.json should show blank runtime user"
 grep -q "API_TOKEN=do-not-bake-secrets" "$INSPECT" || fail "image-inspect.json should expose secret metadata"
 grep -q "API_TOKEN=do-not-bake-secrets" "$HISTORY" || fail "history.txt should expose secret history"
+grep -q "Docker supply-chain analysis passed" "$ANALYZER" || fail "supply_chain_analyzer.py should report a successful local analysis"
 
 grep -q "FROM node:22-bookworm-slim AS deps" "$SAFE" || fail "hardened.Dockerfile should use a smaller dependency stage"
 grep -q "npm ci --omit=dev" "$SAFE" || fail "hardened.Dockerfile should install production dependencies only"
@@ -57,6 +59,14 @@ grep -q "## Tag, Digest, And Promotion Evidence" "$TEMPLATE" || fail "evidence-t
 grep -q "## Secret And Runtime Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for secret/runtime evidence"
 grep -q "## Release Handoff" "$TEMPLATE" || fail "evidence-template.md should prompt for release handoff evidence"
 
+python3 "$ANALYZER" \
+  --dockerfile "$UNSAFE" \
+  --inspect "$INSPECT" \
+  --history "$HISTORY" \
+  --hardened "$SAFE" \
+  --promotion "$PROMOTION" \
+  --quiet
+
 echo "File checks passed for review-docker-image-supply-chain."
 
 if [[ -n "$evidence_file" ]]; then
@@ -66,6 +76,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "blank or root runtime user" "runtime user|User.*blank|non-root|USER node"
   require_evidence_match "$evidence_file" "runtime copies too much source" "COPY --from=build /app|copies too much|source tree"
   require_evidence_match "$evidence_file" "hardened Dockerfile target" "hardened.Dockerfile|npm ci --omit=dev|USER node|dist/server.js"
+  require_evidence_match "$evidence_file" "local Docker supply-chain analyzer evidence" "Docker supply-chain analysis passed|supply-chain analyzer|Promotion risk|Required evidence"
   require_evidence_match "$evidence_file" "promotion block decision" "Block promotion|block|do not promote"
   require_evidence_match "$evidence_file" "SBOM scan and rollback digest" "SBOM|scan|rollback digest|promotion-note"
   require_evidence_match "$evidence_file" "validation or cleanup evidence" "validation|validate|cleanup|file-review"

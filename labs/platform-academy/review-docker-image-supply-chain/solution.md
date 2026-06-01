@@ -18,6 +18,19 @@ Block the image from production promotion.
 
 `promotion-note.md` states the evidence required before production: digest, SBOM, scan result, non-root runtime, no secrets, and rollback digest.
 
+The local Docker supply-chain analyzer verifies the block decision without Docker:
+
+```bash
+python3 labs/platform-academy/review-docker-image-supply-chain/supply_chain_analyzer.py \
+  --dockerfile labs/platform-academy/review-docker-image-supply-chain/Dockerfile \
+  --inspect labs/platform-academy/review-docker-image-supply-chain/image-inspect.json \
+  --history labs/platform-academy/review-docker-image-supply-chain/history.txt \
+  --hardened labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile \
+  --promotion labs/platform-academy/review-docker-image-supply-chain/promotion-note.md
+```
+
+Expected result: `Docker supply-chain analysis passed`, with promotion risk, secret leakage, blank/root runtime user, hardened target, required evidence, and the block decision.
+
 ## Handoff Note
 
 A good handoff says: block `checkout:latest` because there is no immutable digest, `API_TOKEN=do-not-bake-secrets` appears in Dockerfile/config/history, runtime user is blank/root, and the runtime stage copies too much. Promotion needs digest, SBOM, scan result, non-root runtime, no secret metadata, and rollback digest.
@@ -30,6 +43,7 @@ Save:
 - The inspect JSON showing `checkout:latest`, empty `RepoDigests`, and blank runtime user.
 - The history line showing the secret.
 - The promotion note that blocks tag-only deployment.
+- The local Docker supply-chain analyzer output showing the block decision.
 
 ## Cleanup
 

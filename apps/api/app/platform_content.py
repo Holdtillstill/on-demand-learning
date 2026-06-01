@@ -3863,28 +3863,47 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/review-docker-image-supply-chain/setup.sh --evidence /tmp/docker-supply-chain-evidence.md",
             "sed -n '1,160p' labs/platform-academy/review-docker-image-supply-chain/Dockerfile",
             "sed -n '1,160p' labs/platform-academy/review-docker-image-supply-chain/history.txt",
         ],
         "commands": [
             "grep -n \"FROM\\|COPY\\|API_TOKEN\\|USER\" labs/platform-academy/review-docker-image-supply-chain/Dockerfile labs/platform-academy/review-docker-image-supply-chain/image-inspect.json",
             "grep -n \"latest\\|RepoDigests\\|secret\\|COPY\" labs/platform-academy/review-docker-image-supply-chain/image-inspect.json labs/platform-academy/review-docker-image-supply-chain/history.txt",
+            (
+                "python3 labs/platform-academy/review-docker-image-supply-chain/supply_chain_analyzer.py "
+                "--dockerfile labs/platform-academy/review-docker-image-supply-chain/Dockerfile "
+                "--inspect labs/platform-academy/review-docker-image-supply-chain/image-inspect.json "
+                "--history labs/platform-academy/review-docker-image-supply-chain/history.txt "
+                "--hardened labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile "
+                "--promotion labs/platform-academy/review-docker-image-supply-chain/promotion-note.md"
+            ),
             "diff -u labs/platform-academy/review-docker-image-supply-chain/Dockerfile labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile || true",
         ],
         "practice_steps": [
             "Identify base image, runtime user, copied files, exposed ports, and entrypoint.",
             "Compare tag evidence with digest evidence.",
+            "Use the local analyzer to convert supply-chain findings into a block-or-promote decision.",
             "Flag secret leakage and oversized runtime image risk.",
         ],
         "expected_evidence": [
             "The image uses the mutable latest tag and has no RepoDigests.",
             "No runtime user is configured.",
             "API_TOKEN appears in Dockerfile, inspect metadata, and history.",
+            "The local analyzer reports Docker supply-chain analysis passed.",
             "The promotion note requires digest, SBOM, scan, non-root runtime, and rollback evidence.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/review-docker-image-supply-chain/validate.sh",
             "bash labs/platform-academy/review-docker-image-supply-chain/validate.sh --evidence /tmp/docker-supply-chain-evidence.md",
+            (
+                "python3 labs/platform-academy/review-docker-image-supply-chain/supply_chain_analyzer.py "
+                "--dockerfile labs/platform-academy/review-docker-image-supply-chain/Dockerfile "
+                "--inspect labs/platform-academy/review-docker-image-supply-chain/image-inspect.json "
+                "--history labs/platform-academy/review-docker-image-supply-chain/history.txt "
+                "--hardened labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile "
+                "--promotion labs/platform-academy/review-docker-image-supply-chain/promotion-note.md"
+            ),
             "grep -n \"Immutable image digest\" labs/platform-academy/review-docker-image-supply-chain/promotion-note.md",
         ],
         "cleanup_commands": ["bash labs/platform-academy/review-docker-image-supply-chain/cleanup.sh"],
@@ -4577,6 +4596,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "Captured-evidence safety boundary recorded",
+            "Docker supply-chain analysis passed output captured",
             "Tag and missing digest evidence captured",
             "Secret leakage evidence captured",
             "Blank runtime user and image bloat evidence captured",
@@ -4586,7 +4606,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["Dockerfile", "image-inspect.json", "history.txt", "secret pattern", "reviewer"],
-            ["checkout:latest", "RepoDigests", "rollback digest", "promotion artifact"],
+            ["checkout:latest", "RepoDigests", "rollback digest", "promotion artifact", "Docker supply-chain analysis passed"],
             ["API_TOKEN=do-not-bake-secrets", "Dockerfile", "image config", "history", "\"User\": \"\""],
             ["COPY --from=build /app .", "node:22", "root", "source tree", "runtime"],
             ["Block promotion", "digest", "SBOM", "scan", "non-root", "owner"],
@@ -5048,6 +5068,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/review-docker-image-supply-chain/image-inspect.json",
         "labs/platform-academy/review-docker-image-supply-chain/history.txt",
         "labs/platform-academy/review-docker-image-supply-chain/promotion-note.md",
+        "labs/platform-academy/review-docker-image-supply-chain/supply_chain_analyzer.py",
+        "labs/platform-academy/review-docker-image-supply-chain/setup.sh",
         "labs/platform-academy/review-docker-image-supply-chain/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
         "labs/platform-academy/review-docker-image-supply-chain/validate.sh",

@@ -121,8 +121,15 @@ DEEPENED_LAB_CONTRACT = {
         "terms": {"replicas: 3", "replicas: 9", "autoscaling", "/spec/replicas", "Git-owned"},
     },
     "review-docker-image-supply-chain": {
-        "files": {"evidence-template.md"},
-        "terms": {"checkout:latest", "RepoDigests", "API_TOKEN=do-not-bake-secrets", "SBOM", "Block promotion"},
+        "files": {"evidence-template.md", "setup.sh", "supply_chain_analyzer.py"},
+        "terms": {
+            "checkout:latest",
+            "RepoDigests",
+            "API_TOKEN=do-not-bake-secrets",
+            "SBOM",
+            "Block promotion",
+            "Docker supply-chain analysis passed",
+        },
     },
     "design-safe-release-pipeline": {
         "files": {"evidence-template.md"},
