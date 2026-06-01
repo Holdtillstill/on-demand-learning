@@ -77,6 +77,54 @@ PREFLIGHT_SETUP_LABS=(
   "audit-tenant-boundaries"
 )
 
+fake_kubectl_bin="$tmpdir/fakebin"
+mkdir -p "$fake_kubectl_bin"
+cat >"$fake_kubectl_bin/kubectl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${PLATFORM_FAKE_KUBECTL_LOG:?}"
+printf "%s\n" "$*" >>"$PLATFORM_FAKE_KUBECTL_LOG"
+
+case "${1:-}" in
+  config)
+    if [[ "${2:-}" == "current-context" ]]; then
+      echo "kind-platform-lab"
+      exit 0
+    fi
+    ;;
+  version)
+    exit 0
+    ;;
+  auth)
+    if [[ "${2:-}" == "can-i" ]]; then
+      verb="${3:-}"
+      resource="${4:-}"
+      namespace=""
+      if [[ "${5:-}" == "-n" ]]; then
+        namespace="${6:-}"
+      fi
+      if [[ "${PLATFORM_FAKE_KUBECTL_DENY:-}" == "$verb|$resource|$namespace" ]]; then
+        echo "no"
+      else
+        echo "yes"
+      fi
+      exit 0
+    fi
+    ;;
+  get)
+    if [[ "${2:-}" == "namespace" ]]; then
+      echo "Error from server (NotFound): namespaces \"${3:-}\" not found" >&2
+      exit 1
+    fi
+    ;;
+esac
+
+echo "fake kubectl unsupported command: $*" >&2
+exit 64
+EOF
+chmod +x "$fake_kubectl_bin/kubectl"
+
 EVIDENCE_VALIDATION_LABS=(
   "trace-service-to-pod"
   "debug-crashloop-imagepull"
@@ -154,7 +202,27 @@ for setup_lab in "${PREFLIGHT_SETUP_LABS[@]}"; do
   "$setup_script" --help >"$tmpdir/setup-help-$setup_lab.txt"
   grep -q -- "--preflight" "$tmpdir/setup-help-$setup_lab.txt" || fail "$setup_lab setup help should include --preflight"
   grep -q "preflight_kube_lab" "$setup_script" || fail "$setup_lab setup should run the shared Kubernetes preflight before cluster setup"
+
+  fake_log="$tmpdir/preflight-$setup_lab-kubectl.log"
+  : >"$fake_log"
+  PATH="$fake_kubectl_bin:$PATH" \
+    PLATFORM_FAKE_KUBECTL_LOG="$fake_log" \
+    "$setup_script" --preflight >"$tmpdir/setup-preflight-$setup_lab.txt"
+  grep -q "Preflight passed. No app namespace or Pods need to exist before setup." "$tmpdir/setup-preflight-$setup_lab.txt" || fail "$setup_lab preflight should explain namespace setup"
+  grep -q "Next: rerun setup with --cluster" "$tmpdir/setup-preflight-$setup_lab.txt" || fail "$setup_lab preflight should print the cluster setup next step"
+  ! grep -Eq "^(apply|delete)($| )" "$fake_log" || fail "$setup_lab preflight should not mutate the fake cluster"
 done
+
+denied_log="$tmpdir/preflight-denied-kubectl.log"
+: >"$denied_log"
+if PATH="$fake_kubectl_bin:$PATH" \
+  PLATFORM_FAKE_KUBECTL_LOG="$denied_log" \
+  PLATFORM_FAKE_KUBECTL_DENY="create|services|payments" \
+  "$LAB_ROOT/trace-service-to-pod/setup.sh" --preflight >"$tmpdir/setup-preflight-denied.txt" 2>&1; then
+  fail "preflight should reject missing Kubernetes permissions"
+fi
+grep -q "Confirm the permission directly: kubectl auth can-i create services -n payments" "$tmpdir/setup-preflight-denied.txt" || fail "preflight permission failure should include the exact can-i command"
+grep -q "without --cluster or --preflight" "$tmpdir/setup-preflight-denied.txt" || fail "preflight permission failure should include the captured-evidence fallback"
 
 for setup_lab in "${CLUSTER_LABS[@]}"; do
   "$LAB_ROOT/run-lab.sh" setup "$setup_lab" --evidence "$tmpdir/$setup_lab-evidence.md" >"$tmpdir/runner-setup-$setup_lab.txt"
