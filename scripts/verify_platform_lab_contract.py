@@ -42,6 +42,7 @@ REQUIRED_ROOT_README_SNIPPETS = {
     "bash labs/platform-academy/verify-full-labs.sh",
     "bash labs/platform-academy/verify-full-labs.sh --cluster",
     "PLATFORM_LAB_ALLOW_NONLOCAL_CLUSTER=1",
+    "`--run-analyzer` or `--run-simulator`",
 }
 DEEPENED_LAB_CONTRACT = {
     "trace-service-to-pod": {
@@ -494,10 +495,104 @@ def first_line_number(content: str, needle: str) -> int | None:
     return None
 
 
+def executable_command_lines(content: str, command_needles: Iterable[str]) -> list[int]:
+    lines: list[int] = []
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if stripped.startswith(("echo ", "printf ")):
+            continue
+        if any(needle in stripped for needle in command_needles):
+            lines.append(line_number)
+    return lines
+
+
+def command_lines_without_flag_guard(content: str, command_needles: Iterable[str], guard_variable: str) -> list[int]:
+    missing_guard: list[int] = []
+    guard_if = f'if [[ "${guard_variable}" == true ]]; then'
+    if_stack: list[tuple[str | None, bool]] = []
+
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        if stripped.startswith("if ") and stripped.endswith("; then"):
+            if_stack.append((guard_variable if stripped == guard_if else None, False))
+            continue
+        if stripped == "else":
+            if if_stack:
+                active_guard, _ = if_stack[-1]
+                if_stack[-1] = (active_guard, True)
+            continue
+        if stripped == "fi":
+            if if_stack:
+                if_stack.pop()
+            continue
+
+        if stripped.startswith(("echo ", "printf ")):
+            continue
+        if any(needle in stripped for needle in command_needles):
+            guarded = any(active_guard == guard_variable and not in_else for active_guard, in_else in if_stack)
+            if not guarded:
+                missing_guard.append(line_number)
+    return missing_guard
+
+
+def verify_setup_self_check_contract(slug: str, script: Path, content: str) -> None:
+    if script.name != "setup.sh":
+        return
+
+    analyzer_lines = executable_command_lines(content, ('python3 "$ANALYZER"',))
+    if analyzer_lines:
+        required_snippets = {
+            "run_analyzer=false",
+            "--run-analyzer)",
+            "run_analyzer=true",
+            "Analyzer is intentionally not run by default",
+        }
+        missing = sorted(snippet for snippet in required_snippets if snippet not in content)
+        if missing:
+            fail(f"{slug}/setup.sh runs an analyzer but is missing opt-in snippets: {missing}")
+        unguarded_lines = command_lines_without_flag_guard(content, ('python3 "$ANALYZER"',), "run_analyzer")
+        if unguarded_lines:
+            fail(f"{slug}/setup.sh analyzer commands must be guarded by --run-analyzer; lines={unguarded_lines}")
+
+    simulator_lines = executable_command_lines(
+        content,
+        (
+            'python3 "$SIMULATOR"',
+            'python3 "$ROOT/labs/platform-academy/simulator.py"',
+        ),
+    )
+    if simulator_lines:
+        required_snippets = {
+            "run_simulator=false",
+            "--run-simulator)",
+            "run_simulator=true",
+            "Simulator is intentionally not run by default",
+        }
+        missing = sorted(snippet for snippet in required_snippets if snippet not in content)
+        if missing:
+            fail(f"{slug}/setup.sh runs a simulator but is missing opt-in snippets: {missing}")
+        unguarded_lines = command_lines_without_flag_guard(
+            content,
+            (
+                'python3 "$SIMULATOR"',
+                'python3 "$ROOT/labs/platform-academy/simulator.py"',
+            ),
+            "run_simulator",
+        )
+        if unguarded_lines:
+            fail(f"{slug}/setup.sh simulator commands must be guarded by --run-simulator; lines={unguarded_lines}")
+
+
 def verify_script_contract(slug: str, script: Path, artifacts: set[str]) -> None:
     if not executable(script):
         fail(f"{repo_relative(script)} is not executable")
     content = script.read_text()
+    verify_setup_self_check_contract(slug, script, content)
     if "cluster-safety.sh" in content and "labs/platform-academy/lib/cluster-safety.sh" not in artifacts:
         fail(f"{slug} script {script.name} sources cluster-safety.sh but the bundle omits it")
     if "evidence-check.sh" in content and "labs/platform-academy/lib/evidence-check.sh" not in artifacts:
