@@ -34,6 +34,7 @@
 ## Approval Decision
 
 - Decision:
+- Local plan analyzer result:
 - Required changes:
 - Owner:
 - Evidence to save:

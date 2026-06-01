@@ -15,9 +15,16 @@ This lab uses a saved plan excerpt. Do not run `terraform apply`.
 ## Starting State
 
 ```bash
+bash labs/platform-academy/review-terraform-eks-plan/setup.sh --evidence /tmp/terraform-eks-plan-evidence.md
 sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/tfplan.txt
 sed -n '1,180p' labs/platform-academy/review-terraform-eks-plan/review.md
-cp labs/platform-academy/review-terraform-eks-plan/evidence-template.md /tmp/terraform-plan-evidence.md
+```
+
+Run the local plan risk analyzer:
+
+```bash
+python3 labs/platform-academy/review-terraform-eks-plan/plan_analyzer.py \
+  --plan labs/platform-academy/review-terraform-eks-plan/tfplan.txt
 ```
 
 ## Investigation
@@ -30,6 +37,7 @@ Find:
 - Any public ingress.
 - Any broad IAM permissions.
 - Whether rollback is obvious after apply.
+- Whether the analyzer finds enough blocking risk signals to reject the plan.
 
 ## Decision Target
 
@@ -50,4 +58,5 @@ bash labs/platform-academy/review-terraform-eks-plan/validate.sh --evidence /tmp
 - You name the replacement blast radius.
 - You connect network and IAM findings to platform risk.
 - You produce a decision record with required changes.
+- You use the analyzer output as evidence for the block decision.
 - Your evidence note names replacement, subnet coverage, capacity, ingress, IAM, rollback, decision, owner, and validation evidence.

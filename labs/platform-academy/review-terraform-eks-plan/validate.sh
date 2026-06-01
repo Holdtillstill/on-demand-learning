@@ -7,6 +7,7 @@ PLAN="$LAB_DIR/tfplan.txt"
 REVIEW="$LAB_DIR/review.md"
 DECISION="$LAB_DIR/decision-record.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/plan_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -41,6 +42,9 @@ grep -q "rollback" "$DECISION" || fail "decision-record.md should require rollba
 grep -q "## Replacement And Capacity Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for replacement and capacity evidence"
 grep -q "## Network And IAM Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for network and IAM evidence"
 grep -q "## Approval Decision" "$TEMPLATE" || fail "evidence-template.md should prompt for approval decision evidence"
+grep -q "Terraform plan risk analysis passed" "$ANALYZER" || fail "plan_analyzer.py should report a successful local plan risk analysis"
+
+python3 "$ANALYZER" --plan "$PLAN" --quiet
 
 echo "File checks passed for review-terraform-eks-plan."
 
@@ -52,6 +56,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "capacity reduction" "desired capacity|desired_size|6 to 3|6 -> 3|max capacity"
   require_evidence_match "$evidence_file" "public ingress" "0\\.0\\.0\\.0/0|public ingress"
   require_evidence_match "$evidence_file" "broad IAM scope" "eks:\\*|least-privilege|least privilege|IAM"
+  require_evidence_match "$evidence_file" "local plan analyzer evidence" "plan analyzer|plan risk analysis|Terraform plan risk analysis passed|blocking risk"
   require_evidence_match "$evidence_file" "block decision" "block|do not approve|do not apply"
   require_evidence_match "$evidence_file" "rollback or split-plan follow-up" "rollback|separate plans|split|follow-up|validation"
   echo "Evidence checks passed for review-terraform-eks-plan."
