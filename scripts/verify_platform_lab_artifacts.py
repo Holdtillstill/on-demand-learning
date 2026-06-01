@@ -27,6 +27,7 @@ PORTFOLIO_LABS = [
     "trace-network-path",
     "review-terraform-eks-plan",
     "debug-irsa-access-denied",
+    "audit-tenant-boundaries",
     "trace-argocd-drift",
     "design-safe-release-pipeline",
     "write-slo-backed-runbook",
@@ -469,6 +470,122 @@ def verify_debug_irsa_access_denied() -> None:
     require(str(request.get("key", "")).startswith("receipts/"), "CloudTrail request should use the receipts prefix")
 
 
+def role_ref(binding: dict[str, Any], label: str) -> dict[str, Any]:
+    return get_map(binding, "roleRef", label)
+
+
+def role_rule_with_resource(role: dict[str, Any], resource: str, label: str) -> dict[str, Any]:
+    for item in get_list(role, "rules", label):
+        rule = mapping(item, f"{label} rule")
+        resources = {str(entry) for entry in sequence(rule.get("resources"), f"{label} resources")}
+        if resource in resources:
+            return rule
+    fail(f"{label} missing resource {resource}")
+
+
+def verify_audit_tenant_boundaries() -> None:
+    slug = "audit-tenant-boundaries"
+    risky = yaml_docs(slug, "tenant-a.yaml")
+    fixed = yaml_docs(slug, "fixed-tenant-a.yaml")
+    review = text_doc(slug, "review.md")
+    triage = text_doc(slug, "triage-notes.md")
+
+    risky_namespace = find_doc(risky, "Namespace", "tenant-a")
+    risky_service_account = find_doc(risky, "ServiceAccount", "deployer", "tenant-a")
+    risky_role = find_doc(risky, "Role", "app-reader", "tenant-a")
+    risky_role_binding = find_doc(risky, "RoleBinding", "deployer-reader", "tenant-a")
+    risky_policy = find_doc(risky, "NetworkPolicy", "allow-all-egress", "tenant-a")
+    risky_admin_binding = find_doc(risky, "ClusterRoleBinding", "tenant-a-temporary-admin")
+
+    require(
+        metadata(risky_service_account, "risky ServiceAccount").get("namespace") == "tenant-a",
+        "risky ServiceAccount should be tenant-scoped",
+    )
+    risky_labels = get_map(metadata(risky_namespace, "risky Namespace"), "labels", "risky Namespace.metadata")
+    require(
+        risky_labels.get("pod-security.kubernetes.io/enforce") == "baseline",
+        "risky Namespace should enforce baseline Pod Security",
+    )
+    pod_rule = role_rule_with_resource(risky_role, "pods", "risky Role")
+    service_rule = role_rule_with_resource(risky_role, "services", "risky Role")
+    secret_rule = role_rule_with_resource(risky_role, "secrets", "risky Role")
+    for rule, resource in [(pod_rule, "pods"), (service_rule, "services"), (secret_rule, "secrets")]:
+        require(
+            {"get", "list", "watch"}.issubset({str(verb) for verb in sequence(rule.get("verbs"), f"risky Role {resource} verbs")}),
+            f"risky Role should grant get/list/watch for {resource}",
+        )
+    role_binding_ref = role_ref(risky_role_binding, "risky RoleBinding")
+    require(
+        role_binding_ref.get("kind") == "Role" and role_binding_ref.get("name") == "app-reader",
+        "RoleBinding should target app-reader Role",
+    )
+    subjects = get_list(risky_role_binding, "subjects", "risky RoleBinding")
+    require(
+        any(
+            mapping(subject, "risky RoleBinding subject").get("kind") == "ServiceAccount"
+            and mapping(subject, "risky RoleBinding subject").get("name") == "deployer"
+            and mapping(subject, "risky RoleBinding subject").get("namespace") == "tenant-a"
+            for subject in subjects
+        ),
+        "RoleBinding should bind tenant-a/deployer",
+    )
+    admin_ref = role_ref(risky_admin_binding, "risky ClusterRoleBinding")
+    require(
+        admin_ref.get("kind") == "ClusterRole" and admin_ref.get("name") == "cluster-admin",
+        "ClusterRoleBinding should bind cluster-admin",
+    )
+    admin_subjects = get_list(risky_admin_binding, "subjects", "risky ClusterRoleBinding")
+    require(
+        any(
+            mapping(subject, "risky ClusterRoleBinding subject").get("kind") == "ServiceAccount"
+            and mapping(subject, "risky ClusterRoleBinding subject").get("name") == "deployer"
+            and mapping(subject, "risky ClusterRoleBinding subject").get("namespace") == "tenant-a"
+            for subject in admin_subjects
+        ),
+        "ClusterRoleBinding should bind tenant-a/deployer",
+    )
+    risky_policy_spec = spec(risky_policy, "risky NetworkPolicy")
+    require(risky_policy_spec.get("podSelector") == {}, "risky NetworkPolicy should select every tenant Pod")
+    require(
+        "Egress" in sequence(risky_policy_spec.get("policyTypes"), "risky NetworkPolicy policyTypes"),
+        "risky policy should govern egress",
+    )
+    require(risky_policy_spec.get("egress") == [{}], "risky NetworkPolicy should allow all egress with an empty rule")
+
+    fixed_kinds = {str(document.get("kind", "")) for document in fixed}
+    require("ClusterRoleBinding" not in fixed_kinds, "fixed manifest should remove ClusterRoleBinding")
+    fixed_namespace = find_doc(fixed, "Namespace", "tenant-a")
+    fixed_role = find_doc(fixed, "Role", "app-reader", "tenant-a")
+    fixed_role_binding = find_doc(fixed, "RoleBinding", "deployer-reader", "tenant-a")
+    fixed_policy = find_doc(fixed, "NetworkPolicy", "default-deny-egress", "tenant-a")
+    fixed_labels = get_map(metadata(fixed_namespace, "fixed Namespace"), "labels", "fixed Namespace.metadata")
+    require(
+        fixed_labels.get("pod-security.kubernetes.io/enforce") == "restricted",
+        "fixed Namespace should enforce restricted Pod Security",
+    )
+    fixed_resources = {
+        str(resource)
+        for item in get_list(fixed_role, "rules", "fixed Role")
+        for resource in sequence(mapping(item, "fixed Role rule").get("resources"), "fixed Role resources")
+    }
+    require("secrets" not in fixed_resources, "fixed Role should remove secret access")
+    require({"pods", "services"}.issubset(fixed_resources), "fixed Role should keep read access to pods and services")
+    fixed_ref = role_ref(fixed_role_binding, "fixed RoleBinding")
+    require(fixed_ref.get("kind") == "Role" and fixed_ref.get("name") == "app-reader", "fixed RoleBinding should keep app-reader scope")
+    fixed_policy_spec = spec(fixed_policy, "fixed NetworkPolicy")
+    require(fixed_policy_spec.get("podSelector") == {}, "fixed NetworkPolicy should select every tenant Pod")
+    require(
+        "Egress" in sequence(fixed_policy_spec.get("policyTypes"), "fixed NetworkPolicy policyTypes"),
+        "fixed policy should govern egress",
+    )
+    require("egress" not in fixed_policy_spec, "fixed NetworkPolicy should omit allow rules for default-deny egress")
+
+    for term in ["Block onboarding", "secret access is narrowed", "egress is scoped", "owners and expiry dates"]:
+        require(term in review, f"tenant review should include {term}")
+    for term in ["temporary cluster-admin", "NetworkPolicy object is not a boundary", "Client-side dry-run proves YAML parseability"]:
+        require(term in triage, f"tenant triage notes should rule out {term}")
+
+
 def verify_trace_argocd_drift() -> None:
     slug = "trace-argocd-drift"
     desired = yaml_doc(slug, "desired.yaml")
@@ -577,6 +694,7 @@ VERIFY_BY_LAB = {
     "trace-network-path": verify_trace_network_path,
     "review-terraform-eks-plan": verify_review_terraform_eks_plan,
     "debug-irsa-access-denied": verify_debug_irsa_access_denied,
+    "audit-tenant-boundaries": verify_audit_tenant_boundaries,
     "trace-argocd-drift": verify_trace_argocd_drift,
     "design-safe-release-pipeline": verify_design_safe_release_pipeline,
     "write-slo-backed-runbook": verify_write_slo_backed_runbook,

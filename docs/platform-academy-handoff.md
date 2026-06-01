@@ -8,7 +8,7 @@ Use this note when taking this branch into a local demo, shared-EKS preview, or 
 - Platform Academy is now a full-stack product slice: API-backed catalog, standalone React frontend, guest progress/activity, workbook persistence, learner-state export/import, browser-local interview study plans, product metrics, and 21 repository-backed full labs.
 - All 21 full labs now have deepened evidence templates, lab-specific worksheet prompts, validation checks, rubric items, evidence-aware API feedback terms, learner-safe artifact maps, and downloadable lab packets/workspaces.
 - The cluster-backed labs include `setup --preflight` checks for `kubectl`, disposable context safety, API reachability, namespace permissions, and namespace state before mutating a local cluster. `bash labs/platform-academy/bootstrap-local-cluster.sh --preflight <lab-slug>` can create/select a disposable kind context first when kind is installed.
-- Ten practical labs are flagged as portfolio-grade in the catalog and UI; their key YAML, JSON, workflow, alert-rule, Terraform plan, and captured EKS evidence artifacts are structurally verified by `make platform-lab-artifact-contract`.
+- Eleven practical labs are flagged as portfolio-grade in the catalog and UI; their key YAML, JSON, workflow, alert-rule, Terraform plan, captured EKS evidence, and Kubernetes tenant-boundary artifacts are structurally verified by `make platform-lab-artifact-contract`.
 - The labs are local-first and credential-safe. AWS/EKS/Terraform-heavy labs use local fixtures, review artifacts, or explicit design-review mode instead of requiring cloud credentials.
 - Production-like deployments should run Alembic separately with `CREATE_SCHEMA_ON_STARTUP=false`.
 
@@ -36,7 +36,7 @@ Use this map to split review by ownership area instead of reading the branch as 
 - Lab source artifacts: `labs/platform-academy/`, especially each lab `README.md`, `solution.md`, `validate.sh`, `cleanup.sh`, evidence templates, and captured evidence files.
 - Platform Academy UI: `apps/platform-academy/src/App.tsx`, `apps/platform-academy/src/styles.css`, `apps/platform-academy/src/api.ts`, `apps/platform-academy/src/types.ts`, and `apps/platform-academy/src/App.test.tsx`.
 - Browser smoke: `apps/platform-academy/scripts/smoke-routes.mjs`.
-- Lab review matrix: `make platform-lab-matrix` prints portfolio focus and structural-gate columns so reviewers can route the ten portfolio-grade labs separately from the broader full-lab set.
+- Lab review matrix: `make platform-lab-matrix` prints portfolio focus and structural-gate columns so reviewers can route the eleven portfolio-grade labs separately from the broader full-lab set.
 - Release and contract gates: `Makefile`, `scripts/verify_platform_lab_contract.py`, `scripts/smoke_platform_academy_labs.sh`, `scripts/smoke_platform_academy_api.sh`, `scripts/smoke_platform_academy_container.sh`, `scripts/verify_api_image_migrations.sh`, `scripts/verify_workflow_contracts.py`, and `scripts/verify_k8s_platform_contract.py`.
 - Deployment surface: `.env.example`, `docker-compose.yml`, `.github/workflows/`, `infra/k8s/zhongwen-platform.yaml`, and `docs/deployment.md`.
 
