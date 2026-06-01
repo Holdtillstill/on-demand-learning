@@ -10,7 +10,7 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from prometheus_client import Counter, Gauge, start_http_server
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger import json as jsonlogger
 from sqlalchemy import create_engine, text
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://zhongwen:zhongwen@postgres:5432/zhongwen")

@@ -4,6 +4,7 @@ from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, Stri
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+from app.time_utils import utc_now
 
 
 class Course(Base):
@@ -83,7 +84,7 @@ class ReviewState(Base):
     flashcard_id: Mapped[int] = mapped_column(ForeignKey("flashcards.id"), index=True)
     ease: Mapped[float] = mapped_column(Float, default=2.5)
     interval_days: Mapped[int] = mapped_column(Integer, default=0)
-    due_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    due_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
     last_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
@@ -108,7 +109,7 @@ class User(Base):
     id: Mapped[str] = mapped_column(String(80), primary_key=True)
     display_name: Mapped[str] = mapped_column(String(120))
     subscription_status: Mapped[str] = mapped_column(String(40), default="mock_active")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
 
 class Progress(Base):
@@ -120,7 +121,7 @@ class Progress(Base):
     lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"), index=True)
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     score: Mapped[float] = mapped_column(Float, default=0)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
     lesson: Mapped[Lesson] = relationship()
 
 
@@ -133,7 +134,22 @@ class PlatformActivity(Base):
     target_type: Mapped[str] = mapped_column(String(80), index=True)
     target_id: Mapped[str] = mapped_column(String(240), index=True)
     state: Mapped[str] = mapped_column(String(40), default="completed", index=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
+
+
+class PlatformLabSubmission(Base):
+    __tablename__ = "platform_lab_submissions"
+    __table_args__ = (UniqueConstraint("user_id", "lab_slug", name="uq_platform_lab_submission_user_lab"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    lab_slug: Mapped[str] = mapped_column(String(240), index=True)
+    worksheet_answers: Mapped[dict] = mapped_column(JSON, default=dict)
+    checked_items: Mapped[dict] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(40), default="in_progress", index=True)
+    score: Mapped[float] = mapped_column(Float, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
 
 
 class XpEvent(Base):
@@ -145,7 +161,7 @@ class XpEvent(Base):
     source: Mapped[str] = mapped_column(String(80), index=True)
     source_id: Mapped[int] = mapped_column(Integer)
     xp: Mapped[int] = mapped_column(Integer)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
 
 
 class UserAchievement(Base):
@@ -155,7 +171,7 @@ class UserAchievement(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     code: Mapped[str] = mapped_column(String(80), index=True)
-    awarded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    awarded_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
 
 class QuizAttempt(Base):
@@ -166,7 +182,7 @@ class QuizAttempt(Base):
     lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"), index=True)
     score: Mapped[float] = mapped_column(Float)
     answers: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
 
 class Recommendation(Base):
@@ -176,4 +192,4 @@ class Recommendation(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
     course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), index=True)
     reason: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
