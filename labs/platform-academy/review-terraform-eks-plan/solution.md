@@ -4,6 +4,8 @@
 
 Block the plan.
 
+`triage-notes.md` False Leads rule out saved-plan approval, treating managed node group replacement as low risk, accepting one-subnet coverage, approving public HTTPS ingress, granting `eks:*`, and trusting rollback after apply.
+
 ## Evidence
 
 The saved plan shows:

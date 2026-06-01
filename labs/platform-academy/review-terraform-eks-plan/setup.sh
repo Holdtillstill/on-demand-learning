@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/review-terraform-eks-plan"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+TRIAGE="$LAB_DIR/triage-notes.md"
 ANALYZER="$LAB_DIR/plan_analyzer.py"
 
 evidence_file="/tmp/terraform-eks-plan-evidence.md"
@@ -58,6 +59,7 @@ fi
 
 echo
 echo "Staged Terraform EKS plan evidence bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/triage-notes.md"
 echo "  sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/tfplan.txt"
 echo "  sed -n '1,180p' labs/platform-academy/review-terraform-eks-plan/review.md"
 echo "  sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/decision-record.md"
@@ -69,6 +71,10 @@ else
   echo "  python3 labs/platform-academy/review-terraform-eks-plan/plan_analyzer.py \\"
   echo "    --plan labs/platform-academy/review-terraform-eks-plan/tfplan.txt"
 fi
+
+echo
+echo "Captured Terraform plan triage notes:"
+sed -n '1,140p' "$TRIAGE"
 
 echo
 echo "Next: fill $evidence_file, then run:"

@@ -547,8 +547,14 @@ def test_practical_platform_labs_expose_specific_evidence_guides():
             "terms": {"ClusterRole", "privileged: true", "hostPath", "stringData.token"},
         },
         "inspect-linux-failure-evidence": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"CrashLoopBackOff", "exit code 126", "uid=10001(checkout)", "running as root"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {
+                "False Leads",
+                "CrashLoopBackOff",
+                "exit code 126",
+                "uid=10001(checkout)",
+                "running as root",
+            },
         },
         "trace-network-path": {
             "artifacts": {"incident-handoff.md", "evidence-template.md"},
@@ -563,12 +569,12 @@ def test_practical_platform_labs_expose_specific_evidence_guides():
             "terms": {"FailedScheduling", "FailedCreatePodSandBox", "subnet-bbb222", "prefix delegation disabled"},
         },
         "design-production-eks-review": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"endpoint posture", "missing PDB", "zonal storage", "FinOps"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "endpoint posture", "missing PDB", "zonal storage", "FinOps"},
         },
         "review-terraform-eks-plan": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"terraform apply", "node group replacement", "0.0.0.0/0", "eks:*"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "terraform apply", "node group replacement", "0.0.0.0/0", "eks:*"},
         },
         "debug-irsa-access-denied": {
             "artifacts": {"workload-error.log", "evidence-template.md"},
@@ -1028,6 +1034,110 @@ def test_deepened_platform_lab_feedback_flags_missing_specific_evidence():
     assert "app=checkout" not in selector_feedback["evidence_terms"]
     assert "app=checkout" in selector_feedback["feedback"]
     assert pod_label_feedback["status"] == "missing"
+
+
+def test_remaining_review_labs_feedback_tracks_triage_false_leads():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    linux_response = client.post(
+        "/api/platform-academy/labs/inspect-linux-failure-evidence/submission",
+        json={
+            "user_id": "lab-linux-triage-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed pod-describe.txt, previous.log, id-output.txt with no cluster required.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out that Exit code 126 is not memory pressure, "
+                    "Running as root hides the permission bug, and chmod in a live container is not durable."
+                ),
+                "worksheet-2": "CrashLoopBackOff with Restart Count:  8, Last State, and Exit Code:    126.",
+                "worksheet-3": "/app/bin/checkout: Permission denied with uid=10001(checkout) and gid=10001(checkout).",
+                "worksheet-4": "not application logic or memory pressure; permission ownership and execute bit evidence points to image.",
+                "worksheet-5": "image file permissions owner fixes the artifact; Running as root: hides the permission bug.",
+                "worksheet-6": (
+                    "remediation-note.md, validate output, cleanup, evidence-template.md, no-cluster, "
+                    "Linux failure evidence analysis passed."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert linux_response.status_code == 200
+    linux_feedback = linux_response.json()["rubric_feedback"]
+    linux_triage = next(item for item in linux_feedback if "False Leads" in item["criterion"])
+    linux_identity = next(item for item in linux_feedback if "runtime user" in item["criterion"])
+    assert linux_triage["status"] == "strong"
+    assert "triage-notes.md" in linux_triage["evidence_terms"]
+    assert linux_identity["status"] == "strong"
+    assert "uid=10001(checkout)" in linux_identity["evidence_terms"]
+
+    eks_response = client.post(
+        "/api/platform-academy/labs/design-production-eks-review/submission",
+        json={
+            "user_id": "lab-production-eks-triage-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "cluster-review.md and launch-review.md reviewed with no AWS mutation.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out that public and private endpoint is not launch approval, "
+                    "One missing PDB is not a follow-up, A snapshot policy is not restore proof, and "
+                    "Cost labels are not optional after launch."
+                ),
+                "worksheet-2": "Endpoint: public and private; payments/worker has pdb=missing and volume=gp3-us-west-2a.",
+                "worksheet-3": "Missing cost label on apps-c, deprecated APIs, controller add-ons, and compatibility matrix gaps.",
+                "worksheet-4": "Block production launch with follow-up reliability risk and launch blockers separated.",
+                "worksheet-5": "workload owner, platform owner, data owner, FinOps owner, and validation criteria assigned.",
+                "worksheet-6": (
+                    "launch-review.md, validate output, cleanup, evidence-template.md, no-AWS, "
+                    "Production EKS review analysis passed."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert eks_response.status_code == 200
+    eks_feedback = eks_response.json()["rubric_feedback"]
+    eks_triage = next(item for item in eks_feedback if "endpoint-only approval" in item["criterion"])
+    eks_owner = next(item for item in eks_feedback if "FinOps" in item["criterion"])
+    assert eks_triage["status"] == "strong"
+    assert "triage-notes.md" in eks_triage["evidence_terms"]
+    assert eks_owner["status"] == "strong"
+
+    terraform_response = client.post(
+        "/api/platform-academy/labs/review-terraform-eks-plan/submission",
+        json={
+            "user_id": "lab-terraform-triage-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "tfplan.txt plan artifact reviewed; terraform apply is not being run by reviewer.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out that A saved plan is not safe because it is not applied yet, "
+                    "Managed node group replacement is still blast radius, One-subnet coverage is not a temporary detail, "
+                    "and eks:* is not reviewable least privilege."
+                ),
+                "worksheet-2": (
+                    "module.eks.aws_eks_node_group.apps must be replaced; subnet-aaa111 and subnet-bbb222 regress "
+                    "to one subnet, desired_size = 6 -> 3, max_size = 12 -> 6."
+                ),
+                "worksheet-3": "0.0.0.0/0 public ingress and eks:* IAM with Resource = \"*\".",
+                "worksheet-4": "blast radius, rollback, owner, separate plans, and capacity risk documented.",
+                "worksheet-5": "Do not approve; remediation requires least-privilege, validation, and rollback.",
+                "worksheet-6": "decision-record.md, tfplan.txt, review.md, validate, cleanup, Terraform plan risk analysis passed.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert terraform_response.status_code == 200
+    terraform_feedback = terraform_response.json()["rubric_feedback"]
+    terraform_triage = next(item for item in terraform_feedback if "saved-plan approval" in item["criterion"])
+    terraform_replacement = next(item for item in terraform_feedback if "subnet coverage regression" in item["criterion"])
+    assert terraform_triage["status"] == "strong"
+    assert "triage-notes.md" in terraform_triage["evidence_terms"]
+    assert terraform_replacement["status"] == "strong"
 
 
 def test_security_lab_feedback_separates_identity_trust_and_permission():

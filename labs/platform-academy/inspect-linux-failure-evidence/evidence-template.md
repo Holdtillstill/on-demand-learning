@@ -1,5 +1,11 @@
 # Linux Failure Evidence Template
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False crash-diagnosis leads ruled out:
+- Strongest permission clue from triage notes:
+
 ## Container State Evidence
 
 - Pod status and restart count:

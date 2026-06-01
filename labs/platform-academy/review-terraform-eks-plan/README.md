@@ -16,6 +16,7 @@ This lab uses a saved plan excerpt. Do not run `terraform apply`.
 
 ```bash
 bash labs/platform-academy/review-terraform-eks-plan/setup.sh --evidence /tmp/terraform-eks-plan-evidence.md
+sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/triage-notes.md
 sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/tfplan.txt
 sed -n '1,180p' labs/platform-academy/review-terraform-eks-plan/review.md
 ```
@@ -39,6 +40,7 @@ bash labs/platform-academy/review-terraform-eks-plan/setup.sh --run-analyzer --e
 
 Find:
 
+- The triage False Leads that would approve a generated plan without blast-radius review.
 - Which resource is replaced.
 - Whether subnet or Availability Zone coverage changes.
 - Whether capacity changes during replacement.
@@ -62,6 +64,7 @@ bash labs/platform-academy/review-terraform-eks-plan/validate.sh --evidence /tmp
 
 ## Success Criteria
 
+- You rule out the triage false leads before approving or blocking the plan.
 - You block the plan before mutation.
 - You name the replacement blast radius.
 - You connect network and IAM findings to platform risk.

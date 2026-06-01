@@ -4,6 +4,8 @@
 
 Block launch until required owners close the PDB, restore, cost-label, and upgrade-readiness gaps.
 
+`triage-notes.md` False Leads rule out endpoint-only launch approval, deferring a missing PDB, treating a snapshot policy as restore proof, delaying cost labels, and trusting managed add-ons without an upgrade matrix.
+
 ## Findings
 
 - The cluster endpoint is both public and private, which needs an explicit access decision.

@@ -16,6 +16,7 @@ No AWS credentials are required. This lab reviews captured architecture evidence
 
 ```bash
 bash labs/platform-academy/design-production-eks-review/setup.sh --evidence /tmp/production-eks-review-evidence.md
+sed -n '1,220p' labs/platform-academy/design-production-eks-review/triage-notes.md
 sed -n '1,220p' labs/platform-academy/design-production-eks-review/cluster-review.md
 sed -n '1,220p' labs/platform-academy/design-production-eks-review/launch-review.md
 sed -n '1,180p' labs/platform-academy/design-production-eks-review/evidence-template.md
@@ -31,6 +32,7 @@ bash labs/platform-academy/design-production-eks-review/setup.sh --run-analyzer 
 
 Find:
 
+- The triage False Leads that would approve launch before recovery, cost, or upgrade proof exists.
 - Public and private endpoint exposure.
 - Critical workload spread and PDB coverage.
 - Zonal storage and restore expectations.
@@ -63,6 +65,7 @@ python3 labs/platform-academy/design-production-eks-review/production_review_ana
 
 ## Success Criteria
 
+- You rule out the triage false leads before writing the launch decision.
 - You block launch until missing PDB, cost labels, upgrade matrix, and recovery proof are owned.
 - You separate immediate launch blockers from follow-up improvements.
 - You name which team owns workload, platform, data, and cost actions.

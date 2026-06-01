@@ -4,6 +4,8 @@
 
 Fix image file permissions and ownership; do not tune memory or run the container as root.
 
+`triage-notes.md` False Leads rule out treating exit code 126 as memory pressure, relying on restart count alone, using chmod in a live container, running as root, or debugging application logic before checking permissions.
+
 ## Findings
 
 - Pod is in `CrashLoopBackOff`.

@@ -3617,21 +3617,25 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/design-production-eks-review/setup.sh --evidence /tmp/production-eks-review-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/design-production-eks-review/triage-notes.md",
             "sed -n '1,220p' labs/platform-academy/design-production-eks-review/cluster-review.md",
         ],
         "commands": [
+            "grep -n \"False Leads\\|missing PDB\\|snapshot policy\\|cost labels\" labs/platform-academy/design-production-eks-review/triage-notes.md",
             "grep -n \"Missing cost label\\|pdb=missing\\|public and private\\|zonal\" labs/platform-academy/design-production-eks-review/cluster-review.md",
             "grep -n \"Upgrade pause\\|deprecated APIs\\|PDBs\" labs/platform-academy/design-production-eks-review/cluster-review.md",
             "sed -n '1,220p' labs/platform-academy/design-production-eks-review/launch-review.md",
             "python3 labs/platform-academy/design-production-eks-review/production_review_analyzer.py --review labs/platform-academy/design-production-eks-review/cluster-review.md --launch labs/platform-academy/design-production-eks-review/launch-review.md",
         ],
         "practice_steps": [
+            "Read triage-notes.md and rule out launch-approval shortcuts.",
             "Check critical workload spread and PDB coverage.",
             "Identify zonal storage and recovery expectations.",
             "Flag missing cost labels and upgrade pause points.",
             "Run the local production review analyzer and connect its output to the launch decision.",
         ],
         "expected_evidence": [
+            "The triage notes rule out endpoint-only approval, missing-PDB deferral, snapshot-only recovery proof, and deferred cost labels.",
             "One worker has a missing PDB.",
             "Postgres uses zonal storage with snapshot restore expectations.",
             "One apps node lacks a cost label.",
@@ -3646,7 +3650,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/design-production-eks-review/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use cluster-review.md as the design review packet.",
+            "Use triage-notes.md and cluster-review.md as the design review packet.",
             "Write launch blockers and follow-up owners without connecting to AWS.",
         ],
     },
@@ -3774,10 +3778,12 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/inspect-linux-failure-evidence/setup.sh --evidence /tmp/linux-failure-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md",
             "sed -n '1,180p' labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt",
             "sed -n '1,120p' labs/platform-academy/inspect-linux-failure-evidence/previous.log",
         ],
         "commands": [
+            "grep -n \"False Leads\\|Exit code 126\\|Running as root\\|live container\" labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md",
             "grep -n \"Exit Code\\|Reason\\|Restart Count\" labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt",
             "grep -n \"Permission denied\\|uid=\" labs/platform-academy/inspect-linux-failure-evidence/previous.log labs/platform-academy/inspect-linux-failure-evidence/id-output.txt",
             (
@@ -3789,12 +3795,14 @@ RUNNABLE_LAB_UPDATES = {
             ),
         ],
         "practice_steps": [
+            "Read triage-notes.md and rule out memory, restart-count, root-runtime, and live chmod shortcuts.",
             "Capture Last State, exit code, and restart count.",
             "Compare previous logs with runtime user evidence.",
             "Use the local analyzer to prove runtime state, exit, permission, identity, and rejected workaround evidence.",
             "Decide whether this is app crash, permission, or resource pressure.",
         ],
         "expected_evidence": [
+            "The triage notes rule out memory pressure, restart-count-only diagnosis, running as root, and live chmod fixes.",
             "The previous container exited with code 126.",
             "Previous logs show Permission denied.",
             "The process runs as uid 10001.",
@@ -3815,7 +3823,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/inspect-linux-failure-evidence/cleanup.sh"],
         "no_cluster_fallback": [
-            "The captured files are the fallback path.",
+            "The captured triage and evidence files are the fallback path.",
             "Write the next safest diagnostic command and the likely owner of the fix.",
         ],
     },
@@ -3890,20 +3898,24 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/review-terraform-eks-plan/setup.sh --evidence /tmp/terraform-eks-plan-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/triage-notes.md",
             "sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
         ],
         "commands": [
+            "grep -n \"False Leads\\|saved plan\\|Managed node group\\|one-subnet\\|eks:\\*\" labs/platform-academy/review-terraform-eks-plan/triage-notes.md",
             "grep -n \"must be replaced\\|0.0.0.0/0\\|eks:\\*\\|Plan:\" labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
             "sed -n '1,160p' labs/platform-academy/review-terraform-eks-plan/review.md",
             "python3 labs/platform-academy/review-terraform-eks-plan/plan_analyzer.py --plan labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
         ],
         "practice_steps": [
+            "Read triage-notes.md and rule out generated-plan approval shortcuts.",
             "Find create, change, replace, and destroy actions.",
             "Call out subnet, capacity, security group, and IAM blast radius.",
             "Run the local analyzer to produce a block decision from the saved plan.",
             "Write the approval decision and rollback questions.",
         ],
         "expected_evidence": [
+            "The triage notes rule out saved-plan approval, low-risk replacement assumptions, one-subnet coverage, public HTTPS ingress, and broad EKS IAM.",
             "The node group replacement loses multi-AZ subnet coverage.",
             "A public 0.0.0.0/0 security group rule is added.",
             "An IAM policy grants eks:* on all resources.",
@@ -3918,7 +3930,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/review-terraform-eks-plan/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use tfplan.txt as the plan artifact.",
+            "Use triage-notes.md and tfplan.txt as the plan artifact.",
             "Complete review.md without running terraform.",
         ],
     },
@@ -4517,6 +4529,7 @@ DEEPENED_LAB_UPDATES = {
     "inspect-linux-failure-evidence": {
         "worksheet_prompts": [
             "Record the captured pod describe, previous log, id output, namespace, and confirmation that no cluster access is required.",
+            "Read triage-notes.md and list the False Leads ruled out before choosing a fix owner.",
             "Paste `CrashLoopBackOff`, restart count, Last State reason, and exit code 126 evidence.",
             "Paste `/app/bin/checkout: Permission denied`, runtime UID/GID, and file-permission hypothesis evidence.",
             "Explain why the likely fix is image file permission or ownership, not memory tuning or application logic.",
@@ -4525,6 +4538,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the captured-evidence/no-cluster safety boundary and names the evidence files.",
+            "Uses triage notes to rule out memory pressure, restart-count-only diagnosis, live chmod, root runtime, and app-logic False Leads.",
             "Captures `CrashLoopBackOff`, restart count, Last State, and exit code 126 evidence.",
             "Connects `/app/bin/checkout: Permission denied` with runtime user `uid=10001(checkout)`.",
             "Rejects memory tuning and app-logic debugging as first fixes because evidence points to permissions.",
@@ -4533,6 +4547,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-cluster evidence boundary recorded",
+            "Triage false leads recorded",
             "CrashLoopBackOff and restart evidence captured",
             "Exit code 126 evidence captured",
             "Permission denied log and UID evidence captured",
@@ -4542,6 +4557,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["pod-describe.txt", "previous.log", "id-output.txt", "no cluster"],
+            ["triage-notes.md", "False Leads", "Exit code 126 is not memory pressure", "Running as root hides the permission bug", "chmod in a live container"],
             ["CrashLoopBackOff", "Restart Count:  8", "Last State", "Exit Code:    126"],
             ["/app/bin/checkout: Permission denied", "uid=10001(checkout)", "gid=10001(checkout)"],
             ["not application logic or memory pressure", "permission", "ownership", "execute"],
@@ -4552,6 +4568,7 @@ DEEPENED_LAB_UPDATES = {
     "design-production-eks-review": {
         "worksheet_prompts": [
             "Record the cluster-review packet, launch-review packet, reviewer, and confirmation that no AWS changes are being made.",
+            "Read triage-notes.md and list the False Leads ruled out before writing the launch decision.",
             "Paste endpoint posture, critical workload spread, missing PDB, and zonal storage evidence.",
             "Paste missing cost label, idle/NAT/LoadBalancer review gap, deprecated API, and add-on compatibility evidence.",
             "Separate immediate launch blockers from follow-up improvements and explain the reliability risk.",
@@ -4560,6 +4577,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the captured architecture-review safety boundary and avoids live AWS mutation.",
+            "Uses triage notes to rule out endpoint-only approval, missing-PDB deferral, snapshot-only recovery proof, and deferred cost-label False Leads.",
             "Captures endpoint posture, missing PDB, critical workload spread, and zonal storage evidence.",
             "Captures missing cost label, cost-review gaps, deprecated APIs, and add-on compatibility risk.",
             "Separates launch blockers from follow-up improvements with reliability rationale.",
@@ -4568,6 +4586,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-AWS architecture review boundary recorded",
+            "Triage false leads recorded",
             "Endpoint and workload-spread evidence captured",
             "Missing PDB and zonal storage evidence captured",
             "Cost label and cost-review gap evidence captured",
@@ -4577,6 +4596,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["cluster-review.md", "launch-review.md", "no AWS", "reviewer"],
+            ["triage-notes.md", "False Leads", "public and private endpoint is not launch approval", "One missing PDB is not a follow-up", "A snapshot policy is not restore proof", "Cost labels are not optional after launch"],
             ["Endpoint: public and private", "payments/worker", "pdb=missing", "volume=gp3-us-west-2a"],
             ["Missing cost label on apps-c", "deprecated APIs", "controller add-ons", "compatibility matrix"],
             ["Block production launch", "follow-up", "reliability risk", "launch blockers"],
@@ -4705,6 +4725,7 @@ DEEPENED_LAB_UPDATES = {
     "review-terraform-eks-plan": {
         "worksheet_prompts": [
             "Record the plan artifact, workspace or environment, reviewer, and confirmation that `terraform apply` is not being run.",
+            "Read triage-notes.md and list the False Leads ruled out before approving or blocking the plan.",
             "Paste the node group replacement evidence, subnet coverage before/after, and desired/max capacity change.",
             "Paste the public ingress and broad IAM policy evidence.",
             "Explain the blast radius, rollback uncertainty, and whether changes should be split into smaller plans.",
@@ -4713,6 +4734,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the no-apply safety boundary and names the reviewed plan artifact.",
+            "Uses triage notes to rule out saved-plan approval, managed-replacement confidence, one-subnet coverage, public-HTTPS, broad-IAM, and rollback-after-apply False Leads.",
             "Captures node group replacement, subnet coverage regression, and capacity reduction evidence.",
             "Flags public `0.0.0.0/0` ingress and broad `eks:*` IAM scope.",
             "Explains blast radius, rollback uncertainty, owner, and why separate plans are safer.",
@@ -4721,6 +4743,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-apply safety boundary recorded",
+            "Triage false leads recorded",
             "Replacement and subnet regression evidence captured",
             "Capacity reduction evidence captured",
             "Public ingress and broad IAM evidence captured",
@@ -4730,6 +4753,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["terraform apply", "tfplan.txt", "plan artifact", "reviewer"],
+            ["triage-notes.md", "False Leads", "A saved plan is not safe because it is not applied yet", "Managed node group replacement is still blast radius", "One-subnet coverage is not a temporary detail", "eks:* is not reviewable least privilege"],
             ["must be replaced", "subnet-aaa111", "subnet-bbb222", "desired_size = 6 -> 3", "max_size = 12 -> 6"],
             ["0.0.0.0/0", "eks:*", "Resource = \"*\"", "public ingress", "IAM"],
             ["blast radius", "rollback", "owner", "separate plans", "capacity"],
@@ -5358,6 +5382,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "design-production-eks-review": [
         "labs/platform-academy/design-production-eks-review/README.md",
+        "labs/platform-academy/design-production-eks-review/triage-notes.md",
         "labs/platform-academy/design-production-eks-review/cluster-review.md",
         "labs/platform-academy/design-production-eks-review/launch-review.md",
         "labs/platform-academy/design-production-eks-review/evidence-template.md",
@@ -5401,6 +5426,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "inspect-linux-failure-evidence": [
         "labs/platform-academy/inspect-linux-failure-evidence/README.md",
+        "labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md",
         "labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt",
         "labs/platform-academy/inspect-linux-failure-evidence/previous.log",
         "labs/platform-academy/inspect-linux-failure-evidence/id-output.txt",
@@ -5431,6 +5457,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "review-terraform-eks-plan": [
         "labs/platform-academy/review-terraform-eks-plan/README.md",
+        "labs/platform-academy/review-terraform-eks-plan/triage-notes.md",
         "labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
         "labs/platform-academy/review-terraform-eks-plan/review.md",
         "labs/platform-academy/review-terraform-eks-plan/decision-record.md",

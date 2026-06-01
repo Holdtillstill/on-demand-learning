@@ -1,5 +1,11 @@
 # Evidence Template: Review A Terraform EKS Plan
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False plan-approval leads ruled out:
+- Strongest blast-radius clue from triage notes:
+
 ## Scope And Safety
 
 - Plan artifact:

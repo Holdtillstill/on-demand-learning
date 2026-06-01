@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/inspect-linux-failure-evidence"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+TRIAGE="$LAB_DIR/triage-notes.md"
 ANALYZER="$LAB_DIR/linux_failure_analyzer.py"
 
 evidence_file="/tmp/linux-failure-evidence.md"
@@ -61,6 +62,7 @@ fi
 
 echo
 echo "Staged Linux failure evidence bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md"
 echo "  sed -n '1,220p' labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt"
 echo "  sed -n '1,120p' labs/platform-academy/inspect-linux-failure-evidence/previous.log"
 echo "  sed -n '1,80p' labs/platform-academy/inspect-linux-failure-evidence/id-output.txt"
@@ -80,6 +82,10 @@ else
   echo "    --id-output labs/platform-academy/inspect-linux-failure-evidence/id-output.txt \\"
   echo "    --remediation labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md"
 fi
+
+echo
+echo "Captured Linux failure triage notes:"
+sed -n '1,140p' "$TRIAGE"
 
 echo
 echo "Next: fill $evidence_file, then run:"

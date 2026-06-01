@@ -16,6 +16,7 @@ This lab uses captured `kubectl describe`, previous logs, and `id` output. No cl
 
 ```bash
 bash labs/platform-academy/inspect-linux-failure-evidence/setup.sh --evidence /tmp/linux-failure-evidence.md
+sed -n '1,220p' labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md
 sed -n '1,220p' labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt
 sed -n '1,120p' labs/platform-academy/inspect-linux-failure-evidence/previous.log
 sed -n '1,80p' labs/platform-academy/inspect-linux-failure-evidence/id-output.txt
@@ -36,6 +37,7 @@ python3 labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analy
 
 Find:
 
+- The triage False Leads that would treat the crash as memory, app logic, or a root-runtime workaround.
 - Container state and restart count.
 - Exit code and reason.
 - The exact failing file path.
@@ -57,6 +59,7 @@ bash labs/platform-academy/inspect-linux-failure-evidence/validate.sh --evidence
 
 ## Success Criteria
 
+- You rule out the triage false leads before choosing a fix owner.
 - You diagnose exit code 126 as a permission/execute problem.
 - You connect `/app/bin/checkout: Permission denied` with runtime user `10001`.
 - You reject memory tuning as the first fix because the evidence points to permissions.

@@ -6,6 +6,7 @@ LAB_DIR="$ROOT/labs/platform-academy/design-production-eks-review"
 REVIEW="$LAB_DIR/cluster-review.md"
 LAUNCH="$LAB_DIR/launch-review.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+TRIAGE="$LAB_DIR/triage-notes.md"
 ANALYZER="$LAB_DIR/production_review_analyzer.py"
 
 evidence_file="/tmp/production-eks-review-evidence.md"
@@ -70,6 +71,7 @@ fi
 
 echo
 echo "Staged production EKS review packet:"
+echo "  sed -n '1,220p' labs/platform-academy/design-production-eks-review/triage-notes.md"
 echo "  sed -n '1,220p' labs/platform-academy/design-production-eks-review/cluster-review.md"
 echo "  sed -n '1,220p' labs/platform-academy/design-production-eks-review/launch-review.md"
 echo
@@ -81,6 +83,10 @@ else
   echo "    --review labs/platform-academy/design-production-eks-review/cluster-review.md \\"
   echo "    --launch labs/platform-academy/design-production-eks-review/launch-review.md"
 fi
+
+echo
+echo "Captured production EKS triage notes:"
+sed -n '1,140p' "$TRIAGE"
 
 echo
 echo "Captured production EKS proposal excerpt:"

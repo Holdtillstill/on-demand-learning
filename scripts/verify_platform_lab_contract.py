@@ -82,14 +82,16 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "inspect-linux-failure-evidence": {
-        "files": {"evidence-template.md", "linux_failure_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "linux_failure_analyzer.py", "setup.sh", "triage-notes.md"},
         "terms": {
             "CrashLoopBackOff",
             "Exit Code:    126",
+            "False Leads",
             "Linux failure evidence analysis passed",
             "/app/bin/checkout: Permission denied",
             "uid=10001(checkout)",
             "Running as root",
+            "chmod in a live container",
         },
     },
     "trace-network-path": {
@@ -130,24 +132,28 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "design-production-eks-review": {
-        "files": {"evidence-template.md", "production_review_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "production_review_analyzer.py", "setup.sh", "triage-notes.md"},
         "terms": {
             "Endpoint: public and private",
+            "False Leads",
             "pdb=missing",
             "Missing cost label on apps-c",
+            "snapshot policy is not restore proof",
             "controller add-ons",
             "FinOps owner",
             "Production EKS review analysis passed",
         },
     },
     "review-terraform-eks-plan": {
-        "files": {"evidence-template.md", "plan_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "plan_analyzer.py", "setup.sh", "triage-notes.md"},
         "terms": {
             "terraform apply",
+            "False Leads",
             "must be replaced",
             "0.0.0.0/0",
             "eks:*",
             "Do not approve",
+            "One-subnet coverage",
             "Terraform plan risk analysis passed",
         },
     },

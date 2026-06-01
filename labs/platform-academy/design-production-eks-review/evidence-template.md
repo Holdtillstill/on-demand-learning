@@ -1,5 +1,11 @@
 # Production EKS Review Evidence Template
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False launch-approval leads ruled out:
+- Strongest blocker from triage notes:
+
 ## Access And Resilience Evidence
 
 - Endpoint posture:
