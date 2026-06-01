@@ -100,7 +100,7 @@ Paste the most recent successful \`make platform-release-check\` tail here:
 - Platform Academy frontend tests: 34 expected.
 - Full labs: 21 expected.
 - API smoke: catalog/resource/interview counts, no-store headers, OpenAPI backup/workbook/download contract, source-bundle token header contract, learner state export/import, achievements, and product metrics.
-- Browser smoke: 21 courses, 84 lessons, 21 lab detail routes, 17 portfolio-grade UI signals, 320 resource detail routes, 22 interview prep packs, desktop and mobile route checks.
+- Browser smoke: 21 courses, 84 lessons, 21 lab detail routes, 18 portfolio-grade UI signals, 320 resource detail routes, 22 interview prep packs, desktop and mobile route checks.
 - Lab smoke: all lab packets, protected instructor/source bundles, learner workspace bundles, no-store download headers, safe source/workspace extraction, source helper syntax, and each workspace \`validate.sh --files-only\`.
 - API image migration smoke: \`alembic upgrade head\`, \`alembic current\`, \`alembic check\`, and bundled lab verifier with \`CREATE_SCHEMA_ON_STARTUP=false\`.
 - Terraform scaffold: \`terraform fmt -check\`, \`terraform init -backend=false\`, and \`terraform validate\` through \`make terraform-validate\`.

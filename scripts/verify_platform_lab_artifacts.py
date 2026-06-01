@@ -38,6 +38,7 @@ PORTFOLIO_LABS = [
     "design-opentelemetry-signal-path",
     "review-docker-image-supply-chain",
     "audit-eks-cost-drivers",
+    "run-incident-commander-tabletop",
 ]
 
 
@@ -1267,6 +1268,97 @@ def verify_audit_eks_cost_drivers() -> None:
         require(term in analyzer, f"cost analyzer should include {term}")
 
 
+def markdown_table_rows(text: str, label: str) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for line in text.splitlines():
+        if not line.startswith("|") or line.startswith("| ---") or line.startswith("| Time"):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        require(cells and all(cells), f"{label} row should not contain empty cells: {line}")
+        rows.append(cells)
+    require(rows, f"{label} should include Markdown table rows")
+    return rows
+
+
+def verify_run_incident_commander_tabletop() -> None:
+    slug = "run-incident-commander-tabletop"
+    signals = text_doc(slug, "signals.md")
+    roles = text_doc(slug, "roles.md")
+    timeline = text_doc(slug, "timeline.md")
+    completed = text_doc(slug, "completed-timeline.md")
+    brief = text_doc(slug, "commander-brief.md")
+    triage = text_doc(slug, "triage-notes.md")
+    template = text_doc(slug, "evidence-template.md")
+    analyzer = text_doc(slug, "incident_tabletop_analyzer.py")
+    setup = text_doc(slug, "setup.sh")
+
+    for term in [
+        "Checkout 5xx rate rose from 0.2% to 9.4%",
+        "payment confirmation intermittently fails",
+        "SEV-2 declared",
+        "revision 43 promoted to 100%",
+        "rollback option identified: revision 42",
+        "Next stakeholder update due in 15 minutes",
+    ]:
+        require(term in signals, f"incident signals should include {term}")
+    for term in ["Incident commander", "Operations lead", "Communications lead", "Planning lead"]:
+        require(term in roles, f"incident roles should include {term}")
+    for term in [
+        "SEV-2",
+        "Rollback revision 43",
+        "within five minutes",
+        "Send stakeholder update within 15 minutes",
+        "do not delay user-impact mitigation indefinitely",
+    ]:
+        require(term in brief, f"incident commander brief should include {term}")
+
+    timeline_rows = markdown_table_rows(timeline, "timeline.md")
+    completed_rows = markdown_table_rows(completed, "completed-timeline.md")
+    require(len(timeline_rows) >= 4, "timeline.md should include the initial incident decision timeline")
+    require(len(completed_rows) >= 6, "completed-timeline.md should include at least six decision entries")
+    require(
+        any(row[3] == "Pending approval" for row in timeline_rows if len(row) == 5),
+        "timeline.md should preserve the unresolved rollback decision",
+    )
+    for row in completed_rows:
+        require(len(row) == 5, "completed-timeline.md rows should include time, event, evidence, decision, and owner")
+    completed_text = " ".join(" ".join(row) for row in completed_rows)
+    for term in [
+        "Declare SEV-2",
+        "revision 42 known good",
+        "Communications drafts update",
+        "Roll back if no drop in 5 minutes",
+    ]:
+        require(term in completed_text, f"completed incident timeline should include {term}")
+    for owner in ["Release owner", "Operations lead", "Incident commander", "Communications lead"]:
+        require(owner in completed_text, f"completed incident timeline should include owner {owner}")
+
+    for term in [
+        "Waiting for root cause before assigning roles",
+        "Silence until the fix is confirmed",
+        "Immediate rollback without a decision criterion",
+        "Waiting for perfect telemetry",
+        "Timeline entries written after the incident",
+    ]:
+        require(term in triage, f"incident triage notes should include {term}")
+    for heading in [
+        "## Triage Notes And False Leads",
+        "## Impact And Severity Evidence",
+        "## Role Assignment Evidence",
+        "## Timeline And Handoff",
+    ]:
+        require(heading in template, f"incident evidence template should include {heading}")
+    for term in [
+        "Incident commander tabletop analysis passed",
+        "checkout 5xx rising from 0.2% to 9.4%",
+        "rollback revision 43 to known-good revision 42",
+        "stakeholder update clock is set to 15 minutes",
+    ]:
+        require(term in analyzer, f"incident tabletop analyzer should include {term}")
+    for term in ["--run-simulator", "checkout-incident", "incident_tabletop_analyzer.py"]:
+        require(term in setup, f"incident setup should expose {term}")
+
+
 VERIFY_BY_LAB = {
     "trace-service-to-pod": verify_trace_service_to_pod,
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
@@ -1285,6 +1377,7 @@ VERIFY_BY_LAB = {
     "design-opentelemetry-signal-path": verify_design_opentelemetry_signal_path,
     "review-docker-image-supply-chain": verify_review_docker_image_supply_chain,
     "audit-eks-cost-drivers": verify_audit_eks_cost_drivers,
+    "run-incident-commander-tabletop": verify_run_incident_commander_tabletop,
 }
 
 

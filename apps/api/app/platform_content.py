@@ -5659,6 +5659,7 @@ PORTFOLIO_LAB_SLUGS = {
     "design-opentelemetry-signal-path",
     "review-docker-image-supply-chain",
     "audit-eks-cost-drivers",
+    "run-incident-commander-tabletop",
 }
 
 PORTFOLIO_LAB_FOCUS = {
@@ -5679,6 +5680,7 @@ PORTFOLIO_LAB_FOCUS = {
     "design-opentelemetry-signal-path": "OpenTelemetry signal path design",
     "review-docker-image-supply-chain": "Docker image supply-chain review",
     "audit-eks-cost-drivers": "EKS cost-driver review",
+    "run-incident-commander-tabletop": "incident command tabletop",
 }
 
 EVIDENCE_PACK_LAB_SLUGS: set[str] = set()
