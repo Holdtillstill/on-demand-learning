@@ -26,6 +26,7 @@ PORTFOLIO_LABS = [
     "validate-helm-release-artifact",
     "diagnose-eks-ip-exhaustion",
     "trace-network-path",
+    "debug-aws-alb-health-path",
     "review-terraform-eks-plan",
     "debug-irsa-access-denied",
     "audit-tenant-boundaries",
@@ -467,6 +468,90 @@ def verify_trace_network_path() -> None:
     require(fixed_target == "http" and "http" in fixed_ports, "fixed Service should point at the Pod port name")
 
 
+def verify_debug_aws_alb_health_path() -> None:
+    slug = "debug-aws-alb-health-path"
+    health = json_doc(slug, "target-health.json")
+    events = text_doc(slug, "events.txt")
+    broken = yaml_docs(slug, "ingress-service.yaml")
+    fixed = yaml_docs(slug, "fixed-ingress-service.yaml")
+    triage = text_doc(slug, "triage-notes.md")
+
+    descriptions = get_list(health, "TargetHealthDescriptions", "target-health")
+    target_rows = [mapping(item, "target health description") for item in descriptions]
+    unhealthy_rows = [
+        row
+        for row in target_rows
+        if get_map(row, "TargetHealth", "target health description").get("State") == "unhealthy"
+        and get_map(row, "TargetHealth", "target health description").get("Reason") == "Target.ResponseCodeMismatch"
+    ]
+    require(len(unhealthy_rows) == 1, "target-health should include one unhealthy ResponseCodeMismatch target")
+    unhealthy_health = get_map(unhealthy_rows[0], "TargetHealth", "unhealthy target")
+    unhealthy_target = get_map(unhealthy_rows[0], "Target", "unhealthy target")
+    require(unhealthy_target.get("Port") == 8080, "unhealthy ALB target should be port 8080")
+    require("404" in str(unhealthy_health.get("Description", "")), "unhealthy ALB target should report HTTP 404")
+    require(
+        any(get_map(row, "TargetHealth", "target health description").get("State") == "healthy" for row in target_rows),
+        "target-health should include a healthy target for comparison",
+    )
+
+    broken_ingress = find_doc(broken, "Ingress", "checkout", "payments")
+    broken_service = find_doc(broken, "Service", "checkout", "payments")
+    broken_pod = find_doc(broken, "Pod", "checkout-example", "payments")
+    fixed_ingress = find_doc(fixed, "Ingress", "checkout", "payments")
+    fixed_service = find_doc(fixed, "Service", "checkout", "payments")
+    fixed_pod = find_doc(fixed, "Pod", "checkout-example", "payments")
+
+    broken_annotations = get_map(metadata(broken_ingress, "broken Ingress"), "annotations", "broken Ingress.metadata")
+    fixed_annotations = get_map(metadata(fixed_ingress, "fixed Ingress"), "annotations", "fixed Ingress.metadata")
+    require(
+        broken_annotations.get("alb.ingress.kubernetes.io/healthcheck-path") == "/healthz",
+        "broken Ingress should point ALB health checks at /healthz",
+    )
+    require(
+        broken_annotations.get("alb.ingress.kubernetes.io/success-codes") == "200",
+        "broken Ingress should expect HTTP 200 health checks",
+    )
+    require(
+        fixed_annotations.get("alb.ingress.kubernetes.io/healthcheck-path") == "/",
+        "fixed Ingress should point ALB health checks at /",
+    )
+    require(fixed_annotations.get("alb.ingress.kubernetes.io/success-codes") == "200", "fixed Ingress should still expect HTTP 200")
+
+    broken_rules = get_list(spec(broken_ingress, "broken Ingress"), "rules", "broken Ingress.spec")
+    broken_rule = mapping(broken_rules[0], "broken Ingress rule")
+    require(broken_rule.get("host") == "checkout.example.com", "broken Ingress should route checkout.example.com")
+    broken_paths = get_list(get_map(broken_rule, "http", "broken Ingress rule"), "paths", "broken Ingress rule.http")
+    broken_backend = get_map(get_map(mapping(broken_paths[0], "broken path"), "backend", "broken path"), "service", "broken path.backend")
+    require(broken_backend.get("name") == "checkout", "broken Ingress should route to checkout Service")
+    require(get_map(broken_backend, "port", "broken backend service").get("name") == "http", "broken backend should use Service port http")
+
+    broken_target = service_port(broken_service, "http", "broken Service").get("targetPort")
+    fixed_target = service_port(fixed_service, "http", "fixed Service").get("targetPort")
+    broken_ports = container_port_names(pod_container(broken_pod, "checkout", "broken Pod"), "broken Pod checkout")
+    fixed_ports = container_port_names(pod_container(fixed_pod, "checkout", "fixed Pod"), "fixed Pod checkout")
+    require(
+        get_map(spec(broken_service, "broken Service"), "selector", "broken Service.spec") == {"app": "checkout"},
+        "broken Service selector should target checkout Pods",
+    )
+    require(
+        get_map(spec(fixed_service, "fixed Service"), "selector", "fixed Service.spec") == {"app": "checkout"},
+        "fixed Service selector should target checkout Pods",
+    )
+    require(broken_target == "web" and "web" not in broken_ports, "broken Service should target missing Pod port name web")
+    require(fixed_target == "http" and "http" in fixed_ports, "fixed Service should target the Pod port name http")
+    require(
+        pod_container(broken_pod, "checkout", "broken Pod").get("image") == "python:3.12-alpine",
+        "broken Pod should use the sample HTTP server image",
+    )
+    broken_command = get_list(pod_container(broken_pod, "checkout", "broken Pod"), "command", "broken Pod container")
+    require("http.server" in " ".join(str(item) for item in broken_command), "broken Pod should run the sample HTTP server")
+
+    for term in ["Target.ResponseCodeMismatch", "targetPort web has no matching Pod port name"]:
+        require(term in events, f"events should include {term}")
+    for term in ["Target.ResponseCodeMismatch", "targetPort: web", "console-only", "Security groups"]:
+        require(term in triage, f"ALB triage notes should rule out or flag {term}")
+
+
 def verify_review_terraform_eks_plan() -> None:
     slug = "review-terraform-eks-plan"
     plan = text_doc(slug, "tfplan.txt")
@@ -760,6 +845,7 @@ VERIFY_BY_LAB = {
     "validate-helm-release-artifact": verify_validate_helm_release_artifact,
     "diagnose-eks-ip-exhaustion": verify_diagnose_eks_ip_exhaustion,
     "trace-network-path": verify_trace_network_path,
+    "debug-aws-alb-health-path": verify_debug_aws_alb_health_path,
     "review-terraform-eks-plan": verify_review_terraform_eks_plan,
     "debug-irsa-access-denied": verify_debug_irsa_access_denied,
     "audit-tenant-boundaries": verify_audit_tenant_boundaries,
