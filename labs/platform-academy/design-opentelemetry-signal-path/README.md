@@ -22,6 +22,12 @@ sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/prometheu
 python3 labs/platform-academy/simulator.py --scenario checkout-latency --format both --events 3
 ```
 
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer or simulator by default. To exercise those from setup after you inspect the artifacts:
+
+```bash
+bash labs/platform-academy/design-opentelemetry-signal-path/setup.sh --run-analyzer --run-simulator --evidence /tmp/otel-signal-path-evidence.md
+```
+
 ## Investigation
 
 Find:

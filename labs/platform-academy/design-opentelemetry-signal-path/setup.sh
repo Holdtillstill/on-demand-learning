@@ -8,16 +8,20 @@ ANALYZER="$LAB_DIR/signal_path_analyzer.py"
 
 evidence_file="/tmp/otel-signal-path-evidence.md"
 mode="no-cluster"
+run_analyzer=false
+run_simulator=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/design-opentelemetry-signal-path/setup.sh [--cluster] [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/design-opentelemetry-signal-path/setup.sh [--cluster] [--no-cluster] [--run-analyzer] [--run-simulator] [--evidence <file>]
 
 Options:
-  --cluster      Refuse live telemetry setup; this lab is a local Evidence review.
-  --no-cluster   Copy the evidence template and run the local signal-path analyzer. This is the default.
-  --evidence     Evidence note path to create when it does not already exist.
+  --cluster        Refuse live telemetry setup; this lab is a local Evidence review.
+  --no-cluster     Copy the evidence template and stage local artifacts. This is the default.
+  --run-analyzer   Run the local signal-path analyzer after staging evidence.
+  --run-simulator  Emit simulated checkout latency metrics after staging evidence.
+  --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
 
@@ -33,6 +37,12 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-cluster|--transcript)
       mode="no-cluster"
+      ;;
+    --run-analyzer)
+      run_analyzer=true
+      ;;
+    --run-simulator)
+      run_simulator=true
       ;;
     --evidence)
       shift
@@ -62,16 +72,37 @@ else
 fi
 
 echo
-python3 "$ANALYZER" \
-  --collector "$LAB_DIR/collector.yaml" \
-  --logs "$LAB_DIR/checkout-logs.txt" \
-  --rule "$LAB_DIR/prometheus-rule.yaml" \
-  --safe-rule "$LAB_DIR/safe-prometheus-rule.yaml" \
-  --decision "$LAB_DIR/signal-path-decision.md"
+echo "Staged OpenTelemetry signal evidence:"
+echo "  sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/collector.yaml"
+echo "  sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt"
+echo "  sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml"
+echo "  python3 labs/platform-academy/simulator.py --scenario checkout-latency --format both --events 5"
+echo
+if [[ "$run_analyzer" == true ]]; then
+  python3 "$ANALYZER" \
+    --collector "$LAB_DIR/collector.yaml" \
+    --logs "$LAB_DIR/checkout-logs.txt" \
+    --rule "$LAB_DIR/prometheus-rule.yaml" \
+    --safe-rule "$LAB_DIR/safe-prometheus-rule.yaml" \
+    --decision "$LAB_DIR/signal-path-decision.md"
+else
+  echo "Analyzer is intentionally not run by default; inspect privacy, trace, cardinality, owner, and alert evidence first, then run:"
+  echo "  python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py \\"
+  echo "    --collector labs/platform-academy/design-opentelemetry-signal-path/collector.yaml \\"
+  echo "    --logs labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt \\"
+  echo "    --rule labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml \\"
+  echo "    --safe-rule labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml \\"
+  echo "    --decision labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md"
+fi
 
 echo
-echo "Simulated checkout latency metrics:"
-python3 "$ROOT/labs/platform-academy/simulator.py" --scenario checkout-latency --format metrics --events 2
+if [[ "$run_simulator" == true ]]; then
+  echo "Simulated checkout latency metrics:"
+  python3 "$ROOT/labs/platform-academy/simulator.py" --scenario checkout-latency --format metrics --events 2
+else
+  echo "Simulator is intentionally not run by default; inspect the static signal path first, then run:"
+  echo "  python3 labs/platform-academy/simulator.py --scenario checkout-latency --format metrics --events 2"
+fi
 
 echo
 echo "Next: fill $evidence_file, then run:"

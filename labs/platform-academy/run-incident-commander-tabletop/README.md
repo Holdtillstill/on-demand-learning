@@ -22,6 +22,12 @@ sed -n '1,160p' labs/platform-academy/run-incident-commander-tabletop/timeline.m
 python3 labs/platform-academy/simulator.py --scenario checkout-incident --format logs --events 3
 ```
 
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer or simulator by default. To exercise those from setup after you inspect the packet:
+
+```bash
+bash labs/platform-academy/run-incident-commander-tabletop/setup.sh --run-analyzer --run-simulator --evidence /tmp/incident-commander-evidence.md
+```
+
 ## Investigation
 
 Find:

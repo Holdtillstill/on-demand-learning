@@ -470,6 +470,12 @@ grep -q "EKS IP exhaustion analysis passed" "$tmpdir/runner-ip-exhaustion-analyz
 grep -q "Terraform plan risk analysis passed" "$tmpdir/runner-terraform-plan-analyzer-setup.txt" || fail "Terraform plan setup --run-analyzer should execute the analyzer"
 "$LAB_ROOT/run-lab.sh" setup validate-helm-release-artifact --run-analyzer --evidence "$tmpdir/helm-release-analyzer-evidence.md" >"$tmpdir/runner-helm-release-analyzer-setup.txt"
 grep -q "Helm release artifact analysis passed" "$tmpdir/runner-helm-release-analyzer-setup.txt" || fail "Helm release setup --run-analyzer should execute the analyzer"
+"$LAB_ROOT/run-lab.sh" setup design-opentelemetry-signal-path --run-analyzer --run-simulator --evidence "$tmpdir/otel-signal-path-analyzer-evidence.md" >"$tmpdir/runner-otel-signal-path-analyzer-setup.txt"
+grep -q "OpenTelemetry signal path analysis passed" "$tmpdir/runner-otel-signal-path-analyzer-setup.txt" || fail "OpenTelemetry setup --run-analyzer should execute the analyzer"
+grep -q "http_requests_total" "$tmpdir/runner-otel-signal-path-analyzer-setup.txt" || fail "OpenTelemetry setup --run-simulator should emit simulated metrics"
+"$LAB_ROOT/run-lab.sh" setup run-incident-commander-tabletop --run-analyzer --run-simulator --evidence "$tmpdir/incident-tabletop-analyzer-evidence.md" >"$tmpdir/runner-incident-tabletop-analyzer-setup.txt"
+grep -q "Incident commander tabletop analysis passed" "$tmpdir/runner-incident-tabletop-analyzer-setup.txt" || fail "Incident tabletop setup --run-analyzer should execute the analyzer"
+grep -q "service=checkout route=/checkout/confirm" "$tmpdir/runner-incident-tabletop-analyzer-setup.txt" || fail "Incident tabletop setup --run-simulator should emit simulated logs"
 
 for evidence_lab in "${EVIDENCE_VALIDATION_LABS[@]}"; do
   "$LAB_ROOT/run-lab.sh" validate "$evidence_lab" --evidence "$LAB_ROOT/$evidence_lab/solution.md" >"$tmpdir/runner-evidence-$evidence_lab.txt"

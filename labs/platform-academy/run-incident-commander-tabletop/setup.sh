@@ -8,16 +8,20 @@ ANALYZER="$LAB_DIR/incident_tabletop_analyzer.py"
 
 evidence_file="/tmp/incident-commander-evidence.md"
 mode="no-cluster"
+run_analyzer=false
+run_simulator=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/run-incident-commander-tabletop/setup.sh [--cluster] [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/run-incident-commander-tabletop/setup.sh [--cluster] [--no-cluster] [--run-analyzer] [--run-simulator] [--evidence <file>]
 
 Options:
-  --cluster      Refuse live incident setup; this tabletop is a local Evidence exercise.
-  --no-cluster   Copy the evidence template and run the local incident tabletop analyzer. This is the default.
-  --evidence     Evidence note path to create when it does not already exist.
+  --cluster        Refuse live incident setup; this tabletop is a local Evidence exercise.
+  --no-cluster     Copy the evidence template and stage local artifacts. This is the default.
+  --run-analyzer   Run the local incident tabletop analyzer after staging evidence.
+  --run-simulator  Emit simulated incident log lines after staging evidence.
+  --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
 
@@ -33,6 +37,12 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-cluster|--transcript)
       mode="no-cluster"
+      ;;
+    --run-analyzer)
+      run_analyzer=true
+      ;;
+    --run-simulator)
+      run_simulator=true
       ;;
     --evidence)
       shift
@@ -62,16 +72,37 @@ else
 fi
 
 echo
-python3 "$ANALYZER" \
-  --signals "$LAB_DIR/signals.md" \
-  --roles "$LAB_DIR/roles.md" \
-  --timeline "$LAB_DIR/timeline.md" \
-  --brief "$LAB_DIR/commander-brief.md" \
-  --completed-timeline "$LAB_DIR/completed-timeline.md"
+echo "Staged incident tabletop evidence:"
+echo "  sed -n '1,180p' labs/platform-academy/run-incident-commander-tabletop/signals.md"
+echo "  sed -n '1,160p' labs/platform-academy/run-incident-commander-tabletop/roles.md"
+echo "  sed -n '1,160p' labs/platform-academy/run-incident-commander-tabletop/timeline.md"
+echo "  python3 labs/platform-academy/simulator.py --scenario checkout-incident --format logs --events 5"
+echo
+if [[ "$run_analyzer" == true ]]; then
+  python3 "$ANALYZER" \
+    --signals "$LAB_DIR/signals.md" \
+    --roles "$LAB_DIR/roles.md" \
+    --timeline "$LAB_DIR/timeline.md" \
+    --brief "$LAB_DIR/commander-brief.md" \
+    --completed-timeline "$LAB_DIR/completed-timeline.md"
+else
+  echo "Analyzer is intentionally not run by default; inspect severity, roles, rollback, communications, and timeline evidence first, then run:"
+  echo "  python3 labs/platform-academy/run-incident-commander-tabletop/incident_tabletop_analyzer.py \\"
+  echo "    --signals labs/platform-academy/run-incident-commander-tabletop/signals.md \\"
+  echo "    --roles labs/platform-academy/run-incident-commander-tabletop/roles.md \\"
+  echo "    --timeline labs/platform-academy/run-incident-commander-tabletop/timeline.md \\"
+  echo "    --brief labs/platform-academy/run-incident-commander-tabletop/commander-brief.md \\"
+  echo "    --completed-timeline labs/platform-academy/run-incident-commander-tabletop/completed-timeline.md"
+fi
 
 echo
-echo "Simulated incident log lines:"
-python3 "$ROOT/labs/platform-academy/simulator.py" --scenario checkout-incident --format logs --events 3
+if [[ "$run_simulator" == true ]]; then
+  echo "Simulated incident log lines:"
+  python3 "$ROOT/labs/platform-academy/simulator.py" --scenario checkout-incident --format logs --events 3
+else
+  echo "Simulator is intentionally not run by default; inspect the tabletop packet first, then run:"
+  echo "  python3 labs/platform-academy/simulator.py --scenario checkout-incident --format logs --events 3"
+fi
 
 echo
 echo "Next: fill $evidence_file, then run:"
