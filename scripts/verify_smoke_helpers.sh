@@ -117,7 +117,7 @@ grep -q "apps/platform-academy/src/App.tsx" "$REVIEW_PACK_DIR/pathspec-ui.txt" |
 grep -q "docs/platform-academy-handoff.md" "$REVIEW_PACK_DIR/pathspec-docs.txt" || fail "review pack docs pathspec missing handoff doc"
 grep -q "# Platform Academy Lab Review Matrix" "$REVIEW_PACK_DIR/lab-review-matrix.md" || fail "review pack lab matrix missing heading"
 grep -q "# Platform Academy Review Scope" "$REVIEW_PACK_DIR/review-scope.md" || fail "review pack review scope missing heading"
-grep -q "Changed files, tracked plus untracked:" "$REVIEW_PACK_DIR/review-scope.md" || fail "review pack review scope missing changed file count"
+grep -q "Review changed files:" "$REVIEW_PACK_DIR/review-scope.md" || fail "review pack review scope missing changed file count"
 grep -q "Suggested Review Order" "$REVIEW_PACK_DIR/review-scope.md" || fail "review pack review scope missing review order"
 grep -q "| \`trace-service-to-pod\` | Kubernetes Service routing | yes |" "$REVIEW_PACK_DIR/lab-review-matrix.md" || fail "review pack lab matrix missing trace-service-to-pod portfolio metadata"
 grep -q "Verified structural artifacts for 7 Platform Academy portfolio labs." "$REVIEW_PACK_DIR/portfolio-artifact-contract.txt" || fail "review pack portfolio artifact contract missing verifier output"

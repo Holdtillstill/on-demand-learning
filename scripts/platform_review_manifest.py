@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Generate a reviewer-oriented manifest for changed tracked and untracked files."""
+"""Generate a reviewer-oriented manifest for branch and working-tree changes."""
 
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 from collections import defaultdict
 from dataclasses import dataclass
@@ -101,6 +102,12 @@ class ChangedFile:
     area_key: str
 
 
+@dataclass(frozen=True)
+class ReviewBase:
+    ref: str
+    merge_base: str
+
+
 def git_lines(*args: str) -> list[str]:
     result = subprocess.run(
         ["git", "-C", str(ROOT), *args],
@@ -109,6 +116,45 @@ def git_lines(*args: str) -> list[str]:
         text=True,
     )
     return [line for line in result.stdout.splitlines() if line]
+
+
+def git_text_optional(*args: str) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(ROOT), *args],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def git_lines_optional(*args: str) -> list[str]:
+    return [line for line in git_text_optional(*args).splitlines() if line]
+
+
+def resolve_review_base(base_ref: str | None, dirty_only: bool) -> ReviewBase | None:
+    if dirty_only:
+        return None
+    configured = base_ref or os.environ.get("PLATFORM_REVIEW_BASE", "").strip()
+    if configured:
+        merge_base = git_lines_optional("merge-base", "HEAD", configured)
+        if not merge_base:
+            raise SystemExit(f"Unable to resolve review base: {configured}")
+        return ReviewBase(ref=configured, merge_base=merge_base[0])
+    for candidate in ("origin/main", "main"):
+        merge_base = git_lines_optional("merge-base", "HEAD", candidate)
+        if merge_base:
+            return ReviewBase(ref=candidate, merge_base=merge_base[0])
+    return None
+
+
+def describe_review_base(base: ReviewBase | None) -> str:
+    if base is None:
+        return "not found; dirty changes only"
+    return f"{base.ref} (merge-base {base.merge_base[:12]})"
 
 
 def classify(path: str) -> str:
@@ -135,8 +181,18 @@ def parse_name_status(line: str, source: str) -> ChangedFile:
     return ChangedFile(path=path, status=status, source=source, area_key=classify(path))
 
 
-def changed_files() -> list[ChangedFile]:
+def changed_files(base: ReviewBase | None) -> list[ChangedFile]:
     by_path: dict[str, ChangedFile] = {}
+    if base:
+        for line in git_lines(
+            "diff",
+            "--name-status",
+            "--diff-filter=ACMRTUXB",
+            f"{base.merge_base}..HEAD",
+            "--",
+        ):
+            changed = parse_name_status(line, "branch")
+            by_path[changed.path] = changed
     for source, args in (
         ("working tree", ("diff", "--name-status", "--diff-filter=ACMRTUXB", "--")),
         ("index", ("diff", "--cached", "--name-status", "--diff-filter=ACMRTUXB", "--")),
@@ -147,6 +203,21 @@ def changed_files() -> list[ChangedFile]:
     for path in git_lines("ls-files", "--others", "--exclude-standard"):
         by_path[path] = ChangedFile(path=path, status="??", source="untracked", area_key=classify(path))
     return [by_path[path] for path in sorted(by_path)]
+
+
+def diffstat(base: ReviewBase | None) -> str:
+    sections: list[str] = []
+    if base:
+        branch_diffstat = git_text_optional("diff", "--stat", f"{base.merge_base}..HEAD", "--")
+        if branch_diffstat:
+            sections.append(f"Branch diff against {describe_review_base(base)}:\n{branch_diffstat}")
+    working_tree_diffstat = git_text_optional("diff", "--stat", "--")
+    if working_tree_diffstat:
+        sections.append(f"Working tree diff:\n{working_tree_diffstat}")
+    index_diffstat = git_text_optional("diff", "--cached", "--stat", "--")
+    if index_diffstat:
+        sections.append(f"Index diff:\n{index_diffstat}")
+    return "\n\n".join(sections)
 
 
 def status_label(status: str) -> str:
@@ -210,8 +281,14 @@ def write_pathspecs(files_by_area: dict[str, list[ChangedFile]], output_dir: Pat
         pathspec.write_text("\n".join(changed.path for changed in files) + "\n", encoding="utf-8")
 
 
-def print_commit_plan(files_by_area: dict[str, list[ChangedFile]], pathspec_dir: Path | None) -> None:
+def print_commit_plan(
+    files_by_area: dict[str, list[ChangedFile]],
+    pathspec_dir: Path | None,
+    base: ReviewBase | None,
+) -> None:
     print("# Platform Academy Commit Plan")
+    print()
+    print(f"Review base: {describe_review_base(base)}")
     print()
     print(
         "Use this as a practical split plan if the branch needs staged review commits. "
@@ -263,6 +340,16 @@ def print_commit_plan(files_by_area: dict[str, list[ChangedFile]], pathspec_dir:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--base",
+        metavar="REF",
+        help="compare committed branch changes against REF; defaults to PLATFORM_REVIEW_BASE, origin/main, then main",
+    )
+    parser.add_argument(
+        "--dirty-only",
+        action="store_true",
+        help="ignore committed branch changes and report only modified, staged, and untracked files",
+    )
+    parser.add_argument(
         "--commit-plan",
         metavar="PATHSPEC_DIR",
         help="print a commit plan that references pathspec files in PATHSPEC_DIR",
@@ -272,16 +359,53 @@ def main() -> int:
         metavar="DIR",
         help="write one pathspec file per review lane into DIR",
     )
+    parser.add_argument(
+        "--list-paths",
+        action="store_true",
+        help="print the changed paths only",
+    )
+    parser.add_argument(
+        "--diffstat",
+        action="store_true",
+        help="print a branch-aware diffstat",
+    )
+    parser.add_argument(
+        "--name-status",
+        action="store_true",
+        help="print changed file status and path rows",
+    )
+    parser.add_argument(
+        "--base-info",
+        action="store_true",
+        help="print the resolved review base",
+    )
     args = parser.parse_args()
 
-    files = changed_files()
+    base = resolve_review_base(args.base, args.dirty_only)
+    files = changed_files(base)
     files_by_area = grouped_files(files)
 
+    if args.base_info:
+        print(describe_review_base(base))
+        return 0
+    if args.list_paths:
+        for changed in files:
+            print(changed.path)
+        return 0
+    if args.diffstat:
+        output = diffstat(base)
+        if output:
+            print(output)
+        return 0
+    if args.name_status:
+        for changed in files:
+            print(f"{changed.status}\t{changed.path}")
+        return 0
     if args.write_pathspec_dir:
         write_pathspecs(files_by_area, Path(args.write_pathspec_dir))
         return 0
     if args.commit_plan:
-        print_commit_plan(files_by_area, Path(args.commit_plan))
+        print_commit_plan(files_by_area, Path(args.commit_plan), base)
         return 0
 
     branch = git_lines("rev-parse", "--abbrev-ref", "HEAD")[0]
@@ -293,11 +417,12 @@ def main() -> int:
     print(f"Generated: {generated_at}")
     print(f"Branch: {branch}")
     print(f"Commit: {commit}")
+    print(f"Review base: {describe_review_base(base)}")
     print(f"Changed files: {len(files)}")
     print()
     print(
         "Use this manifest to split a broad Platform Academy review by subsystem. "
-        "It includes modified, staged, and untracked files."
+        "It includes committed branch changes plus modified, staged, and untracked files."
     )
     print()
     print_summary(files_by_area)

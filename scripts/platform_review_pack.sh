@@ -68,22 +68,23 @@ content_count_contract="$(PYTHONPATH="$ROOT/apps/api" PYTHONDONTWRITEBYTECODE=1 
 workflow_contracts="$(PYTHONDONTWRITEBYTECODE=1 "$PYTHON_BIN" "$ROOT/scripts/verify_workflow_contracts.py")"
 review_manifest="$(PYTHONDONTWRITEBYTECODE=1 "$PYTHON_BIN" "$ROOT/scripts/platform_review_manifest.py")"
 commit_plan="$(PYTHONDONTWRITEBYTECODE=1 "$PYTHON_BIN" "$ROOT/scripts/platform_review_manifest.py" --commit-plan "$out_dir")"
+review_base="$(PYTHONDONTWRITEBYTECODE=1 "$PYTHON_BIN" "$ROOT/scripts/platform_review_manifest.py" --base-info)"
+changed_files="$(PYTHONDONTWRITEBYTECODE=1 "$PYTHON_BIN" "$ROOT/scripts/platform_review_manifest.py" --list-paths)"
+git_diffstat="$(PYTHONDONTWRITEBYTECODE=1 "$PYTHON_BIN" "$ROOT/scripts/platform_review_manifest.py" --diffstat)"
+git_name_status="$(PYTHONDONTWRITEBYTECODE=1 "$PYTHON_BIN" "$ROOT/scripts/platform_review_manifest.py" --name-status)"
 git_status="$(git_value status --short --branch --untracked-files=all)"
-git_diffstat="$(git_value diff --stat)"
-git_name_status="$(git_value diff --name-status)"
-tracked_files="$(git_value diff --name-only)"
 untracked_files="$(git_value ls-files --others --exclude-standard)"
-changed_files="$(
+local_tracked_files="$(
   {
-    printf '%s\n' "$tracked_files"
-    printf '%s\n' "$untracked_files"
+    git_value diff --name-only
+    git_value diff --cached --name-only
   } | sed '/^$/d' | sort -u
 )"
 
 branch="$(git_value rev-parse --abbrev-ref HEAD)"
 commit="$(git_value rev-parse --short=12 HEAD)"
 changed_count="$(count_lines "$changed_files")"
-tracked_count="$(count_lines "$tracked_files")"
+local_tracked_count="$(count_lines "$local_tracked_files")"
 untracked_count="$(count_lines "$untracked_files")"
 api_count="$(count_matching_paths '^(apps/api|apps/worker|infra/db)/' "$changed_files")"
 ui_count="$(count_matching_paths '^apps/platform-academy/' "$changed_files")"
@@ -104,8 +105,8 @@ printf '%s\n' "$workflow_contracts" >"$out_dir/workflow-contracts.txt"
 printf '%s\n' "$review_manifest" >"$out_dir/changed-file-review-manifest.md"
 printf '%s\n' "$commit_plan" >"$out_dir/commit-plan.md"
 printf '%s\n' "$git_status" >"$out_dir/git-status.txt"
-printf '%s\n' "${git_diffstat:-No tracked diffstat output.}" >"$out_dir/tracked-diffstat.txt"
-printf '%s\n' "${git_name_status:-No tracked file changes.}" >"$out_dir/tracked-name-status.txt"
+printf '%s\n' "${git_diffstat:-No branch or local tracked diffstat output.}" >"$out_dir/tracked-diffstat.txt"
+printf '%s\n' "${git_name_status:-No branch or local tracked file changes.}" >"$out_dir/tracked-name-status.txt"
 printf '%s\n' "${untracked_files:-No untracked files.}" >"$out_dir/untracked-files.txt"
 
 cat >"$out_dir/review-scope.md" <<EOF
@@ -114,14 +115,15 @@ cat >"$out_dir/review-scope.md" <<EOF
 Generated: ${generated_at}
 Branch: ${branch:-unknown}
 Commit: ${commit:-unknown}
+Review base: ${review_base}
 
 This branch is intentionally broad. Use this generated scope summary with \`changed-file-review-manifest.md\` and \`commit-plan.md\` to route review by subsystem before reading the full diff.
 
 ## File Counts
 
-- Changed files, tracked plus untracked: ${changed_count}
-- Tracked changed files: ${tracked_count}
-- Untracked files: ${untracked_count}
+- Review changed files: ${changed_count}
+- Local modified or staged tracked files: ${local_tracked_count}
+- Local untracked files: ${untracked_count}
 - API, worker, and migrations: ${api_count}
 - Platform Academy frontend: ${ui_count}
 - Lab source artifacts: ${lab_count}
@@ -140,10 +142,11 @@ This branch is intentionally broad. Use this generated scope summary with \`chan
 ## Scope Notes
 
 - \`git-status.txt\` is generated with \`--untracked-files=all\` so new lab evidence files and scripts are visible individually.
-- \`tracked-diffstat.txt\` only covers tracked edits because Git cannot diff untracked files until they are added.
-- \`changed-file-review-manifest.md\` groups changed tracked and untracked files by reviewer lane.
+- \`tracked-diffstat.txt\` covers committed branch diff plus any local tracked edits; Git cannot diff untracked files until they are added.
+- \`changed-file-review-manifest.md\` groups committed branch changes plus local modified, staged, and untracked files by reviewer lane.
 - \`commit-plan.md\` maps each reviewer lane to a suggested commit message and generated pathspec file.
-- \`untracked-files.txt\` is the authoritative flat list of new files that need staging or review before opening the PR.
+- Set \`PLATFORM_REVIEW_BASE=<ref>\` to compare the pack against a different target ref.
+- \`untracked-files.txt\` is the authoritative flat list of local files that still need staging or cleanup before opening the PR.
 - \`content-count-contract.txt\`, \`workflow-contracts.txt\`, and \`portfolio-artifact-contract.txt\` are generated verifier outputs, not hand-written claims.
 EOF
 
@@ -157,9 +160,10 @@ cat >"$out_dir/README.md" <<EOF
 Generated: ${generated_at}
 Branch: ${branch:-unknown}
 Commit: ${commit:-unknown}
-Working tree changed paths: ${changed_count}
+Review base: ${review_base}
+Review changed paths: ${changed_count}
 
-This pack is a disposable reviewer/deployment handoff bundle for the Platform Academy full-lab branch. It pulls together the evidence scaffold, lab review matrix, branch status, tracked diff summary, handoff note, release checklist, and PR template so reviewers do not have to hunt through the repo.
+This pack is a disposable reviewer/deployment handoff bundle for the Platform Academy full-lab branch. It pulls together the evidence scaffold, lab review matrix, branch status, branch-aware diff summary, handoff note, release checklist, and PR template so reviewers do not have to hunt through the repo.
 
 ## Start Here
 
@@ -180,16 +184,18 @@ This pack is a disposable reviewer/deployment handoff bundle for the Platform Ac
 - \`content-count-contract.txt\`: output from \`make platform-content-count-check\` proving smoke defaults and count-bearing docs match API content.
 - \`workflow-contracts.txt\`: output from \`make workflow-contract-check\` proving the release-critical GitHub Actions workflow contracts passed.
 - \`review-scope.md\`: generated subsystem counts and recommended review order for the broad branch.
-- \`changed-file-review-manifest.md\`: generated changed-file manifest grouped by reviewer lane, including untracked files.
+- \`changed-file-review-manifest.md\`: generated changed-file manifest grouped by reviewer lane, including committed branch changes and local modified, staged, or untracked files.
 - \`commit-plan.md\`: suggested commit slicing order, focused validation commands, and portable staging commands using pathspec files.
 - \`pathspec-*.txt\`: exact file lists consumed by the portable staging loop in \`commit-plan.md\`.
 - \`platform-academy-handoff.md\`: branch handoff, reviewer map, deployment assumptions, and API contract.
 - \`release-checklist.md\`: local, container, deployed, migration, acceptance, and rollback checklist.
 - \`pull-request-template.md\`: PR checklist fields to fill before review.
 - \`git-status.txt\`: branch plus modified/untracked paths.
-- \`tracked-diffstat.txt\`: tracked diff size by file.
-- \`tracked-name-status.txt\`: tracked file status.
-- \`untracked-files.txt\`: untracked file list.
+- \`tracked-diffstat.txt\`: branch-aware tracked diff size by file.
+- \`tracked-name-status.txt\`: branch-aware tracked file status.
+- \`untracked-files.txt\`: local untracked file list.
+
+Set \`PLATFORM_REVIEW_BASE=<ref>\` before running \`make platform-review-pack\` to compare against a target other than the default \`origin/main\` or \`main\`.
 
 ## Required Gates
 
