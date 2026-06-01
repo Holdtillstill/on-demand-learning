@@ -24,6 +24,16 @@ sed -n '1,220p' labs/platform-academy/trace-network-path/ingress-service.yaml
 sed -n '1,160p' labs/platform-academy/trace-network-path/evidence-template.md
 ```
 
+Run the local analyzer:
+
+```bash
+python3 labs/platform-academy/trace-network-path/network_path_analyzer.py \
+  --handoff labs/platform-academy/trace-network-path/incident-handoff.md \
+  --evidence labs/platform-academy/trace-network-path/network-evidence.md \
+  --broken labs/platform-academy/trace-network-path/ingress-service.yaml \
+  --fixed labs/platform-academy/trace-network-path/fixed-ingress-service.yaml
+```
+
 Optional local broken-state setup:
 
 ```bash
@@ -41,6 +51,7 @@ Answer these before opening the solution:
 - Does the Service point at the right backend port name?
 - Do the Pods expose a matching named port?
 - Which owner should act if DNS and ALB routing are still pointed at the expected backend?
+- Whether the local analyzer confirms the Service-to-Pod mismatch and source fix.
 - Which owner should change the source manifest, and what validation output should be saved?
 
 ## Fix
@@ -65,4 +76,5 @@ bash labs/platform-academy/trace-network-path/cleanup.sh
 - You can identify the failing hop without guessing.
 - You can explain why `targetPort` name matching matters.
 - You preserve Ingress host/path behavior while fixing Service-to-Pod routing.
+- You capture the local network path analyzer result.
 - You can save a hop-by-hop evidence note without live DNS, ALB, or cluster access.

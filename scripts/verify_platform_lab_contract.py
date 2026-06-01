@@ -87,8 +87,15 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "trace-network-path": {
-        "files": {"evidence-template.md"},
-        "terms": {"HTTP/2 503", "Target.ResponseCodeMismatch", "targetPort web", "targetPort: http", "source-manifest"},
+        "files": {"evidence-template.md", "network_path_analyzer.py", "setup.sh"},
+        "terms": {
+            "HTTP/2 503",
+            "Network path analysis passed",
+            "Target.ResponseCodeMismatch",
+            "targetPort web",
+            "targetPort: http",
+            "source-manifest",
+        },
     },
     "debug-aws-alb-health-path": {
         "files": {"evidence-template.md"},

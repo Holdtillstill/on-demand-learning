@@ -8,6 +8,7 @@ FIXED="$LAB_DIR/fixed-ingress-service.yaml"
 EVIDENCE="$LAB_DIR/network-evidence.md"
 HANDOFF="$LAB_DIR/incident-handoff.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/network_path_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
@@ -71,6 +72,9 @@ grep -q "kind: Namespace" "$FIXED" || fail "fixed manifest should create the dis
 grep -q "## Request And Edge Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for request and edge evidence"
 grep -q "## Ingress, Service, And Pod Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for service and pod evidence"
 grep -q "## Owner And Fix Decision" "$TEMPLATE" || fail "evidence-template.md should prompt for owner and fix decision"
+grep -q "Network path analysis passed" "$ANALYZER" || fail "network_path_analyzer.py should report a successful local analysis"
+
+python3 "$ANALYZER" --handoff "$HANDOFF" --evidence "$EVIDENCE" --broken "$BROKEN" --fixed "$FIXED" --quiet
 
 run_structural_check
 echo "File checks passed for trace-network-path."
@@ -83,6 +87,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "Ingress host or backend" "checkout\\.example\\.com|Ingress|backend|checkout"
   require_evidence_match "$evidence_file" "broken Service targetPort web" "targetPort[[:space:]]*:?[[:space:]]*web|targetPort web"
   require_evidence_match "$evidence_file" "Pod port name http" "name[[:space:]]*:?[[:space:]]*http|port named http|Pod port"
+  require_evidence_match "$evidence_file" "local network path analyzer evidence" "Network path analysis passed|network path analyzer|Service/Pod risk|Owner decision"
   require_evidence_match "$evidence_file" "owners ruled out" "DNS owner|ALB owner|app/platform owner|owner ruled out|not DNS|not ALB"
   require_evidence_match "$evidence_file" "source manifest fix to targetPort http" "targetPort[[:space:]]*:?[[:space:]]*http|fixed-ingress-service\\.yaml|source-manifest|source manifest"
   require_evidence_match "$evidence_file" "validation or no-cluster handoff" "validate|validation|no-cluster|handoff|cleanup"

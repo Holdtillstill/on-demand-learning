@@ -36,6 +36,18 @@ Expected evidence:
 - ALB owner is ruled out for console-only action because target health points back to Kubernetes backend behavior.
 - App/platform owner owns the source-manifest fix.
 
+The local network path analyzer verifies the hop-by-hop diagnosis without DNS, ALB, or cluster access:
+
+```bash
+python3 labs/platform-academy/trace-network-path/network_path_analyzer.py \
+  --handoff labs/platform-academy/trace-network-path/incident-handoff.md \
+  --evidence labs/platform-academy/trace-network-path/network-evidence.md \
+  --broken labs/platform-academy/trace-network-path/ingress-service.yaml \
+  --fixed labs/platform-academy/trace-network-path/fixed-ingress-service.yaml
+```
+
+Expected result: `Network path analysis passed`, with edge-symptom, ALB, Ingress, Service/Pod, fixed-target, and owner-decision evidence.
+
 ## Fix
 
 Set the Service target port to the Pod's named port:

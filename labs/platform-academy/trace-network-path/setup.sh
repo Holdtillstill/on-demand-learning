@@ -4,9 +4,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/trace-network-path"
 BROKEN="$LAB_DIR/ingress-service.yaml"
+FIXED="$LAB_DIR/fixed-ingress-service.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 HANDOFF="$LAB_DIR/incident-handoff.md"
 NETWORK_EVIDENCE="$LAB_DIR/network-evidence.md"
+ANALYZER="$LAB_DIR/network_path_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
 mode="no-cluster"
@@ -71,6 +73,8 @@ if [[ "$mode" == "no-cluster" ]]; then
   echo "Captured network evidence:"
   sed -n '1,180p' "$NETWORK_EVIDENCE"
   echo
+  python3 "$ANALYZER" --handoff "$HANDOFF" --evidence "$NETWORK_EVIDENCE" --broken "$BROKEN" --fixed "$FIXED"
+  echo
   echo "Next: fill $evidence_file, then run:"
   echo "  bash labs/platform-academy/trace-network-path/validate.sh --evidence $evidence_file"
   exit 0
@@ -81,6 +85,7 @@ kubectl delete namespace payments --ignore-not-found >/dev/null
 kubectl apply -f "$BROKEN"
 kubectl wait --for=condition=Ready pod/checkout-example -n payments --timeout=90s
 prepare_evidence_note
+python3 "$ANALYZER" --handoff "$HANDOFF" --evidence "$NETWORK_EVIDENCE" --broken "$BROKEN" --fixed "$FIXED"
 
 echo
 echo "Broken network-path lab is ready in namespace payments."

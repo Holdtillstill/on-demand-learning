@@ -3782,11 +3782,19 @@ RUNNABLE_LAB_UPDATES = {
         "commands": [
             "grep -n \"HTTP/2 503\\|Target.ResponseCodeMismatch\\|targetPort web\" labs/platform-academy/trace-network-path/incident-handoff.md labs/platform-academy/trace-network-path/network-evidence.md labs/platform-academy/trace-network-path/ingress-service.yaml",
             "grep -n \"name: http\\|targetPort: web\" labs/platform-academy/trace-network-path/ingress-service.yaml",
+            (
+                "python3 labs/platform-academy/trace-network-path/network_path_analyzer.py "
+                "--handoff labs/platform-academy/trace-network-path/incident-handoff.md "
+                "--evidence labs/platform-academy/trace-network-path/network-evidence.md "
+                "--broken labs/platform-academy/trace-network-path/ingress-service.yaml "
+                "--fixed labs/platform-academy/trace-network-path/fixed-ingress-service.yaml"
+            ),
         ],
         "practice_steps": [
             "Start from the pager handoff and preserve the no-live-change boundary.",
             "Identify which hop emits the 503.",
             "Compare ALB target health with Kubernetes Service and Pod port names.",
+            "Use the local analyzer to prove edge, ALB, Ingress, Service/Pod, fixed-target, and owner evidence.",
             "Decide whether the owner is DNS, ingress, Service, or application readiness.",
         ],
         "expected_evidence": [
@@ -3794,10 +3802,18 @@ RUNNABLE_LAB_UPDATES = {
             "The client receives a 503 from awselb.",
             "One target is unhealthy with response code mismatch.",
             "The Service targetPort is web while the Pod port is named http.",
+            "The local analyzer reports Network path analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/trace-network-path/validate.sh",
             "bash labs/platform-academy/trace-network-path/validate.sh --evidence /tmp/network-path-evidence.md",
+            (
+                "python3 labs/platform-academy/trace-network-path/network_path_analyzer.py "
+                "--handoff labs/platform-academy/trace-network-path/incident-handoff.md "
+                "--evidence labs/platform-academy/trace-network-path/network-evidence.md "
+                "--broken labs/platform-academy/trace-network-path/ingress-service.yaml "
+                "--fixed labs/platform-academy/trace-network-path/fixed-ingress-service.yaml"
+            ),
             "bash labs/platform-academy/trace-network-path/validate.sh --cluster",
             "grep -n \"targetPort: web\" labs/platform-academy/trace-network-path/ingress-service.yaml",
             "grep -n \"name: http\" labs/platform-academy/trace-network-path/ingress-service.yaml",
@@ -4452,7 +4468,7 @@ DEEPENED_LAB_UPDATES = {
             "Ingress backend evidence captured",
             "Service targetPort and Pod port evidence captured",
             "Owners ruled out plus source-manifest fix recorded",
-            "Validation output and cleanup/no-cluster evidence recorded",
+            "Network path analysis, validation output, and cleanup/no-cluster evidence recorded",
         ],
         "rubric_evidence_terms": [
             ["incident-handoff.md", "Pager Snapshot", "impact", "no live DNS", "no live ALB"],
@@ -4460,7 +4476,7 @@ DEEPENED_LAB_UPDATES = {
             ["Target.ResponseCodeMismatch", "unhealthy", "Health checks failed", "target health"],
             ["Ingress", "Service", "targetPort web", "targetPort: web", "Pod port", "http"],
             ["DNS owner", "ALB owner", "app/platform owner", "source-manifest", "targetPort: http"],
-            ["diff", "validate", "cleanup", "no-cluster", "evidence-template.md"],
+            ["diff", "validate", "cleanup", "no-cluster", "evidence-template.md", "Network path analysis passed"],
         ],
     },
     "debug-aws-alb-health-path": {
@@ -5168,6 +5184,7 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/trace-network-path/evidence-template.md",
         "labs/platform-academy/lib/cluster-safety.sh",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/trace-network-path/network_path_analyzer.py",
         "labs/platform-academy/trace-network-path/setup.sh",
         "labs/platform-academy/trace-network-path/validate.sh",
         "labs/platform-academy/trace-network-path/cleanup.sh",
