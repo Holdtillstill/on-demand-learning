@@ -29,7 +29,7 @@ const ROUTES = [
   {
     path: "/labs/trace-service-to-pod",
     heading: "Trace Service traffic to ready Pods",
-    visibleText: ["Worksheet and validation state", "Learner workspace contract", "Optional cluster workflow", "Validation commands"],
+    visibleText: ["Worksheet and validation state", "Learner workspace contract", "Optional cluster workflow", "Opt-in self-check commands", "Validation commands"],
   },
   {
     path: "/roadmap",
@@ -219,6 +219,18 @@ async function fetchAcademyCatalog() {
   if (invalidWorkspaceMetadata.length) {
     throw new Error(
       `Expected all labs to expose downloaded workspace metadata; invalid labs: ${invalidWorkspaceMetadata.map((lab) => lab.slug || "unknown").join(", ")}`
+    );
+  }
+  const invalidSelfCheckMetadata = labs.filter((lab) => {
+    const commands = Array.isArray(lab.setup_self_check_commands) ? lab.setup_self_check_commands : [];
+    return (
+      !commands.length ||
+      commands.some((command) => !command.includes(`run-lab.sh setup ${lab.slug}`) || !command.includes("--run-"))
+    );
+  });
+  if (invalidSelfCheckMetadata.length) {
+    throw new Error(
+      `Expected all labs to expose opt-in setup self-check commands; invalid labs: ${invalidSelfCheckMetadata.map((lab) => lab.slug || "unknown").join(", ")}`
     );
   }
   const invalidClusterWorkflowMetadata = labs.filter((lab) => {
@@ -576,6 +588,10 @@ async function assertAllLabDetailRoutes(page, labs) {
     await expect(page.getByLabel("Downloaded workspace quickstart")).toBeVisible({ timeout: TIMEOUT_MS });
     await expect(page.getByRole("heading", { name: "Run from extracted bundle" })).toBeVisible({ timeout: TIMEOUT_MS });
     await expect(page.getByText(lab.workspace_archive_name, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
+    await expect(page.getByText("Opt-in self-check commands").first()).toBeVisible({ timeout: TIMEOUT_MS });
+    for (const command of lab.setup_self_check_commands || []) {
+      await expect(page.getByText(command, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
+    }
     for (const command of [
       `unzip ${lab.workspace_archive_name}`,
       `cd ${lab.workspace_root}`,
