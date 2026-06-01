@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout
+  namespace: payments
+  labels:
+    app.kubernetes.io/name: checkout
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: checkout
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: checkout
+    spec:
+      containers:
+        - name: checkout
+          image: registry.example.com/checkout@sha256:2222
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkout
+  namespace: payments
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: checkout
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout
+  namespace: payments
+  labels:
+    app.kubernetes.io/name: checkout
+spec:
+  selector:
+    matchLabels:
+      app: checkout
+  template:
+    metadata:
+      labels:
+        app: checkout
+    spec:
+      containers:
+        - name: checkout
+          image: registry.example.com/checkout:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            privileged: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkout
+  namespace: payments
+spec:
+  type: LoadBalancer
+  selector:
+    app: checkout
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

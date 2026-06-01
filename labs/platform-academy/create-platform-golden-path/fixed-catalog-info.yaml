@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: checkout
+  annotations:
+    github.com/project-slug: platform-academy/checkout
+    pagerduty.com/service-id: P123CHECKOUT
+    platform.example.com/slo-dashboard: https://grafana.example.com/d/checkout-slo
+    platform.example.com/runbook: https://runbooks.example.com/checkout
+    platform.example.com/cost-center: payments-platform
+spec:
+  type: service
+  lifecycle: production
+  owner: group:payments
+  system: checkout-platform

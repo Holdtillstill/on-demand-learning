@@ -1,0 +1,31 @@
+# Captured Evidence: Trace Service Traffic to Ready Pods
+
+Use this transcript when you do not have a disposable Kubernetes cluster. It mirrors the broken state created by `start.yaml`.
+
+```text
+$ kubectl describe svc checkout -n payments
+Name:              checkout
+Namespace:         payments
+Labels:            <none>
+Selector:          app=checkout
+Type:              ClusterIP
+IP Family Policy:  SingleStack
+Port:              http  80/TCP
+TargetPort:        http/TCP
+Endpoints:         <none>
+
+$ kubectl get pods -n payments --show-labels
+NAME                        READY   STATUS    RESTARTS   AGE   LABELS
+checkout-6c8f47f7c8-f4d2b   1/1     Running   0          2m    app=checkout-api,tier=web
+checkout-6c8f47f7c8-k8v9g   1/1     Running   0          2m    app=checkout-api,tier=web
+
+$ kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout -o wide
+NAME             ADDRESSTYPE   PORTS   ENDPOINTS   AGE
+checkout-lk9cm   IPv4          80      <none>      2m
+
+$ kubectl get deploy checkout -n payments
+NAME       READY   UP-TO-DATE   AVAILABLE   AGE
+checkout   2/2     2            2           2m
+```
+
+Operator note: the Deployment is healthy, but the Service has no ready backends because `app=checkout` does not match the Pod template label `app=checkout-api`.

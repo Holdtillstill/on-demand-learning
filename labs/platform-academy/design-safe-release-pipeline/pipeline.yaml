@@ -1,0 +1,15 @@
+name: checkout-release
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    steps:
+      - run: docker build -t registry.example.com/checkout:${GITHUB_SHA} .
+      - run: echo "missing digest promotion"
+  deploy-prod:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - run: helm upgrade --install checkout charts/checkout -f values/prod.yaml
+      - run: kubectl rollout status deploy/checkout -n payments

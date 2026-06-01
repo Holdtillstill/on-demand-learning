@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout
+  namespace: payments
+  labels:
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    autoscaling.platform.example.com/last-scale: "2026-05-30T10:17:00Z"
+spec:
+  replicas: 9
+  template:
+    spec:
+      containers:
+        - name: checkout
+          image: registry.example.com/checkout@sha256:2222
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi

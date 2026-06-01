@@ -1,0 +1,3 @@
+10:41:02 aws-load-balancer-controller successfully reconciled ingress payments/checkout
+10:42:17 target group health check failed: Target.ResponseCodeMismatch for 10.42.21.44:8080
+10:42:33 service checkout targetPort web has no matching Pod port name on checkout-example

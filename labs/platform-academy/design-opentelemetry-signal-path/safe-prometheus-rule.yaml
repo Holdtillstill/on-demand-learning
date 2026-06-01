@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: checkout-latency
+  namespace: observability
+spec:
+  groups:
+    - name: checkout
+      rules:
+        - alert: CheckoutP95LatencyHigh
+          expr: histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket{service="checkout"}[5m]))) > 1
+          for: 15m
+          labels:
+            severity: page
+          annotations:
+            summary: "Checkout p95 latency is above one second"
+            dashboard: "https://grafana.example.com/d/checkout-latency"

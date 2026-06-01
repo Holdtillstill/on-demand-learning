@@ -1,0 +1,13 @@
+{
+  "eventSource": "s3.amazonaws.com",
+  "eventName": "PutObject",
+  "errorCode": "AccessDenied",
+  "userIdentity": {
+    "type": "AssumedRole",
+    "arn": "arn:aws:sts::111122223333:assumed-role/payments-checkout-readonly/botocore-session"
+  },
+  "requestParameters": {
+    "bucketName": "payments-prod-receipts",
+    "key": "receipts/2026/05/30/example.json"
+  }
+}

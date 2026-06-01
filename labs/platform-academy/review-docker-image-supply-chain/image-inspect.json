@@ -1,0 +1,11 @@
+{
+  "RepoTags": ["checkout:latest"],
+  "RepoDigests": [],
+  "Config": {
+    "User": "",
+    "Env": ["NODE_ENV=production", "API_TOKEN=do-not-bake-secrets"],
+    "ExposedPorts": {
+      "3000/tcp": {}
+    }
+  }
+}

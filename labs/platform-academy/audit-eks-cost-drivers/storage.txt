@@ -1,0 +1,4 @@
+NAMESPACE       PVC                   SIZE   STORAGECLASS   AGE     OWNER
+data            postgres-data         500Gi  gp3            220d    data-platform
+observability   loki-chunks           2Ti    gp3            240d    platform
+default         abandoned-cache       200Gi  gp2            120d    unknown

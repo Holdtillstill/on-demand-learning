@@ -1,0 +1,24 @@
+Name:               payments/checkout
+Project:            platform-services
+Server:             https://kubernetes.default.svc
+Namespace:          payments
+URL:                https://argocd.example.com/applications/payments/checkout
+Sync Status:        OutOfSync from git@github.com:example/platform-manifests.git
+Health Status:      Healthy
+
+GROUP  KIND        NAMESPACE  NAME      STATUS     HEALTH   HOOK  MESSAGE
+apps   Deployment  payments   checkout  OutOfSync  Healthy
+
+DIFF SUMMARY
+  field: /spec/replicas
+  desired: replicas: 3
+  live:    replicas: 9
+  live annotation: autoscaling.platform.example.com/last-scale=2026-05-30T15:41:12Z
+
+SYNC POLICY
+  automated: true
+  prune: false
+  selfHeal: true
+
+OPERATOR NOTE
+  Do not force sync until field ownership is decided. If autoscaling owns replicas, ignore only /spec/replicas for the checkout Deployment and keep image, labels, resources, probes, and security settings Git-owned.

@@ -1,0 +1,33 @@
+Terraform will perform the following actions:
+
+  # module.eks.aws_eks_node_group.apps must be replaced
+-/+ resource "aws_eks_node_group" "apps" {
+      name           = "apps-ng"
+    ~ instance_types = ["m5.large"] -> ["t3.medium"]
+    ~ subnet_ids     = ["subnet-aaa111", "subnet-bbb222"] -> ["subnet-bbb222"]
+    ~ scaling_config {
+        desired_size = 6 -> 3
+        max_size     = 12 -> 6
+      }
+  }
+
+  # aws_security_group_rule.api_public will be created
+  + resource "aws_security_group_rule" "api_public" {
+      type        = "ingress"
+      cidr_blocks = ["0.0.0.0/0"]
+      from_port   = 443
+      to_port     = 443
+    }
+
+  # aws_iam_role_policy.cluster_admin will be updated in-place
+  ~ resource "aws_iam_role_policy" "cluster_admin" {
+      policy = jsonencode({
+        Statement = [{
+          Action   = "eks:*"
+          Effect   = "Allow"
+          Resource = "*"
+        }]
+      })
+    }
+
+Plan: 2 to add, 1 to change, 1 to destroy.

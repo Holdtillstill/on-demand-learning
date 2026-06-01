@@ -1,0 +1,25 @@
+# EKS Cost Driver Evidence Template
+
+## Compute Waste Evidence
+
+- Over-requested workload rows:
+- Unknown owner rows:
+- Usage/request ratio:
+- Reliability risk:
+
+## Service And Storage Waste Evidence
+
+- Abandoned LoadBalancer Service:
+- Estimated monthly cost:
+- Abandoned or outdated PVC:
+- Architecture-review items that are not quick deletes:
+
+## Recommendation Evidence
+
+- Ranked recommendation:
+- Owner:
+- Expected savings:
+- Rollback:
+- Review cadence:
+- Validation output:
+- Cleanup or no-AWS note:

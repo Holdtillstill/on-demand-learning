@@ -1,0 +1,5 @@
+target-role-1: Kubernetes, Terraform, AWS, CI/CD, incident response, observability
+target-role-2: EKS, Helm, ArgoCD, platform engineering, developer experience, SLOs
+target-role-3: AWS IAM, security, Kubernetes multi-tenancy, network policy, cost controls
+target-role-4: Docker, supply chain, release engineering, rollback, GitHub Actions
+target-role-5: SRE, Prometheus, Grafana, on-call, postmortems, capacity planning

@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+LAB_ROOT="$ROOT/labs/platform-academy"
+if [ -n "${PYTHON:-}" ]; then
+  PYTHON_BIN="$PYTHON"
+elif command -v python3.11 >/dev/null 2>&1; then
+  PYTHON_BIN="python3.11"
+else
+  PYTHON_BIN="python3"
+fi
+source "$LAB_ROOT/lib/cluster-safety.sh"
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+
+usage() {
+  cat <<'EOF'
+Usage:
+  bash labs/platform-academy/verify-full-labs.sh [--cluster]
+
+Without flags, verifies every full lab's repo artifacts, local runner paths,
+learner workspace generation, workspace file-only validation, packet output,
+and evidence-note validation using captured/local-safe artifacts.
+
+With --cluster, also runs cluster-backed validators for the local-cluster labs
+after confirming the current Kubernetes context is disposable.
+EOF
+}
+
+fail() {
+  echo "FAIL: $*" >&2
+  exit 1
+}
+
+run_cluster=false
+case "$#" in
+  0)
+    ;;
+  1)
+    case "${1:-}" in
+      --cluster)
+        run_cluster=true
+        ;;
+      -h|--help|help)
+        usage
+        exit 0
+        ;;
+      *)
+        usage >&2
+        fail "unsupported option: $1"
+        ;;
+    esac
+    ;;
+  *)
+    usage >&2
+    fail "too many arguments"
+    ;;
+esac
+
+FULL_LABS=()
+while IFS= read -r lab; do
+  [[ -n "$lab" ]] && FULL_LABS+=("$lab")
+done < <("$PYTHON_BIN" "$ROOT/scripts/verify_platform_lab_contract.py" --list-full-lab-slugs)
+export PLATFORM_LAB_SKIP_CONTRACT=true
+
+CLUSTER_LABS=(
+  "trace-service-to-pod"
+  "debug-crashloop-imagepull"
+)
+
+EVIDENCE_VALIDATION_LABS=(
+  "trace-service-to-pod"
+  "debug-crashloop-imagepull"
+  "review-yaml-before-apply"
+  "diagnose-eks-ip-exhaustion"
+  "validate-helm-release-artifact"
+  "trace-argocd-drift"
+  "design-production-eks-review"
+  "audit-tenant-boundaries"
+  "write-slo-backed-runbook"
+  "inspect-linux-failure-evidence"
+  "trace-network-path"
+  "review-terraform-eks-plan"
+  "debug-irsa-access-denied"
+  "design-safe-release-pipeline"
+  "create-platform-golden-path"
+  "review-docker-image-supply-chain"
+  "debug-aws-alb-health-path"
+  "design-opentelemetry-signal-path"
+  "run-incident-commander-tabletop"
+  "audit-eks-cost-drivers"
+  "build-platform-career-proof-pack"
+)
+
+printf "%s\n" "${FULL_LABS[@]}" | sort >"$tmpdir/expected-labs.txt"
+find "$LAB_ROOT" -mindepth 2 -maxdepth 2 -name validate.sh -print \
+  | awk -F/ '{print $(NF-1)}' \
+  | sort >"$tmpdir/actual-labs.txt"
+if ! diff -u "$tmpdir/expected-labs.txt" "$tmpdir/actual-labs.txt"; then
+  fail "full lab verifier list does not match lab directories with validate.sh"
+fi
+
+"$LAB_ROOT/run-lab.sh" list | sort >"$tmpdir/runner-labs.txt"
+if ! diff -u "$tmpdir/expected-labs.txt" "$tmpdir/runner-labs.txt"; then
+  fail "lab runner list does not match full lab catalog"
+fi
+
+"$LAB_ROOT/run-lab.sh" validate trace-service-to-pod >"$tmpdir/runner-validate.txt"
+grep -q "File checks passed for trace-service-to-pod" "$tmpdir/runner-validate.txt" || fail "lab runner did not validate trace-service-to-pod"
+
+for workspace_lab in "${FULL_LABS[@]}"; do
+  "$LAB_ROOT/run-lab.sh" workspace "$workspace_lab" --dir "$tmpdir/workspaces" >"$tmpdir/runner-workspace-$workspace_lab.txt"
+  workspace_dir="$tmpdir/workspaces/$workspace_lab"
+  [[ -s "$workspace_dir/README.md" ]] || fail "workspace README missing for $workspace_lab"
+  [[ -s "$workspace_dir/evidence.md" ]] || fail "workspace evidence note missing for $workspace_lab"
+  [[ -s "$workspace_dir/MANIFEST.txt" ]] || fail "workspace manifest missing for $workspace_lab"
+  [[ -d "$workspace_dir/artifacts" ]] || fail "workspace artifacts directory missing for $workspace_lab"
+  for script in setup.sh validate.sh cleanup.sh; do
+    [[ -x "$workspace_dir/$script" ]] || fail "workspace $script missing or not executable for $workspace_lab"
+    bash -n "$workspace_dir/$script"
+  done
+  grep -q "./validate.sh --files-only" "$workspace_dir/MANIFEST.txt" || fail "workspace manifest should include file-only validation for $workspace_lab"
+  "$workspace_dir/validate.sh" --files-only >"$tmpdir/workspace-files-only-$workspace_lab.txt"
+  grep -q "File checks passed for $workspace_lab" "$tmpdir/workspace-files-only-$workspace_lab.txt" || fail "workspace file-only validation did not pass for $workspace_lab"
+  [[ ! -e "$workspace_dir/artifacts/labs/platform-academy/$workspace_lab/README.md" ]] || fail "workspace should withhold source README.md by default for $workspace_lab"
+  [[ ! -e "$workspace_dir/artifacts/labs/platform-academy/$workspace_lab/solution.md" ]] || fail "workspace should withhold solution.md by default for $workspace_lab"
+  grep -q "Withheld source-only artifacts" "$workspace_dir/MANIFEST.txt" || fail "workspace manifest should list withheld source-only artifacts for $workspace_lab"
+  grep -q "labs/platform-academy/$workspace_lab/README.md" "$workspace_dir/MANIFEST.txt" || fail "workspace manifest should list withheld source README.md for $workspace_lab"
+  grep -q "labs/platform-academy/$workspace_lab/solution.md" "$workspace_dir/MANIFEST.txt" || fail "workspace manifest should list withheld solution.md for $workspace_lab"
+done
+
+if "$LAB_ROOT/run-lab.sh" workspace trace-service-to-pod --dir "$tmpdir/workspaces" >"$tmpdir/runner-workspace-existing.txt" 2>&1; then
+  fail "workspace command should refuse to overwrite an existing workspace without --force"
+fi
+grep -q "already exists and is not empty" "$tmpdir/runner-workspace-existing.txt" || fail "workspace overwrite refusal returned an unexpected message"
+
+"$LAB_ROOT/run-lab.sh" workspace trace-service-to-pod --dir "$tmpdir/solution-workspaces" --include-solution >"$tmpdir/runner-workspace-solution.txt"
+[[ -s "$tmpdir/solution-workspaces/trace-service-to-pod/artifacts/labs/platform-academy/trace-service-to-pod/README.md" ]] || fail "workspace --include-solution should copy source README.md"
+[[ -s "$tmpdir/solution-workspaces/trace-service-to-pod/artifacts/labs/platform-academy/trace-service-to-pod/solution.md" ]] || fail "workspace --include-solution should copy solution.md"
+
+for setup_lab in "${CLUSTER_LABS[@]}"; do
+  setup_script="$LAB_ROOT/$setup_lab/setup.sh"
+  [[ -x "$setup_script" ]] || fail "$setup_lab/setup.sh is missing or not executable"
+  bash -n "$setup_script"
+  "$LAB_ROOT/run-lab.sh" setup "$setup_lab" --evidence "$tmpdir/$setup_lab-evidence.md" >"$tmpdir/runner-setup-$setup_lab.txt"
+  [[ -s "$tmpdir/$setup_lab-evidence.md" ]] || fail "lab runner setup did not create evidence note for $setup_lab"
+  grep -q "Captured broken-state transcript" "$tmpdir/runner-setup-$setup_lab.txt" || fail "lab runner setup did not print transcript for $setup_lab"
+done
+
+for setup_lab in "${FULL_LABS[@]}"; do
+  "$LAB_ROOT/run-lab.sh" setup "$setup_lab" --no-cluster --evidence "$tmpdir/generic-$setup_lab-evidence.md" >"$tmpdir/runner-generic-setup-$setup_lab.txt"
+  [[ -s "$tmpdir/generic-$setup_lab-evidence.md" ]] || fail "generic setup did not create evidence note for $setup_lab"
+  grep -q "Next: fill $tmpdir/generic-$setup_lab-evidence.md" "$tmpdir/runner-generic-setup-$setup_lab.txt" || fail "generic setup did not print next validation step for $setup_lab"
+done
+
+for evidence_lab in "${EVIDENCE_VALIDATION_LABS[@]}"; do
+  "$LAB_ROOT/run-lab.sh" validate "$evidence_lab" --evidence "$LAB_ROOT/$evidence_lab/solution.md" >"$tmpdir/runner-evidence-$evidence_lab.txt"
+  grep -q "Evidence checks passed for $evidence_lab" "$tmpdir/runner-evidence-$evidence_lab.txt" || fail "lab runner did not validate $evidence_lab evidence"
+done
+
+touch "$tmpdir/empty-evidence.md"
+if "$LAB_ROOT/run-lab.sh" validate trace-service-to-pod --evidence "$tmpdir/empty-evidence.md" >"$tmpdir/runner-evidence-negative.txt" 2>&1; then
+  fail "lab runner should reject empty evidence notes"
+fi
+grep -q "evidence file is empty" "$tmpdir/runner-evidence-negative.txt" || fail "lab runner evidence negative path returned an unexpected message"
+
+"$LAB_ROOT/run-lab.sh" show trace-service-to-pod >"$tmpdir/runner-show.txt"
+grep -q "Lab: Trace Service traffic to ready Pods" "$tmpdir/runner-show.txt" || fail "lab runner show did not print the lab title"
+grep -q "Evidence templates:" "$tmpdir/runner-show.txt" || fail "lab runner show did not print evidence templates"
+grep -q "labs/platform-academy/trace-service-to-pod/evidence-template.md" "$tmpdir/runner-show.txt" || fail "lab runner show did not print the evidence template path"
+grep -q "Local validate: bash labs/platform-academy/run-lab.sh validate trace-service-to-pod" "$tmpdir/runner-show.txt" || fail "lab runner show did not print local validate help"
+
+"$LAB_ROOT/run-lab.sh" packet trace-service-to-pod >"$tmpdir/runner-packet.md"
+grep -q "# Trace Service traffic to ready Pods" "$tmpdir/runner-packet.md" || fail "lab runner packet did not print the lab packet title"
+grep -q "## Learner artifact paths" "$tmpdir/runner-packet.md" || fail "lab runner packet did not print learner artifact paths"
+grep -q "labs/platform-academy/trace-service-to-pod/start.yaml" "$tmpdir/runner-packet.md" || fail "lab runner packet did not print learner artifacts"
+! grep -q "solution.md" "$tmpdir/runner-packet.md" || fail "lab runner packet should not expose solution.md"
+grep -q "## Worksheet prompts" "$tmpdir/runner-packet.md" || fail "lab runner packet did not print worksheet prompts"
+grep -q "## Validation checks" "$tmpdir/runner-packet.md" || fail "lab runner packet did not print validation checks"
+grep -q "## Rubric" "$tmpdir/runner-packet.md" || fail "lab runner packet did not print the rubric"
+
+if "$LAB_ROOT/run-lab.sh" validate review-yaml-before-apply --cluster >"$tmpdir/runner-negative.txt" 2>&1; then
+  fail "lab runner should reject cluster mode for a non-cluster lab"
+fi
+grep -q "does not have a cluster-backed validator" "$tmpdir/runner-negative.txt" || fail "lab runner negative path returned an unexpected message"
+
+for lab in "${FULL_LABS[@]}"; do
+  lab_dir="$LAB_ROOT/$lab"
+  [[ -d "$lab_dir" ]] || fail "$lab_dir is missing"
+  for file in README.md solution.md validate.sh cleanup.sh; do
+    [[ -f "$lab_dir/$file" ]] || fail "$lab/$file is missing"
+  done
+  for script in validate.sh cleanup.sh; do
+    [[ -x "$lab_dir/$script" ]] || fail "$lab/$script is not executable"
+    bash -n "$lab_dir/$script"
+  done
+  if [[ -f "$lab_dir/setup.sh" ]]; then
+    [[ -x "$lab_dir/setup.sh" ]] || fail "$lab/setup.sh is not executable"
+    bash -n "$lab_dir/setup.sh"
+  fi
+  bash "$lab_dir/validate.sh"
+done
+
+if [[ "$run_cluster" == true ]]; then
+  require_disposable_kube_context
+  for lab in "${CLUSTER_LABS[@]}"; do
+    bash "$LAB_ROOT/$lab/validate.sh" --cluster
+    bash "$LAB_ROOT/$lab/cleanup.sh"
+  done
+fi
+
+echo "Verified ${#FULL_LABS[@]} full labs."

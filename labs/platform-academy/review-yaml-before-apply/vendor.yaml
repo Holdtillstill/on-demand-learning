@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vendor-payments
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vendor-api-token
+  namespace: vendor-payments
+type: Opaque
+stringData:
+  token: replace-me
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vendor-platform-reader
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "secrets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vendor-agent
+  namespace: vendor-payments
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vendor-agent
+  template:
+    metadata:
+      labels:
+        app: vendor-agent
+    spec:
+      containers:
+        - name: agent
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: host-root
+              mountPath: /host
+              readOnly: true
+      volumes:
+        - name: host-root
+          hostPath:
+            path: /
+            type: Directory

@@ -1,0 +1,3 @@
+2026-05-30T10:51:03Z service=checkout route=/checkout status=500 trace_id=4bf92f3577b34da6a3ce929d0e0e4736 span_id=00f067aa0ba902b7
+2026-05-30T10:51:04Z service=checkout route=/checkout user_id=913482 status=200 trace_id=missing
+2026-05-30T10:51:05Z service=payments-db route=query cardinality_label=customer_email
