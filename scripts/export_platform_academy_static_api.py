@@ -42,9 +42,8 @@ def main() -> None:
         os.environ.setdefault("RATE_LIMIT_PER_MINUTE", "0")
         os.environ.setdefault("PLATFORM_SOURCE_BUNDLE_PUBLIC", "true")
 
-        from fastapi.testclient import TestClient
-
         from app.main import app
+        from fastapi.testclient import TestClient
 
         if STATIC_ROOT.exists():
             shutil.rmtree(STATIC_ROOT)
