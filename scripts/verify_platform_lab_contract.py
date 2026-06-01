@@ -143,13 +143,14 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "create-platform-golden-path": {
-        "files": {"evidence-template.md"},
+        "files": {"evidence-template.md", "golden_path_analyzer.py", "setup.sh"},
         "terms": {
             "Required Inputs",
             "pagerduty.com/service-id: missing",
             "platform.example.com/slo-dashboard: missing",
             "Adoption Metrics",
             "Production readiness review",
+            "Golden path readiness analysis passed",
         },
     },
     "write-slo-backed-runbook": {

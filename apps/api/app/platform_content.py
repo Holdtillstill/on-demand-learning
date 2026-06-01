@@ -3845,27 +3845,46 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/create-platform-golden-path/setup.sh --evidence /tmp/golden-path-evidence.md",
             "sed -n '1,220p' labs/platform-academy/create-platform-golden-path/service-template.md",
         ],
         "commands": [
             "grep -n \"Generated artifacts\\|SLO dashboard\\|Runbook\\|Backstage\" labs/platform-academy/create-platform-golden-path/service-template.md",
             "grep -n \"missing\\|owner\\|lifecycle\" labs/platform-academy/create-platform-golden-path/catalog-info.yaml",
+            (
+                "python3 labs/platform-academy/create-platform-golden-path/golden_path_analyzer.py "
+                "--start-template labs/platform-academy/create-platform-golden-path/service-template.md "
+                "--ready-template labs/platform-academy/create-platform-golden-path/ready-service-template.md "
+                "--catalog labs/platform-academy/create-platform-golden-path/catalog-info.yaml "
+                "--fixed-catalog labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml "
+                "--decision labs/platform-academy/create-platform-golden-path/decision-record.md"
+            ),
             "diff -u labs/platform-academy/create-platform-golden-path/catalog-info.yaml labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml || true",
         ],
         "practice_steps": [
             "Define required inputs and generated outputs.",
             "Check whether ownership, SLO, and runbook defaults are complete.",
+            "Use the local analyzer to prove the starting gap, ready contract, and fixed metadata.",
             "Describe the first-run developer experience and adoption metrics.",
         ],
         "expected_evidence": [
             "The template generates Dockerfile, Helm, CI, ArgoCD, dashboard, runbook, and catalog files.",
             "The catalog file still has missing PagerDuty and SLO annotations.",
             "The first-run flow ends with production readiness review.",
+            "The local analyzer reports Golden path readiness analysis passed.",
             "The ready template defines inputs, secure defaults, launch gates, and adoption metrics.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/create-platform-golden-path/validate.sh",
             "bash labs/platform-academy/create-platform-golden-path/validate.sh --evidence /tmp/golden-path-evidence.md",
+            (
+                "python3 labs/platform-academy/create-platform-golden-path/golden_path_analyzer.py "
+                "--start-template labs/platform-academy/create-platform-golden-path/service-template.md "
+                "--ready-template labs/platform-academy/create-platform-golden-path/ready-service-template.md "
+                "--catalog labs/platform-academy/create-platform-golden-path/catalog-info.yaml "
+                "--fixed-catalog labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml "
+                "--decision labs/platform-academy/create-platform-golden-path/decision-record.md"
+            ),
             "grep -n \"Adoption Metrics\" labs/platform-academy/create-platform-golden-path/ready-service-template.md",
         ],
         "cleanup_commands": ["bash labs/platform-academy/create-platform-golden-path/cleanup.sh"],
@@ -4691,6 +4710,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-runtime template review boundary recorded",
+            "Golden path readiness analysis passed output captured",
             "Required inputs and generated artifacts captured",
             "Secure defaults and launch gates captured",
             "Missing pager and SLO dashboard evidence captured",
@@ -4700,7 +4720,13 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["service-template.md", "catalog-info.yaml", "no template engine", "no cluster"],
-            ["Required Inputs", "Generated artifacts", "Run as non-root", "Production readiness review"],
+            [
+                "Required Inputs",
+                "Generated artifacts",
+                "Run as non-root",
+                "Production readiness review",
+                "Golden path readiness analysis passed",
+            ],
             ["pagerduty.com/service-id: missing", "platform.example.com/slo-dashboard: missing", "runbook", "cost_center"],
             ["Block the starting service template", "production onboarding", "ownership metadata"],
             ["Adoption Metrics", "reliability metrics", "launch gates", "owner"],
@@ -5081,6 +5107,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/create-platform-golden-path/catalog-info.yaml",
         "labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml",
         "labs/platform-academy/create-platform-golden-path/decision-record.md",
+        "labs/platform-academy/create-platform-golden-path/golden_path_analyzer.py",
+        "labs/platform-academy/create-platform-golden-path/setup.sh",
         "labs/platform-academy/create-platform-golden-path/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
         "labs/platform-academy/create-platform-golden-path/validate.sh",

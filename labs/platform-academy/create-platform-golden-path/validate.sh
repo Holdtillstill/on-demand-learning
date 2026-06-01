@@ -9,6 +9,7 @@ READY="$LAB_DIR/ready-service-template.md"
 FIXED="$LAB_DIR/fixed-catalog-info.yaml"
 DECISION="$LAB_DIR/decision-record.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/golden_path_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -55,10 +56,19 @@ grep -q "owner: group:payments" "$FIXED" || fail "fixed-catalog-info.yaml should
 
 grep -q "Block the starting service template" "$DECISION" || fail "decision-record.md should document the block decision"
 grep -q "Adoption metrics" "$DECISION" || fail "decision-record.md should mention adoption metrics"
+grep -q "Golden path readiness analysis passed" "$ANALYZER" || fail "golden_path_analyzer.py should report a successful local analysis"
 
 grep -q "## Template Contract Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for template contract evidence"
 grep -q "## Ownership Metadata Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for ownership metadata evidence"
 grep -q "## Product Decision Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for product decision evidence"
+
+python3 "$ANALYZER" \
+  --start-template "$START" \
+  --ready-template "$READY" \
+  --catalog "$CATALOG" \
+  --fixed-catalog "$FIXED" \
+  --decision "$DECISION" \
+  --quiet
 
 echo "File checks passed for create-platform-golden-path."
 
@@ -69,6 +79,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "missing pager or dashboard metadata" "pagerduty.com/service-id: missing|slo-dashboard: missing|missing"
   require_evidence_match "$evidence_file" "secure runtime defaults or launch gates" "Run as non-root|secure runtime|Production readiness review|launch gates"
   require_evidence_match "$evidence_file" "fixed ownership metadata" "P123CHECKOUT|grafana.example.com/d/checkout-slo|group:payments|runbook"
+  require_evidence_match "$evidence_file" "local golden path analyzer evidence" "Golden path readiness analysis passed|golden-path analyzer|Fixed metadata|Starting gap"
   require_evidence_match "$evidence_file" "block incomplete template decision" "Block the starting service template|block|incomplete"
   require_evidence_match "$evidence_file" "adoption or reliability metrics" "Adoption metrics|reliability metrics|validation"
   require_evidence_match "$evidence_file" "no-runtime or cleanup note" "no-runtime|cleanup|no cleanup|validation"

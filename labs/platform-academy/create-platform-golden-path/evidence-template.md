@@ -18,6 +18,7 @@
 
 ## Product Decision Evidence
 
+- Local golden path analyzer result:
 - Block or approve decision:
 - Ready template excerpt:
 - Adoption metrics:

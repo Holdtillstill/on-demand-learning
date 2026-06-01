@@ -17,6 +17,7 @@ This lab is file-first. It does not require Backstage, Cookiecutter, Terraform, 
 Inspect the starting template and catalog metadata:
 
 ```bash
+bash labs/platform-academy/create-platform-golden-path/setup.sh --evidence /tmp/golden-path-evidence.md
 sed -n '1,220p' labs/platform-academy/create-platform-golden-path/service-template.md
 sed -n '1,160p' labs/platform-academy/create-platform-golden-path/catalog-info.yaml
 sed -n '1,180p' labs/platform-academy/create-platform-golden-path/evidence-template.md
@@ -26,6 +27,17 @@ Compare the starting metadata with the safer target:
 
 ```bash
 diff -u labs/platform-academy/create-platform-golden-path/catalog-info.yaml labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml || true
+```
+
+Run the local analyzer:
+
+```bash
+python3 labs/platform-academy/create-platform-golden-path/golden_path_analyzer.py \
+  --start-template labs/platform-academy/create-platform-golden-path/service-template.md \
+  --ready-template labs/platform-academy/create-platform-golden-path/ready-service-template.md \
+  --catalog labs/platform-academy/create-platform-golden-path/catalog-info.yaml \
+  --fixed-catalog labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml \
+  --decision labs/platform-academy/create-platform-golden-path/decision-record.md
 ```
 
 ## Investigation
@@ -39,6 +51,7 @@ Find:
 - Whether first-run developer experience has observable success criteria.
 - Which adoption and reliability metrics the platform team should review after launch.
 - Which metadata gaps should block onboarding before a service team depends on the template.
+- Whether the local analyzer proves the starting gap, ready contract, fixed metadata, and block decision.
 
 ## Remediation Target
 
@@ -57,4 +70,5 @@ bash labs/platform-academy/create-platform-golden-path/validate.sh --evidence /t
 - You define required inputs, generated artifacts, secure defaults, and launch gates.
 - You explain the first-run developer experience from questionnaire to production readiness review.
 - You name the metrics that prove whether the golden path is actually useful.
+- You use analyzer output as evidence for the product-readiness decision.
 - You save a product-decision evidence packet with ownership and adoption metrics.
