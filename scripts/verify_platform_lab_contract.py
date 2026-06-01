@@ -326,7 +326,7 @@ MUTATING_KUBECTL_COMMANDS = {
     "set",
 }
 MUTATING_KUBECTL_ROLLOUT_COMMANDS = {"restart", "undo"}
-EXPECTED_PORTFOLIO_LAB_COUNT = 8
+EXPECTED_PORTFOLIO_LAB_COUNT = 9
 SELF_CHECK_COMMAND_MARKERS = ("analyzer.py", "simulator.py")
 
 sys.path.insert(0, str(API_ROOT))
@@ -1053,7 +1053,7 @@ def print_lab_review_matrix() -> None:
     print("All rows are verified by `make platform-lab-contract` before this matrix prints.")
     print(
         "Rows with `Structural gate` set to `yes` are also parsed by "
-        "`make platform-lab-artifact-contract` for portfolio-grade YAML/JSON contracts."
+        "`make platform-lab-artifact-contract` for portfolio-grade structural artifact contracts."
     )
     print(
         "Learner files exclude source-only `README.md` and `solution.md`; "

@@ -169,7 +169,7 @@ This pack is a disposable reviewer/deployment handoff bundle for the Platform Ac
 
 1. Read \`platform-academy-handoff.md\` for scope, reviewer routing, deployment coordination, and runtime contracts.
 2. Use \`lab-review-matrix.md\` to split the 21 full labs by portfolio focus, structural gate, mode, track, learner files, source files, and evidence self-check coverage.
-3. Check \`portfolio-artifact-contract.txt\` for the structural verifier result covering the 8 portfolio-grade labs.
+3. Check \`portfolio-artifact-contract.txt\` for the structural verifier result covering the 9 portfolio-grade labs.
 4. Check \`content-count-contract.txt\` for the catalog/resource/interview count verifier result.
 5. Check \`workflow-contracts.txt\` for the GitHub Actions release workflow contract verifier result.
 6. Use \`review-scope.md\`, \`changed-file-review-manifest.md\`, and \`commit-plan.md\` to route subsystem review across API, frontend, labs, release tooling, docs, and deployment surfaces.
@@ -180,7 +180,7 @@ This pack is a disposable reviewer/deployment handoff bundle for the Platform Ac
 
 - \`release-evidence.md\`: copy-paste release evidence scaffold from \`make platform-release-evidence\`.
 - \`lab-review-matrix.md\`: generated lab-by-lab review matrix from \`make platform-lab-matrix\`, including the portfolio-grade slice, structural artifact gate, evidence self-check, and false-lead artifact.
-- \`portfolio-artifact-contract.txt\`: output from \`make platform-lab-artifact-contract\` proving the portfolio-grade structural YAML/JSON verifier passed.
+- \`portfolio-artifact-contract.txt\`: output from \`make platform-lab-artifact-contract\` proving the portfolio-grade structural artifact verifier passed.
 - \`content-count-contract.txt\`: output from \`make platform-content-count-check\` proving smoke defaults and count-bearing docs match API content.
 - \`workflow-contracts.txt\`: output from \`make workflow-contract-check\` proving the release-critical GitHub Actions workflow contracts passed.
 - \`review-scope.md\`: generated subsystem counts and recommended review order for the broad branch.

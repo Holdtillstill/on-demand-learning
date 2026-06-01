@@ -88,7 +88,7 @@ Then generate the copy-paste release note scaffold:
 make platform-release-evidence
 ```
 
-For reviewer routing across the full lab set, generate the lab matrix. It includes the portfolio focus and structural gate columns so reviewers can split the 8 high-value labs from the rest of the full-lab catalog:
+For reviewer routing across the full lab set, generate the lab matrix. It includes the portfolio focus and structural gate columns so reviewers can split the 9 high-value labs from the rest of the full-lab catalog:
 
 ```bash
 make platform-lab-matrix
@@ -106,8 +106,8 @@ For a single disposable reviewer/deployment bundle with the release scaffold, la
 make platform-review-pack
 ```
 
-For a full release candidate, keep the default smoke gates: 21 courses, 84 lessons, 21 full labs, 8 portfolio-grade lab UI signals, 320 resources, 22 interview prep packs, 219 interview questions, desktop and mobile browser routes, interview cram-sheet downloads, custom study-plan save/download, workbook save, lab evidence report download, and guest recovery validation.
-The lab contract also requires every full lab to expose a deepened evidence template, lab-specific workbook prompts, validation checks, rubric items, and criterion-specific evidence terms. The portfolio-grade lab subset additionally has structural checks for broken/fixed Kubernetes YAML, ArgoCD ignore rules, IAM trust and least-privilege JSON, release workflow gates, and SLO alert rules. Downloaded lab packets must include the guided run sequence and evidence artifact map before workbook prompts and commands.
+For a full release candidate, keep the default smoke gates: 21 courses, 84 lessons, 21 full labs, 9 portfolio-grade lab UI signals, 320 resources, 22 interview prep packs, 219 interview questions, desktop and mobile browser routes, interview cram-sheet downloads, custom study-plan save/download, workbook save, lab evidence report download, and guest recovery validation.
+The lab contract also requires every full lab to expose a deepened evidence template, lab-specific workbook prompts, validation checks, rubric items, and criterion-specific evidence terms. The portfolio-grade lab subset additionally has structural checks for broken/fixed Kubernetes YAML, pre-apply manifest risk, Terraform plan risk, ArgoCD ignore rules, IAM trust and least-privilege JSON, release workflow gates, and SLO alert rules. Downloaded lab packets must include the guided run sequence and evidence artifact map before workbook prompts and commands.
 The browser lab-detail smoke also requires every advertised lab route to render the guided run sequence and learner-safe artifact map before the workbook controls.
 
 For remote triage after a known infrastructure-only change, keep API smoke full and narrow only the browser rendering pass:
@@ -171,7 +171,7 @@ Attach these to the release note:
 - Git SHA and image tags.
 - `alembic current` output for the target database.
 - `make platform-api-smoke API_BASE=...` output, including no-store header validation and OpenAPI backup, workbook, source-bundle token, and download response-header contract validation.
-- `make platform-browser-smoke WEB_BASE=...` output, proving the 8 portfolio-grade lab UI signals and filter, core routes plus every advertised course, lesson, lab detail, resource detail, and interview-pack route render in Chromium, and proving the browser can download interview cram sheets, save/download a custom study plan, save a lab workbook, download the resulting lab evidence report, and validate guest recovery backup controls.
+- `make platform-browser-smoke WEB_BASE=...` output, proving the 9 portfolio-grade lab UI signals and filter, core routes plus every advertised course, lesson, lab detail, resource detail, and interview-pack route render in Chromium, and proving the browser can download interview cram sheets, save/download a custom study plan, save a lab workbook, download the resulting lab evidence report, and validate guest recovery backup controls.
 - `make platform-container-smoke` output, proving the built API image serves the full API smoke and full lab smoke in a production-like `ENVIRONMENT=preview` mode, all lab packets and learner workspace bundles are downloadable with no-store headers, every workspace extracts safely and runs `validate.sh --files-only`, instructor/source bundles reject unauthenticated requests with no-store headers, download with the smoke token, extract safely, contain syntax-valid source helpers, the Platform Academy nginx image works with that API, and the API log stays free of request failures, tracebacks, and unique-constraint errors during smoke.
 - Backup/snapshot identifier and rollback image tag.
 

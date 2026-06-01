@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ PORTFOLIO_LABS = [
     "debug-crashloop-imagepull",
     "review-yaml-before-apply",
     "trace-network-path",
+    "review-terraform-eks-plan",
     "debug-irsa-access-denied",
     "trace-argocd-drift",
     "design-safe-release-pipeline",
@@ -71,6 +73,10 @@ def json_doc(slug: str, filename: str) -> dict[str, Any]:
         fail(f"{slug}/{filename} is not parseable JSON: {exc}")
     require(isinstance(data, dict), f"{slug}/{filename} should contain a JSON object")
     return data
+
+
+def text_doc(slug: str, filename: str) -> str:
+    return lab_path(slug, filename).read_text(encoding="utf-8")
 
 
 def mapping(value: Any, label: str) -> dict[str, Any]:
@@ -351,6 +357,40 @@ def verify_trace_network_path() -> None:
     require(fixed_target == "http" and "http" in fixed_ports, "fixed Service should point at the Pod port name")
 
 
+def verify_review_terraform_eks_plan() -> None:
+    slug = "review-terraform-eks-plan"
+    plan = text_doc(slug, "tfplan.txt")
+    review = text_doc(slug, "review.md")
+    decision = text_doc(slug, "decision-record.md")
+
+    require("module.eks.aws_eks_node_group.apps must be replaced" in plan, "Terraform plan should replace the apps node group")
+    subnet_match = re.search(r'~ subnet_ids\s+=\s+\[([^\]]+)\]\s+->\s+\[([^\]]+)\]', plan, flags=re.MULTILINE)
+    require(subnet_match is not None, "Terraform plan should expose before/after subnet IDs")
+    before_subnets = set(re.findall(r'"([^"]+)"', subnet_match.group(1) if subnet_match else ""))
+    after_subnets = set(re.findall(r'"([^"]+)"', subnet_match.group(2) if subnet_match else ""))
+    require(before_subnets == {"subnet-aaa111", "subnet-bbb222"}, "Terraform plan should start with two known subnets")
+    require(after_subnets == {"subnet-bbb222"}, "Terraform plan should regress to one subnet")
+
+    capacity_match = re.search(
+        r"desired_size\s+=\s+([0-9]+)\s+->\s+([0-9]+).*?max_size\s+=\s+([0-9]+)\s+->\s+([0-9]+)",
+        plan,
+        flags=re.DOTALL,
+    )
+    require(capacity_match is not None, "Terraform plan should expose desired and max capacity changes")
+    desired_before, desired_after, max_before, max_after = (
+        [int(value) for value in capacity_match.groups()] if capacity_match else [0, 0, 0, 0]
+    )
+    require((desired_before, desired_after) == (6, 3), "Terraform plan should reduce desired capacity from 6 to 3")
+    require((max_before, max_after) == (12, 6), "Terraform plan should reduce max capacity from 12 to 6")
+
+    require('cidr_blocks = ["0.0.0.0/0"]' in plan, "Terraform plan should add public API ingress evidence")
+    require('Action   = "eks:*"' in plan and 'Resource = "*"' in plan, "Terraform plan should include broad EKS IAM evidence")
+    require("Plan: 2 to add, 1 to change, 1 to destroy." in plan, "Terraform plan summary should preserve add/change/destroy counts")
+    require("Do not approve" in review and "Do not approve" in decision, "Terraform review and decision should block the plan")
+    for term in ["multi-AZ", "rollback", "least-privilege", "Restrict API ingress"]:
+        require(term in decision, f"Terraform decision should require {term}")
+
+
 def verify_debug_irsa_access_denied() -> None:
     slug = "debug-irsa-access-denied"
     docs = yaml_docs(slug, "serviceaccount.yaml")
@@ -492,6 +532,7 @@ VERIFY_BY_LAB = {
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
     "review-yaml-before-apply": verify_review_yaml_before_apply,
     "trace-network-path": verify_trace_network_path,
+    "review-terraform-eks-plan": verify_review_terraform_eks_plan,
     "debug-irsa-access-denied": verify_debug_irsa_access_denied,
     "trace-argocd-drift": verify_trace_argocd_drift,
     "design-safe-release-pipeline": verify_design_safe_release_pipeline,
