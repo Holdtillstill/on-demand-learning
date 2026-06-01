@@ -15,6 +15,18 @@ service checkout targetPort web has no matching Pod port name on checkout-exampl
 
 The Ingress also configures `/healthz` as the ALB health check path. The sample Pod is nginx, which returns 200 on `/` by default, not `/healthz`.
 
+The local ALB health analyzer verifies the evidence without AWS credentials:
+
+```bash
+python3 labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py \
+  --target-health labs/platform-academy/debug-aws-alb-health-path/target-health.json \
+  --events labs/platform-academy/debug-aws-alb-health-path/events.txt \
+  --broken labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml \
+  --fixed labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml
+```
+
+Expected result: `ALB health path analysis passed`, with ALB, health-path, Service/Pod, controller-event, fixed-target, and owner-decision evidence.
+
 ## Fix
 
 `fixed-ingress-service.yaml` changes:

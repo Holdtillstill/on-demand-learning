@@ -8,6 +8,7 @@ BROKEN="$LAB_DIR/ingress-service.yaml"
 FIXED="$LAB_DIR/fixed-ingress-service.yaml"
 EVENTS="$LAB_DIR/events.txt"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/alb_health_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
@@ -51,6 +52,9 @@ grep -q "http.server" "$FIXED" || fail "fixed manifest should run a local HTTP s
 grep -q "## ALB Target Health Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for ALB target health evidence"
 grep -q "## Kubernetes Routing Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for Kubernetes routing evidence"
 grep -q "## Application Contract Check" "$TEMPLATE" || fail "evidence-template.md should prompt for application health contract evidence"
+grep -q "ALB health path analysis passed" "$ANALYZER" || fail "alb_health_analyzer.py should report a successful local analysis"
+
+python3 "$ANALYZER" --target-health "$HEALTH" --events "$EVENTS" --broken "$BROKEN" --fixed "$FIXED" --quiet
 
 echo "File checks passed for debug-aws-alb-health-path."
 
@@ -61,6 +65,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "health check path" "/healthz|healthcheck-path|health check path"
   require_evidence_match "$evidence_file" "broken Service targetPort web" "targetPort[[:space:]]*:?[[:space:]]*web|targetPort web"
   require_evidence_match "$evidence_file" "Pod port name http" "name[[:space:]]*:?[[:space:]]*http|port named http|Pod port"
+  require_evidence_match "$evidence_file" "local ALB health analyzer evidence" "ALB health path analysis passed|ALB health analyzer|Health path risk|Service/Pod risk"
   require_evidence_match "$evidence_file" "source manifest fix" "fixed-ingress-service\\.yaml|targetPort[[:space:]]*:?[[:space:]]*http|health check path|source manifest"
   require_evidence_match "$evidence_file" "owner decision" "AWS networking|Ingress|controller|app owner|owner"
   require_evidence_match "$evidence_file" "handoff, validation, or cleanup" "handoff|validation|validate|cleanup|next deploy|rollback"

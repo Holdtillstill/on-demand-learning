@@ -4,9 +4,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/debug-aws-alb-health-path"
 BROKEN="$LAB_DIR/ingress-service.yaml"
+FIXED="$LAB_DIR/fixed-ingress-service.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 HEALTH="$LAB_DIR/target-health.json"
 EVENTS="$LAB_DIR/events.txt"
+ANALYZER="$LAB_DIR/alb_health_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
 mode="no-cluster"
@@ -71,6 +73,8 @@ if [[ "$mode" == "no-cluster" ]]; then
   echo "Captured controller events:"
   sed -n '1,180p' "$EVENTS"
   echo
+  python3 "$ANALYZER" --target-health "$HEALTH" --events "$EVENTS" --broken "$BROKEN" --fixed "$FIXED"
+  echo
   echo "Next: fill $evidence_file, then run:"
   echo "  bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --evidence $evidence_file"
   exit 0
@@ -81,6 +85,7 @@ kubectl delete namespace payments --ignore-not-found >/dev/null
 kubectl apply -f "$BROKEN"
 kubectl wait --for=condition=Ready pod/checkout-example -n payments --timeout=90s
 prepare_evidence_note
+python3 "$ANALYZER" --target-health "$HEALTH" --events "$EVENTS" --broken "$BROKEN" --fixed "$FIXED"
 
 echo
 echo "Broken ALB health-path lab is ready in namespace payments."

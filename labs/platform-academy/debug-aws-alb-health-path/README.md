@@ -21,6 +21,16 @@ sed -n '1,260p' labs/platform-academy/debug-aws-alb-health-path/ingress-service.
 sed -n '1,160p' labs/platform-academy/debug-aws-alb-health-path/events.txt
 ```
 
+Run the local analyzer:
+
+```bash
+python3 labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py \
+  --target-health labs/platform-academy/debug-aws-alb-health-path/target-health.json \
+  --events labs/platform-academy/debug-aws-alb-health-path/events.txt \
+  --broken labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml \
+  --fixed labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml
+```
+
 Optional parse check:
 
 ```bash
@@ -43,6 +53,7 @@ Find:
 - The Pod port name.
 - Any controller event that names the mismatch.
 - Whether the application path also returns a 404.
+- Whether the local analyzer confirms health-path, Service/Pod, and owner evidence.
 
 ## Remediation Target
 
@@ -65,4 +76,5 @@ bash labs/platform-academy/debug-aws-alb-health-path/cleanup.sh
 - You identify the `targetPort: web` mismatch.
 - You explain why `/healthz` returning 404 also needs owner confirmation.
 - You propose a source-manifest fix rather than a console-only change.
+- You capture the local ALB health analyzer result.
 - Your evidence note separates ALB target health, Kubernetes port wiring, application health contract, owners, validation, and handoff.

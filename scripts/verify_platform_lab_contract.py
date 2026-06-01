@@ -98,8 +98,8 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "debug-aws-alb-health-path": {
-        "files": {"evidence-template.md"},
-        "terms": {"ALB", "Target.ResponseCodeMismatch", "targetPort", "health", "owner"},
+        "files": {"alb_health_analyzer.py", "evidence-template.md", "setup.sh"},
+        "terms": {"ALB", "ALB health path analysis passed", "Target.ResponseCodeMismatch", "targetPort", "health", "owner"},
     },
     "diagnose-eks-ip-exhaustion": {
         "files": {"evidence-template.md", "ip_exhaustion_analyzer.py", "setup.sh"},

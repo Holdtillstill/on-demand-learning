@@ -4082,20 +4082,36 @@ RUNNABLE_LAB_UPDATES = {
         "commands": [
             "grep -n \"unhealthy\\|ResponseCodeMismatch\\|targetPort: web\" labs/platform-academy/debug-aws-alb-health-path/target-health.json labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",
             "grep -n \"healthcheck-path\\|targetPort web\\|no matching Pod port\" labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml labs/platform-academy/debug-aws-alb-health-path/events.txt",
+            (
+                "python3 labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py "
+                "--target-health labs/platform-academy/debug-aws-alb-health-path/target-health.json "
+                "--events labs/platform-academy/debug-aws-alb-health-path/events.txt "
+                "--broken labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml "
+                "--fixed labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml"
+            ),
         ],
         "practice_steps": [
             "Confirm which target group symptom is failing.",
             "Compare ALB health path with Ingress, Service, and Pod port evidence.",
+            "Use the local analyzer to prove ALB, health-path, Service/Pod, controller-event, and fixed-target evidence.",
             "Name whether the owner is AWS networking, ingress controller, or app manifest.",
         ],
         "expected_evidence": [
             "One target is unhealthy with Target.ResponseCodeMismatch.",
             "Ingress healthcheck path is /healthz.",
             "Service targetPort web does not match the Pod port named http.",
+            "The local analyzer reports ALB health path analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/debug-aws-alb-health-path/validate.sh",
             "bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --evidence /tmp/alb-health-path-evidence.md",
+            (
+                "python3 labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py "
+                "--target-health labs/platform-academy/debug-aws-alb-health-path/target-health.json "
+                "--events labs/platform-academy/debug-aws-alb-health-path/events.txt "
+                "--broken labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml "
+                "--fixed labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml"
+            ),
             "bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --cluster",
             "grep -n \"Target.ResponseCodeMismatch\" labs/platform-academy/debug-aws-alb-health-path/target-health.json",
             "grep -n \"targetPort: web\" labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",
@@ -4503,7 +4519,7 @@ DEEPENED_LAB_UPDATES = {
             "Service-to-Pod port mismatch captured",
             "Controller event captured",
             "Owner decision written",
-            "Source-manifest fix and validation handoff recorded",
+            "ALB health analysis, source-manifest fix, and validation handoff recorded",
         ],
         "rubric_evidence_terms": [
             ["evidence source", "no live AWS", "namespace", "manifest", "no live mutation"],
@@ -4511,7 +4527,7 @@ DEEPENED_LAB_UPDATES = {
             ["/healthz", "health check path", "app contract", "health endpoint"],
             ["targetPort: web", "targetPort web", "Pod port", "http", "controller event"],
             ["AWS networking", "ingress/controller", "app owner", "owner"],
-            ["source-manifest", "validation", "handoff", "console-only", "rollout"],
+            ["source-manifest", "validation", "handoff", "console-only", "rollout", "ALB health path analysis passed"],
         ],
     },
     "diagnose-eks-ip-exhaustion": {
@@ -5272,6 +5288,7 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/debug-aws-alb-health-path/evidence-template.md",
         "labs/platform-academy/lib/cluster-safety.sh",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py",
         "labs/platform-academy/debug-aws-alb-health-path/setup.sh",
         "labs/platform-academy/debug-aws-alb-health-path/validate.sh",
         "labs/platform-academy/debug-aws-alb-health-path/cleanup.sh",
