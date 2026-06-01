@@ -52,4 +52,8 @@ Save the request status, DNS target, ALB reason, Ingress backend, Service target
 
 ## Cleanup
 
-No cleanup is needed for the default captured-evidence path.
+No cleanup is needed for the default captured-evidence path. If you used the optional disposable-cluster path, run:
+
+```bash
+bash labs/platform-academy/trace-network-path/cleanup.sh
+```

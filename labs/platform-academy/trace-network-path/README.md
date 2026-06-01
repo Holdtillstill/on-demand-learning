@@ -2,7 +2,7 @@
 
 ## Goal
 
-Walk an HTTP 503 from client symptom to the most likely Kubernetes configuration issue. The lab uses captured DNS, ALB, Ingress, Service, and Pod evidence so it can be completed without AWS or cluster access.
+Walk an HTTP 503 from client symptom to the most likely Kubernetes configuration issue. The default lab uses captured DNS, ALB, Ingress, Service, and Pod evidence so it can be completed without AWS or cluster access. An optional disposable-cluster mode creates the broken Kubernetes objects locally.
 
 ## Time
 
@@ -10,17 +10,24 @@ Walk an HTTP 503 from client symptom to the most likely Kubernetes configuration
 
 ## Safety
 
-No AWS or Kubernetes access is required. Use the captured DNS, ALB, Ingress, Service, and Pod evidence instead of changing a real traffic path.
+No AWS or Kubernetes access is required for the default path. Use the captured DNS, ALB, Ingress, Service, and Pod evidence instead of changing a real traffic path. If you use `--cluster`, run it only against kind, minikube, Docker Desktop, Rancher Desktop, or another approved sandbox.
 
 ## Starting State
 
 Open the evidence pack:
 
 ```bash
+bash labs/platform-academy/trace-network-path/setup.sh --evidence /tmp/network-path-evidence.md
 sed -n '1,220p' labs/platform-academy/trace-network-path/incident-handoff.md
 sed -n '1,220p' labs/platform-academy/trace-network-path/network-evidence.md
 sed -n '1,220p' labs/platform-academy/trace-network-path/ingress-service.yaml
 sed -n '1,160p' labs/platform-academy/trace-network-path/evidence-template.md
+```
+
+Optional local broken-state setup:
+
+```bash
+bash labs/platform-academy/trace-network-path/setup.sh --cluster --evidence /tmp/network-path-evidence.md
 ```
 
 ## Investigation
@@ -49,6 +56,8 @@ diff -u labs/platform-academy/trace-network-path/ingress-service.yaml labs/platf
 ```bash
 bash labs/platform-academy/trace-network-path/validate.sh
 bash labs/platform-academy/trace-network-path/validate.sh --evidence /tmp/network-path-evidence.md
+bash labs/platform-academy/trace-network-path/validate.sh --cluster
+bash labs/platform-academy/trace-network-path/cleanup.sh
 ```
 
 ## Success Criteria

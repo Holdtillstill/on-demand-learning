@@ -8,6 +8,7 @@ FIXED="$LAB_DIR/fixed-ingress-service.yaml"
 EVIDENCE="$LAB_DIR/network-evidence.md"
 HANDOFF="$LAB_DIR/incident-handoff.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -33,9 +34,13 @@ run_structural_check() {
   "$python_bin" "$checker" --lab trace-network-path
 }
 
+run_cluster=false
 evidence_file=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --cluster)
+      run_cluster=true
+      ;;
     --evidence)
       shift
       [[ -n "${1:-}" ]] || fail "--evidence requires a file path"
@@ -58,8 +63,10 @@ grep -q "targetPort web" "$HANDOFF" || fail "incident-handoff.md should include 
 grep -q "Owner Notes" "$HANDOFF" || fail "incident-handoff.md should include owner notes"
 grep -q "targetPort: web" "$BROKEN" || fail "broken manifest should use targetPort web"
 grep -q "name: http" "$BROKEN" || fail "broken manifest should expose a Pod port named http"
+grep -q "kind: Namespace" "$BROKEN" || fail "broken manifest should create the disposable namespace"
 grep -q "targetPort: http" "$FIXED" || fail "fixed manifest should use targetPort http"
 ! grep -q "targetPort: web" "$FIXED" || fail "fixed manifest should not keep targetPort web"
+grep -q "kind: Namespace" "$FIXED" || fail "fixed manifest should create the disposable namespace"
 
 grep -q "## Request And Edge Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for request and edge evidence"
 grep -q "## Ingress, Service, And Pod Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for service and pod evidence"
@@ -80,4 +87,26 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "source manifest fix to targetPort http" "targetPort[[:space:]]*:?[[:space:]]*http|fixed-ingress-service\\.yaml|source-manifest|source manifest"
   require_evidence_match "$evidence_file" "validation or no-cluster handoff" "validate|validation|no-cluster|handoff|cleanup"
   echo "Evidence checks passed for trace-network-path."
+fi
+
+if [[ "$run_cluster" == true ]]; then
+  require_disposable_kube_context
+  kubectl delete namespace payments --ignore-not-found >/dev/null
+  kubectl apply -f "$BROKEN"
+  kubectl wait --for=condition=Ready pod/checkout-example -n payments --timeout=90s
+  broken_target_port="$(kubectl get svc checkout -n payments -o jsonpath='{.spec.ports[0].targetPort}')"
+  [[ "$broken_target_port" == "web" ]] || fail "broken Service should route to targetPort web, saw '$broken_target_port'"
+
+  kubectl apply -f "$FIXED"
+  fixed_target_port="$(kubectl get svc checkout -n payments -o jsonpath='{.spec.ports[0].targetPort}')"
+  [[ "$fixed_target_port" == "http" ]] || fail "fixed Service should route to targetPort http, saw '$fixed_target_port'"
+
+  endpoint_ports=""
+  for _ in {1..30}; do
+    endpoint_ports="$(kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout -o jsonpath='{.items[*].ports[*].port}' 2>/dev/null || true)"
+    [[ " $endpoint_ports " == *" 8080 "* ]] && break
+    sleep 1
+  done
+  [[ " $endpoint_ports " == *" 8080 "* ]] || fail "fixed Service should publish EndpointSlice port 8080, saw '${endpoint_ports:-none}'"
+  kubectl get svc,endpointslice -n payments -o wide
 fi

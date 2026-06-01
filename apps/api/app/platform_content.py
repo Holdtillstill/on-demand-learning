@@ -3651,13 +3651,15 @@ RUNNABLE_LAB_UPDATES = {
     },
     "trace-network-path": {
         "prerequisites": [
-            "No DNS, ALB, or Kubernetes access required; this lab uses captured network evidence.",
+            "No DNS, ALB, or Kubernetes access required for the default path; this lab uses captured network evidence.",
+            "Optional cluster mode requires a disposable local Kubernetes context.",
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/trace-network-path/setup.sh --evidence /tmp/network-path-evidence.md",
             "sed -n '1,220p' labs/platform-academy/trace-network-path/incident-handoff.md",
             "sed -n '1,220p' labs/platform-academy/trace-network-path/network-evidence.md",
-            "kubectl create --dry-run=client --validate=false -f labs/platform-academy/trace-network-path/ingress-service.yaml",
+            "bash labs/platform-academy/trace-network-path/setup.sh --cluster --evidence /tmp/network-path-evidence.md",
         ],
         "commands": [
             "grep -n \"HTTP/2 503\\|Target.ResponseCodeMismatch\\|targetPort web\" labs/platform-academy/trace-network-path/incident-handoff.md labs/platform-academy/trace-network-path/network-evidence.md labs/platform-academy/trace-network-path/ingress-service.yaml",
@@ -3678,6 +3680,7 @@ RUNNABLE_LAB_UPDATES = {
         "validation_commands": [
             "bash labs/platform-academy/trace-network-path/validate.sh",
             "bash labs/platform-academy/trace-network-path/validate.sh --evidence /tmp/network-path-evidence.md",
+            "bash labs/platform-academy/trace-network-path/validate.sh --cluster",
             "grep -n \"targetPort: web\" labs/platform-academy/trace-network-path/ingress-service.yaml",
             "grep -n \"name: http\" labs/platform-academy/trace-network-path/ingress-service.yaml",
         ],
@@ -4919,7 +4922,9 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/trace-network-path/ingress-service.yaml",
         "labs/platform-academy/trace-network-path/fixed-ingress-service.yaml",
         "labs/platform-academy/trace-network-path/evidence-template.md",
+        "labs/platform-academy/lib/cluster-safety.sh",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/trace-network-path/setup.sh",
         "labs/platform-academy/trace-network-path/validate.sh",
         "labs/platform-academy/trace-network-path/cleanup.sh",
         "labs/platform-academy/trace-network-path/solution.md",
