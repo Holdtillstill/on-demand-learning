@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Verify changed tracked and untracked files are clean enough to review."""
+"""Verify branch and working-tree files are clean enough to review."""
 
 from __future__ import annotations
 
+import argparse
+import os
 import re
 import stat
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -31,6 +34,12 @@ CONFLICT_MARKER_RE = re.compile(r"^(?:<{7}|>{7})(?: .*)?$|^={7}$")
 MAX_REPORTED_ERRORS = 80
 
 
+@dataclass(frozen=True)
+class ReviewBase:
+    ref: str
+    merge_base: str
+
+
 def git_lines(*args: str) -> list[str]:
     result = subprocess.run(
         ["git", "-C", str(REPO_ROOT), *args],
@@ -41,8 +50,49 @@ def git_lines(*args: str) -> list[str]:
     return [line for line in result.stdout.splitlines() if line]
 
 
-def changed_paths() -> list[Path]:
+def git_text_optional(*args: str) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), *args],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def git_lines_optional(*args: str) -> list[str]:
+    return [line for line in git_text_optional(*args).splitlines() if line]
+
+
+def resolve_review_base(base_ref: str | None, dirty_only: bool) -> ReviewBase | None:
+    if dirty_only:
+        return None
+    configured = base_ref or os.environ.get("PLATFORM_REVIEW_BASE", "").strip()
+    if configured:
+        merge_base = git_lines_optional("merge-base", "HEAD", configured)
+        if not merge_base:
+            raise SystemExit(f"Unable to resolve review base: {configured}")
+        return ReviewBase(ref=configured, merge_base=merge_base[0])
+    for candidate in ("origin/main", "main"):
+        merge_base = git_lines_optional("merge-base", "HEAD", candidate)
+        if merge_base:
+            return ReviewBase(ref=candidate, merge_base=merge_base[0])
+    return None
+
+
+def describe_review_base(base: ReviewBase | None) -> str:
+    if base is None:
+        return "not found; dirty changes only"
+    return f"{base.ref} (merge-base {base.merge_base[:12]})"
+
+
+def changed_paths(base: ReviewBase | None) -> list[Path]:
     paths: set[str] = set()
+    if base:
+        paths.update(git_lines("diff", "--name-only", "--diff-filter=ACMRTUXB", f"{base.merge_base}..HEAD", "--"))
     for args in (
         ("diff", "--name-only", "--diff-filter=ACMRTUXB", "--"),
         ("diff", "--cached", "--name-only", "--diff-filter=ACMRTUXB", "--"),
@@ -114,8 +164,22 @@ def verify_path(path: Path, errors: list[str]) -> tuple[bool, bool]:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--base",
+        metavar="REF",
+        help="compare committed branch changes against REF; defaults to PLATFORM_REVIEW_BASE, origin/main, then main",
+    )
+    parser.add_argument(
+        "--dirty-only",
+        action="store_true",
+        help="ignore committed branch changes and inspect only modified, staged, and untracked files",
+    )
+    args = parser.parse_args()
+
+    base = resolve_review_base(args.base, args.dirty_only)
     errors: list[str] = []
-    paths = changed_paths()
+    paths = changed_paths(base)
     existing_count = 0
     text_count = 0
     for path in paths:
@@ -133,8 +197,8 @@ def main() -> int:
         return 1
 
     print(
-        f"Verified working-tree hygiene for {existing_count} changed files "
-        f"({text_count} text files inspected)."
+        f"Verified working-tree hygiene for {existing_count} review files "
+        f"({text_count} text files inspected) against {describe_review_base(base)}."
     )
     return 0
 

@@ -7,7 +7,7 @@ Run this after every local rebuild, Docker Compose demo, shared-EKS preview, or 
 - `GET /healthz` returns `200`.
 - `GET /readyz` returns `200` when database and Redis are healthy.
 - `make api-migration-check` passes before building or deploying API images.
-- `make working-tree-hygiene-check` passes before staging or reviewing broad lab/release branches with new files.
+- `make working-tree-hygiene-check` passes before staging or reviewing broad lab/release branches; it inspects committed branch changes plus local modified, staged, and untracked files.
 - `make script-syntax-check` passes before relying on local or deployed smoke helpers.
 - `make smoke-helper-check` passes before relying on deployed smoke, container smoke, API/lab smoke, review-pack, or API-image dry-run and input validation paths.
 - `make platform-container-smoke` passes after image-affecting API, lab, nginx, or Platform Academy frontend changes; it runs the API image in production-like source-bundle protection mode and proves unauthenticated instructor/source bundle requests are blocked.

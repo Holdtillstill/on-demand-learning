@@ -41,7 +41,7 @@ make workflow-lint
 ```
 
 `make workflow-lint` runs actionlint and `scripts/verify_workflow_contracts.py`, so it also proves the release-critical workflow shape: image publishing keeps migration checks, Trivy scans, built-container smoke, and delayed push ordering; the image workflow watches the smoke/image helper scripts it depends on; and the platform validation workflow keeps the local contract gates wired.
-`make working-tree-hygiene-check` inspects modified, staged, and untracked files together, so newly added lab artifacts get the same whitespace, conflict-marker, generated-artifact, final-newline, and executable-shell-helper checks as tracked edits.
+`make working-tree-hygiene-check` inspects committed branch changes plus local modified, staged, and untracked files, so newly added lab artifacts get the same whitespace, conflict-marker, generated-artifact, final-newline, and executable-shell-helper checks as tracked edits. Set `PLATFORM_REVIEW_BASE=<ref>` when the release branch should compare against a target other than the default `origin/main` or `main`.
 
 With a local API running, also run:
 

@@ -17,7 +17,7 @@ Latest local verification on `codex/runnable-labs`:
 
 - `make release-check`: passed.
 - `make platform-release-check`: passed, including API-image Alembic execution and built API/web container smoke.
-- `make working-tree-hygiene-check`: passed across modified, staged, and untracked changed files.
+- `make working-tree-hygiene-check`: passed across branch changes plus local modified, staged, and untracked files.
 - API tests: `59 passed`.
 - Worker tests: `1 passed`.
 - Zhongwen frontend tests: `1 passed`.

@@ -75,7 +75,7 @@ env-contract-check: ## Verify sample env and local Compose cover runtime setting
 platform-content-count-check: ## Verify smoke defaults and docs match Platform Academy content counts
 	PYTHONPATH=apps/api $(PYTHON) scripts/verify_platform_content_counts.py
 
-working-tree-hygiene-check: ## Verify changed tracked/untracked files are clean enough to stage
+working-tree-hygiene-check: ## Verify branch and local changed files are clean enough to review
 	$(PYTHON) scripts/verify_working_tree_hygiene.py
 
 frontend-test: ## Run frontend tests locally
@@ -93,7 +93,7 @@ platform-lab-artifact-contract: ## Structurally verify portfolio-grade Platform 
 platform-lab-matrix: ## Print Markdown review matrix for all full Platform Academy labs
 	@PYTHONDONTWRITEBYTECODE=1 $(PYTHON) scripts/verify_platform_lab_contract.py --lab-review-matrix
 
-platform-review-manifest: ## Print reviewer-oriented manifest for changed tracked/untracked files
+platform-review-manifest: ## Print branch-aware reviewer manifest grouped by subsystem
 	@PYTHONDONTWRITEBYTECODE=1 $(PYTHON) scripts/platform_review_manifest.py
 
 platform-lab-verify: platform-lab-contract platform-lab-artifact-contract ## Verify local Platform Academy full-lab artifacts

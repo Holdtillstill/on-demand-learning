@@ -8,7 +8,7 @@ Required for Platform Academy, API, persistence, deployment, lab, or frontend ch
 
 - [ ] `make release-check`
 - [ ] `make platform-release-check` for image, proxy, Platform Academy frontend, API, or lab-bundle changes
-- [ ] `make working-tree-hygiene-check` when the branch has untracked/new lab artifacts before staging
+- [ ] `make working-tree-hygiene-check` to inspect branch changes plus any local modified, staged, or untracked files
 - [ ] `make api-image-migration-check` or equivalent `API_IMAGE=<published-candidate> make api-image-migration-check` for API image changes
 - [ ] `make platform-api-smoke API_BASE=<origin>` for local or deployed API
 - [ ] `make platform-browser-smoke WEB_BASE=<origin>` for local or deployed Platform Academy web
