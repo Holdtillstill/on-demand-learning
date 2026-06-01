@@ -14,6 +14,12 @@ Use a disposable local cluster such as kind, minikube, Docker Desktop Kubernetes
 
 ## Starting State
 
+Check cluster readiness before mutating anything:
+
+```bash
+bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight
+```
+
 Apply the broken manifest:
 
 ```bash
@@ -23,11 +29,13 @@ bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --cluster
 Equivalent manual setup:
 
 ```bash
+kubectl config current-context
 kubectl apply -f labs/platform-academy/trace-service-to-pod/start.yaml
 kubectl wait --for=condition=available deploy/checkout -n payments --timeout=90s
 ```
 
 The Deployment becomes available, but the Service selector points at labels the Pods do not have.
+The preflight/setup path creates or recreates the `payments` namespace; the learner does not need an app namespace or Pods running ahead of time.
 
 No-cluster path:
 

@@ -7,6 +7,7 @@ Use this note when taking this branch into a local demo, shared-EKS preview, or 
 - Branch: `codex/runnable-labs`.
 - Platform Academy is now a full-stack product slice: API-backed catalog, standalone React frontend, guest progress/activity, workbook persistence, learner-state export/import, browser-local interview study plans, product metrics, and 21 repository-backed full labs.
 - All 21 full labs now have deepened evidence templates, lab-specific worksheet prompts, validation checks, rubric items, evidence-aware API feedback terms, learner-safe artifact maps, and downloadable lab packets/workspaces.
+- The beginner cluster-backed labs include `setup --preflight` checks for `kubectl`, disposable context safety, API reachability, namespace permissions, and namespace state before mutating a local cluster.
 - Seven practical labs are flagged as portfolio-grade in the catalog and UI; their key YAML/JSON artifacts are structurally verified by `make platform-lab-artifact-contract`.
 - The labs are local-first and credential-safe. AWS/EKS/Terraform-heavy labs use local fixtures, review artifacts, or explicit design-review mode instead of requiring cloud credentials.
 - Production-like deployments should run Alembic separately with `CREATE_SCHEMA_ON_STARTUP=false`.

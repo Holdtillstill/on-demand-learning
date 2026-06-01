@@ -35,6 +35,7 @@ REQUIRED_ROOT_README_SNIPPETS = {
     "bash labs/platform-academy/run-lab.sh packet trace-service-to-pod",
     "bash labs/platform-academy/run-lab.sh workspace trace-service-to-pod",
     "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod",
+    "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight",
     "bash labs/platform-academy/run-lab.sh setup review-yaml-before-apply",
     "bash labs/platform-academy/run-lab.sh validate trace-service-to-pod",
     "bash labs/platform-academy/verify-full-labs.sh",

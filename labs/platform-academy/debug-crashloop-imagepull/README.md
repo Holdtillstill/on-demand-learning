@@ -17,6 +17,12 @@ Use a disposable local cluster. The lab creates the `payments-debug` namespace a
 
 ## Starting State
 
+Check cluster readiness before mutating anything:
+
+```bash
+bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --preflight
+```
+
 ```bash
 bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --cluster
 ```
@@ -24,11 +30,13 @@ bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --cluster
 Equivalent manual setup:
 
 ```bash
+kubectl config current-context
 kubectl apply -f labs/platform-academy/debug-crashloop-imagepull/start.yaml
 kubectl get pods -n payments-debug
 ```
 
 One Deployment intentionally exits with code 42. The other references an invalid registry.
+The preflight/setup path creates or recreates the `payments-debug` namespace; the learner does not need an app namespace or Pods running ahead of time.
 
 No-cluster path:
 

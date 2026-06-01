@@ -2816,7 +2816,9 @@ PLATFORM_LABS = [
         ],
         "setup_commands": [
             "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md",
+            "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight",
             "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --cluster",
+            "kubectl config current-context",
             "kubectl apply -f labs/platform-academy/trace-service-to-pod/start.yaml",
             "kubectl wait --for=condition=available deploy/checkout -n payments --timeout=90s",
             "kubectl get svc,pods,endpointslice -n payments",
@@ -2889,7 +2891,9 @@ PLATFORM_LABS = [
         ],
         "setup_commands": [
             "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --evidence /tmp/crashloop-imagepull-evidence.md",
+            "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --preflight",
             "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --cluster",
+            "kubectl config current-context",
             "kubectl apply -f labs/platform-academy/debug-crashloop-imagepull/start.yaml",
             "kubectl get pods -n payments-debug",
         ],
