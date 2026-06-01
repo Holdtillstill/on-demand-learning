@@ -4748,6 +4748,155 @@ pre {
   color: var(--pa-readable-secondary);
 }
 
+.lab-rubric-feedback {
+  border-top: 1px solid rgba(158, 187, 177, 0.2);
+  padding-top: 14px;
+}
+
+.lab-rubric-feedback .section-heading h2,
+.lab-rubric-feedback .section-heading h3 {
+  color: #f4fff9;
+}
+
+.lab-rubric-feedback .check-list {
+  color: var(--pa-readable-secondary);
+}
+
+.lab-feedback-summary span {
+  border-color: rgba(158, 187, 177, 0.22);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--pa-text-soft);
+}
+
+.lab-feedback-summary .lab-feedback-summary-strong {
+  border-color: rgba(125, 243, 211, 0.34);
+  background: rgba(51, 214, 166, 0.14);
+  color: #c7ffed;
+}
+
+.lab-feedback-summary .lab-feedback-summary-passes {
+  border-color: rgba(34, 211, 238, 0.3);
+  background: rgba(34, 211, 238, 0.12);
+  color: #d8fbff;
+}
+
+.lab-feedback-summary .lab-feedback-summary-needs-evidence {
+  border-color: rgba(245, 158, 11, 0.34);
+  background: rgba(245, 158, 11, 0.14);
+  color: #ffe4af;
+}
+
+.lab-feedback-summary .lab-feedback-summary-missing {
+  border-color: rgba(251, 113, 133, 0.34);
+  background: rgba(251, 113, 133, 0.13);
+  color: #ffd8df;
+}
+
+.lab-feedback-overview {
+  border-color: rgba(158, 187, 177, 0.2);
+  background:
+    linear-gradient(135deg, rgba(51, 214, 166, 0.08), rgba(34, 211, 238, 0.035)),
+    rgba(255, 255, 255, 0.045);
+  color: var(--pa-readable-secondary);
+}
+
+.lab-feedback-card {
+  border-color: rgba(158, 187, 177, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.024)),
+    rgba(4, 16, 14, 0.74);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+}
+
+.lab-feedback-card-header > span,
+.lab-feedback-terms span {
+  color: var(--pa-muted);
+}
+
+.lab-feedback-card strong {
+  border: 1px solid rgba(158, 187, 177, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--pa-text-soft);
+}
+
+.lab-feedback-card p {
+  color: #f4fff9;
+}
+
+.lab-feedback-card small {
+  color: var(--pa-readable-secondary);
+}
+
+.lab-feedback-next {
+  color: #ffe4af;
+}
+
+.feedback-strong {
+  border-left-color: #7df3d3;
+}
+
+.feedback-strong strong {
+  border-color: rgba(125, 243, 211, 0.34);
+  background: rgba(51, 214, 166, 0.16);
+  color: #c7ffed;
+}
+
+.feedback-passes {
+  border-left-color: #22d3ee;
+}
+
+.feedback-passes strong {
+  border-color: rgba(34, 211, 238, 0.32);
+  background: rgba(34, 211, 238, 0.13);
+  color: #d8fbff;
+}
+
+.feedback-needs-evidence {
+  border-left-color: #f59e0b;
+}
+
+.feedback-needs-evidence strong {
+  border-color: rgba(245, 158, 11, 0.34);
+  background: rgba(245, 158, 11, 0.14);
+  color: #ffe4af;
+}
+
+.feedback-missing {
+  border-left-color: #fb7185;
+}
+
+.feedback-missing strong {
+  border-color: rgba(251, 113, 133, 0.34);
+  background: rgba(251, 113, 133, 0.13);
+  color: #ffd8df;
+}
+
+.lab-feedback-terms code {
+  border-color: rgba(125, 243, 211, 0.2);
+  background: rgba(51, 214, 166, 0.1);
+  color: #c7ffed;
+}
+
+.lab-feedback-terms.empty,
+.lab-feedback-terms.empty span {
+  color: #ffd8df;
+}
+
+.lab-submission-summary {
+  border-color: rgba(158, 187, 177, 0.22);
+  background:
+    linear-gradient(135deg, rgba(51, 214, 166, 0.1), rgba(34, 211, 238, 0.045)),
+    rgba(255, 255, 255, 0.045);
+}
+
+.lab-submission-summary strong {
+  color: #f4fff9;
+}
+
+.lab-submission-summary span {
+  color: var(--pa-readable-secondary);
+}
+
 .search-box {
   border-color: rgba(158, 187, 177, 0.2);
   background: rgba(255, 255, 255, 0.06);
