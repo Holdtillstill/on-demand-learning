@@ -18,7 +18,9 @@ Use real lab evidence as the portfolio core. Do not make broad claims without co
 
 ## Evidence to Save
 
-Save the proof README, resume bullets, STAR stories, evidence inventory, public-safe redaction note, missing-proof list, and links to the lab validators that back each claim in `evidence-template.md`.
+Save the proof README, resume bullets, STAR stories, evidence inventory, local analyzer output, public-safe redaction note, missing-proof list, and links to the lab validators that back each claim in `evidence-template.md`.
+
+The local career proof analyzer reports `Career proof pack analysis passed`.
 
 ## Cleanup
 

@@ -237,13 +237,14 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "build-platform-career-proof-pack": {
-        "files": {"evidence-template.md"},
+        "files": {"career_proof_analyzer.py", "evidence-template.md", "setup.sh"},
         "terms": {
             "Kubernetes, Terraform, AWS, CI/CD",
             "Candidate artifacts",
             "completed-proof-readme.md",
             "Incident Response",
             "Release Safety",
+            "Career proof pack analysis passed",
         },
     },
 }

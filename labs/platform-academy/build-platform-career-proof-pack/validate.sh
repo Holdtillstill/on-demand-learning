@@ -10,6 +10,7 @@ PROOF="$LAB_DIR/completed-proof-readme.md"
 BULLETS="$LAB_DIR/resume-bullets.md"
 STAR="$LAB_DIR/star-stories.md"
 TEMPLATE_EVIDENCE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/career_proof_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -57,6 +58,9 @@ grep -q "Release Safety" "$STAR" || fail "star-stories.md should include release
 grep -q "## Skill Demand Evidence" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for skill demand evidence"
 grep -q "## Portfolio Artifact Evidence" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for portfolio artifact evidence"
 grep -q "## Interview And Resume Evidence" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for interview and resume evidence"
+grep -q "Career proof pack analysis passed" "$ANALYZER" || fail "career_proof_analyzer.py should report successful analysis"
+
+python3 "$ANALYZER" --skills "$SKILLS" --inventory "$INVENTORY" --proof "$PROOF" --bullets "$BULLETS" --star "$STAR" --quiet
 
 echo "File checks passed for build-platform-career-proof-pack."
 
@@ -69,6 +73,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "release and rollback evidence" "digest promotion|Rollback|rollback"
   require_evidence_match "$evidence_file" "resume bullet evidence" "resume bullet|repository-backed|profile-backed|digest, SBOM, scan"
   require_evidence_match "$evidence_file" "STAR story coverage" "Incident Response|Security|Cost|Release Safety|STAR"
+  require_evidence_match "$evidence_file" "local career proof analyzer evidence" "Career proof pack analysis passed|career proof analyzer|proof pack analysis"
   require_evidence_match "$evidence_file" "public-safe or missing-proof note" "public-safe|redaction|missing proof|stronger evidence"
   echo "Evidence checks passed for build-platform-career-proof-pack."
 fi

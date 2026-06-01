@@ -20,5 +20,6 @@
 - README proof section:
 - Resume bullet with action/scope/impact:
 - STAR story:
+- Local analyzer output:
 - Claim that needs stronger evidence:
 - Validation output:

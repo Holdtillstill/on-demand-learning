@@ -3427,16 +3427,17 @@ PLATFORM_LABS.extend(
             "scenario": "You need interview-ready proof that your platform skills are practical, current, and credible after a layoff.",
             "skills": ["portfolio", "resume bullets", "STAR stories", "job description analysis", "mock interview prep"],
             "commands": [
-                "git log --oneline --decorate -5",
-                "find . -maxdepth 3 -iname '*README*' -o -iname '*runbook*'",
-                "grep -R \"rollback\\|SLO\\|Terraform\\|Kubernetes\" -n docs apps || true",
-            ],
+            "git log --oneline --decorate -5",
+            "find . -maxdepth 3 -iname '*README*' -o -iname '*runbook*'",
+            "grep -R \"rollback\\|SLO\\|Terraform\\|Kubernetes\" -n docs apps || true",
+            "python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md --proof labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md --bullets labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md --star labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
+        ],
             "checklist": [
                 "Choose five target job descriptions and extract repeated skill demands.",
                 "Turn one lab into a README proof section with commands, evidence, tradeoffs, and rollback.",
                 "Write resume bullets for implementation, operations, and business impact.",
-                "Prepare STAR stories for incident response, automation, cost, security, and influence.",
-            ],
+            "Use the local analyzer to verify that every career claim is backed by artifacts, commands, validation, and public-safe notes.",
+        ],
         },
     ]
 )
@@ -4269,6 +4270,7 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/build-platform-career-proof-pack/setup.sh --evidence /tmp/career-proof-evidence.md",
             "sed -n '1,160p' labs/platform-academy/build-platform-career-proof-pack/job-skills.txt",
             "sed -n '1,180p' labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md",
         ],
@@ -4276,21 +4278,25 @@ RUNNABLE_LAB_UPDATES = {
             "grep -n \"Kubernetes\\|Terraform\\|incident response\\|SLOs\\|FinOps\" labs/platform-academy/build-platform-career-proof-pack/job-skills.txt",
             "grep -n \"Missing proof\\|rollback\\|STAR\" labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md labs/platform-academy/build-platform-career-proof-pack/readme-template.md",
             "diff -u labs/platform-academy/build-platform-career-proof-pack/readme-template.md labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md || true",
+            "python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md --proof labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md --bullets labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md --star labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
         ],
         "practice_steps": [
             "Extract repeated skills from the sample target roles.",
             "Pick three lab artifacts and map them to proof bullets.",
             "Fill the README template with commands, evidence, validation, rollback, and interview talking points.",
+            "Run the local career proof analyzer to prove the README, bullets, STAR stories, missing-proof list, and public-safety boundary.",
         ],
         "expected_evidence": [
             "Target roles repeatedly mention Kubernetes, AWS, Terraform, CI/CD, observability, SRE, and security.",
             "The evidence inventory names five candidate artifacts and missing proof to collect.",
             "The README template forces problem, commands, validation, rollback, and STAR talking points.",
             "The completed proof pack includes a README proof section, resume bullets, and STAR stories.",
+            "The local analyzer reports Career proof pack analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/build-platform-career-proof-pack/validate.sh",
             "bash labs/platform-academy/build-platform-career-proof-pack/validate.sh --evidence /tmp/career-proof-evidence.md",
+            "python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md --proof labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md --bullets labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md --star labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
             "grep -n \"Release Safety\" labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
         ],
         "cleanup_commands": ["bash labs/platform-academy/build-platform-career-proof-pack/cleanup.sh"],
@@ -4936,7 +4942,7 @@ DEEPENED_LAB_UPDATES = {
             "Paste selected lab artifacts, command/validator proof, decision evidence, rollback evidence, and missing proof.",
             "Write one portfolio proof section with problem, environment, commands, decision, validation, and talking points.",
             "Write resume bullets and STAR stories tied to incident response, security, cost, and release safety evidence.",
-            "Capture validation output and list every claim that still needs screenshots, diagrams, or stronger evidence.",
+            "Capture analyzer output, validation output, and every claim that still needs screenshots, diagrams, or stronger evidence.",
         ],
         "rubric": [
             "Preserves the public-safe evidence boundary and avoids secrets, customer data, or private identifiers.",
@@ -4953,7 +4959,7 @@ DEEPENED_LAB_UPDATES = {
             "Portfolio proof README completed",
             "Resume bullets written with action/scope/impact",
             "STAR stories written for incident/security/cost/release",
-            "Validation output and missing-proof evidence recorded",
+            "Career proof analyzer output, validation output, and missing-proof evidence recorded",
         ],
         "rubric_evidence_terms": [
             ["job-skills.txt", "evidence-inventory.md", "public", "redaction"],
@@ -4961,7 +4967,7 @@ DEEPENED_LAB_UPDATES = {
             ["Candidate artifacts", "Missing proof to collect", "verify-full-labs.sh", "Rollback"],
             ["completed-proof-readme.md", "Problem", "Environment", "Interview Talking Points"],
             ["resume-bullets.md", "star-stories.md", "Incident Response", "Security", "Cost", "Release Safety"],
-            ["validate", "screenshots", "diagrams", "evidence-template.md", "stronger evidence"],
+            ["validate", "screenshots", "diagrams", "evidence-template.md", "stronger evidence", "Career proof pack analysis passed"],
         ],
     },
     "write-slo-backed-runbook": {
@@ -5383,6 +5389,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
         "labs/platform-academy/build-platform-career-proof-pack/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py",
+        "labs/platform-academy/build-platform-career-proof-pack/setup.sh",
         "labs/platform-academy/build-platform-career-proof-pack/validate.sh",
         "labs/platform-academy/build-platform-career-proof-pack/cleanup.sh",
         "labs/platform-academy/build-platform-career-proof-pack/solution.md",
