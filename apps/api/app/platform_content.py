@@ -5658,6 +5658,7 @@ PORTFOLIO_LAB_SLUGS = {
     "write-slo-backed-runbook",
     "design-opentelemetry-signal-path",
     "review-docker-image-supply-chain",
+    "audit-eks-cost-drivers",
 }
 
 PORTFOLIO_LAB_FOCUS = {
@@ -5677,6 +5678,7 @@ PORTFOLIO_LAB_FOCUS = {
     "write-slo-backed-runbook": "SLO-backed incident response",
     "design-opentelemetry-signal-path": "OpenTelemetry signal path design",
     "review-docker-image-supply-chain": "Docker image supply-chain review",
+    "audit-eks-cost-drivers": "EKS cost-driver review",
 }
 
 EVIDENCE_PACK_LAB_SLUGS: set[str] = set()

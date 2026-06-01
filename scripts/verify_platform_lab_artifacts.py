@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import re
 import sys
@@ -36,6 +37,7 @@ PORTFOLIO_LABS = [
     "write-slo-backed-runbook",
     "design-opentelemetry-signal-path",
     "review-docker-image-supply-chain",
+    "audit-eks-cost-drivers",
 ]
 
 
@@ -80,6 +82,14 @@ def json_doc(slug: str, filename: str) -> dict[str, Any]:
         fail(f"{slug}/{filename} is not parseable JSON: {exc}")
     require(isinstance(data, dict), f"{slug}/{filename} should contain a JSON object")
     return data
+
+
+def csv_rows(slug: str, filename: str) -> list[dict[str, str]]:
+    path = lab_path(slug, filename)
+    with path.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    require(rows, f"{slug}/{filename} should contain CSV rows")
+    return rows
 
 
 def text_doc(slug: str, filename: str) -> str:
@@ -1135,6 +1145,128 @@ def verify_review_docker_image_supply_chain() -> None:
         require(term in analyzer, f"Docker supply-chain analyzer should include {term}")
 
 
+def parse_space_table(text: str, columns: int, label: str) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for line in text.splitlines()[1:]:
+        if not line.strip():
+            continue
+        parts = line.split()
+        require(len(parts) == columns, f"{label} row should have {columns} columns: {line}")
+        rows.append(parts)
+    require(rows, f"{label} should include rows")
+    return rows
+
+
+def verify_audit_eks_cost_drivers() -> None:
+    slug = "audit-eks-cost-drivers"
+    usage = csv_rows(slug, "usage.csv")
+    services = text_doc(slug, "services.txt")
+    storage = text_doc(slug, "storage.txt")
+    recommendations = text_doc(slug, "recommendations.md")
+    triage = text_doc(slug, "triage-notes.md")
+    template = text_doc(slug, "evidence-template.md")
+    analyzer = text_doc(slug, "cost_analyzer.py")
+
+    usage_by_name = {f"{row['namespace']}/{row['workload']}": row for row in usage}
+    expected_usage_names = {"payments/checkout", "payments/worker", "observability/loki", "default/load-test", "data/postgres"}
+    require(set(usage_by_name) == expected_usage_names, "usage.csv should preserve the expected workload set")
+
+    checkout = usage_by_name["payments/checkout"]
+    worker = usage_by_name["payments/worker"]
+    load_test = usage_by_name["default/load-test"]
+    loki = usage_by_name["observability/loki"]
+    postgres = usage_by_name["data/postgres"]
+    require(
+        int(checkout["cpu_request_mcores"]) == 6000
+        and int(checkout["cpu_usage_mcores"]) == 900
+        and int(checkout["memory_request_mib"]) == 12288
+        and int(checkout["memory_usage_mib"]) == 4096
+        and checkout["owner"] == "team-payments",
+        "payments/checkout should preserve over-requested usage evidence",
+    )
+    require(
+        int(worker["cpu_request_mcores"]) == 4000
+        and int(worker["cpu_usage_mcores"]) == 350
+        and int(worker["memory_request_mib"]) == 8192
+        and int(worker["memory_usage_mib"]) == 1024
+        and worker["owner"] == "team-payments",
+        "payments/worker should preserve over-requested usage evidence",
+    )
+    require(
+        int(load_test["cpu_usage_mcores"]) == 0
+        and int(load_test["memory_usage_mib"]) == 0
+        and int(load_test["monthly_cost_usd"]) == 160
+        and load_test["owner"] == "unknown",
+        "default/load-test should be idle with unknown ownership",
+    )
+    require(
+        int(loki["monthly_cost_usd"]) == 1180 and loki["owner"] == "platform",
+        "observability/loki should remain a platform-owned architecture-review cost driver",
+    )
+    require(
+        int(postgres["monthly_cost_usd"]) == 910 and postgres["owner"] == "data-platform",
+        "data/postgres should remain a data-owned architecture-review cost driver",
+    )
+
+    service_rows = parse_space_table(services, 5, "services.txt")
+    service_by_name = {f"{row[0]}/{row[1]}": row for row in service_rows}
+    require("default/abandoned-demo" in service_by_name, "services.txt should include abandoned-demo")
+    require(service_by_name["default/abandoned-demo"][2] == "LoadBalancer", "abandoned-demo should be a LoadBalancer")
+    require(int(service_by_name["default/abandoned-demo"][4]) == 22, "abandoned-demo should preserve monthly cost estimate")
+    require("observability/grafana-public" in service_by_name, "services.txt should keep observability exception evidence")
+
+    storage_rows = parse_space_table(storage, 6, "storage.txt")
+    storage_by_name = {f"{row[0]}/{row[1]}": row for row in storage_rows}
+    abandoned_cache = storage_by_name.get("default/abandoned-cache")
+    require(abandoned_cache is not None, "storage.txt should include abandoned-cache")
+    require(
+        abandoned_cache[2] == "200Gi" and abandoned_cache[3] == "gp2" and abandoned_cache[5] == "unknown",
+        "abandoned-cache should preserve size, gp2 class, and unknown owner evidence",
+    )
+    require(
+        storage_by_name.get("observability/loki-chunks", ["", "", "", "", "", ""])[2] == "2Ti",
+        "storage.txt should keep Loki architecture-review storage evidence",
+    )
+
+    recommendation_rows = [
+        line for line in recommendations.splitlines() if line.startswith("| ") and "---" not in line and "Finding" not in line
+    ]
+    require(len(recommendation_rows) == 5, "recommendations.md should contain five recommendation rows")
+    for term in [
+        "Checkout CPU over-requested",
+        "Worker CPU and memory over-requested",
+        "Default load-test has unknown owner and zero usage",
+        "Abandoned demo LoadBalancer",
+        "Abandoned cache PVC",
+        "Expected Savings",
+        "Reliability Risk",
+        "Restore previous requests",
+        "Snapshot before deletion",
+        "Weekly: unknown owner and idle LoadBalancer report",
+        "Monthly: workload request versus usage review",
+        "Quarterly: storage class and retention review",
+    ]:
+        require(term in recommendations, f"cost recommendations should include {term}")
+    for term in [
+        "Low utilization is not automatic deletion approval",
+        "Unknown owner means pause and confirm ownership",
+        "LoadBalancer age is not enough",
+        "PVC cleanup needs restore expectations",
+        "Expensive observability or data workloads are architecture-review items",
+        "Savings without reliability risk and rollback",
+    ]:
+        require(term in triage, f"cost triage notes should include {term}")
+    for heading in [
+        "## Triage Notes And False Leads",
+        "## Compute Waste Evidence",
+        "## Service And Storage Waste Evidence",
+        "## Recommendation Evidence",
+    ]:
+        require(heading in template, f"cost evidence template should include {heading}")
+    for term in ["EKS cost driver analysis passed", "quick_win_exposure", "architecture_review", "default/abandoned-cache"]:
+        require(term in analyzer, f"cost analyzer should include {term}")
+
+
 VERIFY_BY_LAB = {
     "trace-service-to-pod": verify_trace_service_to_pod,
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
@@ -1152,6 +1284,7 @@ VERIFY_BY_LAB = {
     "write-slo-backed-runbook": verify_write_slo_backed_runbook,
     "design-opentelemetry-signal-path": verify_design_opentelemetry_signal_path,
     "review-docker-image-supply-chain": verify_review_docker_image_supply_chain,
+    "audit-eks-cost-drivers": verify_audit_eks_cost_drivers,
 }
 
 
