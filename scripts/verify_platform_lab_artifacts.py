@@ -35,6 +35,7 @@ PORTFOLIO_LABS = [
     "design-safe-release-pipeline",
     "write-slo-backed-runbook",
     "design-opentelemetry-signal-path",
+    "review-docker-image-supply-chain",
 ]
 
 
@@ -1049,6 +1050,91 @@ def verify_design_opentelemetry_signal_path() -> None:
         require(term in analyzer, f"OpenTelemetry analyzer should include {term}")
 
 
+def verify_review_docker_image_supply_chain() -> None:
+    slug = "review-docker-image-supply-chain"
+    dockerfile = text_doc(slug, "Dockerfile")
+    inspect = json_doc(slug, "image-inspect.json")
+    history = text_doc(slug, "history.txt")
+    hardened = text_doc(slug, "hardened.Dockerfile")
+    promotion = text_doc(slug, "promotion-note.md")
+    triage = text_doc(slug, "triage-notes.md")
+    template = text_doc(slug, "evidence-template.md")
+    analyzer = text_doc(slug, "supply_chain_analyzer.py")
+    secret = "API_TOKEN=do-not-bake-secrets"
+
+    for term in [
+        "FROM node:22 AS build",
+        "WORKDIR /app",
+        "COPY . .",
+        "RUN npm install",
+        "RUN npm run build",
+        "FROM node:22",
+        f"ENV {secret}",
+        "COPY --from=build /app .",
+        "EXPOSE 3000",
+        'CMD ["npm", "start"]',
+    ]:
+        require(term in dockerfile, f"Dockerfile should include {term}")
+    require("\nUSER " not in dockerfile, "starting Dockerfile should not set a non-root runtime user")
+
+    require(inspect.get("RepoTags") == ["checkout:latest"], "image inspect should preserve checkout:latest")
+    require(inspect.get("RepoDigests") == [], "image inspect should preserve missing RepoDigests")
+    config = get_map(inspect, "Config", "image inspect")
+    require(config.get("User") == "", "image inspect should show blank/root runtime user")
+    env = sequence(config.get("Env"), "image inspect Config.Env")
+    require("NODE_ENV=production" in env and secret in env, "image inspect should include production env and baked secret")
+    exposed = get_map(config, "ExposedPorts", "image inspect Config")
+    require("3000/tcp" in exposed, "image inspect should expose port 3000/tcp")
+
+    for term in [secret, "COPY /app . # build output plus source tree", "FROM node:22"]:
+        require(term in history, f"image history should include {term}")
+
+    for term in [
+        "FROM node:22-bookworm-slim AS deps",
+        "RUN npm ci",
+        "FROM deps AS build",
+        "FROM node:22-bookworm-slim AS runtime",
+        "ENV NODE_ENV=production",
+        "npm ci --omit=dev",
+        "COPY --from=build --chown=node:node /app/dist ./dist",
+        "USER node",
+        'CMD ["node", "dist/server.js"]',
+    ]:
+        require(term in hardened, f"hardened Dockerfile should include {term}")
+    require("API_TOKEN" not in hardened, "hardened Dockerfile should not contain secret material")
+    require("COPY --from=build /app ." not in hardened, "hardened Dockerfile should not copy the whole app tree")
+
+    for term in [
+        "Block promotion of `checkout:latest`",
+        "Immutable image digest",
+        "SBOM artifact",
+        "Vulnerability scan",
+        "Runtime user set to non-root",
+        "No secrets in Dockerfile",
+        "Rollback digest",
+        "Promote only by digest",
+    ]:
+        require(term in promotion, f"promotion note should include {term}")
+    for term in [
+        "`latest` is not acceptable promotion evidence",
+        "Deleting a secret in a later Dockerfile layer",
+        "runAsNonRoot",
+        "Copying the full build tree into runtime",
+        "SBOM and vulnerability scans after promotion",
+        "rollback digest",
+    ]:
+        require(term in triage, f"Docker triage notes should include {term}")
+    for heading in [
+        "## Triage Notes And False Leads",
+        "## Tag, Digest, And Promotion Evidence",
+        "## Secret And Runtime Evidence",
+        "## Release Handoff",
+    ]:
+        require(heading in template, f"Docker evidence template should include {heading}")
+    for term in ["Docker supply-chain analysis passed", "checkout:latest", "RepoDigests", "rollback digest"]:
+        require(term in analyzer, f"Docker supply-chain analyzer should include {term}")
+
+
 VERIFY_BY_LAB = {
     "trace-service-to-pod": verify_trace_service_to_pod,
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
@@ -1065,6 +1151,7 @@ VERIFY_BY_LAB = {
     "design-safe-release-pipeline": verify_design_safe_release_pipeline,
     "write-slo-backed-runbook": verify_write_slo_backed_runbook,
     "design-opentelemetry-signal-path": verify_design_opentelemetry_signal_path,
+    "review-docker-image-supply-chain": verify_review_docker_image_supply_chain,
 }
 
 

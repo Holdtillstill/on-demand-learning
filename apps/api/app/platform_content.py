@@ -5657,6 +5657,7 @@ PORTFOLIO_LAB_SLUGS = {
     "design-safe-release-pipeline",
     "write-slo-backed-runbook",
     "design-opentelemetry-signal-path",
+    "review-docker-image-supply-chain",
 }
 
 PORTFOLIO_LAB_FOCUS = {
@@ -5675,6 +5676,7 @@ PORTFOLIO_LAB_FOCUS = {
     "design-safe-release-pipeline": "production release safety",
     "write-slo-backed-runbook": "SLO-backed incident response",
     "design-opentelemetry-signal-path": "OpenTelemetry signal path design",
+    "review-docker-image-supply-chain": "Docker image supply-chain review",
 }
 
 EVIDENCE_PACK_LAB_SLUGS: set[str] = set()
