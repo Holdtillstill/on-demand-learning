@@ -3721,16 +3721,25 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/inspect-linux-failure-evidence/setup.sh --evidence /tmp/linux-failure-evidence.md",
             "sed -n '1,180p' labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt",
             "sed -n '1,120p' labs/platform-academy/inspect-linux-failure-evidence/previous.log",
         ],
         "commands": [
             "grep -n \"Exit Code\\|Reason\\|Restart Count\" labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt",
             "grep -n \"Permission denied\\|uid=\" labs/platform-academy/inspect-linux-failure-evidence/previous.log labs/platform-academy/inspect-linux-failure-evidence/id-output.txt",
+            (
+                "python3 labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analyzer.py "
+                "--describe labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt "
+                "--previous-log labs/platform-academy/inspect-linux-failure-evidence/previous.log "
+                "--id-output labs/platform-academy/inspect-linux-failure-evidence/id-output.txt "
+                "--remediation labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md"
+            ),
         ],
         "practice_steps": [
             "Capture Last State, exit code, and restart count.",
             "Compare previous logs with runtime user evidence.",
+            "Use the local analyzer to prove runtime state, exit, permission, identity, and rejected workaround evidence.",
             "Decide whether this is app crash, permission, or resource pressure.",
         ],
         "expected_evidence": [
@@ -3738,10 +3747,18 @@ RUNNABLE_LAB_UPDATES = {
             "Previous logs show Permission denied.",
             "The process runs as uid 10001.",
             "The remediation note rejects memory tuning and root runtime as first fixes.",
+            "The local analyzer reports Linux failure evidence analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/inspect-linux-failure-evidence/validate.sh",
             "bash labs/platform-academy/inspect-linux-failure-evidence/validate.sh --evidence /tmp/linux-failure-evidence.md",
+            (
+                "python3 labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analyzer.py "
+                "--describe labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt "
+                "--previous-log labs/platform-academy/inspect-linux-failure-evidence/previous.log "
+                "--id-output labs/platform-academy/inspect-linux-failure-evidence/id-output.txt "
+                "--remediation labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md"
+            ),
             "grep -n \"Running as root: hides the permission bug\" labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md",
         ],
         "cleanup_commands": ["bash labs/platform-academy/inspect-linux-failure-evidence/cleanup.sh"],
@@ -4365,7 +4382,7 @@ DEEPENED_LAB_UPDATES = {
             "Permission denied log and UID evidence captured",
             "Wrong fixes rejected",
             "Image permission owner and remediation recorded",
-            "Validation output and cleanup/no-cluster evidence recorded",
+            "Linux failure analysis, validation output, and cleanup/no-cluster evidence recorded",
         ],
         "rubric_evidence_terms": [
             ["pod-describe.txt", "previous.log", "id-output.txt", "no cluster"],
@@ -4373,7 +4390,7 @@ DEEPENED_LAB_UPDATES = {
             ["/app/bin/checkout: Permission denied", "uid=10001(checkout)", "gid=10001(checkout)"],
             ["not application logic or memory pressure", "permission", "ownership", "execute"],
             ["image file permissions", "Running as root: hides the permission bug", "owner"],
-            ["remediation-note.md", "validate", "cleanup", "evidence-template.md", "no-cluster"],
+            ["remediation-note.md", "validate", "cleanup", "evidence-template.md", "no-cluster", "Linux failure evidence analysis passed"],
         ],
     },
     "design-production-eks-review": {
@@ -5136,6 +5153,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md",
         "labs/platform-academy/inspect-linux-failure-evidence/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analyzer.py",
+        "labs/platform-academy/inspect-linux-failure-evidence/setup.sh",
         "labs/platform-academy/inspect-linux-failure-evidence/validate.sh",
         "labs/platform-academy/inspect-linux-failure-evidence/cleanup.sh",
         "labs/platform-academy/inspect-linux-failure-evidence/solution.md",

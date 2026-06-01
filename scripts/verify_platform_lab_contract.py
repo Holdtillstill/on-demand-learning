@@ -76,10 +76,11 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "inspect-linux-failure-evidence": {
-        "files": {"evidence-template.md"},
+        "files": {"evidence-template.md", "linux_failure_analyzer.py", "setup.sh"},
         "terms": {
             "CrashLoopBackOff",
             "Exit Code:    126",
+            "Linux failure evidence analysis passed",
             "/app/bin/checkout: Permission denied",
             "uid=10001(checkout)",
             "Running as root",

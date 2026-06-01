@@ -8,6 +8,7 @@ LOG="$LAB_DIR/previous.log"
 ID_OUT="$LAB_DIR/id-output.txt"
 NOTE="$LAB_DIR/remediation-note.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/linux_failure_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -41,6 +42,9 @@ grep -q "Running as root: hides the permission bug" "$NOTE" || fail "remediation
 grep -q "## Container State Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for container state evidence"
 grep -q "## Linux Identity And Permission Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for Linux identity evidence"
 grep -q "## Remediation Decision Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for remediation decision evidence"
+grep -q "Linux failure evidence analysis passed" "$ANALYZER" || fail "linux_failure_analyzer.py should report a successful local analysis"
+
+python3 "$ANALYZER" --describe "$DESCRIBE" --previous-log "$LOG" --id-output "$ID_OUT" --remediation "$NOTE" --quiet
 
 echo "File checks passed for inspect-linux-failure-evidence."
 
@@ -52,6 +56,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "runtime UID/GID evidence" "uid=10001|UID/GID 10001|runtime user"
   require_evidence_match "$evidence_file" "not memory pressure or app logic" "not memory|memory pressure|not application logic|permission"
   require_evidence_match "$evidence_file" "rejected root workaround" "root|run as root|Running as root"
+  require_evidence_match "$evidence_file" "local Linux failure analyzer evidence" "Linux failure evidence analysis passed|Linux failure analyzer|Permission evidence|Identity evidence"
   require_evidence_match "$evidence_file" "image permission remediation" "image file permissions|ownership|execute-bit|permission fix"
   require_evidence_match "$evidence_file" "validation or no-cluster note" "validation|validate|no-cluster|cleanup"
   echo "Evidence checks passed for inspect-linux-failure-evidence."

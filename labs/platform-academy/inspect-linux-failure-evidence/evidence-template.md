@@ -16,6 +16,7 @@
 
 ## Remediation Decision Evidence
 
+- Local Linux failure analyzer result:
 - Primary owner:
 - Image or file-permission fix:
 - Rejected workaround:

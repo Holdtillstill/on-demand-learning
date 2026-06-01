@@ -12,6 +12,18 @@ Fix image file permissions and ownership; do not tune memory or run the containe
 - Runtime user is UID/GID 10001.
 - The container exits before listening on `:8080`.
 
+The local Linux failure analyzer verifies the evidence chain without a cluster:
+
+```bash
+python3 labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analyzer.py \
+  --describe labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt \
+  --previous-log labs/platform-academy/inspect-linux-failure-evidence/previous.log \
+  --id-output labs/platform-academy/inspect-linux-failure-evidence/id-output.txt \
+  --remediation labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md
+```
+
+Expected result: `Linux failure evidence analysis passed`, with runtime state, exit, permission, identity, fix-target, and rejected-root evidence.
+
 ## Evidence to Save
 
 Save the describe output, previous logs, runtime identity, diagnosis, rejected root and memory fixes, validation command, and no-cluster note in `evidence-template.md`.
