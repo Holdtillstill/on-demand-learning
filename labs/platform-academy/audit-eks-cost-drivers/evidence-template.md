@@ -16,6 +16,7 @@
 
 ## Recommendation Evidence
 
+- Local EKS cost analyzer result:
 - Ranked recommendation:
 - Owner:
 - Expected savings:

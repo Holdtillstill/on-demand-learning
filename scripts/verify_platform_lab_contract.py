@@ -157,8 +157,10 @@ DEEPENED_LAB_CONTRACT = {
         "terms": {"SEV-2", "0.2%", "9.4%", "revision 42", "Communications lead"},
     },
     "audit-eks-cost-drivers": {
-        "files": {"evidence-template.md"},
+        "files": {"evidence-template.md", "cost_analyzer.py", "setup.sh"},
         "terms": {
+            "EKS cost driver analysis passed",
+            "Quick-win monthly exposure",
             "payments,checkout,6000,900",
             "abandoned-demo",
             "abandoned-cache",

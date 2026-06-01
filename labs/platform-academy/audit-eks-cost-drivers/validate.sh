@@ -8,6 +8,7 @@ SERVICES="$LAB_DIR/services.txt"
 STORAGE="$LAB_DIR/storage.txt"
 RECS="$LAB_DIR/recommendations.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/cost_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -35,6 +36,7 @@ grep -q "payments,worker,4000,350" "$USAGE" || fail "usage.csv should include wo
 grep -q "default,load-test,3000,0" "$USAGE" || fail "usage.csv should include idle unknown workload"
 grep -q "abandoned-demo" "$SERVICES" || fail "services.txt should include abandoned load balancer"
 grep -q "abandoned-cache" "$STORAGE" || fail "storage.txt should include abandoned PVC"
+grep -q "EKS cost driver analysis passed" "$ANALYZER" || fail "cost_analyzer.py should report a successful local analysis"
 grep -q "Expected Savings" "$RECS" || fail "recommendations.md should include savings"
 grep -q "Reliability Risk" "$RECS" || fail "recommendations.md should include risk"
 grep -q "Restore previous requests" "$RECS" || fail "recommendations.md should include rollback"
@@ -44,6 +46,13 @@ grep -q "## Compute Waste Evidence" "$TEMPLATE" || fail "evidence-template.md sh
 grep -q "## Service And Storage Waste Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for service and storage evidence"
 grep -q "## Recommendation Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for recommendation evidence"
 
+python3 "$ANALYZER" \
+  --usage "$USAGE" \
+  --services "$SERVICES" \
+  --storage "$STORAGE" \
+  --recommendations "$RECS" \
+  --quiet
+
 echo "File checks passed for audit-eks-cost-drivers."
 
 if [[ -n "$evidence_file" ]]; then
@@ -52,6 +61,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "unknown owner idle workload" "default,load-test|default/load-test|unknown owner|owner unknown"
   require_evidence_match "$evidence_file" "abandoned LoadBalancer" "abandoned-demo|LoadBalancer|estimated monthly cost"
   require_evidence_match "$evidence_file" "abandoned PVC or storage waste" "abandoned-cache|200Gi|gp2|PVC"
+  require_evidence_match "$evidence_file" "local EKS cost analyzer evidence" "EKS cost driver analysis passed|cost analyzer|Compute right-size candidates|Quick-win monthly exposure"
   require_evidence_match "$evidence_file" "expected savings" "Expected Savings|expected savings|savings"
   require_evidence_match "$evidence_file" "reliability risk" "Reliability Risk|reliability risk"
   require_evidence_match "$evidence_file" "rollback and review cadence" "Rollback|review cadence|Weekly"

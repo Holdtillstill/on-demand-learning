@@ -4009,15 +4009,24 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/audit-eks-cost-drivers/setup.sh --evidence /tmp/eks-cost-evidence.md",
             "sed -n '1,160p' labs/platform-academy/audit-eks-cost-drivers/usage.csv",
             "sed -n '1,120p' labs/platform-academy/audit-eks-cost-drivers/services.txt",
         ],
         "commands": [
             "awk -F, 'NR==1 || $8==\"unknown\" || $3 > ($4 * 4) {print}' labs/platform-academy/audit-eks-cost-drivers/usage.csv",
             "grep -n \"abandoned\\|LoadBalancer\\|unknown\" labs/platform-academy/audit-eks-cost-drivers/services.txt labs/platform-academy/audit-eks-cost-drivers/storage.txt",
+            (
+                "python3 labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py "
+                "--usage labs/platform-academy/audit-eks-cost-drivers/usage.csv "
+                "--services labs/platform-academy/audit-eks-cost-drivers/services.txt "
+                "--storage labs/platform-academy/audit-eks-cost-drivers/storage.txt "
+                "--recommendations labs/platform-academy/audit-eks-cost-drivers/recommendations.md"
+            ),
         ],
         "practice_steps": [
             "Rank compute over-requesting, idle load balancers, and abandoned storage.",
+            "Use the local analyzer to separate quick-win monthly exposure from architecture-review items.",
             "Map each finding to an owner, savings estimate, reliability risk, and rollback.",
             "Decide which recommendations are quick wins versus architecture changes.",
         ],
@@ -4025,11 +4034,19 @@ RUNNABLE_LAB_UPDATES = {
             "Checkout and worker CPU requests are far above usage.",
             "Default namespace has abandoned load balancer and storage entries.",
             "Some resources have unknown owner metadata.",
+            "The local analyzer reports EKS cost driver analysis passed and quick-win monthly exposure.",
             "The recommendation table includes savings, reliability risk, and rollback.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/audit-eks-cost-drivers/validate.sh",
             "bash labs/platform-academy/audit-eks-cost-drivers/validate.sh --evidence /tmp/eks-cost-evidence.md",
+            (
+                "python3 labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py "
+                "--usage labs/platform-academy/audit-eks-cost-drivers/usage.csv "
+                "--services labs/platform-academy/audit-eks-cost-drivers/services.txt "
+                "--storage labs/platform-academy/audit-eks-cost-drivers/storage.txt "
+                "--recommendations labs/platform-academy/audit-eks-cost-drivers/recommendations.md"
+            ),
             "grep -n \"Expected Savings\" labs/platform-academy/audit-eks-cost-drivers/recommendations.md",
         ],
         "cleanup_commands": ["bash labs/platform-academy/audit-eks-cost-drivers/cleanup.sh"],
@@ -4665,16 +4682,24 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-delete/no-AWS safety boundary recorded",
+            "EKS cost driver analysis passed output captured",
             "Compute over-request evidence captured",
             "Unknown owner evidence captured",
             "Abandoned LoadBalancer and PVC evidence captured",
-            "Quick wins and architecture changes separated",
+            "Quick-win monthly exposure and architecture-review items separated",
             "Owner, savings, risk, rollback, and cadence recorded",
             "Validation output and cleanup/no-AWS evidence recorded",
         ],
         "rubric_evidence_terms": [
             ["usage.csv", "services.txt", "storage.txt", "no AWS", "no delete"],
-            ["payments,checkout,6000,900", "payments,worker,4000,350", "default,load-test,3000,0"],
+            [
+                "payments,checkout,6000,900",
+                "payments,worker,4000,350",
+                "default,load-test,3000,0",
+                "EKS cost driver analysis passed",
+                "Compute right-size candidates",
+                "Quick-win monthly exposure",
+            ],
             ["abandoned-demo", "abandoned-cache", "Expected Savings", "architecture review"],
             ["quick wins", "Reliability Risk", "owner confirmation", "delete"],
             ["Expected Savings", "Restore previous requests", "Weekly: unknown owner", "rollback"],
@@ -5077,6 +5102,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/audit-eks-cost-drivers/services.txt",
         "labs/platform-academy/audit-eks-cost-drivers/storage.txt",
         "labs/platform-academy/audit-eks-cost-drivers/recommendations.md",
+        "labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py",
+        "labs/platform-academy/audit-eks-cost-drivers/setup.sh",
         "labs/platform-academy/audit-eks-cost-drivers/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
         "labs/platform-academy/audit-eks-cost-drivers/validate.sh",

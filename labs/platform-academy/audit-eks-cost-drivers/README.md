@@ -15,10 +15,21 @@ No AWS Cost Explorer access is required. Use the local CSV and text snapshots. D
 ## Starting State
 
 ```bash
+bash labs/platform-academy/audit-eks-cost-drivers/setup.sh --evidence /tmp/eks-cost-evidence.md
 sed -n '1,160p' labs/platform-academy/audit-eks-cost-drivers/usage.csv
 sed -n '1,120p' labs/platform-academy/audit-eks-cost-drivers/services.txt
 sed -n '1,120p' labs/platform-academy/audit-eks-cost-drivers/storage.txt
 sed -n '1,180p' labs/platform-academy/audit-eks-cost-drivers/evidence-template.md
+```
+
+Run the local analyzer:
+
+```bash
+python3 labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py \
+  --usage labs/platform-academy/audit-eks-cost-drivers/usage.csv \
+  --services labs/platform-academy/audit-eks-cost-drivers/services.txt \
+  --storage labs/platform-academy/audit-eks-cost-drivers/storage.txt \
+  --recommendations labs/platform-academy/audit-eks-cost-drivers/recommendations.md
 ```
 
 ## Investigation
@@ -29,6 +40,7 @@ Find:
 - Unknown owners.
 - Abandoned LoadBalancer Services.
 - Abandoned or outdated storage.
+- Whether the local analyzer separates quick wins from architecture-review items.
 - Recommendations that are quick wins versus architecture changes.
 - Owner, expected savings, reliability risk, rollback, and review cadence evidence for each recommendation.
 
@@ -46,6 +58,7 @@ bash labs/platform-academy/audit-eks-cost-drivers/validate.sh --evidence /tmp/ek
 ## Success Criteria
 
 - You rank compute, LoadBalancer, and storage waste.
+- You use analyzer output to support the ranking and owner split.
 - You attach owner, expected savings, reliability risk, and rollback to each recommendation.
 - You avoid deleting anything without ownership confirmation.
 - You separate quick wins from architecture review items before proposing deletion or right-sizing.

@@ -14,7 +14,19 @@ Start with owner cleanup and right-sizing proposals. Do not delete shared resour
 
 ## Evidence to Save
 
-Save the usage rows, service list, storage list, recommendation table, owner assignments, expected savings, reliability risk, rollback notes, review cadence, and no-AWS note in `evidence-template.md`.
+The local EKS cost analyzer verifies the ranking without AWS credentials:
+
+```bash
+python3 labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py \
+  --usage labs/platform-academy/audit-eks-cost-drivers/usage.csv \
+  --services labs/platform-academy/audit-eks-cost-drivers/services.txt \
+  --storage labs/platform-academy/audit-eks-cost-drivers/storage.txt \
+  --recommendations labs/platform-academy/audit-eks-cost-drivers/recommendations.md
+```
+
+Expected result: `EKS cost driver analysis passed`, with compute right-size candidates, `default/load-test`, `default/abandoned-demo`, `default/abandoned-cache`, architecture-review items, and quick-win monthly exposure.
+
+Save the usage rows, service list, storage list, recommendation table, local EKS cost analyzer output, owner assignments, expected savings, reliability risk, rollback notes, review cadence, and no-AWS note in `evidence-template.md`.
 
 ## Cleanup
 
