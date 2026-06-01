@@ -2533,11 +2533,11 @@ function LabCard({ lab, completed, submission }: { lab: PlatformLab; completed: 
         <PortfolioLabBadge lab={lab} />
         <LabRuntimeBadge lab={lab} />
         <LabSubmissionBadge submission={submission} />
-        <span>
+        <span className="lab-duration">
           <Clock aria-hidden="true" />
           {lab.estimated_minutes} min
         </span>
-        {completed && <span>saved</span>}
+        {completed && <span className="lab-saved-badge">saved</span>}
       </div>
       <h2>{lab.title}</h2>
       <p>{lab.scenario}</p>

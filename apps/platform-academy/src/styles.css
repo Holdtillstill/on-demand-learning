@@ -792,13 +792,16 @@ main {
 .lab-queue {
   max-height: calc(100vh - 250px);
   overflow: auto;
+  overflow-x: hidden;
   padding-right: 4px;
+  overscroll-behavior: contain;
 }
 
 .lab-queue-row {
   display: grid;
   gap: 10px;
   min-width: 0;
+  overflow: hidden;
   border: 1px solid #d9dfda;
   background: #ffffff;
   padding: 14px;
@@ -2896,16 +2899,39 @@ h2 {
 }
 
 .lab-meta {
-  justify-content: space-between;
-  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 0;
 }
 
-.lab-meta > span:last-child {
+.lab-duration,
+.lab-saved-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   color: #52625c;
   font-weight: 800;
+}
+
+.lab-queue-row .level-badge,
+.lab-queue-row .lab-tier-badge,
+.lab-queue-row .portfolio-lab-badge,
+.lab-queue-row .lab-runtime-badge,
+.lab-queue-row .lab-submission-badge,
+.lab-queue-row .lab-duration,
+.lab-queue-row .lab-saved-badge {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+  line-height: 1.15;
+}
+
+.lab-queue-row .portfolio-lab-badge {
+  flex-basis: min(100%, 15rem);
 }
 
 .chip-list {
@@ -4393,6 +4419,161 @@ pre {
   border-color: rgba(251, 113, 133, 0.32);
   background: rgba(251, 113, 133, 0.13);
   color: #ffc0cb;
+}
+
+.lab-tier-badge,
+.portfolio-lab-badge,
+.lab-runtime-badge,
+.lab-submission-badge,
+.lab-saved-badge {
+  border: 1px solid rgba(158, 187, 177, 0.18);
+  background: rgba(255, 255, 255, 0.065);
+  color: var(--pa-text-soft);
+}
+
+.lab-tier-full {
+  border-color: rgba(51, 214, 166, 0.28);
+  background: rgba(51, 214, 166, 0.13);
+  color: #9ff9df;
+}
+
+.lab-tier-guided {
+  border-color: rgba(34, 211, 238, 0.3);
+  background: rgba(34, 211, 238, 0.13);
+  color: #a8f3ff;
+}
+
+.lab-tier-evidence-pack {
+  border-color: rgba(245, 158, 11, 0.32);
+  background: rgba(245, 158, 11, 0.14);
+  color: #ffd88a;
+}
+
+.portfolio-lab-badge {
+  border-color: rgba(125, 243, 211, 0.32);
+  background: linear-gradient(135deg, rgba(51, 214, 166, 0.16), rgba(34, 211, 238, 0.08));
+  color: #c8fff0;
+}
+
+.lab-runtime-cluster {
+  border-color: rgba(125, 243, 211, 0.3);
+  background: rgba(51, 214, 166, 0.12);
+  color: #b9ffe9;
+}
+
+.lab-runtime-files {
+  border-color: rgba(158, 187, 177, 0.18);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--pa-readable-secondary);
+}
+
+.lab-submission-badge,
+.lab-submission-not-started {
+  border-color: rgba(158, 187, 177, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--pa-text-soft);
+}
+
+.lab-submission-strong,
+.lab-submission-submitted {
+  border-color: rgba(51, 214, 166, 0.32);
+  background: rgba(51, 214, 166, 0.14);
+  color: #b9ffe9;
+}
+
+.lab-submission-in-progress {
+  border-color: rgba(245, 158, 11, 0.34);
+  background: rgba(245, 158, 11, 0.14);
+  color: #ffd88a;
+}
+
+.lab-duration,
+.lab-saved-badge {
+  color: var(--pa-readable-secondary);
+}
+
+.portfolio-lab-callout {
+  border-color: rgba(125, 243, 211, 0.3);
+  background:
+    linear-gradient(135deg, rgba(51, 214, 166, 0.14), rgba(34, 211, 238, 0.06)),
+    rgba(8, 22, 19, 0.72);
+}
+
+.portfolio-lab-callout strong {
+  color: #eafff7;
+}
+
+.portfolio-lab-callout span {
+  color: var(--pa-readable-secondary);
+}
+
+.lab-operational-brief {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(125, 243, 211, 0.26);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.12), transparent 24rem),
+    radial-gradient(circle at 0% 0%, rgba(51, 214, 166, 0.14), transparent 22rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.066), rgba(255, 255, 255, 0.028)),
+    rgba(6, 18, 16, 0.82);
+  color: var(--pa-text);
+  box-shadow: var(--pa-shadow-soft);
+}
+
+.lab-operational-brief::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(135deg, rgba(125, 243, 211, 0.12), transparent 42%);
+}
+
+.lab-operational-brief > * {
+  position: relative;
+}
+
+.lab-operational-brief .section-heading h2,
+.lab-artifact-map-panel .section-heading h3,
+.lab-run-phase h3,
+.lab-artifact-map-item strong {
+  color: #f4fff9;
+}
+
+.lab-operational-brief .section-heading > span,
+.lab-artifact-map-panel .section-heading > span,
+.lab-run-phase li,
+.lab-run-phase p,
+.lab-artifact-map-item code,
+.lab-artifact-map-more,
+.lab-artifact-map-empty {
+  color: var(--pa-readable-secondary);
+}
+
+.lab-run-phase,
+.lab-artifact-map-item {
+  border-color: rgba(158, 187, 177, 0.18);
+}
+
+.lab-run-phase-index {
+  color: #9ff9df;
+}
+
+.lab-run-phase-index svg {
+  border-color: rgba(125, 243, 211, 0.28);
+  background: rgba(51, 214, 166, 0.12);
+}
+
+.lab-artifact-map-panel {
+  border-color: rgba(158, 187, 177, 0.22);
+}
+
+.lab-artifact-map-item span {
+  color: var(--pa-muted);
+}
+
+.lab-artifact-map-item svg {
+  color: #9ff9df;
 }
 
 .search-box {
