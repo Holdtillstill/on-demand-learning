@@ -183,6 +183,20 @@ async function fetchAcademyCatalog() {
   if (invalid.length) {
     throw new Error(`Expected all labs to expose slug, title, and full tier; invalid labs: ${invalid.map((lab) => lab.slug || "unknown").join(", ")}`);
   }
+  const invalidWorkspaceMetadata = labs.filter(
+    (lab) =>
+      lab.workspace_archive_name !== `${lab.slug}-learner-workspace.zip` ||
+      lab.workspace_root !== lab.slug ||
+      !Array.isArray(lab.workspace_quickstart_commands) ||
+      lab.workspace_quickstart_commands[0] !== `unzip ${lab.slug}-learner-workspace.zip` ||
+      lab.workspace_quickstart_commands[1] !== `cd ${lab.slug}` ||
+      !lab.workspace_quickstart_commands.includes("./validate.sh --files-only")
+  );
+  if (invalidWorkspaceMetadata.length) {
+    throw new Error(
+      `Expected all labs to expose downloaded workspace metadata; invalid labs: ${invalidWorkspaceMetadata.map((lab) => lab.slug || "unknown").join(", ")}`
+    );
+  }
   const portfolioLabs = labs.filter((lab) => lab.portfolio_grade === true);
   if (portfolioLabs.length !== EXPECTED_PORTFOLIO_LABS) {
     throw new Error(`Expected ${EXPECTED_PORTFOLIO_LABS} portfolio-grade labs from catalog API, got ${portfolioLabs.length}`);
@@ -508,10 +522,23 @@ async function assertAllLabDetailRoutes(page, labs) {
     await expect(page.getByRole("heading", { name: "Worksheet and validation state" })).toBeVisible({ timeout: TIMEOUT_MS });
     await expect(page.getByText("Learner workspace contract")).toBeVisible({ timeout: TIMEOUT_MS });
     await expectApiLinkHref(page.getByRole("link", { name: /download lab packet/i }), `/api/platform-academy/labs/${encodeURIComponent(lab.slug)}/packet`);
-    await expectApiLinkHref(
-      page.getByRole("link", { name: /download learner workspace/i }),
-      `/api/platform-academy/labs/${encodeURIComponent(lab.slug)}/workspace-bundle`
-    );
+    const workspaceDownloadLink = page.getByRole("link", { name: /download learner workspace/i });
+    await expectApiLinkHref(workspaceDownloadLink, `/api/platform-academy/labs/${encodeURIComponent(lab.slug)}/workspace-bundle`);
+    const downloadName = await workspaceDownloadLink.getAttribute("download", { timeout: TIMEOUT_MS });
+    if (downloadName !== lab.workspace_archive_name) {
+      throw new Error(`Expected ${lab.slug} learner workspace download name ${lab.workspace_archive_name}, got ${downloadName || "empty"}`);
+    }
+    await expect(page.getByLabel("Downloaded workspace quickstart")).toBeVisible({ timeout: TIMEOUT_MS });
+    await expect(page.getByRole("heading", { name: "Run from extracted bundle" })).toBeVisible({ timeout: TIMEOUT_MS });
+    await expect(page.getByText(lab.workspace_archive_name, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
+    for (const command of [
+      `unzip ${lab.workspace_archive_name}`,
+      `cd ${lab.workspace_root}`,
+      "./validate.sh --files-only",
+      "./cleanup.sh",
+    ]) {
+      await expect(page.getByText(command, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
+    }
     await expect(page.getByText("Lab not found.")).toHaveCount(0);
   }
   console.log(`Verified ${labs.length} Platform Academy lab detail routes`);

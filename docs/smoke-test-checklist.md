@@ -15,7 +15,7 @@ Run this after every local rebuild, Docker Compose demo, shared-EKS preview, or 
 - `GET /api/platform-academy/catalog` returns `21` courses and `84` lessons.
 - `make platform-api-smoke API_BASE=https://...` passes and verifies no-store API headers, the OpenAPI backup/workbook/download contract, the source-bundle token header contract, the catalog, resources, interview prep, dashboard, activity history, 21 full labs, learner-safe public artifact paths, all lab packets, instructor/source bundles, learner workspace bundles, submission persistence, submission history, platform achievements, learner state export/import, and Platform Academy product metrics.
 - `make platform-lab-smoke API_BASE=https://...` passes and verifies all lab packets, protected source bundles, learner workspace bundles, no-store download headers, safe source/workspace extraction, source helper script syntax, and each downloaded workspace `validate.sh --files-only` helper.
-- API lab smoke verifies every Markdown lab packet includes the guided run sequence, evidence artifact map, learner-safe artifact paths, workbook prompts, validation commands, validation checks, rubric, cleanup commands, and local workspace command.
+- API lab smoke verifies every Markdown lab packet includes the guided run sequence, evidence artifact map, learner-safe artifact paths, workbook prompts, validation commands, validation checks, rubric, cleanup commands, local workspace command, and downloaded-workspace quickstart.
 - `make platform-deployed-smoke API_BASE=https://... WEB_BASE=https://...` passes when validating a complete remote deployment from a workstation or CI runner.
 - Container and CI browser smoke fail if the API emits `request_failed`, traceback, or unique-constraint errors while the browser is exercising lab workbook and recovery flows.
 - `GET /api/platform-academy/resources` returns `320` resources.
@@ -30,7 +30,7 @@ Run this after every local rebuild, Docker Compose demo, shared-EKS preview, or 
 - `/roadmap` renders all roadmap stages and remains readable on desktop and mobile widths.
 - `/labs` renders lab cards and linked course/lesson actions.
 - Every `/courses/{course_slug}` and `/courses/{course_slug}/lessons/{sequence}` route from the API catalog renders its title and expected lesson/progress controls.
-- Every `/labs/{slug}` route from the API lab catalog renders its lab title, guided run sequence, learner-safe artifact map, workbook, learner workspace contract, packet link, and learner workspace download link.
+- Every `/labs/{slug}` route from the API lab catalog renders its lab title, guided run sequence, learner-safe artifact map, workbook, learner workspace contract, packet link, learner workspace download link, downloaded-workspace filename, and extracted-bundle commands.
 - `/labs/trace-service-to-pod` saves worksheet evidence and returns rubric feedback.
 - Every `/resources/{slug}` route from the API resource library renders its title, commands, outcomes, and artifacts.
 - Every interview pack query state under `/interview-prep?pack={slug}` renders its selected pack and full question queue.
