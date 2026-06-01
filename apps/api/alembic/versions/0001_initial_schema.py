@@ -43,30 +43,13 @@ def upgrade() -> None:
     )
 
     op.create_table(
-        "character_metadata",
-        sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("simplified", sa.String(length=8), nullable=False),
-        sa.Column("traditional", sa.String(length=8), nullable=False),
-        sa.Column("pinyin", sa.String(length=80), nullable=False),
-        sa.Column("meaning", sa.String(length=160), nullable=False),
-        sa.Column("radical", sa.String(length=40), nullable=False),
-        sa.Column("strokes", sa.Integer(), nullable=False),
-        sa.Column("mnemonic", sa.Text(), nullable=False),
-        sa.Column("cultural_note", sa.Text(), nullable=False),
-        sa.Column("example_words", sa.JSON(), nullable=False),
-    )
-    op.create_index("ix_character_metadata_simplified", "character_metadata", ["simplified"], unique=True)
-    op.create_index("ix_character_metadata_traditional", "character_metadata", ["traditional"])
-
-    op.create_table(
         "lessons",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("course_id", sa.Integer(), sa.ForeignKey("courses.id"), nullable=False),
         sa.Column("title", sa.String(length=200), nullable=False),
         sa.Column("summary", sa.Text(), nullable=False),
-        sa.Column("body_simplified", sa.Text(), nullable=False),
-        sa.Column("body_traditional", sa.Text(), nullable=False),
-        sa.Column("pinyin", sa.Text(), nullable=False),
+        sa.Column("body", sa.Text(), nullable=False),
+        sa.Column("practice_notes", sa.Text(), nullable=False),
         sa.Column("audio_url", sa.String(length=500), nullable=True),
         sa.Column("video_url", sa.String(length=500), nullable=True),
         sa.Column("sequence", sa.Integer(), nullable=False),
@@ -75,15 +58,14 @@ def upgrade() -> None:
     op.create_index("ix_lessons_title", "lessons", ["title"])
 
     op.create_table(
-        "vocabulary_terms",
+        "glossary_terms",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("lesson_id", sa.Integer(), sa.ForeignKey("lessons.id"), nullable=False),
-        sa.Column("simplified", sa.String(length=80), nullable=False),
-        sa.Column("traditional", sa.String(length=80), nullable=False),
-        sa.Column("pinyin", sa.String(length=120), nullable=False),
+        sa.Column("term", sa.String(length=80), nullable=False),
+        sa.Column("context", sa.String(length=120), nullable=False),
         sa.Column("definition", sa.String(length=250), nullable=False),
     )
-    op.create_index("ix_vocabulary_terms_lesson_id", "vocabulary_terms", ["lesson_id"])
+    op.create_index("ix_glossary_terms_lesson_id", "glossary_terms", ["lesson_id"])
 
     op.create_table(
         "flashcards",
@@ -91,7 +73,7 @@ def upgrade() -> None:
         sa.Column("lesson_id", sa.Integer(), sa.ForeignKey("lessons.id"), nullable=False),
         sa.Column("prompt", sa.Text(), nullable=False),
         sa.Column("answer", sa.Text(), nullable=False),
-        sa.Column("pinyin", sa.String(length=160), nullable=False),
+        sa.Column("hint", sa.String(length=160), nullable=False),
         sa.Column("difficulty", sa.String(length=40), nullable=False),
     )
     op.create_index("ix_flashcards_lesson_id", "flashcards", ["lesson_id"])
@@ -216,9 +198,8 @@ def downgrade() -> None:
         "progress",
         "review_states",
         "flashcards",
-        "vocabulary_terms",
+        "glossary_terms",
         "lessons",
-        "character_metadata",
         "users",
         "courses",
     ]:

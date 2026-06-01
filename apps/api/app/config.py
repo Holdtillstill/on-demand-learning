@@ -9,13 +9,13 @@ LOCAL_SOURCE_BUNDLE_ENVIRONMENTS = {"local", "test", "development"}
 
 
 class Settings(BaseSettings):
-    app_name: str = "zhongwen-api"
+    app_name: str = "platform-academy-api"
     environment: str = "local"
-    database_url: str = "postgresql+psycopg://zhongwen:zhongwen@postgres:5432/zhongwen"
+    database_url: str = "postgresql+psycopg://platform_academy:platform_academy@postgres:5432/platform_academy"
     redis_url: str = "redis://redis:6379/0"
     cors_origins: str = (
-        "http://localhost:5173,http://localhost:5174,http://localhost:8080,http://localhost:8081,http://localhost:8082,http://localhost:8090,"
-        "http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:8080,http://127.0.0.1:8081,http://127.0.0.1:8082,http://127.0.0.1:8090"
+        "http://localhost:5174,http://localhost:8090,"
+        "http://127.0.0.1:5174,http://127.0.0.1:8090"
     )
     auto_seed: bool = True
     create_schema_on_startup: bool = True

@@ -39,9 +39,9 @@ from app.metrics import (
     XP_AWARDED,
 )
 from app.models import (
-    CharacterMetadata,
     Course,
     Flashcard,
+    GlossaryTerm,
     Lesson,
     PlatformActivity,
     PlatformLabSubmission,
@@ -50,7 +50,6 @@ from app.models import (
     ReviewState,
     User,
     UserAchievement,
-    VocabularyTerm,
     XpEvent,
 )
 from app.platform_content import (
@@ -80,7 +79,6 @@ from app.schemas import (
     MAX_PLATFORM_STATE_WORKSHEET_VALUE_LENGTH,
     MAX_USER_ID_LENGTH,
     USER_ID_PATTERN,
-    CharacterOut,
     CourseCreate,
     CourseOut,
     DueReviewQueue,
@@ -113,7 +111,7 @@ from app.telemetry import configure_tracing
 from app.time_utils import utc_now, utc_today
 
 configure_logging()
-logger = logging.getLogger("zhongwen.api")
+logger = logging.getLogger("platform_academy.api")
 settings = get_settings()
 SOURCE_BUNDLE_TOKEN_HEADER = "X-Platform-Source-Bundle-Token"
 
@@ -133,13 +131,13 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Zhongwen Cloud Learning Platform API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Platform Academy API", version="0.1.0", lifespan=lifespan)
 configure_tracing(app)
 
 PLATFORM_STATE_EXPORT_DESCRIPTION = (
     "Exports a portable JSON backup for a Platform Academy guest profile. "
     "The backup is intentionally scoped to Platform Academy lesson progress, saved activity, and lab workbook submissions; "
-    "it does not include Zhongwen course progress or credentials. "
+    "it does not include credentials or unrelated lesson progress. "
     f"The response is capped at {MAX_PLATFORM_STATE_PROGRESS_ROWS} progress rows, "
     f"{MAX_PLATFORM_STATE_ACTIVITY_ROWS} activity rows, and {MAX_PLATFORM_STATE_LAB_ROWS} lab submissions."
 )
@@ -289,28 +287,14 @@ ACHIEVEMENTS = [
         "title": "First Lesson",
         "description": "Complete one lesson.",
         "target": 1,
-        "domains": {"all", "zhongwen", "platform"},
-    },
-    {
-        "code": "poetry_explorer",
-        "title": "Poetry Explorer",
-        "description": "Complete a literature or Tang poetry lesson.",
-        "target": 1,
-        "domains": {"all", "zhongwen"},
-    },
-    {
-        "code": "character_builder",
-        "title": "Character Builder",
-        "description": "Complete a character building lesson or review character cards.",
-        "target": 1,
-        "domains": {"all", "zhongwen"},
+        "domains": {"all", "platform"},
     },
     {
         "code": "seven_day_streak",
         "title": "Seven Day Streak",
         "description": "Record learner XP on seven consecutive days.",
         "target": 7,
-        "domains": {"all", "zhongwen", "platform"},
+        "domains": {"all", "platform"},
     },
     {
         "code": "platform_pathfinder",
@@ -419,8 +403,8 @@ def add_xp_event(db: Session, user_id: str, source: str, source_id: int, xp: int
 
 def selected_domain(domain: str | None) -> str:
     selected = (domain or "all").lower()
-    if selected not in {"all", "platform", "zhongwen"}:
-        raise HTTPException(status_code=400, detail="domain must be one of: all, zhongwen, platform")
+    if selected not in {"all", "platform"}:
+        raise HTTPException(status_code=400, detail="domain must be one of: all, platform")
     return selected
 
 
@@ -434,7 +418,7 @@ def course_domain_condition(domain: str | None):
         return None
     if selected == "platform":
         return Course.era == PLATFORM_ACADEMY_ERA
-    return Course.era != PLATFORM_ACADEMY_ERA
+    return None
 
 
 def completed_progress_query(db: Session, user_id: str, domain: str = "all"):
@@ -480,8 +464,7 @@ def apply_course_domain_filter(query, domain: str | None):
         return query
     if selected == "platform":
         return query.filter(Course.era == PLATFORM_ACADEMY_ERA)
-    if selected == "zhongwen":
-        return query.filter(Course.era != PLATFORM_ACADEMY_ERA)
+    return query
 
 
 def platform_courses(db: Session) -> list[Course]:
@@ -1303,7 +1286,7 @@ def get_course(course_id: int, db: Session = Depends(get_db)):
 def get_lesson(lesson_id: int, db: Session = Depends(get_db)):
     lesson = (
         db.query(Lesson)
-        .options(joinedload(Lesson.course), joinedload(Lesson.vocabulary), joinedload(Lesson.flashcards))
+        .options(joinedload(Lesson.course), joinedload(Lesson.terms), joinedload(Lesson.flashcards))
         .filter(Lesson.id == lesson_id)
         .first()
     )
@@ -1449,8 +1432,8 @@ def search(q: str, db: Session = Depends(get_db)):
             or_(
                 Lesson.title.ilike(pattern),
                 Lesson.summary.ilike(pattern),
-                Lesson.body_simplified.ilike(pattern),
-                Lesson.pinyin.ilike(pattern),
+                Lesson.body.ilike(pattern),
+                Lesson.practice_notes.ilike(pattern),
             )
         )
         .limit(10)
@@ -1483,7 +1466,7 @@ def create_quiz_attempt(payload: QuizAttemptIn, db: Session = Depends(get_db)):
 
 
 @app.get("/api/learning-path", response_model=LearningPathOut)
-def get_learning_path(user_id: str = "demo-user", domain: str = "zhongwen", db: Session = Depends(get_db)):
+def get_learning_path(user_id: str = "demo-user", domain: str = "platform", db: Session = Depends(get_db)):
     ensure_user(db, user_id)
     query = db.query(Course).options(joinedload(Course.lessons)).order_by(Course.id)
     courses = apply_course_domain_filter(query, domain).all()
@@ -1579,22 +1562,6 @@ def achievement_progress(db: Session, user_id: str, streak_days: int, domain: st
     completed = completed_progress_query(db, user_id, domain).all()
     platform_completed = completed if domain == "platform" else completed_progress_query(db, user_id, "platform").all()
     completed_count = len(completed)
-    poetry_count = sum(
-        1
-        for progress in completed
-        if progress.lesson.course.category == "Literature" or progress.lesson.course.era == "Tang"
-    )
-    character_progress = sum(1 for progress in completed if progress.lesson.course.category == "Characters")
-    review_query = (
-        db.query(ReviewState)
-        .join(Flashcard, ReviewState.flashcard_id == Flashcard.id)
-        .join(Lesson, Flashcard.lesson_id == Lesson.id)
-        .join(Course, Lesson.course_id == Course.id)
-    )
-    condition = course_domain_condition(domain)
-    if condition is not None:
-        review_query = review_query.filter(condition)
-    character_reviews = review_query.filter(ReviewState.user_id == user_id, ReviewState.last_reviewed_at.is_not(None)).count()
     platform_activity = (
         db.query(PlatformActivity)
         .filter(PlatformActivity.user_id == user_id, PlatformActivity.state == "completed")
@@ -1612,8 +1579,6 @@ def achievement_progress(db: Session, user_id: str, streak_days: int, domain: st
     }
     return {
         "first_lesson": completed_count,
-        "poetry_explorer": poetry_count,
-        "character_builder": character_progress + character_reviews,
         "seven_day_streak": streak_days,
         "platform_pathfinder": len(platform_completed),
         "resource_curator": len({row.target_id for row in platform_activity if row.target_type == "resource"}),
@@ -1712,7 +1677,7 @@ def get_due_reviews(user_id: str = "demo-user", limit: int = 20, db: Session = D
                 "lesson_id": card.lesson_id,
                 "prompt": card.prompt,
                 "answer": card.answer,
-                "pinyin": card.pinyin,
+                "hint": card.hint,
                 "difficulty": card.difficulty,
                 "due_at": state.due_at if state else now,
                 "interval_days": state.interval_days if state else 0,
@@ -1753,19 +1718,6 @@ def answer_review(flashcard_id: int, payload: ReviewAnswerIn, db: Session = Depe
     return state
 
 
-@app.get("/api/characters", response_model=list[CharacterOut])
-def list_characters(db: Session = Depends(get_db)):
-    return db.query(CharacterMetadata).order_by(CharacterMetadata.strokes, CharacterMetadata.id).all()
-
-
-@app.get("/api/characters/{character_id}", response_model=CharacterOut)
-def get_character(character_id: int, db: Session = Depends(get_db)):
-    character = db.get(CharacterMetadata, character_id)
-    if not character:
-        raise HTTPException(status_code=404, detail="character not found")
-    return character
-
-
 @app.post("/api/admin/courses", response_model=CourseOut, status_code=status.HTTP_201_CREATED)
 def admin_create_course(payload: CourseCreate, db: Session = Depends(get_db)):
     existing = db.query(Course).filter(Course.slug == payload.slug).first()
@@ -1789,22 +1741,20 @@ def admin_create_course(payload: CourseCreate, db: Session = Depends(get_db)):
             course_id=course.id,
             title=lesson_data.title,
             summary=lesson_data.summary,
-            body_simplified=lesson_data.body_simplified,
-            body_traditional=lesson_data.body_traditional,
-            pinyin=lesson_data.pinyin,
+            body=lesson_data.body,
+            practice_notes=lesson_data.practice_notes,
             audio_url=lesson_data.audio_url,
             video_url=lesson_data.video_url,
             sequence=index,
         )
         db.add(lesson)
         db.flush()
-        for term in lesson_data.vocabulary:
+        for term in lesson_data.terms:
             db.add(
-                VocabularyTerm(
+                GlossaryTerm(
                     lesson_id=lesson.id,
-                    simplified=term.simplified,
-                    traditional=term.traditional,
-                    pinyin=term.pinyin,
+                    term=term.term,
+                    context=term.context,
                     definition=term.definition,
                 )
             )
@@ -1814,7 +1764,7 @@ def admin_create_course(payload: CourseCreate, db: Session = Depends(get_db)):
                     lesson_id=lesson.id,
                     prompt=card.prompt,
                     answer=card.answer,
-                    pinyin=card.pinyin,
+                    hint=card.hint,
                     difficulty=card.difficulty,
                 )
             )

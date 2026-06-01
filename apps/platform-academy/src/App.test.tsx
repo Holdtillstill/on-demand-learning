@@ -213,16 +213,15 @@ const lesson201 = {
   title: "Containers, Images, and Pods",
   summary: "Understand the unit Kubernetes runs.",
   sequence: 1,
-  body_simplified: "## Pod model\nKubernetes schedules Pods, not bare containers.",
-  body_traditional: "## Pod model\nKubernetes schedules Pods, not bare containers.",
-  pinyin: "- Inspect Pods\n$ kubectl get pods -A",
+  body: "## Pod model\nKubernetes schedules Pods, not bare containers.",
+  practice_notes: "- Inspect Pods\n$ kubectl get pods -A",
   audio_url: null,
   video_url: null,
   course_slug: "platform-kubernetes-fundamentals",
   course_category: "Kubernetes",
   course_era: "Platform Academy",
-  vocabulary: [{ id: 2, simplified: "Pod", traditional: "Pod", pinyin: "pod", definition: "Smallest schedulable Kubernetes workload." }],
-  flashcards: [{ id: 2, lesson_id: 201, prompt: "What does Kubernetes schedule?", answer: "Pods.", pinyin: "", difficulty: "beginner" }]
+  terms: [{ id: 2, term: "Pod", context: "pod", definition: "Smallest schedulable Kubernetes workload." }],
+  flashcards: [{ id: 2, lesson_id: 201, prompt: "What does Kubernetes schedule?", answer: "Pods.", hint: "", difficulty: "beginner" }]
 };
 
 const lesson202 = {
@@ -231,16 +230,15 @@ const lesson202 = {
   title: "Services, Labels, Selectors, and Namespaces",
   summary: "Connect traffic to Pods.",
   sequence: 2,
-  body_simplified: "## Service routing\nServices select ready Pods by label.",
-  body_traditional: "## Service routing\nServices select ready Pods by label.",
-  pinyin: "- Compare selector labels\n$ kubectl describe svc checkout -n payments",
+  body: "## Service routing\nServices select ready Pods by label.",
+  practice_notes: "- Compare selector labels\n$ kubectl describe svc checkout -n payments",
   audio_url: null,
   video_url: null,
   course_slug: "platform-kubernetes-fundamentals",
   course_category: "Kubernetes",
   course_era: "Platform Academy",
-  vocabulary: [{ id: 1, simplified: "Service", traditional: "Service", pinyin: "service", definition: "Stable cluster networking abstraction." }],
-  flashcards: [{ id: 1, lesson_id: 202, prompt: "What connects a Service to Pods?", answer: "Selectors and labels.", pinyin: "", difficulty: "beginner" }]
+  terms: [{ id: 1, term: "Service", context: "service", definition: "Stable cluster networking abstraction." }],
+  flashcards: [{ id: 1, lesson_id: 202, prompt: "What connects a Service to Pods?", answer: "Selectors and labels.", hint: "", difficulty: "beginner" }]
 };
 
 const roadmap = {

@@ -14,13 +14,12 @@ def platform_lesson(
     return {
         "title": title,
         "summary": summary,
-        "body_simplified": body.strip(),
-        "body_traditional": body.strip(),
-        "pinyin": lab.strip(),
+        "body": body.strip(),
+        "practice_notes": lab.strip(),
         "audio_url": None,
         "video_url": None,
-        "vocabulary": terms,
-        "flashcards": flashcards,
+        "terms": [{"term": term, "context": context, "definition": definition} for term, _alternate, context, definition in terms],
+        "flashcards": [{"prompt": prompt, "answer": answer, "hint": hint, "difficulty": "beginner"} for prompt, answer, hint in flashcards],
     }
 
 

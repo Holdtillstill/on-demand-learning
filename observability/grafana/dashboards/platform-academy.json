@@ -1,0 +1,325 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (path, status_code) (rate(platform_academy_api_requests_total[5m]))",
+          "legendFormat": "{{path}} {{status_code}}",
+          "refId": "A"
+        }
+      ],
+      "title": "API Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, path) (rate(platform_academy_api_request_latency_seconds_bucket[5m])))",
+          "legendFormat": "p95 {{path}}",
+          "refId": "A"
+        }
+      ],
+      "title": "API p95 Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "platform_academy_api_db_health",
+          "legendFormat": "db health",
+          "refId": "A"
+        }
+      ],
+      "title": "Database Health",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 8
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "increase(platform_academy_quiz_attempts_total[1h])",
+          "legendFormat": "quiz attempts",
+          "refId": "A"
+        },
+        {
+          "expr": "increase(platform_academy_lesson_completions_total[1h])",
+          "legendFormat": "lesson completions",
+          "refId": "B"
+        }
+      ],
+      "title": "Learning Events Last Hour",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 8
+      },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "sum by (job) (increase(platform_academy_worker_jobs_total[1h]))",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Worker Jobs Last Hour",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 15
+      },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "increase(platform_academy_xp_awarded_total[1h])",
+          "legendFormat": "xp awarded",
+          "refId": "A"
+        }
+      ],
+      "title": "XP Awarded Last Hour",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 15
+      },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "increase(platform_academy_srs_reviews_total[1h])",
+          "legendFormat": "srs reviews",
+          "refId": "A"
+        }
+      ],
+      "title": "SRS Reviews Last Hour",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 15
+      },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "platform_academy_worker_due_flashcards",
+          "legendFormat": "due cards",
+          "refId": "A"
+        }
+      ],
+      "title": "Worker Due Flashcards",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 22
+      },
+      "id": 9,
+      "targets": [
+        {
+          "expr": "sum by (target_type, state) (increase(platform_academy_activity_saves_total[1h]))",
+          "legendFormat": "{{target_type}} {{state}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Platform Activity Saves",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 6,
+        "y": 22
+      },
+      "id": 10,
+      "targets": [
+        {
+          "expr": "sum by (status) (increase(platform_academy_lab_submissions_total[1h]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Platform Lab Submissions",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 22
+      },
+      "id": 11,
+      "targets": [
+        {
+          "expr": "sum(increase(platform_academy_lab_packet_downloads_total[1h]))",
+          "legendFormat": "packets",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(platform_academy_lab_bundle_downloads_total[1h]))",
+          "legendFormat": "bundles",
+          "refId": "B"
+        }
+      ],
+      "title": "Lab Downloads",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 22
+      },
+      "id": 12,
+      "targets": [
+        {
+          "expr": "sum by (domain) (increase(platform_academy_dashboard_reads_total[1h]))",
+          "legendFormat": "{{domain}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Dashboard Reads",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["platform-academy", "sre", "portfolio"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "title": "Platform Academy Overview",
+  "uid": "platform-academy",
+  "version": 1,
+  "weekStart": ""
+}

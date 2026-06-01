@@ -1,4 +1,4 @@
-.PHONY: help up up-logging down logs clean-generated clean-smoke-images test bootstrap backend-test api-migration-check api-image-migration-check doc-link-check env-contract-check platform-content-count-check working-tree-hygiene-check frontend-test platform-academy-test platform-lab-contract platform-lab-artifact-contract platform-lab-matrix platform-lab-verify platform-review-manifest platform-api-smoke platform-lab-smoke platform-browser-smoke platform-container-smoke platform-deployed-smoke platform-release-evidence platform-review-pack smoke-helper-check worker-test build compose-config terraform-validate k8s-platform-contract kubeconform-check workflow-lint workflow-contract-check script-syntax-check fmt-check release-check platform-release-check
+.PHONY: help up up-logging down logs clean-generated clean-smoke-images test bootstrap backend-test api-migration-check api-image-migration-check doc-link-check env-contract-check platform-content-count-check working-tree-hygiene-check platform-academy-test platform-lab-contract platform-lab-artifact-contract platform-lab-matrix platform-lab-verify platform-review-manifest platform-api-smoke platform-lab-smoke platform-browser-smoke platform-container-smoke platform-deployed-smoke platform-release-evidence platform-review-pack smoke-helper-check worker-test build compose-config terraform-validate k8s-platform-contract kubeconform-check workflow-lint workflow-contract-check script-syntax-check fmt-check release-check platform-release-check
 
 PYTHON ?= python3.11
 KUBECONFORM_IMAGE ?= ghcr.io/yannh/kubeconform:v0.6.7
@@ -20,9 +20,8 @@ logs: ## Tail all service logs
 	docker compose logs -f
 
 clean-generated: ## Remove local test/build/smoke artifacts
-	rm -rf .pytest_cache apps/api/.pytest_cache apps/worker/.pytest_cache apps/frontend/.vite apps/platform-academy/.vite apps/frontend/dist apps/platform-academy/dist infra/terraform/.terraform smoke-artifacts
+	rm -rf .pytest_cache apps/api/.pytest_cache apps/worker/.pytest_cache apps/platform-academy/.vite apps/platform-academy/dist infra/terraform/.terraform smoke-artifacts
 	rm -rf apps/api/test.db apps/api/ci-test.db apps/api/ci-smoke.db test.db ci-platform-browser-smoke.db
-	rm -rf apps/frontend/playwright-report apps/frontend/test-results apps/frontend/coverage
 	rm -rf apps/platform-academy/playwright-report apps/platform-academy/test-results apps/platform-academy/coverage
 	find apps scripts labs -name __pycache__ -type d -prune -exec rm -rf {} +
 	find apps -name '*.tsbuildinfo' -type f -delete
@@ -45,7 +44,7 @@ k8s-platform-contract: ## Verify Kubernetes scaffold includes the Platform Acade
 	$(PYTHON) scripts/verify_k8s_platform_contract.py
 
 kubeconform-check: ## Validate Kubernetes manifests with kubeconform
-	docker run --rm -v "$(CURDIR):/work" $(KUBECONFORM_IMAGE) -strict -summary /work/infra/k8s/zhongwen-platform.yaml
+	docker run --rm -v "$(CURDIR):/work" $(KUBECONFORM_IMAGE) -strict -summary /work/infra/k8s/platform-academy.yaml
 
 workflow-lint: ## Validate GitHub Actions workflows with actionlint
 	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ACTIONLINT_IMAGE) -color=false .github/workflows/*.yml
@@ -80,9 +79,6 @@ platform-content-count-check: ## Verify smoke defaults and docs match Platform A
 
 working-tree-hygiene-check: ## Verify branch and local changed files are clean enough to review
 	$(PYTHON) scripts/verify_working_tree_hygiene.py
-
-frontend-test: ## Run frontend tests locally
-	cd apps/frontend && npm install --include=dev && npm run typecheck && npm test && npm run build
 
 platform-academy-test: ## Run standalone Platform Academy frontend tests locally
 	cd apps/platform-academy && npm install --include=dev && npm run typecheck && npm test && npm run build
@@ -130,7 +126,7 @@ smoke-helper-check: ## Verify smoke helper dry-run and validation paths without 
 worker-test: ## Run worker tests locally
 	cd apps/worker && $(PYTHON) -m pytest
 
-test: backend-test worker-test frontend-test platform-academy-test platform-lab-verify ## Run all tests
+test: backend-test worker-test platform-academy-test platform-lab-verify ## Run all tests
 
 build: ## Build local service images
 	docker compose build

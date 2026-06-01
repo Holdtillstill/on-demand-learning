@@ -3,7 +3,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project     = "zhongwen-cloud-learning-platform"
+      Project     = "platform-academy"
       ManagedBy   = "terraform"
       Environment = var.environment
       CostCenter  = "portfolio-demo"

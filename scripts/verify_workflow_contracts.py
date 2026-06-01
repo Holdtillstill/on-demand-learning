@@ -15,7 +15,7 @@ EXPECTED_WORKFLOWS = {
     "backend.yml",
     "dependency-audit.yml",
     "docker-build.yml",
-    "frontend.yml",
+    "platform-academy-frontend.yml",
     "platform-academy-image.yml",
     "platform-deployed-smoke.yml",
     "platform-validate.yml",
@@ -201,11 +201,11 @@ def verify_backend_frontend_smokes() -> None:
     require_run_contains(backend_smoke, "scripts/smoke_platform_academy_api.sh", "backend API smoke")
     require_run_contains(backend_smoke, "scripts/audit_api_log.sh", "backend API smoke log audit")
 
-    frontend = workflow("frontend.yml")
-    frontend_steps = steps(frontend, "platform-academy-browser-smoke", "frontend.yml")
-    browser_smoke = step_by_name(frontend_steps, "Run Platform Academy browser smoke", "frontend.yml")
-    require_run_contains(browser_smoke, "npm --prefix apps/platform-academy run smoke:routes", "frontend browser smoke")
-    require_run_contains(browser_smoke, "scripts/audit_api_log.sh", "frontend browser smoke log audit")
+    frontend = workflow("platform-academy-frontend.yml")
+    frontend_steps = steps(frontend, "platform-academy-browser-smoke", "platform-academy-frontend.yml")
+    browser_smoke = step_by_name(frontend_steps, "Run Platform Academy browser smoke", "platform-academy-frontend.yml")
+    require_run_contains(browser_smoke, "npm --prefix apps/platform-academy run smoke:routes", "platform academy frontend browser smoke")
+    require_run_contains(browser_smoke, "scripts/audit_api_log.sh", "platform academy frontend browser smoke log audit")
 
 
 def verify_platform_validate_workflow() -> None:

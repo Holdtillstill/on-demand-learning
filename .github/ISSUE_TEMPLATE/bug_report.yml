@@ -9,7 +9,6 @@ body:
       label: Affected Surface
       options:
         - Platform Academy frontend
-        - Zhongwen frontend
         - FastAPI backend
         - Worker
         - Labs

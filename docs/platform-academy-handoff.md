@@ -21,7 +21,6 @@ Latest local verification on `codex/runnable-labs`:
 - `make working-tree-hygiene-check`: passed across branch changes plus local modified, staged, and untracked files.
 - API tests: `69 passed`.
 - Worker tests: `1 passed`.
-- Zhongwen frontend tests: `1 passed`.
 - Platform Academy frontend tests: `34 passed`.
 - Full lab verifier: `Verified 21 full labs`.
 - Lab contract now requires `DEEPENED_LAB_CONTRACT` to cover every full lab, so a future full lab cannot silently fall back to generic worksheet/rubric behavior.
@@ -38,7 +37,7 @@ Use this map to split review by ownership area instead of reading the branch as 
 - Browser smoke: `apps/platform-academy/scripts/smoke-routes.mjs`.
 - Lab review matrix: `make platform-lab-matrix` prints portfolio focus and structural-gate columns so reviewers can route the 21 portfolio-grade labs across structural artifact gates and workbook evidence checks.
 - Release and contract gates: `Makefile`, `scripts/verify_platform_lab_contract.py`, `scripts/smoke_platform_academy_labs.sh`, `scripts/smoke_platform_academy_api.sh`, `scripts/smoke_platform_academy_container.sh`, `scripts/verify_api_image_migrations.sh`, `scripts/verify_workflow_contracts.py`, and `scripts/verify_k8s_platform_contract.py`.
-- Deployment surface: `.env.example`, `docker-compose.yml`, `.github/workflows/`, `infra/k8s/zhongwen-platform.yaml`, and `docs/deployment.md`.
+- Deployment surface: `.env.example`, `docker-compose.yml`, `.github/workflows/`, `infra/k8s/platform-academy.yaml`, and `docs/deployment.md`.
 
 For a quick lab-by-lab review index, run:
 
@@ -56,7 +55,7 @@ make platform-review-pack
 
 Another deployment-focused branch can safely build on this work, but these shared surfaces need an intentional merge:
 
-- Keep `infra/k8s/zhongwen-platform.yaml`, `docker-compose.yml`, `.env.example`, `.github/workflows/`, `Makefile`, and `docs/deployment.md` synchronized rather than accepting one side wholesale.
+- Keep `infra/k8s/platform-academy.yaml`, `docker-compose.yml`, `.env.example`, `.github/workflows/`, `Makefile`, and `docs/deployment.md` synchronized rather than accepting one side wholesale.
 - Preserve the runtime contract for `DATABASE_URL`, `REDIS_URL`, `CORS_ORIGINS`, `TRUSTED_PROXY_CIDRS`, `RATE_LIMIT_EXEMPT_PATHS`, `CREATE_SCHEMA_ON_STARTUP`, `PLATFORM_API_UPSTREAM`, `PLATFORM_SOURCE_BUNDLE_PUBLIC`, and `PLATFORM_SOURCE_BUNDLE_TOKEN`.
 - Publish API and Platform Academy web images from the same Git SHA. The lab API schema, browser workbook UI, and bundle/download smoke are coupled enough that split-SHA deployment should be treated as risky.
 - If the deployment branch changes hosts, image names, ingress, CORS, proxying, workflow inputs, or source-bundle token handling, rerun `make platform-release-check` after merge and run `SMOKE_DRY_RUN=true make platform-deployed-smoke API_BASE=<preview-api> WEB_BASE=<preview-web>` before the real deployed smoke.

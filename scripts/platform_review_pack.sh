@@ -133,7 +133,7 @@ This branch is intentionally broad. Use this generated scope summary with \`chan
 
 ## Suggested Review Order
 
-1. Release/deployment contracts: \`Makefile\`, \`scripts/\`, \`.github/workflows/\`, \`.env.example\`, \`docker-compose.yml\`, and \`infra/k8s/zhongwen-platform.yaml\`.
+1. Release/deployment contracts: \`Makefile\`, \`scripts/\`, \`.github/workflows/\`, \`.env.example\`, \`docker-compose.yml\`, and \`infra/k8s/platform-academy.yaml\`.
 2. API contracts and persistence: \`apps/api/app/main.py\`, \`apps/api/app/platform_content.py\`, \`apps/api/app/platform_lab_artifacts.py\`, \`apps/api/app/schemas.py\`, Alembic files, and API tests.
 3. Lab artifacts: \`labs/platform-academy/\`, using \`lab-review-matrix.md\` to split portfolio-grade labs from the broader full-lab set.
 4. Platform Academy frontend: \`apps/platform-academy/src/\` plus \`apps/platform-academy/scripts/smoke-routes.mjs\`.

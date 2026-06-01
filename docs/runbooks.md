@@ -51,7 +51,7 @@ Validation:
 ## Elevated API Error Rate
 
 Symptoms:
-- `zhongwen_api_errors_total` increases.
+- `platform_academy_api_errors_total` increases.
 - 5xx status codes appear in request rate panel.
 
 Steps:
@@ -105,7 +105,7 @@ Safety note:
 ## Worker Job Failures
 
 Symptoms:
-- `zhongwen_worker_job_failures_total` increases.
+- `platform_academy_worker_job_failures_total` increases.
 - Recommendations stop refreshing.
 
 Steps:
@@ -138,7 +138,7 @@ pg_dump --format=custom --file "backups/platform-academy-$(date +%Y%m%d%H%M%S).d
 Local Compose backup:
 
 ```bash
-docker compose exec postgres pg_dump -U zhongwen -d zhongwen --format=custom > backups/local-platform-academy.dump
+docker compose exec postgres pg_dump -U platform_academy -d platform_academy --format=custom > backups/local-platform-academy.dump
 ```
 
 Restore drill:
@@ -198,7 +198,7 @@ Symptoms:
 - Jaeger traces show slow `/api/search`, `/api/reviews/due`, or dashboard requests.
 
 Steps:
-1. Check whether latency is isolated to one path: `sum by (path) (rate(zhongwen_api_request_latency_seconds_sum[5m]))`.
+1. Check whether latency is isolated to one path: `sum by (path) (rate(platform_academy_api_request_latency_seconds_sum[5m]))`.
 2. Inspect Jaeger traces for the slow path and verify whether time is in SQL, Redis, or application code.
 3. Check Postgres health and query volume: `docker compose ps postgres` and API logs by request ID.
 4. If `/api/reviews/due` is slow, verify review-state row counts and worker due-card refresh behavior.
@@ -211,7 +211,7 @@ Symptoms:
 - Browser network tab shows 4xx/5xx from `/api/search` or `/api/courses`.
 
 Steps:
-1. Call the API directly: `curl "http://localhost:8000/api/search?q=Tang"`.
+1. Call the API directly: `curl "http://localhost:8000/api/search?q=Kubernetes"`.
 2. Check `/readyz`; if it fails, use the API readiness runbook.
 3. Check API logs for request ID, status code, and exception.
 4. Verify seed data exists with `curl http://localhost:8000/api/courses`.
@@ -220,7 +220,7 @@ Steps:
 ## Prometheus Target Down
 
 Symptoms:
-- Prometheus target page shows `zhongwen-api` or `zhongwen-worker` down.
+- Prometheus target page shows `platform-academy-api` or `platform-academy-worker` down.
 - Grafana panels have missing data while the app appears usable.
 
 Steps:

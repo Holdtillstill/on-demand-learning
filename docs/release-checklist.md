@@ -25,7 +25,6 @@ That target expands to the required local gates:
 make api-migration-check
 cd apps/api && python -m ruff check app tests alembic && python -m pytest
 cd apps/worker && python -m ruff check . && python -m pytest
-cd apps/frontend && npm run typecheck && npm test && npm run build
 cd apps/platform-academy && npm run typecheck && npm test -- --run && npm run build
 make script-syntax-check
 make smoke-helper-check

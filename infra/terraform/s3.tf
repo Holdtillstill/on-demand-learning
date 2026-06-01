@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "media" {
-  bucket_prefix = "zhongwen-media-${var.environment}-"
+  bucket_prefix = "platform-academy-media-${var.environment}-"
 }
 
 resource "aws_s3_bucket_public_access_block" "media" {

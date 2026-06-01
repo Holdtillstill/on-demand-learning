@@ -13,7 +13,7 @@ from prometheus_client import Counter, Gauge, start_http_server
 from pythonjsonlogger import json as jsonlogger
 from sqlalchemy import create_engine, text
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://zhongwen:zhongwen@postgres:5432/zhongwen")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://platform_academy:platform_academy@postgres:5432/platform_academy")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 OTEL_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://jaeger:4318")
 INTERVAL_SECONDS = int(os.getenv("WORKER_INTERVAL_SECONDS", "30"))
@@ -21,19 +21,19 @@ INTERVAL_SECONDS = int(os.getenv("WORKER_INTERVAL_SECONDS", "30"))
 handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(jsonlogger.JsonFormatter("%(asctime)s %(levelname)s %(name)s %(message)s %(job)s %(duration_ms)s"))
 logging.basicConfig(level=logging.INFO, handlers=[handler])
-logger = logging.getLogger("zhongwen.worker")
+logger = logging.getLogger("platform_academy.worker")
 
-resource = Resource.create({"service.name": "zhongwen-worker", "deployment.environment": os.getenv("ENVIRONMENT", "local")})
+resource = Resource.create({"service.name": "platform-academy-worker", "deployment.environment": os.getenv("ENVIRONMENT", "local")})
 provider = TracerProvider(resource=resource)
 if OTEL_ENDPOINT:
     provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint=f"{OTEL_ENDPOINT}/v1/traces")))
 trace.set_tracer_provider(provider)
 tracer = trace.get_tracer(__name__)
 
-JOB_COUNT = Counter("zhongwen_worker_jobs_total", "Worker jobs completed", ["job"])
-JOB_FAILURES = Counter("zhongwen_worker_job_failures_total", "Worker jobs failed", ["job"])
-RECOMMENDATIONS = Gauge("zhongwen_worker_recommendations", "Current recommendation rows")
-DUE_CARDS = Gauge("zhongwen_worker_due_flashcards", "Due flashcards for demo-user")
+JOB_COUNT = Counter("platform_academy_worker_jobs_total", "Worker jobs completed", ["job"])
+JOB_FAILURES = Counter("platform_academy_worker_job_failures_total", "Worker jobs failed", ["job"])
+RECOMMENDATIONS = Gauge("platform_academy_worker_recommendations", "Current recommendation rows")
+DUE_CARDS = Gauge("platform_academy_worker_due_flashcards", "Due flashcards for demo-user")
 
 
 def refresh_recommendations() -> int:
@@ -98,7 +98,7 @@ def publish_due_card_count() -> int:
                 """
             )
         ).scalar_one()
-    redis_client.set("zhongwen:due_flashcards:demo-user", count)
+    redis_client.set("platform_academy:due_flashcards:demo-user", count)
     DUE_CARDS.set(count)
     return count
 

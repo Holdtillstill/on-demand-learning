@@ -1,6 +1,6 @@
 # Terraform Scaffold
 
-This directory is a reviewable AWS `us-west-2` scaffold for the Zhongwen Cloud Learning Platform. It is intentionally not wired into any automatic apply flow.
+This directory is a reviewable AWS `us-west-2` scaffold for Platform Academy. It is intentionally not wired into any automatic apply flow.
 
 Before any real use:
 - Review every variable and resource with a cost/security lens.

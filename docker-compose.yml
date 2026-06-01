@@ -2,16 +2,16 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: zhongwen
-      POSTGRES_USER: zhongwen
-      POSTGRES_PASSWORD: zhongwen
+      POSTGRES_DB: platform_academy
+      POSTGRES_USER: platform_academy
+      POSTGRES_PASSWORD: platform_academy
     ports:
       - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./infra/db/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U zhongwen -d zhongwen"]
+      test: ["CMD-SHELL", "pg_isready -U platform_academy -d platform_academy"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,10 +32,10 @@ services:
       dockerfile: apps/api/Dockerfile
     environment:
       ENVIRONMENT: local
-      DATABASE_URL: postgresql+psycopg://zhongwen:zhongwen@postgres:5432/zhongwen
+      DATABASE_URL: postgresql+psycopg://platform_academy:platform_academy@postgres:5432/platform_academy
       REDIS_URL: redis://redis:6379/0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
-      CORS_ORIGINS: http://localhost:5173,http://localhost:5174,http://localhost:8080,http://localhost:8081,http://localhost:8082,http://localhost:8090,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:8080,http://127.0.0.1:8081,http://127.0.0.1:8082,http://127.0.0.1:8090
+      CORS_ORIGINS: http://localhost:5174,http://localhost:8090,http://127.0.0.1:5174,http://127.0.0.1:8090
       AUTO_SEED: "true"
       CREATE_SCHEMA_ON_STARTUP: "true"
       RATE_LIMIT_PER_MINUTE: "120"
@@ -64,7 +64,7 @@ services:
       dockerfile: apps/worker/Dockerfile
     environment:
       ENVIRONMENT: local
-      DATABASE_URL: postgresql+psycopg://zhongwen:zhongwen@postgres:5432/zhongwen
+      DATABASE_URL: postgresql+psycopg://platform_academy:platform_academy@postgres:5432/platform_academy
       REDIS_URL: redis://redis:6379/0
       OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
       WORKER_INTERVAL_SECONDS: "30"
@@ -74,16 +74,6 @@ services:
       api:
         condition: service_healthy
       redis:
-        condition: service_healthy
-
-  frontend:
-    build:
-      context: .
-      dockerfile: apps/frontend/Dockerfile
-    ports:
-      - "8080:80"
-    depends_on:
-      api:
         condition: service_healthy
 
   platform-academy:

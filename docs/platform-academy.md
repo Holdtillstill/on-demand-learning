@@ -1,6 +1,6 @@
 # Platform Academy
 
-Platform Academy is a standalone local-first learning app for AWS, Kubernetes, SRE, and platform engineering. It shares the FastAPI backend, database, progress, XP, and lesson APIs with the Zhongwen app, but it has its own React/Vite frontend, brand, navigation, guest profile model, resources, interview prep, and Docker Compose service.
+Platform Academy is a standalone local-first learning app for AWS, Kubernetes, SRE, and platform engineering. It owns the React/Vite frontend and shares a FastAPI backend with worker, database, progress, XP, lesson, resource, lab, and interview-prep APIs.
 
 ## Local Use
 
@@ -13,7 +13,6 @@ docker compose up --build
 Open:
 
 - Platform Academy frontend: http://localhost:8090
-- Zhongwen frontend: http://localhost:8080
 - Catalog API: http://localhost:8000/api/platform-academy/catalog
 - Roadmap API: http://localhost:8000/api/platform-academy/roadmap
 - Labs API: http://localhost:8000/api/platform-academy/labs
@@ -174,7 +173,7 @@ Rubric feedback is deterministic and local to the API. It compares worksheet not
 
 The app also loads `/api/platform-academy/lab-submissions/{user_id}` on startup so the dashboard, lab queue, and `/labs/history` evidence journal can show active workbooks, submitted state, rubric signals, evidence terms, and score without opening each lab. The journal exports a Markdown evidence report with worksheet notes, expected evidence, learner artifact paths, validation commands, and rubric follow-ups for portfolio notes or review.
 
-Guest profiles can export and import a JSON backup from the recovery dialog. The API scopes backups to Platform Academy lesson progress, saved activity, and lab workbook submissions, so imported state can restore a guest workspace without mixing in Zhongwen lesson progress. Imported backups are bounded by row count and worksheet-answer size so the public demo endpoint cannot accept unbounded profile payloads.
+Guest profiles can export and import a JSON backup from the recovery dialog. The API scopes backups to Platform Academy lesson progress, saved activity, and lab workbook submissions, so imported state can restore a guest workspace without mixing in unrelated lesson progress. Imported backups are bounded by row count and worksheet-answer size so the public demo endpoint cannot accept unbounded profile payloads.
 
 ### Portable Learner State API
 
@@ -183,7 +182,7 @@ Guest recovery uses two public API endpoints:
 - `GET /api/platform-academy/state/{user_id}/export` returns a schema-versioned JSON backup for a guest profile.
 - `POST /api/platform-academy/state/import` imports that backup into a target guest profile and returns row counts for progress, activity, and lab workbook submissions.
 
-The backup contract is intentionally narrow. It contains Platform Academy lesson progress, Platform Academy saved activity, and Platform Academy lab workbook submissions only. It does not include Zhongwen course progress, credentials, secrets, or browser storage values.
+The backup contract is intentionally narrow. It contains Platform Academy lesson progress, Platform Academy saved activity, and Platform Academy lab workbook submissions only. It does not include unrelated course progress, credentials, secrets, or browser storage values.
 
 Current payload limits:
 
@@ -206,10 +205,6 @@ The Platform Academy dashboard now shows platform-specific achievement badges. T
 Full-lab verification is scriptable with `bash labs/platform-academy/verify-full-labs.sh`. Cluster mode is available with `--cluster`, but the scripts refuse non-disposable Kubernetes contexts by default so a learner does not accidentally mutate an EKS or production context. Run `bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod` when you want the repo to create/select a local kind context, or run `setup --preflight` before live setup when you already have a disposable context selected.
 
 Prometheus exposes Platform Academy product counters for activity saves, guest recovery restores, lab workbook submissions, lab packet downloads, lab bundle downloads, and dashboard reads. The local Grafana overview includes panels for those signals, and `make platform-api-smoke API_BASE=<api-origin>` verifies that the metrics move after smoke activity.
-
-## Product Boundary
-
-Platform Academy is no longer a nav item inside the Zhongwen app. The Zhongwen frontend remains focused on Mandarin, Chinese literature, art, characters, reviews, and admin upload. Direct platform lesson URLs still render in the Zhongwen lesson viewer because both apps use the same `/api/lessons/:id` endpoint, but the main platform learning experience lives at http://localhost:8090.
 
 ## Next Iterations
 

@@ -9,7 +9,7 @@ from typing import Any
 from yaml_contract import YamlContractError, load_yaml_documents
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = REPO_ROOT / "infra" / "k8s" / "zhongwen-platform.yaml"
+MANIFEST = REPO_ROOT / "infra" / "k8s" / "platform-academy.yaml"
 
 
 def fail(message: str) -> None:
@@ -130,7 +130,7 @@ def ingress_backend(rule: dict[str, Any], path: str) -> tuple[str, int]:
 def verify_config_map(config: dict[str, Any]) -> None:
     data = config.get("data", {})
     if not isinstance(data, dict):
-        fail("ConfigMap/zhongwen-config data should be a mapping")
+        fail("ConfigMap/platform-config data should be a mapping")
     require_keys(
         data,
         {
@@ -145,11 +145,11 @@ def verify_config_map(config: dict[str, Any]) -> None:
             "REDIS_URL",
             "OTEL_EXPORTER_OTLP_ENDPOINT",
         },
-        "ConfigMap/zhongwen-config data",
+        "ConfigMap/platform-config data",
     )
     require_equal(data["ENVIRONMENT"], "demo", "ConfigMap ENVIRONMENT")
     origins = {origin.strip() for origin in str(data["CORS_ORIGINS"]).split(",") if origin.strip()}
-    require_equal({"https://learn.example.com", "https://academy.example.com"} <= origins, True, "ConfigMap CORS_ORIGINS hosts")
+    require_equal(origins, {"https://academy.example.com"}, "ConfigMap CORS_ORIGINS hosts")
     require_equal(data["AUTO_SEED"], "false", "ConfigMap AUTO_SEED")
     require_equal(data["CREATE_SCHEMA_ON_STARTUP"], "false", "ConfigMap CREATE_SCHEMA_ON_STARTUP")
     require_equal(str(data["RATE_LIMIT_PER_MINUTE"]), "120", "ConfigMap RATE_LIMIT_PER_MINUTE")
@@ -161,34 +161,40 @@ def verify_config_map(config: dict[str, Any]) -> None:
 def verify_secret(secret: dict[str, Any]) -> None:
     string_data = secret.get("stringData", {})
     if not isinstance(string_data, dict):
-        fail("Secret/zhongwen-secrets-template stringData should be a mapping")
-    require_keys(string_data, {"DATABASE_URL", "PLATFORM_SOURCE_BUNDLE_TOKEN"}, "Secret/zhongwen-secrets-template stringData")
+        fail("Secret/platform-secrets-template stringData should be a mapping")
+    require_keys(string_data, {"DATABASE_URL", "PLATFORM_SOURCE_BUNDLE_TOKEN"}, "Secret/platform-secrets-template stringData")
     require_truthy(string_data["PLATFORM_SOURCE_BUNDLE_TOKEN"], "Secret PLATFORM_SOURCE_BUNDLE_TOKEN")
 
 
 def verify_workload_env(workload: dict[str, Any], container_name: str) -> dict[str, Any]:
     container = container_by_name(workload, container_name)
     config_maps, secrets = env_from_names(container)
-    require_equal("zhongwen-config" in config_maps, True, f"{workload.get('kind')}/{metadata_name(workload)} envFrom config")
-    require_equal("zhongwen-secrets-template" in secrets, True, f"{workload.get('kind')}/{metadata_name(workload)} envFrom secret")
+    require_equal("platform-config" in config_maps, True, f"{workload.get('kind')}/{metadata_name(workload)} envFrom config")
+    require_equal("platform-secrets-template" in secrets, True, f"{workload.get('kind')}/{metadata_name(workload)} envFrom secret")
     return container
 
 
 def verify_deployments(docs: list[dict[str, Any]]) -> None:
     backend = find_document(docs, "Deployment", "backend")
     backend_container = verify_workload_env(backend, "backend")
-    require_equal(backend_container.get("image"), "ghcr.io/example/zhongwen-api:replace-me", "backend image")
+    require_equal(backend_container.get("image"), "ghcr.io/example/platform-academy-api:replace-me", "backend image")
     require_equal(probe_path(backend_container, "readinessProbe"), "/readyz", "backend readiness probe")
     require_equal(probe_path(backend_container, "livenessProbe"), "/healthz", "backend liveness probe")
 
     worker = find_document(docs, "Deployment", "worker")
     worker_container = verify_workload_env(worker, "worker")
-    require_equal(worker_container.get("image"), "ghcr.io/example/zhongwen-worker:replace-me", "worker image")
+    require_equal(worker_container.get("image"), "ghcr.io/example/platform-academy-worker:replace-me", "worker image")
 
     platform = find_document(docs, "Deployment", "platform-academy")
     platform_container = container_by_name(platform, "platform-academy")
     require_equal(platform_container.get("image"), "ghcr.io/example/platform-academy-web:replace-me", "platform-academy image")
     require_equal(env_value(platform_container, "PLATFORM_API_UPSTREAM"), "http://backend:8000", "platform-academy PLATFORM_API_UPSTREAM")
+    security_context = platform_container.get("securityContext", {})
+    require_equal(security_context.get("runAsNonRoot"), True, "platform-academy runAsNonRoot")
+    require_equal(security_context.get("runAsUser"), 101, "platform-academy runAsUser")
+    require_equal(security_context.get("runAsGroup"), 101, "platform-academy runAsGroup")
+    require_equal(security_context.get("allowPrivilegeEscalation"), False, "platform-academy allowPrivilegeEscalation")
+    require_equal(security_context.get("capabilities", {}).get("drop"), ["ALL"], "platform-academy dropped capabilities")
     require_equal(probe_path(platform_container, "readinessProbe"), "/dashboard/home", "platform-academy readiness probe")
     require_equal(probe_path(platform_container, "livenessProbe"), "/dashboard/home", "platform-academy liveness probe")
 
@@ -196,17 +202,16 @@ def verify_deployments(docs: list[dict[str, Any]]) -> None:
 def verify_migration_job(docs: list[dict[str, Any]]) -> None:
     job = find_document(docs, "Job", "backend-migrations")
     service_account = job.get("spec", {}).get("template", {}).get("spec", {}).get("serviceAccountName")
-    require_equal(service_account, "zhongwen-api", "migration job service account")
+    require_equal(service_account, "platform-academy-api", "migration job service account")
     container = verify_workload_env(job, "alembic")
-    require_equal(container.get("image"), "ghcr.io/example/zhongwen-api:replace-me", "migration job image")
+    require_equal(container.get("image"), "ghcr.io/example/platform-academy-api:replace-me", "migration job image")
     require_equal(container.get("command"), ["alembic", "upgrade", "head"], "migration job command")
 
 
 def verify_services(docs: list[dict[str, Any]]) -> None:
     expected = {
         "backend": ("http", 8000, 8000),
-        "platform-academy": ("http", 80, 80),
-        "frontend": ("http", 80, 80),
+        "platform-academy": ("http", 80, 8080),
         "redis": ("redis", 6379, 6379),
     }
     for name, (port_name, port, target_port) in expected.items():
@@ -219,7 +224,7 @@ def verify_services(docs: list[dict[str, Any]]) -> None:
 
 
 def verify_scaling_and_disruption(docs: list[dict[str, Any]]) -> None:
-    for name in ["platform-academy", "backend", "frontend"]:
+    for name in ["platform-academy", "backend"]:
         hpa = find_document(docs, "HorizontalPodAutoscaler", name)
         require_equal(hpa.get("spec", {}).get("scaleTargetRef", {}).get("name"), name, f"HPA/{name} target")
         require_equal(hpa.get("spec", {}).get("minReplicas"), 2, f"HPA/{name} minReplicas")
@@ -231,25 +236,22 @@ def verify_scaling_and_disruption(docs: list[dict[str, Any]]) -> None:
 
 
 def verify_ingress(docs: list[dict[str, Any]]) -> None:
-    ingress = find_document(docs, "Ingress", "zhongwen")
+    ingress = find_document(docs, "Ingress", "platform-academy")
     require_equal(ingress.get("spec", {}).get("ingressClassName"), "nginx", "Ingress ingressClassName")
-    learn = ingress_rule(ingress, "learn.example.com")
     academy = ingress_rule(ingress, "academy.example.com")
-    for rule in [learn, academy]:
-        for path in ["/healthz", "/readyz", "/metrics", "/api"]:
-            require_equal(ingress_backend(rule, path), ("backend", 8000), f"Ingress {rule.get('host')} {path}")
-    require_equal(ingress_backend(learn, "/"), ("frontend", 80), "Ingress learn root")
+    for path in ["/healthz", "/readyz", "/metrics", "/api"]:
+        require_equal(ingress_backend(academy, path), ("backend", 8000), f"Ingress academy {path}")
     require_equal(ingress_backend(academy, "/"), ("platform-academy", 80), "Ingress academy root")
 
 
 def main() -> int:
     docs = load_manifest_documents()
-    require_equal(len(docs), 24, "Kubernetes document count")
-    find_document(docs, "Namespace", "zhongwen")
-    find_document(docs, "ServiceAccount", "zhongwen-api")
-    find_document(docs, "ServiceAccount", "zhongwen-worker")
-    verify_config_map(find_document(docs, "ConfigMap", "zhongwen-config"))
-    verify_secret(find_document(docs, "Secret", "zhongwen-secrets-template"))
+    require_equal(len(docs), 20, "Kubernetes document count")
+    find_document(docs, "Namespace", "platform-academy")
+    find_document(docs, "ServiceAccount", "platform-academy-api")
+    find_document(docs, "ServiceAccount", "platform-academy-worker")
+    verify_config_map(find_document(docs, "ConfigMap", "platform-config"))
+    verify_secret(find_document(docs, "Secret", "platform-secrets-template"))
     verify_migration_job(docs)
     verify_deployments(docs)
     verify_services(docs)

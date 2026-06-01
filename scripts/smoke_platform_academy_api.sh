@@ -393,11 +393,6 @@ missing = sorted(expected - earned)
 if missing:
     raise SystemExit(f"missing platform achievements after smoke activity: {missing}")
 
-zhongwen_only = {"poetry_explorer", "character_builder"}
-unexpected = sorted(zhongwen_only & {item.get("code") for item in dashboard.get("achievements", [])})
-if unexpected:
-    raise SystemExit(f"platform dashboard included Zhongwen-only achievements: {unexpected}")
-
 print("Validated Platform Academy achievements")
 PY
 
@@ -443,11 +438,11 @@ PY
 
 curl_smoke "${API_BASE}/metrics" >"${tmpdir}/metrics.txt"
 for metric_name in \
-  zhongwen_platform_activity_saves_total \
-  zhongwen_platform_dashboard_reads_total \
-  zhongwen_platform_lab_packet_downloads_total \
-  zhongwen_platform_lab_bundle_downloads_total \
-  zhongwen_platform_lab_submissions_total; do
+  platform_academy_activity_saves_total \
+  platform_academy_dashboard_reads_total \
+  platform_academy_lab_packet_downloads_total \
+  platform_academy_lab_bundle_downloads_total \
+  platform_academy_lab_submissions_total; do
   if ! grep -q "${metric_name}" "${tmpdir}/metrics.txt"; then
     echo "Expected ${metric_name} in /metrics after smoke activity" >&2
     exit 1

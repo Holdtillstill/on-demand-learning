@@ -4975,7 +4975,7 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
       <section className="detail-layout lesson-layout">
         <div className="detail-main">
           <article className="lesson-body workspace-panel">
-            <RichContent text={lesson.body_simplified} />
+            <RichContent text={lesson.body} />
           </article>
 
           <section className="practice-panel workspace-panel">
@@ -4983,16 +4983,16 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
               <p className="eyebrow">Lab scenario</p>
               <h2>Practice the lesson</h2>
             </div>
-            <RichContent text={lesson.pinyin} />
+            <RichContent text={lesson.practice_notes} />
           </section>
 
           <section className="workspace-panel">
             <h2>Key terms</h2>
             <div className="term-grid">
-              {lesson.vocabulary.map((term) => (
+              {lesson.terms.map((term) => (
                 <article className="term-card" key={term.id}>
-                  <strong>{term.simplified}</strong>
-                  <span>{term.pinyin}</span>
+                  <strong>{term.term}</strong>
+                  <span>{term.context}</span>
                   <p>{term.definition}</p>
                 </article>
               ))}

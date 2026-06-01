@@ -1,8 +1,7 @@
-export interface VocabularyTerm {
+export interface GlossaryTerm {
   id: number;
-  simplified: string;
-  traditional: string;
-  pinyin: string;
+  term: string;
+  context: string;
   definition: string;
 }
 
@@ -11,7 +10,7 @@ export interface Flashcard {
   lesson_id: number;
   prompt: string;
   answer: string;
-  pinyin: string;
+  hint: string;
   difficulty: string;
 }
 
@@ -24,15 +23,14 @@ export interface LessonSummary {
 }
 
 export interface Lesson extends LessonSummary {
-  body_simplified: string;
-  body_traditional: string;
-  pinyin: string;
+  body: string;
+  practice_notes: string;
   audio_url?: string | null;
   video_url?: string | null;
   course_slug?: string | null;
   course_category?: string | null;
   course_era?: string | null;
-  vocabulary: VocabularyTerm[];
+  terms: GlossaryTerm[];
   flashcards: Flashcard[];
 }
 

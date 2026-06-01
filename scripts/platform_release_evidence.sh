@@ -35,7 +35,7 @@ count_py_tests() {
 generated_artifacts="$(
   cd "$ROOT"
   find . \( -name '.git' -o -name 'node_modules' -o -name '.venv' \) -prune -o \
-    \( -path './apps/frontend/dist' -o -path './apps/platform-academy/dist' -o -path './smoke-artifacts' \
+    \( -path './apps/platform-academy/dist' -o -path './smoke-artifacts' \
       -o -path './infra/terraform/.terraform' \
       -o -name '.pytest_cache' -o -name '__pycache__' -o -name '*.tsbuildinfo' \
       -o -name 'test.db' -o -name 'ci-test.db' -o -name 'ci-smoke.db' -o -name 'ci-platform-browser-smoke.db' \
@@ -96,7 +96,6 @@ Paste the most recent successful \`make platform-release-check\` tail here:
 
 - API tests: ${api_test_count} expected.
 - Worker tests: ${worker_test_count} expected.
-- Zhongwen frontend tests: 1 expected.
 - Platform Academy frontend tests: 34 expected.
 - Full labs: 21 expected.
 - API smoke: catalog/resource/interview counts, no-store headers, OpenAPI backup/workbook/download contract, source-bundle token header contract, learner state export/import, achievements, and product metrics.
@@ -171,7 +170,7 @@ cat <<'EOF'
 - Lab product/API: `apps/api/app/platform_content.py`, `apps/api/app/platform_lab_artifacts.py`, `apps/api/app/main.py`, `apps/api/app/schemas.py`, `apps/api/tests/test_api.py`.
 - Lab artifacts: `labs/platform-academy/`.
 - Platform Academy UI: `apps/platform-academy/src/App.tsx`, `apps/platform-academy/src/styles.css`, `apps/platform-academy/src/api.ts`, `apps/platform-academy/src/types.ts`, `apps/platform-academy/src/App.test.tsx`.
-- Release/deployment: `Makefile`, `scripts/`, `.github/workflows/`, `.env.example`, `docker-compose.yml`, `infra/k8s/zhongwen-platform.yaml`, `docs/deployment.md`.
+- Release/deployment: `Makefile`, `scripts/`, `.github/workflows/`, `.env.example`, `docker-compose.yml`, `infra/k8s/platform-academy.yaml`, `docs/deployment.md`.
 
 Branch-aware helpers honor `GITHUB_BASE_REF` in GitHub Actions and `PLATFORM_REVIEW_BASE=<ref>` for local override.
 

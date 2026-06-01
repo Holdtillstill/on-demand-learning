@@ -28,14 +28,13 @@ class Lesson(Base):
     course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), index=True)
     title: Mapped[str] = mapped_column(String(200), index=True)
     summary: Mapped[str] = mapped_column(Text)
-    body_simplified: Mapped[str] = mapped_column(Text)
-    body_traditional: Mapped[str] = mapped_column(Text)
-    pinyin: Mapped[str] = mapped_column(Text)
+    body: Mapped[str] = mapped_column(Text)
+    practice_notes: Mapped[str] = mapped_column(Text)
     audio_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     video_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     sequence: Mapped[int] = mapped_column(Integer, default=1)
     course: Mapped[Course] = relationship(back_populates="lessons")
-    vocabulary: Mapped[list["VocabularyTerm"]] = relationship(back_populates="lesson", cascade="all, delete-orphan")
+    terms: Mapped[list["GlossaryTerm"]] = relationship(back_populates="lesson", cascade="all, delete-orphan")
     flashcards: Mapped[list["Flashcard"]] = relationship(back_populates="lesson", cascade="all, delete-orphan")
 
     @property
@@ -51,16 +50,15 @@ class Lesson(Base):
         return self.course.era if self.course else None
 
 
-class VocabularyTerm(Base):
-    __tablename__ = "vocabulary_terms"
+class GlossaryTerm(Base):
+    __tablename__ = "glossary_terms"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"), index=True)
-    simplified: Mapped[str] = mapped_column(String(80))
-    traditional: Mapped[str] = mapped_column(String(80))
-    pinyin: Mapped[str] = mapped_column(String(120))
+    term: Mapped[str] = mapped_column(String(80))
+    context: Mapped[str] = mapped_column(String(120))
     definition: Mapped[str] = mapped_column(String(250))
-    lesson: Mapped[Lesson] = relationship(back_populates="vocabulary")
+    lesson: Mapped[Lesson] = relationship(back_populates="terms")
 
 
 class Flashcard(Base):
@@ -70,7 +68,7 @@ class Flashcard(Base):
     lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id"), index=True)
     prompt: Mapped[str] = mapped_column(Text)
     answer: Mapped[str] = mapped_column(Text)
-    pinyin: Mapped[str] = mapped_column(String(160), default="")
+    hint: Mapped[str] = mapped_column(String(160), default="")
     difficulty: Mapped[str] = mapped_column(String(40), default="beginner")
     lesson: Mapped[Lesson] = relationship(back_populates="flashcards")
 
@@ -86,21 +84,6 @@ class ReviewState(Base):
     interval_days: Mapped[int] = mapped_column(Integer, default=0)
     due_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
     last_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-
-
-class CharacterMetadata(Base):
-    __tablename__ = "character_metadata"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    simplified: Mapped[str] = mapped_column(String(8), unique=True, index=True)
-    traditional: Mapped[str] = mapped_column(String(8), index=True)
-    pinyin: Mapped[str] = mapped_column(String(80))
-    meaning: Mapped[str] = mapped_column(String(160))
-    radical: Mapped[str] = mapped_column(String(40))
-    strokes: Mapped[int] = mapped_column(Integer)
-    mnemonic: Mapped[str] = mapped_column(Text)
-    cultural_note: Mapped[str] = mapped_column(Text)
-    example_words: Mapped[list[str]] = mapped_column(JSON, default=list)
 
 
 class User(Base):

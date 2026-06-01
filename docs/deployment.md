@@ -85,7 +85,7 @@ Expected workflows:
 
 - `.github/workflows/backend.yml`
 - `.github/workflows/dependency-audit.yml`
-- `.github/workflows/frontend.yml`
+- `.github/workflows/platform-academy-frontend.yml`
 - `.github/workflows/docker-build.yml`
 - `.github/workflows/platform-academy-image.yml`
 - `.github/workflows/platform-deployed-smoke.yml`
@@ -114,7 +114,7 @@ Recommended preview shape:
 - Namespace: `platform-academy-preview`
 - Host: `preview.academy.ybz.dev`
 - Images: immutable tags from GitHub SHA or release tag
-- Kubernetes scaffold: replace `ghcr.io/example/zhongwen-api:replace-me`, `ghcr.io/example/platform-academy-web:replace-me`, and example hosts before applying.
+- Kubernetes scaffold: replace `ghcr.io/example/platform-academy-api:replace-me`, `ghcr.io/example/platform-academy-web:replace-me`, and example hosts before applying.
 - Secrets: injected through Kubernetes Secret or external secret controller
 - Database: in-cluster Postgres only for demo data, or a shared low-cost managed database if previews must survive pod reschedules
 - Redis: in-cluster for demo
@@ -150,7 +150,7 @@ Suggested route plan:
 - `academy.ybz.dev`: stable public Platform Academy frontend
 - `academy.ybz.dev/api/*`: API route if frontend and API share an origin
 - `preview.academy.ybz.dev`: on-demand shared-EKS preview
-- `learn.example.com` and `academy.example.com` in `infra/k8s/zhongwen-platform.yaml` are placeholders for the Zhongwen and Platform Academy hosts.
+- `academy.example.com` in `infra/k8s/platform-academy.yaml` is the placeholder for the Platform Academy host.
 
 CloudFront can sit in front of the frontend later. Do not make Platform Academy pure static S3-only unless the product is intentionally split into a read-only public catalog with no progress/activity persistence.
 

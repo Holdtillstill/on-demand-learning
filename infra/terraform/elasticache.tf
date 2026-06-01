@@ -1,10 +1,10 @@
 resource "aws_elasticache_subnet_group" "main" {
-  name       = "zhongwen-${var.environment}"
+  name       = "platform-academy-${var.environment}"
   subnet_ids = aws_subnet.private[*].id
 }
 
 resource "aws_security_group" "redis" {
-  name        = "zhongwen-${var.environment}-redis"
+  name        = "platform-academy-${var.environment}-redis"
   description = "Allow Redis from private subnets"
   vpc_id      = aws_vpc.main.id
 
@@ -17,7 +17,7 @@ resource "aws_security_group" "redis" {
 }
 
 resource "aws_elasticache_cluster" "redis" {
-  cluster_id           = "zhongwen-${var.environment}"
+  cluster_id           = "platform-academy-${var.environment}"
   engine               = "redis"
   node_type            = "cache.t4g.micro"
   num_cache_nodes      = 1

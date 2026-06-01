@@ -207,8 +207,8 @@ def test_courses_are_seeded():
     response = client.get("/api/courses")
     assert response.status_code == 200
     courses = response.json()
-    assert len(courses) >= 5
-    assert any(course["era"] == "Tang" for course in courses)
+    assert len(courses) >= 21
+    assert all(course["era"] == "Platform Academy" for course in courses)
 
 
 def test_platform_academy_catalog_roadmap_and_labs():
@@ -1787,10 +1787,34 @@ def test_platform_lab_submission_rejects_unknown_lab():
 def test_platform_learner_state_export_import_round_trips_guest_progress():
     source_user_id = "platform-export-source"
     target_user_id = "platform-export-target"
-    all_courses = client.get("/api/courses").json()
     platform_courses = client.get("/api/courses?domain=platform").json()
     platform_lesson_id = platform_courses[0]["lessons"][0]["id"]
-    legacy_lesson_id = next(course for course in all_courses if course["era"] != "Platform Academy")["lessons"][0]["id"]
+    custom_course = client.post(
+        "/api/admin/courses",
+        json={
+            "slug": "custom-non-platform-export",
+            "title": "Custom Non-Platform Export Fixture",
+            "era": "Internal",
+            "level": "Advanced",
+            "category": "Fixture",
+            "description": "A non-platform course used to prove Platform Academy backups stay scoped.",
+            "subscription_tier": "mock_active",
+            "lessons": [
+                {
+                    "title": "Non-Platform Lesson",
+                    "summary": "Fixture lesson outside Platform Academy.",
+                    "body": "This lesson should not appear in Platform Academy exports.",
+                    "practice_notes": "fixture",
+                    "audio_url": None,
+                    "video_url": None,
+                    "terms": [],
+                    "flashcards": [{"prompt": "Fixture?", "answer": "Fixture.", "hint": "", "difficulty": "beginner"}],
+                }
+            ],
+        },
+    )
+    assert custom_course.status_code == 201
+    custom_lesson_id = custom_course.json()["lessons"][0]["id"]
     lab_slug = "trace-service-to-pod"
 
     assert client.post(
@@ -1799,7 +1823,7 @@ def test_platform_learner_state_export_import_round_trips_guest_progress():
     ).status_code == 200
     assert client.post(
         "/api/progress",
-        json={"user_id": source_user_id, "lesson_id": legacy_lesson_id, "completed": True, "score": 1},
+        json={"user_id": source_user_id, "lesson_id": custom_lesson_id, "completed": True, "score": 1},
     ).status_code == 200
     assert (
         client.post(
@@ -1846,7 +1870,7 @@ def test_platform_learner_state_export_import_round_trips_guest_progress():
 
     target_progress = client.get(f"/api/progress/{target_user_id}")
     assert any(row["lesson_id"] == platform_lesson_id and row["completed"] for row in target_progress.json())
-    assert all(row["lesson_id"] != legacy_lesson_id for row in target_progress.json())
+    assert all(row["lesson_id"] != custom_lesson_id for row in target_progress.json())
     target_activity = client.get(f"/api/platform-academy/activity/{target_user_id}")
     assert target_activity.json()[0]["target_id"] == "kubernetes-debugging-cheatsheet"
     target_submissions = client.get(f"/api/platform-academy/lab-submissions/{target_user_id}")
@@ -2213,31 +2237,29 @@ def test_platform_academy_product_metrics_record_bounded_product_events():
     assert client.get(f"/api/users/{user_id}/dashboard?domain=platform").status_code == 200
 
     metrics = client.get("/metrics").text
-    assert "zhongwen_platform_activity_saves_total" in metrics
+    assert "platform_academy_activity_saves_total" in metrics
     assert 'target_type="interview_question"' in metrics
     assert 'state="completed"' in metrics
     assert 'target_type="other"' in metrics
     assert 'state="other"' in metrics
-    assert "zhongwen_platform_lab_packet_downloads_total" in metrics
-    assert "zhongwen_platform_lab_bundle_downloads_total" in metrics
-    assert "zhongwen_platform_lab_submissions_total" in metrics
+    assert "platform_academy_lab_packet_downloads_total" in metrics
+    assert "platform_academy_lab_bundle_downloads_total" in metrics
+    assert "platform_academy_lab_submissions_total" in metrics
     assert f'lab_slug="{lab_slug}"' in metrics
     assert 'status="submitted"' in metrics
-    assert "zhongwen_platform_dashboard_reads_total" in metrics
+    assert "platform_academy_dashboard_reads_total" in metrics
     assert 'domain="platform"' in metrics
 
 
-def test_course_domain_filters_keep_zhongwen_and_platform_separate():
-    zhongwen = client.get("/api/courses?domain=zhongwen")
-    assert zhongwen.status_code == 200
-    assert zhongwen.json()
-    assert all(course["era"] != "Platform Academy" for course in zhongwen.json())
-
+def test_course_domain_filters_keep_platform_scope_explicit():
     platform = client.get("/api/courses?domain=platform")
     assert platform.status_code == 200
     platform_courses = platform.json()
     assert len(platform_courses) >= 15
     assert all(course["era"] == "Platform Academy" for course in platform_courses)
+
+    retired_domain = client.get("/api/courses?domain=legacy")
+    assert retired_domain.status_code == 400
 
     invalid = client.get("/api/courses?domain=bad")
     assert invalid.status_code == 400
@@ -2248,7 +2270,7 @@ def test_lesson_and_flashcards():
     lesson_id = courses[0]["lessons"][0]["id"]
     lesson = client.get(f"/api/lessons/{lesson_id}")
     assert lesson.status_code == 200
-    assert lesson.json()["vocabulary"]
+    assert lesson.json()["terms"]
     cards = client.get(f"/api/flashcards?lesson_id={lesson_id}")
     assert cards.status_code == 200
     assert cards.json()
@@ -2261,9 +2283,9 @@ def test_platform_lesson_contains_teaching_terms_and_review_prompts():
     assert lesson.status_code == 200
     payload = lesson.json()
     assert payload["course_era"] == "Platform Academy"
-    assert "IRSA" in payload["body_simplified"]
-    assert "service account" in payload["body_simplified"]
-    assert payload["vocabulary"]
+    assert "IRSA" in payload["body"]
+    assert "service account" in payload["body"]
+    assert payload["terms"]
     assert payload["flashcards"]
 
     search = client.get("/api/search?q=CrashLoopBackOff")
@@ -2271,13 +2293,37 @@ def test_platform_lesson_contains_teaching_terms_and_review_prompts():
     assert search.json()["lessons"]
 
 
+def test_lesson_contract_uses_platform_neutral_fields():
+    lesson_id = client.get("/api/courses?domain=platform").json()[0]["lessons"][0]["id"]
+    payload = client.get(f"/api/lessons/{lesson_id}").json()
+    removed_sound_field = "".join(("pin", "yin"))
+    removed_lesson_fields = {
+        "body_" + "".join(("simpl", "ified")),
+        "body_" + "".join(("trad", "itional")),
+        removed_sound_field,
+        "".join(("vocab", "ulary")),
+    }
+    removed_term_fields = {"".join(("simpl", "ified")), "".join(("trad", "itional")), removed_sound_field}
+
+    assert {"body", "practice_notes", "terms", "flashcards"}.issubset(payload)
+    assert removed_lesson_fields.isdisjoint(payload)
+    assert {"term", "context", "definition"}.issubset(payload["terms"][0])
+    assert removed_term_fields.isdisjoint(payload["terms"][0])
+    assert "hint" in payload["flashcards"][0]
+    assert removed_sound_field not in payload["flashcards"][0]
+
+
 def test_progress_and_quiz_attempt():
-    payload = {"user_id": "demo-user", "lesson_id": 1, "completed": True, "score": 0.9}
+    lesson_id = client.get("/api/courses?domain=platform").json()[0]["lessons"][0]["id"]
+    payload = {"user_id": "demo-user", "lesson_id": lesson_id, "completed": True, "score": 0.9}
     progress = client.post("/api/progress", json=payload)
     assert progress.status_code == 200
     assert progress.json()["completed"] is True
 
-    attempt = client.post("/api/quiz/attempts", json={"user_id": "demo-user", "lesson_id": 1, "score": 0.8, "answers": {"1": "hello"}})
+    attempt = client.post(
+        "/api/quiz/attempts",
+        json={"user_id": "demo-user", "lesson_id": lesson_id, "score": 0.8, "answers": {"1": "labels"}},
+    )
     assert attempt.status_code == 200
     assert attempt.json()["score"] == 0.8
 
@@ -2377,19 +2423,43 @@ def test_platform_activity_upsert_is_concurrency_safe():
     assert activity_count == 1
 
 
-def test_platform_dashboard_scope_excludes_legacy_learning_content():
-    all_courses = client.get("/api/courses").json()
+def test_platform_dashboard_scope_excludes_non_platform_content():
     platform_courses = client.get("/api/courses?domain=platform").json()
-    legacy_lesson_id = next(course for course in all_courses if course["era"] != "Platform Academy")["lessons"][0]["id"]
+    custom_course = client.post(
+        "/api/admin/courses",
+        json={
+            "slug": "custom-non-platform-dashboard",
+            "title": "Custom Non-Platform Dashboard Fixture",
+            "era": "Internal",
+            "level": "Advanced",
+            "category": "Fixture",
+            "description": "A non-platform course used to prove Platform Academy dashboards stay scoped.",
+            "subscription_tier": "mock_active",
+            "lessons": [
+                {
+                    "title": "Dashboard Fixture Lesson",
+                    "summary": "Fixture lesson outside Platform Academy.",
+                    "body": "This lesson should not count in a Platform Academy dashboard.",
+                    "practice_notes": "fixture",
+                    "audio_url": None,
+                    "video_url": None,
+                    "terms": [],
+                    "flashcards": [{"prompt": "Fixture?", "answer": "Fixture.", "hint": "", "difficulty": "beginner"}],
+                }
+            ],
+        },
+    )
+    assert custom_course.status_code == 201
+    custom_lesson_id = custom_course.json()["lessons"][0]["id"]
     platform_lesson_id = platform_courses[0]["lessons"][0]["id"]
     user_id = "guest-platform-scope-regression"
 
-    legacy_progress = client.post("/api/progress", json={"user_id": user_id, "lesson_id": legacy_lesson_id, "completed": True, "score": 1})
+    custom_progress = client.post("/api/progress", json={"user_id": user_id, "lesson_id": custom_lesson_id, "completed": True, "score": 1})
     platform_progress = client.post(
         "/api/progress",
         json={"user_id": user_id, "lesson_id": platform_lesson_id, "completed": True, "score": 1},
     )
-    assert legacy_progress.status_code == 200
+    assert custom_progress.status_code == 200
     assert platform_progress.status_code == 200
 
     global_dashboard = client.get(f"/api/users/{user_id}/dashboard")
@@ -2451,8 +2521,6 @@ def test_platform_dashboard_awards_platform_specific_achievements():
     achievements = response.json()["achievements"]
     earned = {achievement["code"] for achievement in achievements if achievement["earned"]}
     assert {"platform_pathfinder", "resource_curator", "interview_operator", "cluster_debugger"}.issubset(earned)
-    assert "poetry_explorer" not in {achievement["code"] for achievement in achievements}
-    assert "character_builder" not in {achievement["code"] for achievement in achievements}
 
 
 def test_platform_dashboard_achievement_awards_are_concurrency_safe():
@@ -2515,12 +2583,12 @@ def test_platform_interview_prep_catalog_is_content_rich():
 
 
 def test_search_and_metrics():
-    search = client.get("/api/search?q=Tang")
+    search = client.get("/api/search?q=Kubernetes")
     assert search.status_code == 200
     assert search.json()["courses"]
     metrics = client.get("/metrics")
     assert metrics.status_code == 200
-    assert "zhongwen_api_requests_total" in metrics.text
+    assert "platform_academy_api_requests_total" in metrics.text
 
 
 def test_seed_database_is_repeatable_after_reset():
@@ -2539,28 +2607,32 @@ def test_seed_database_is_repeatable_after_reset():
 
 def test_admin_upload_course_flow():
     payload = {
-        "slug": "calligraphy-orchid-preface",
-        "title": "Calligraphy: Wang Xizhi and the Orchid Pavilion Preface",
-        "era": "Eastern Jin",
+        "slug": "platform-incident-brief-upload",
+        "title": "Platform Incident Brief Upload",
+        "era": "Internal",
         "level": "Advanced",
-        "category": "Art",
-        "description": "Upload flow smoke test for a course about 行书 rhythm, gathering, and cultural memory.",
+        "category": "Platform Engineering",
+        "description": "Upload flow smoke test for a platform incident brief course.",
         "subscription_tier": "mock_active",
         "lessons": [
             {
-                "title": "Reading 行书 as Movement",
-                "summary": "A short authoring-flow lesson with vocabulary and flashcards.",
-                "body_simplified": "《兰亭集序》表现了书法的节奏、聚会的雅趣和时间的感叹。",
-                "body_traditional": "《蘭亭集序》表現了書法的節奏、聚會的雅趣和時間的感嘆。",
-                "pinyin": "Lántíng jí xù biǎoxiàn le shūfǎ de jiézòu.",
+                "title": "Writing an Incident Brief",
+                "summary": "A short authoring-flow lesson with glossary terms and flashcards.",
+                "body": "An incident brief records user impact, timeline, evidence, decision owners, and follow-up actions.",
+                "practice_notes": "platform",
                 "audio_url": None,
-                "video_url": "https://example.com/media/orchid-preface.mp4",
-                "vocabulary": [
-                    {"simplified": "书法", "traditional": "書法", "pinyin": "shūfǎ", "definition": "calligraphy"},
-                    {"simplified": "节奏", "traditional": "節奏", "pinyin": "jiézòu", "definition": "rhythm"},
+                "video_url": "https://example.com/media/platform-incident-brief.mp4",
+                "terms": [
+                    {"term": "Incident brief", "context": "platform", "definition": "A concise incident record."},
+                    {"term": "Evidence", "context": "platform", "definition": "Observed facts from logs, events, traces, or metrics."},
                 ],
                 "flashcards": [
-                    {"prompt": "What does 书法 mean?", "answer": "calligraphy", "pinyin": "shūfǎ", "difficulty": "intermediate"}
+                    {
+                        "prompt": "What belongs in an incident brief?",
+                        "answer": "Impact, timeline, evidence, owners, and follow-up.",
+                        "hint": "",
+                        "difficulty": "intermediate",
+                    }
                 ],
             }
         ],
@@ -2569,13 +2641,13 @@ def test_admin_upload_course_flow():
     created = client.post("/api/admin/courses", json=payload)
     assert created.status_code == 201
     course = created.json()
-    assert course["slug"] == "calligraphy-orchid-preface"
-    assert course["lessons"][0]["title"] == "Reading 行书 as Movement"
+    assert course["slug"] == "platform-incident-brief-upload"
+    assert course["lessons"][0]["title"] == "Writing an Incident Brief"
 
     duplicate = client.post("/api/admin/courses", json=payload)
     assert duplicate.status_code == 409
 
-    search = client.get("/api/search?q=兰亭")
+    search = client.get("/api/search?q=incident brief")
     assert search.status_code == 200
     assert search.json()["lessons"]
 
@@ -2598,32 +2670,25 @@ def test_learning_path_marks_completion_and_recommendation():
 
 
 def test_user_dashboard_reports_xp_streak_goal_and_achievements():
-    courses = client.get("/api/courses").json()
+    courses = client.get("/api/courses?domain=platform").json()
     first_lesson_id = courses[0]["lessons"][0]["id"]
-    poetry_lesson_id = next(
-        lesson["id"]
-        for course in courses
-        if course["category"] == "Literature"
-        for lesson in course["lessons"]
-    )
     client.post("/api/progress", json={"user_id": "demo-user", "lesson_id": first_lesson_id, "completed": True, "score": 1})
-    client.post("/api/progress", json={"user_id": "demo-user", "lesson_id": poetry_lesson_id, "completed": True, "score": 1})
     client.post(
         "/api/quiz/attempts",
-        json={"user_id": "demo-user", "lesson_id": first_lesson_id, "score": 0.8, "answers": {"tone": "声调"}},
+        json={"user_id": "demo-user", "lesson_id": first_lesson_id, "score": 0.8, "answers": {"evidence": "logs"}},
     )
 
     response = client.get("/api/users/demo-user/dashboard")
     assert response.status_code == 200
     dashboard = response.json()
 
-    assert dashboard["xp"]["total"] >= 48
+    assert dashboard["xp"]["total"] >= 28
     assert dashboard["xp"]["total"] == dashboard["xp"]["lesson_completion_xp"] + dashboard["xp"]["quiz_xp"] + dashboard["xp"]["review_xp"]
     assert dashboard["daily_goal"]["target_xp"] == 50
-    assert dashboard["daily_goal"]["earned_xp_today"] >= 48
+    assert dashboard["daily_goal"]["earned_xp_today"] >= 28
     assert dashboard["streak"]["current_days"] >= 1
     earned = {achievement["code"] for achievement in dashboard["achievements"] if achievement["earned"]}
-    assert {"first_lesson", "poetry_explorer"}.issubset(earned)
+    assert {"first_lesson", "platform_pathfinder"}.issubset(earned)
 
 
 def test_due_reviews_and_answer_update_schedule():
@@ -2664,19 +2729,3 @@ def test_review_answer_initial_state_is_concurrency_safe():
         )
     assert review_state_count == 1
     assert xp_count == 1
-
-
-def test_character_practice_metadata():
-    response = client.get("/api/characters")
-    assert response.status_code == 200
-    characters = response.json()
-    moon = next(item for item in characters if item["simplified"] == "月")
-    assert moon["traditional"] == "月"
-    assert moon["pinyin"] == "yuè"
-    assert moon["radical"]
-    assert moon["strokes"] > 0
-    assert moon["example_words"]
-
-    detail = client.get(f"/api/characters/{moon['id']}")
-    assert detail.status_code == 200
-    assert detail.json()["mnemonic"]

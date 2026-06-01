@@ -11,5 +11,5 @@ Production expectations:
 Example local validation:
 
 ```bash
-kubectl apply --dry-run=client -f infra/k8s/zhongwen-platform.yaml
+kubectl apply --dry-run=client -f infra/k8s/platform-academy.yaml
 ```

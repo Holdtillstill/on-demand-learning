@@ -158,7 +158,6 @@ def verify_compose_contract(env_example: dict[str, str]) -> None:
         {
             "api",
             "worker",
-            "frontend",
             "platform-academy",
             "postgres",
             "redis",
@@ -202,22 +201,13 @@ def verify_compose_contract(env_example: dict[str, str]) -> None:
     require_ports(worker, {"9100:9100"}, "worker")
     require_depends_on(worker, {"api", "redis"}, "worker")
 
-    frontend = compose_service(compose, "frontend")
-    require_equal(
-        compose_build(frontend, "frontend").get("dockerfile"),
-        "apps/frontend/Dockerfile",
-        "docker-compose.yml frontend Dockerfile",
-    )
-    require_ports(frontend, {"8080:80"}, "frontend")
-    require_depends_on(frontend, {"api"}, "frontend")
-
     platform = compose_service(compose, "platform-academy")
     require_equal(
         compose_build(platform, "platform-academy").get("dockerfile"),
         "apps/platform-academy/Dockerfile",
         "docker-compose.yml platform-academy Dockerfile",
     )
-    require_ports(platform, {"8090:80"}, "platform-academy")
+    require_ports(platform, {"8090:8080"}, "platform-academy")
     require_depends_on(platform, {"api"}, "platform-academy")
 
 

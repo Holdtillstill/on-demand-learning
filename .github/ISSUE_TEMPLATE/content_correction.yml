@@ -12,7 +12,6 @@ body:
         - Platform Academy lab
         - Platform Academy resource
         - Interview prep
-        - Zhongwen lesson
         - Documentation
     validations:
       required: true

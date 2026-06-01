@@ -1,1 +1,1 @@
-"""Zhongwen Cloud Learning Platform API."""
+"""Platform Academy API."""

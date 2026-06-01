@@ -10,11 +10,11 @@ scrape_configs:
     static_configs:
       - targets: ["prometheus:9090"]
 
-  - job_name: zhongwen-api
+  - job_name: platform-academy-api
     metrics_path: /metrics
     static_configs:
       - targets: ["api:8000"]
 
-  - job_name: zhongwen-worker
+  - job_name: platform-academy-worker
     static_configs:
       - targets: ["worker:9100"]

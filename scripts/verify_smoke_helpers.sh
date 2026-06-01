@@ -137,11 +137,6 @@ mkdir -p \
   "$CLEANUP_TEST_DIR/.pytest_cache" \
   "$CLEANUP_TEST_DIR/apps/api/.pytest_cache" \
   "$CLEANUP_TEST_DIR/apps/worker/.pytest_cache" \
-  "$CLEANUP_TEST_DIR/apps/frontend/.vite" \
-  "$CLEANUP_TEST_DIR/apps/frontend/dist" \
-  "$CLEANUP_TEST_DIR/apps/frontend/playwright-report" \
-  "$CLEANUP_TEST_DIR/apps/frontend/test-results" \
-  "$CLEANUP_TEST_DIR/apps/frontend/coverage" \
   "$CLEANUP_TEST_DIR/apps/platform-academy/.vite" \
   "$CLEANUP_TEST_DIR/apps/platform-academy/dist" \
   "$CLEANUP_TEST_DIR/apps/platform-academy/playwright-report" \
@@ -157,12 +152,6 @@ touch \
   "$CLEANUP_TEST_DIR/apps/api/test.db" \
   "$CLEANUP_TEST_DIR/apps/api/ci-test.db" \
   "$CLEANUP_TEST_DIR/apps/api/ci-smoke.db" \
-  "$CLEANUP_TEST_DIR/apps/frontend/.vite/cache" \
-  "$CLEANUP_TEST_DIR/apps/frontend/dist/index.html" \
-  "$CLEANUP_TEST_DIR/apps/frontend/playwright-report/index.html" \
-  "$CLEANUP_TEST_DIR/apps/frontend/test-results/result.txt" \
-  "$CLEANUP_TEST_DIR/apps/frontend/coverage/index.html" \
-  "$CLEANUP_TEST_DIR/apps/frontend/tsconfig.tsbuildinfo" \
   "$CLEANUP_TEST_DIR/apps/platform-academy/.vite/cache" \
   "$CLEANUP_TEST_DIR/apps/platform-academy/dist/index.html" \
   "$CLEANUP_TEST_DIR/apps/platform-academy/playwright-report/index.html" \

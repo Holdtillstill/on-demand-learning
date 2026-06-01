@@ -56,11 +56,10 @@ def validate_platform_checked_items(value: dict[str, bool]) -> dict[str, bool]:
     return value
 
 
-class VocabularyOut(BaseModel):
+class GlossaryTermOut(BaseModel):
     id: int
-    simplified: str
-    traditional: str
-    pinyin: str
+    term: str
+    context: str
     definition: str
 
     model_config = ConfigDict(from_attributes=True)
@@ -71,7 +70,7 @@ class FlashcardOut(BaseModel):
     lesson_id: int
     prompt: str
     answer: str
-    pinyin: str
+    hint: str
     difficulty: str
 
     model_config = ConfigDict(from_attributes=True)
@@ -107,21 +106,6 @@ class ReviewStateOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class CharacterOut(BaseModel):
-    id: int
-    simplified: str
-    traditional: str
-    pinyin: str
-    meaning: str
-    radical: str
-    strokes: int
-    mnemonic: str
-    cultural_note: str
-    example_words: list[str]
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class LessonSummary(BaseModel):
     id: int
     course_id: int
@@ -133,15 +117,14 @@ class LessonSummary(BaseModel):
 
 
 class LessonOut(LessonSummary):
-    body_simplified: str
-    body_traditional: str
-    pinyin: str
+    body: str
+    practice_notes: str
     audio_url: str | None
     video_url: str | None
     course_slug: str | None = None
     course_category: str | None = None
     course_era: str | None = None
-    vocabulary: list[VocabularyOut] = []
+    terms: list[GlossaryTermOut] = []
     flashcards: list[FlashcardOut] = []
 
 
@@ -330,29 +313,27 @@ class PlatformInterviewPrepIndexOut(BaseModel):
     packs: list[PlatformInterviewPrepOut]
 
 
-class VocabularyIn(BaseModel):
-    simplified: str = Field(min_length=1, max_length=80)
-    traditional: str = Field(min_length=1, max_length=80)
-    pinyin: str = Field(min_length=1, max_length=120)
+class GlossaryTermIn(BaseModel):
+    term: str = Field(min_length=1, max_length=80)
+    context: str = Field(min_length=1, max_length=120)
     definition: str = Field(min_length=1, max_length=250)
 
 
 class FlashcardIn(BaseModel):
     prompt: str = Field(min_length=1)
     answer: str = Field(min_length=1)
-    pinyin: str = ""
+    hint: str = ""
     difficulty: str = "beginner"
 
 
 class LessonCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     summary: str = Field(min_length=1)
-    body_simplified: str = Field(min_length=1)
-    body_traditional: str = Field(min_length=1)
-    pinyin: str = Field(min_length=1)
+    body: str = Field(min_length=1)
+    practice_notes: str = Field(min_length=1)
     audio_url: str | None = None
     video_url: str | None = None
-    vocabulary: list[VocabularyIn] = Field(default_factory=list)
+    terms: list[GlossaryTermIn] = Field(default_factory=list)
     flashcards: list[FlashcardIn] = Field(default_factory=list)
 
 
