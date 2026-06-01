@@ -125,12 +125,26 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "review-terraform-eks-plan": {
-        "files": {"evidence-template.md"},
-        "terms": {"terraform apply", "must be replaced", "0.0.0.0/0", "eks:*", "Do not approve"},
+        "files": {"evidence-template.md", "plan_analyzer.py", "setup.sh"},
+        "terms": {
+            "terraform apply",
+            "must be replaced",
+            "0.0.0.0/0",
+            "eks:*",
+            "Do not approve",
+            "Terraform plan risk analysis passed",
+        },
     },
     "debug-irsa-access-denied": {
-        "files": {"evidence-template.md"},
-        "terms": {"ServiceAccount", "AccessDenied", "PutObject", "system:serviceaccount:payments:checkout", "least-privilege"},
+        "files": {"evidence-template.md", "irsa_simulator.py", "setup.sh"},
+        "terms": {
+            "ServiceAccount",
+            "AccessDenied",
+            "PutObject",
+            "system:serviceaccount:payments:checkout",
+            "least-privilege",
+            "IRSA simulation passed",
+        },
     },
     "audit-tenant-boundaries": {
         "files": {"evidence-template.md", "setup.sh", "tenant_boundary_analyzer.py"},
@@ -155,8 +169,15 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "trace-argocd-drift": {
-        "files": {"evidence-template.md"},
-        "terms": {"replicas: 3", "replicas: 9", "autoscaling", "/spec/replicas", "Git-owned"},
+        "files": {"drift_analyzer.py", "evidence-template.md", "setup.sh"},
+        "terms": {
+            "replicas: 3",
+            "replicas: 9",
+            "autoscaling",
+            "/spec/replicas",
+            "Git-owned",
+            "ArgoCD drift analysis passed",
+        },
     },
     "review-docker-image-supply-chain": {
         "files": {"evidence-template.md", "setup.sh", "supply_chain_analyzer.py"},

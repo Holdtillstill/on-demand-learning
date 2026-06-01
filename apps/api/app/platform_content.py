@@ -4621,7 +4621,7 @@ DEEPENED_LAB_UPDATES = {
             ["0.0.0.0/0", "eks:*", "Resource = \"*\"", "public ingress", "IAM"],
             ["blast radius", "rollback", "owner", "separate plans", "capacity"],
             ["Do not approve", "remediation", "least-privilege", "validation", "rollback"],
-            ["decision-record.md", "tfplan.txt", "review.md", "validate", "cleanup"],
+            ["decision-record.md", "tfplan.txt", "review.md", "validate", "cleanup", "Terraform plan risk analysis passed"],
         ],
     },
     "debug-irsa-access-denied": {
@@ -4660,7 +4660,14 @@ DEEPENED_LAB_UPDATES = {
             ["system:serviceaccount:default:checkout", "system:serviceaccount:payments:checkout", "trust policy", "namespace mismatch"],
             ["AccessDenied", "PutObject", "payments-prod-receipts", "receipts/2026/05/30", "CloudTrail"],
             ["trust", "permission", "owner", "wildcard", "s3:*"],
-            ["s3:PutObject", "arn:aws:s3:::payments-prod-receipts/receipts/*", "least-privilege", "validation", "handoff"],
+            [
+                "s3:PutObject",
+                "arn:aws:s3:::payments-prod-receipts/receipts/*",
+                "least-privilege",
+                "validation",
+                "handoff",
+                "IRSA simulation passed",
+            ],
         ],
     },
     "audit-tenant-boundaries": {
@@ -4769,7 +4776,14 @@ DEEPENED_LAB_UPDATES = {
             ["autoscaling.platform.example.com/last-scale", "autoscaling", "controller-owned", "live object"],
             ["Git-owned", "image", "labels", "resources", "security"],
             ["ignoreDifferences", "/spec/replicas", "checkout", "payments", "Deployment"],
-            ["ownership-decision.md", "ignore-differences.yaml", "validate", "cleanup", "no-runtime"],
+            [
+                "ownership-decision.md",
+                "ignore-differences.yaml",
+                "validate",
+                "cleanup",
+                "no-runtime",
+                "ArgoCD drift analysis passed",
+            ],
         ],
     },
     "review-docker-image-supply-chain": {

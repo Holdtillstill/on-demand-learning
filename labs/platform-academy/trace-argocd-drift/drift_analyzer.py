@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local ArgoCD drift analyzer for the desired/live manifest lab."""
+"""Evidence-oriented local ArgoCD drift analyzer for the desired/live manifest lab."""
 
 from __future__ import annotations
 

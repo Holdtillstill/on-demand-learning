@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local IRSA trust and permission simulator for the access-denied lab."""
+"""Evidence-oriented local IRSA trust and permission simulator for the access-denied lab."""
 
 from __future__ import annotations
 

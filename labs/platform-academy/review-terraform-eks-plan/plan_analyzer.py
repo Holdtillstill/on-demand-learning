@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local Terraform plan risk analyzer for the EKS plan review lab."""
+"""Evidence-oriented local Terraform plan risk analyzer for the EKS review lab."""
 
 from __future__ import annotations
 
