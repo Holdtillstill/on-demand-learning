@@ -3,6 +3,14 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+if [ -n "${PYTHON:-}" ]; then
+  PYTHON_BIN="${PYTHON}"
+elif command -v python3.11 >/dev/null 2>&1; then
+  PYTHON_BIN="python3.11"
+else
+  PYTHON_BIN="python3"
+fi
+
 git_value() {
   git -C "$ROOT" "$@" 2>/dev/null || true
 }
@@ -38,7 +46,10 @@ fi
 branch="$(git_value rev-parse --abbrev-ref HEAD)"
 commit="$(git_value rev-parse --short=12 HEAD)"
 status="$(git_value status --short --untracked-files=all)"
-changed_count="$(count_lines "$status")"
+review_base="$(PYTHONDONTWRITEBYTECODE=1 "$PYTHON_BIN" "$ROOT/scripts/platform_review_manifest.py" --base-info)"
+review_changed_paths="$(PYTHONDONTWRITEBYTECODE=1 "$PYTHON_BIN" "$ROOT/scripts/platform_review_manifest.py" --list-paths)"
+review_changed_count="$(count_lines "$review_changed_paths")"
+local_changed_count="$(count_lines "$status")"
 generated_count="$(count_lines "$generated_artifacts")"
 image_count="$(count_lines "$smoke_images")"
 container_count="$(count_lines "$smoke_containers")"
@@ -50,7 +61,9 @@ cat <<EOF
 Generated: ${generated_at}
 Branch: ${branch:-unknown}
 Commit: ${commit:-unknown}
-Working tree changed paths: ${changed_count}
+Review base: ${review_base}
+Review changed paths: ${review_changed_count}
+Working tree changed paths: ${local_changed_count}
 
 ## Required Local Evidence
 
@@ -77,7 +90,8 @@ Paste the most recent successful \`make platform-release-check\` tail here:
 - Browser smoke: 21 courses, 84 lessons, 21 lab detail routes, 7 portfolio-grade UI signals, 320 resource detail routes, 22 interview prep packs, desktop and mobile route checks.
 - Lab smoke: all lab packets, protected instructor/source bundles, learner workspace bundles, no-store download headers, safe source/workspace extraction, source helper syntax, and each workspace \`validate.sh --files-only\`.
 - API image migration smoke: \`alembic upgrade head\`, \`alembic current\`, \`alembic check\`, and bundled lab verifier with \`CREATE_SCHEMA_ON_STARTUP=false\`.
-- Working-tree hygiene: tracked and untracked changed files, including new lab files, are checked for generated artifacts, executable shell helpers, trailing whitespace, CRLF line endings, conflict markers, and missing final newlines.
+- Review scope: branch-aware manifest and review pack compare against the review base and include local modified, staged, or untracked files.
+- Working-tree hygiene: local modified, staged, and untracked files are checked for generated artifacts, executable shell helpers, trailing whitespace, CRLF line endings, conflict markers, and missing final newlines.
 - Workflow contract: expected GitHub Actions workflow set, Platform Academy image path filters, migration/scan/container-smoke-before-push ordering, backend API smoke, frontend browser smoke, and platform validation gates.
 
 ## Cleanup Status
@@ -145,5 +159,5 @@ cat <<'EOF'
 - Platform Academy UI: `apps/platform-academy/src/App.tsx`, `apps/platform-academy/src/styles.css`, `apps/platform-academy/src/api.ts`, `apps/platform-academy/src/types.ts`, `apps/platform-academy/src/App.test.tsx`.
 - Release/deployment: `Makefile`, `scripts/`, `.github/workflows/`, `.env.example`, `docker-compose.yml`, `infra/k8s/zhongwen-platform.yaml`, `docs/deployment.md`.
 
-Run `make platform-lab-matrix` when reviewers need a lab-by-lab portfolio-focus, structural-gate, mode, artifact-count, and evidence-check index. Run `make platform-review-manifest` when reviewers need the changed tracked/untracked files grouped by subsystem. Run `make platform-review-pack` when reviewers or deployment owners need one disposable bundle with the release scaffold, lab matrix, review-scope summary, changed-file manifest, commit plan with pathspec files, content-count contract, workflow contract, handoff docs, PR template, git status, and diff summaries.
+Run `make platform-lab-matrix` when reviewers need a lab-by-lab portfolio-focus, structural-gate, mode, artifact-count, and evidence-check index. Run `make platform-review-manifest` when reviewers need committed branch changes plus local modified, staged, or untracked files grouped by subsystem. Run `make platform-review-pack` when reviewers or deployment owners need one disposable bundle with the release scaffold, lab matrix, review-scope summary, changed-file manifest, commit plan with pathspec files, content-count contract, workflow contract, handoff docs, PR template, git status, and diff summaries.
 EOF
