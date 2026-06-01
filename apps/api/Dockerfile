@@ -16,6 +16,7 @@ COPY apps/api/app /app/app
 COPY apps/api/alembic.ini /app/alembic.ini
 COPY apps/api/alembic /app/alembic
 COPY labs /app/labs
+COPY scripts /app/scripts
 
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

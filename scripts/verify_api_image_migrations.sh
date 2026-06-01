@@ -76,6 +76,21 @@ docker run --rm \
   -e REDIS_URL=redis://localhost:6379/0 \
   -e OTEL_EXPORTER_OTLP_ENDPOINT= \
   "${image}" \
-  sh -c 'python -m alembic upgrade head && python -m alembic current && python -m alembic check && test -f /app/labs/platform-academy/verify-full-labs.sh'
+  sh -c 'python -m alembic upgrade head && python -m alembic current && python -m alembic check && test -f /app/labs/platform-academy/verify-full-labs.sh && python - <<'"'"'PY'"'"'
+from pathlib import Path
+
+from app.platform_content import LAB_ARTIFACT_PATHS
+
+root = Path("/app")
+missing = [
+    artifact_path
+    for paths in LAB_ARTIFACT_PATHS.values()
+    for artifact_path in paths
+    if not (root / artifact_path).is_file()
+]
+if missing:
+    raise SystemExit("API image is missing lab source bundle artifacts: " + ", ".join(missing))
+print(f"Verified API image includes {sum(len(paths) for paths in LAB_ARTIFACT_PATHS.values())} lab source bundle artifacts.")
+PY'
 
 echo "Verified API image migrations and bundled lab verifier in ${image}"
