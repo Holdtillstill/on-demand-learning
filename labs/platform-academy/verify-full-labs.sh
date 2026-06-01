@@ -93,6 +93,17 @@ set -euo pipefail
 
 : "${PLATFORM_FAKE_KUBECTL_LOG:?}"
 printf "%s\n" "$*" >>"$PLATFORM_FAKE_KUBECTL_LOG"
+state_file="${PLATFORM_FAKE_KUBECTL_STATE:-$PLATFORM_FAKE_KUBECTL_LOG.state}"
+touch "$state_file"
+
+set_state() {
+  printf "%s=%s\n" "$1" "$2" >>"$state_file"
+}
+
+get_state() {
+  local key="$1"
+  awk -F= -v key="$key" '$1 == key { value = $2 } END { print value }' "$state_file"
+}
 
 case "${1:-}" in
   config)
@@ -113,8 +124,17 @@ case "${1:-}" in
       verb="${3:-}"
       resource="${4:-}"
       namespace=""
-      if [[ "${5:-}" == "-n" ]]; then
-        namespace="${6:-}"
+      shift 4
+      while [[ $# -gt 0 ]]; do
+        if [[ "${1:-}" == "-n" ]]; then
+          shift
+          namespace="${1:-}"
+        fi
+        shift || true
+      done
+      if [[ "$verb|$resource|$namespace" == "get|secrets|tenant-a" ]] && [[ "$(get_state tenant)" == "fixed" ]]; then
+        echo "no"
+        exit 0
       fi
       if [[ "${PLATFORM_FAKE_KUBECTL_DENY:-}" == "$verb|$resource|$namespace" ]]; then
         echo "no"
@@ -124,10 +144,144 @@ case "${1:-}" in
       exit 0
     fi
     ;;
+  delete)
+    if [[ "${2:-}" == "clusterrolebinding" && "${3:-}" == "tenant-a-temporary-admin" ]]; then
+      set_state tenant_binding deleted
+    fi
+    exit 0
+    ;;
+  apply)
+    if [[ "${2:-}" == "-f" ]]; then
+      manifest="${3:-}"
+      case "$manifest" in
+        */trace-service-to-pod/start.yaml)
+          set_state service_endpoint empty
+          ;;
+        */trace-service-to-pod/fixed.yaml)
+          set_state service_endpoint ready
+          ;;
+        */debug-crashloop-imagepull/start.yaml)
+          set_state crashloop broken
+          ;;
+        */debug-crashloop-imagepull/fixed.yaml)
+          set_state crashloop fixed
+          ;;
+        */trace-network-path/ingress-service.yaml)
+          set_state route_target_port web
+          set_state endpoint_port none
+          ;;
+        */trace-network-path/fixed-ingress-service.yaml)
+          set_state route_target_port http
+          set_state endpoint_port 8080
+          ;;
+        */debug-aws-alb-health-path/ingress-service.yaml)
+          set_state route_target_port web
+          set_state alb_health_path /healthz
+          set_state endpoint_port none
+          ;;
+        */debug-aws-alb-health-path/fixed-ingress-service.yaml)
+          set_state route_target_port http
+          set_state alb_health_path /
+          set_state endpoint_port 8080
+          ;;
+        */audit-tenant-boundaries/tenant-a.yaml)
+          set_state tenant broken
+          set_state tenant_binding present
+          ;;
+        */audit-tenant-boundaries/fixed-tenant-a.yaml)
+          set_state tenant fixed
+          ;;
+      esac
+      exit 0
+    fi
+    ;;
+  rollout)
+    exit 0
+    ;;
+  wait)
+    exit 0
+    ;;
+  logs)
+    echo "missing DB_URL"
+    exit 0
+    ;;
+  exec)
+    if [[ "$*" == *"/healthz"* ]]; then
+      echo "404"
+    else
+      echo "200"
+    fi
+    exit 0
+    ;;
   get)
     if [[ "${2:-}" == "namespace" ]]; then
+      if [[ "${3:-}" == "tenant-a" ]] && [[ "$*" == *"jsonpath"* ]]; then
+        if [[ "$(get_state tenant)" == "fixed" ]]; then
+          echo "restricted"
+        else
+          echo "baseline"
+        fi
+        exit 0
+      fi
       echo "Error from server (NotFound): namespaces \"${3:-}\" not found" >&2
       exit 1
+    fi
+    if [[ "${2:-}" == "clusterrolebinding" && "${3:-}" == "tenant-a-temporary-admin" ]]; then
+      if [[ "$(get_state tenant_binding)" == "present" ]]; then
+        if [[ "$*" == *"jsonpath"* ]]; then
+          echo "cluster-admin"
+        fi
+        exit 0
+      fi
+      exit 1
+    fi
+    if [[ "${2:-}" == "networkpolicy" ]]; then
+      if [[ "${3:-}" == "allow-all-egress" ]]; then
+        echo "egress:"
+      else
+        echo "networkpolicy.networking.k8s.io/${3:-default-deny-egress}"
+      fi
+      exit 0
+    fi
+    if [[ "${2:-}" == "pods" ]]; then
+      if [[ "$*" == *"app=checkout-crash"* ]]; then
+        echo "CrashLoopBackOff"
+      elif [[ "$*" == *"app=checkout-pull"* ]]; then
+        echo "ImagePullBackOff"
+      else
+        echo "pod/checkout-example"
+      fi
+      exit 0
+    fi
+    if [[ "${2:-}" == "svc" && "${3:-}" == "checkout" ]]; then
+      if [[ "$*" == *"jsonpath"* ]]; then
+        echo "$(get_state route_target_port)"
+      else
+        echo "service/checkout"
+      fi
+      exit 0
+    fi
+    if [[ "${2:-}" == "ingress" && "${3:-}" == "checkout" ]]; then
+      if [[ "$*" == *"jsonpath"* ]]; then
+        echo "$(get_state alb_health_path)"
+      else
+        echo "ingress.networking.k8s.io/checkout"
+      fi
+      exit 0
+    fi
+    if [[ "${2:-}" == "endpointslice" ]]; then
+      if [[ "$*" == *".items[*].endpoints[*].addresses[*]"* ]]; then
+        [[ "$(get_state service_endpoint)" == "ready" ]] && echo "10.0.0.10"
+      elif [[ "$*" == *".items[*].ports[*].port"* ]]; then
+        [[ "$(get_state endpoint_port)" == "8080" ]] && echo "8080"
+      else
+        echo "endpointslice.discovery.k8s.io/checkout-abc"
+      fi
+      exit 0
+    fi
+    if [[ "${2:-}" == "svc,endpointslice" || "${2:-}" == "ingress,svc,endpointslice,pod" || "${2:-}" == "namespace,role,rolebinding,networkpolicy" ]]; then
+      echo "fake wide output"
+      exit 0
     fi
     ;;
 esac
@@ -326,6 +480,19 @@ if "$LAB_ROOT/run-lab.sh" validate review-yaml-before-apply --cluster >"$tmpdir/
   fail "lab runner should reject cluster mode for a non-cluster lab"
 fi
 grep -q "does not have a cluster-backed validator" "$tmpdir/runner-negative.txt" || fail "lab runner negative path returned an unexpected message"
+
+for cluster_lab in "${CLUSTER_LABS[@]}"; do
+  fake_log="$tmpdir/runner-cluster-$cluster_lab-kubectl.log"
+  fake_state="$tmpdir/runner-cluster-$cluster_lab-kubectl.state"
+  : >"$fake_log"
+  : >"$fake_state"
+  PATH="$fake_kubectl_bin:$PATH" \
+    PLATFORM_FAKE_KUBECTL_LOG="$fake_log" \
+    PLATFORM_FAKE_KUBECTL_STATE="$fake_state" \
+    "$LAB_ROOT/run-lab.sh" validate "$cluster_lab" --cluster >"$tmpdir/runner-cluster-$cluster_lab.txt"
+  grep -q "File checks passed for $cluster_lab" "$tmpdir/runner-cluster-$cluster_lab.txt" || fail "$cluster_lab runner cluster validation should run file checks before cluster checks"
+  grep -q "^apply -f " "$fake_log" || fail "$cluster_lab runner cluster validation should apply manifests through the fake cluster"
+done
 
 for lab in "${FULL_LABS[@]}"; do
   lab_dir="$LAB_ROOT/$lab"
