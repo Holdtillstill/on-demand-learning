@@ -3446,26 +3446,42 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
-            "ls labs/platform-academy/validate-helm-release-artifact",
+            "bash labs/platform-academy/validate-helm-release-artifact/setup.sh --evidence /tmp/helm-release-evidence.md",
             "sed -n '1,180p' labs/platform-academy/validate-helm-release-artifact/review-notes.md",
         ],
         "commands": [
             "diff -u labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml || true",
             "grep -n \"selector:\\|latest\\|privileged\\|LoadBalancer\" labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml",
+            (
+                "python3 labs/platform-academy/validate-helm-release-artifact/helm_release_analyzer.py "
+                "--before labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml "
+                "--after labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml "
+                "--safe labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml "
+                "--notes labs/platform-academy/validate-helm-release-artifact/review-notes.md"
+            ),
         ],
         "practice_steps": [
             "Review rendered YAML instead of trusting chart success.",
             "Find immutable selector changes and risky security changes.",
+            "Use the local analyzer to prove selector, image, runtime, exposure, and safer-target evidence.",
             "Write an approval decision with rollback limitations.",
         ],
         "expected_evidence": [
             "The Deployment selector changes between rendered versions.",
             "The image changes from digest-pinned to the mutable latest tag.",
             "The rendered output introduces privileged mode and a LoadBalancer.",
+            "The local analyzer reports Helm release artifact analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/validate-helm-release-artifact/validate.sh",
             "bash labs/platform-academy/validate-helm-release-artifact/validate.sh --evidence /tmp/helm-release-evidence.md",
+            (
+                "python3 labs/platform-academy/validate-helm-release-artifact/helm_release_analyzer.py "
+                "--before labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml "
+                "--after labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml "
+                "--safe labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml "
+                "--notes labs/platform-academy/validate-helm-release-artifact/review-notes.md"
+            ),
             "grep -n \"app: checkout\" labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml",
             "grep -n \"privileged: true\" labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml",
         ],
@@ -4594,7 +4610,7 @@ DEEPENED_LAB_UPDATES = {
             "Privileged runtime and LoadBalancer evidence captured",
             "Rollback risk and owner questions written",
             "Safer render decision recorded",
-            "Validation output and saved evidence recorded",
+            "Helm release analysis, validation output, and saved evidence recorded",
         ],
         "rubric_evidence_terms": [
             ["rendered artifact", "rendered-after.yaml", "not applied", "reviewer"],
@@ -4602,7 +4618,7 @@ DEEPENED_LAB_UPDATES = {
             ["checkout:latest", "privileged: true", "LoadBalancer", "securityContext", "mutable"],
             ["rollback", "owner", "chart values", "render-success", "release approval"],
             ["Block the release", "safe-rendered-after.yaml", "digest-pinned", "ClusterIP", "non-privileged"],
-            ["diff", "review-notes.md", "validate", "cleanup", "no-runtime"],
+            ["diff", "review-notes.md", "validate", "cleanup", "no-runtime", "Helm release artifact analysis passed"],
         ],
     },
     "trace-argocd-drift": {
@@ -5005,6 +5021,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml",
         "labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml",
         "labs/platform-academy/validate-helm-release-artifact/review-notes.md",
+        "labs/platform-academy/validate-helm-release-artifact/helm_release_analyzer.py",
+        "labs/platform-academy/validate-helm-release-artifact/setup.sh",
         "labs/platform-academy/validate-helm-release-artifact/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
         "labs/platform-academy/validate-helm-release-artifact/validate.sh",

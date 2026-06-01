@@ -120,8 +120,15 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "validate-helm-release-artifact": {
-        "files": {"evidence-template.md"},
-        "terms": {"immutable selector", "checkout:latest", "privileged: true", "LoadBalancer", "Block the release"},
+        "files": {"evidence-template.md", "helm_release_analyzer.py", "setup.sh"},
+        "terms": {
+            "immutable selector",
+            "checkout:latest",
+            "privileged: true",
+            "LoadBalancer",
+            "Block the release",
+            "Helm release artifact analysis passed",
+        },
     },
     "trace-argocd-drift": {
         "files": {"evidence-template.md"},

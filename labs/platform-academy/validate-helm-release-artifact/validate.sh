@@ -8,6 +8,7 @@ AFTER="$LAB_DIR/rendered-after.yaml"
 SAFE="$LAB_DIR/safe-rendered-after.yaml"
 NOTES="$LAB_DIR/review-notes.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/helm_release_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -46,6 +47,9 @@ grep -q "type: ClusterIP" "$SAFE" || fail "safe-rendered-after.yaml should avoid
 grep -q "## Immutable Selector Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for selector evidence"
 grep -q "## Image, Security, And Exposure Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for image/security/exposure evidence"
 grep -q "## Safer Render Validation" "$TEMPLATE" || fail "evidence-template.md should prompt for safer render validation"
+grep -q "Helm release artifact analysis passed" "$ANALYZER" || fail "helm_release_analyzer.py should report a successful local analysis"
+
+python3 "$ANALYZER" --before "$BEFORE" --after "$AFTER" --safe "$SAFE" --notes "$NOTES" --quiet
 
 echo "File checks passed for validate-helm-release-artifact."
 
@@ -56,6 +60,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "mutable latest image" "checkout:latest|latest|digest-pinned|sha256"
   require_evidence_match "$evidence_file" "privileged runtime regression" "privileged|non-privileged|security context"
   require_evidence_match "$evidence_file" "LoadBalancer exposure risk" "LoadBalancer|ClusterIP|exposure|public"
+  require_evidence_match "$evidence_file" "local Helm release analyzer evidence" "Helm release artifact analysis passed|Helm release analyzer|Selector risk|Exposure risk"
   require_evidence_match "$evidence_file" "block release decision" "block|blocked|do not approve|release decision"
   require_evidence_match "$evidence_file" "safer render target" "safe-rendered-after|digest|ClusterIP|allowPrivilegeEscalation: false|non-root"
   require_evidence_match "$evidence_file" "validation or cleanup evidence" "validation|validate|cleanup|file-review"

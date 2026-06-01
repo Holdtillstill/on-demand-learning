@@ -24,6 +24,7 @@
 
 ## Release Decision
 
+- Local Helm release analyzer result:
 - Decision:
 - Required chart/value changes:
 - Rollback risk:
