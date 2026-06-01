@@ -6,9 +6,25 @@ import App from "./App";
 import { getOrCreateLocalLearnerId, LOCAL_LEARNER_ID_KEY } from "./learnerIdentity";
 
 function jsonResponse(payload: unknown) {
+  const body = JSON.stringify(payload);
   return Promise.resolve({
     ok: true,
+    status: 200,
+    statusText: "OK",
+    headers: new Headers({ "content-type": "application/json" }),
+    text: () => Promise.resolve(body),
     json: () => Promise.resolve(payload)
+  } as Response);
+}
+
+function htmlResponse() {
+  return Promise.resolve({
+    ok: true,
+    status: 200,
+    statusText: "OK",
+    headers: new Headers({ "content-type": "text/html" }),
+    text: () => Promise.resolve("<!doctype html><html><body>SPA fallback</body></html>"),
+    json: () => Promise.reject(new SyntaxError("Unexpected token '<'"))
   } as Response);
 }
 
@@ -449,6 +465,32 @@ describe("Platform Academy app", () => {
       expect.stringContaining(`/api/users/${testLearnerId}/dashboard?domain=platform`),
       expect.objectContaining({ cache: "no-store" })
     );
+  });
+
+  it("loads from static snapshots when same-origin API routes return the static shell", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.startsWith("/static-api/platform-academy-catalog.json")) return jsonResponse(catalog);
+        if (url.startsWith("/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
+        if (url.startsWith("/static-api/platform-academy-resources.json")) return jsonResponse(resources);
+        if (url.startsWith("/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrep);
+        if (url.includes("/api/")) return htmlResponse();
+        return jsonResponse([]);
+      })
+    );
+
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Platform Academy" })).toBeInTheDocument();
+    expect(screen.queryByText("Platform Academy is unavailable.")).not.toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith("/static-api/platform-academy-catalog.json", expect.objectContaining({ cache: "force-cache" }));
+    expect(fetch).toHaveBeenCalledWith("/static-api/platform-academy-roadmap.json", expect.objectContaining({ cache: "force-cache" }));
   });
 
   it("renders interview preparation packs with docs links", async () => {
@@ -1334,11 +1376,11 @@ describe("Platform Academy app", () => {
     expect(screen.queryByText("labs/platform-academy/trace-service-to-pod/solution.md")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /download lab packet/i })).toHaveAttribute(
       "href",
-      "/api/platform-academy/labs/trace-service-to-pod/packet"
+      "/static-api/labs/trace-service-to-pod/packet.md"
     );
     expect(screen.getByRole("link", { name: /download learner workspace/i })).toHaveAttribute(
       "href",
-      "/api/platform-academy/labs/trace-service-to-pod/workspace-bundle"
+      "/static-api/labs/trace-service-to-pod/workspace-bundle.zip"
     );
     expect(screen.getByRole("link", { name: /download learner workspace/i })).toHaveAttribute(
       "download",
