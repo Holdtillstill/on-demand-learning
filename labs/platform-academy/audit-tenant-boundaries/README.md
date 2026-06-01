@@ -20,7 +20,7 @@ sed -n '1,240p' labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml
 sed -n '1,180p' labs/platform-academy/audit-tenant-boundaries/review.md
 ```
 
-Run the local analyzer:
+Setup creates the risky sandbox state or stages the captured tenant review packet, but it does not run the analyzer by default. Run the local analyzer after you inspect RBAC, secrets, Pod Security, and network policy evidence, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py \

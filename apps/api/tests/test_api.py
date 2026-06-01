@@ -758,9 +758,9 @@ def test_all_platform_lab_workspace_bundles_withhold_solutions():
 
 def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path):
     setup_smoke_expectations = {
-        "trace-service-to-pod": "Service routing analysis passed",
-        "debug-crashloop-imagepull": "CrashLoop/ImagePull analysis passed",
-        "review-yaml-before-apply": "YAML manifest risk analysis passed",
+        "trace-service-to-pod": "Analyzer is intentionally not run by default",
+        "debug-crashloop-imagepull": "Analyzer is intentionally not run by default",
+        "review-yaml-before-apply": "Analyzer is intentionally not run by default",
         "diagnose-eks-ip-exhaustion": "Analyzer is intentionally not run by default",
         "validate-helm-release-artifact": "Analyzer is intentionally not run by default",
         "review-terraform-eks-plan": "Analyzer is intentionally not run by default",
@@ -774,8 +774,16 @@ def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path
         "review-docker-image-supply-chain": "Analyzer is intentionally not run by default",
         "audit-eks-cost-drivers": "Analyzer is intentionally not run by default",
         "build-platform-career-proof-pack": "Analyzer is intentionally not run by default",
+        "trace-argocd-drift": "Analyzer is intentionally not run by default",
+        "inspect-linux-failure-evidence": "Analyzer is intentionally not run by default",
+        "trace-network-path": "Analyzer is intentionally not run by default",
+        "debug-aws-alb-health-path": "Analyzer is intentionally not run by default",
+        "audit-tenant-boundaries": "Analyzer is intentionally not run by default",
     }
     setup_smoke_absences = {
+        "trace-service-to-pod": ["Service routing analysis passed"],
+        "debug-crashloop-imagepull": ["CrashLoop/ImagePull analysis passed"],
+        "review-yaml-before-apply": ["YAML manifest risk analysis passed"],
         "diagnose-eks-ip-exhaustion": ["EKS IP exhaustion analysis passed"],
         "validate-helm-release-artifact": ["Helm release artifact analysis passed"],
         "review-terraform-eks-plan": ["Terraform plan risk analysis passed"],
@@ -795,6 +803,11 @@ def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path
         "review-docker-image-supply-chain": ["Docker supply-chain analysis passed"],
         "audit-eks-cost-drivers": ["EKS cost driver analysis passed"],
         "build-platform-career-proof-pack": ["Career proof pack analysis passed"],
+        "trace-argocd-drift": ["ArgoCD drift analysis passed"],
+        "inspect-linux-failure-evidence": ["Linux failure evidence analysis passed"],
+        "trace-network-path": ["Network path analysis passed"],
+        "debug-aws-alb-health-path": ["ALB health path analysis passed"],
+        "audit-tenant-boundaries": ["Tenant boundary analysis passed"],
     }
 
     for slug in FULL_LAB_SLUGS:

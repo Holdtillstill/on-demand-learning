@@ -22,7 +22,7 @@ sed -n '1,80p' labs/platform-academy/inspect-linux-failure-evidence/id-output.tx
 sed -n '1,160p' labs/platform-academy/inspect-linux-failure-evidence/evidence-template.md
 ```
 
-Run the local analyzer:
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default. Run the local analyzer after you inspect the Linux failure evidence, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analyzer.py \

@@ -21,7 +21,7 @@ sed -n '1,260p' labs/platform-academy/debug-aws-alb-health-path/ingress-service.
 sed -n '1,160p' labs/platform-academy/debug-aws-alb-health-path/events.txt
 ```
 
-Run the local analyzer:
+Setup creates the broken cluster state or stages the captured ALB/controller packet, but it does not run the analyzer by default. Run the local analyzer after you inspect target-health, event, health-path, and targetPort evidence, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py \

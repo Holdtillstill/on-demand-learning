@@ -45,7 +45,7 @@ No-cluster path:
 bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --evidence /tmp/crashloop-imagepull-evidence.md
 ```
 
-Run the local analyzer:
+Setup creates the broken cluster state or stages the transcript, but it does not run the analyzer by default. Run the local analyzer after you inspect Pod state, events, previous logs, and image evidence, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/debug-crashloop-imagepull/failure_mode_analyzer.py \

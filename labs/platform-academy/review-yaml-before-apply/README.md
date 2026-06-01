@@ -26,7 +26,7 @@ Optional client-side parse check:
 kubectl apply --dry-run=client --validate=false -f labs/platform-academy/review-yaml-before-apply/vendor.yaml
 ```
 
-Run the local analyzer:
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default. Run the local analyzer after you inspect the manifest, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py \

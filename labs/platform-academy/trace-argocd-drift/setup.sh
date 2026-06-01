@@ -7,15 +7,17 @@ TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/drift_analyzer.py"
 
 evidence_file="/tmp/argocd-drift-evidence.md"
+run_analyzer=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/trace-argocd-drift/setup.sh [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/trace-argocd-drift/setup.sh [--no-cluster] [--run-analyzer] [--evidence <file>]
 
 Options:
-  --no-cluster   Prepare the local evidence note and run the desired/live drift analyzer. This is the default.
-  --evidence     Evidence note path to create when it does not already exist.
+  --no-cluster     Prepare the local evidence note and stage drift artifacts. This is the default.
+  --run-analyzer   Run the desired/live drift analyzer after staging evidence.
+  --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
 
@@ -27,6 +29,9 @@ fail() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-cluster|--transcript)
+      ;;
+    --run-analyzer)
+      run_analyzer=true
       ;;
     --evidence)
       shift
@@ -52,11 +57,26 @@ else
 fi
 
 echo
-python3 "$ANALYZER" \
-  --desired "$LAB_DIR/desired.yaml" \
-  --live "$LAB_DIR/live.yaml" \
-  --ignore-rule "$LAB_DIR/ignore-differences.yaml" \
-  --report "$LAB_DIR/argocd-app-report.txt"
+echo "Staged ArgoCD drift evidence bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/trace-argocd-drift/argocd-app-report.txt"
+echo "  sed -n '1,220p' labs/platform-academy/trace-argocd-drift/desired.yaml"
+echo "  sed -n '1,220p' labs/platform-academy/trace-argocd-drift/live.yaml"
+echo "  diff -u labs/platform-academy/trace-argocd-drift/desired.yaml labs/platform-academy/trace-argocd-drift/live.yaml || true"
+echo
+if [[ "$run_analyzer" == true ]]; then
+  python3 "$ANALYZER" \
+    --desired "$LAB_DIR/desired.yaml" \
+    --live "$LAB_DIR/live.yaml" \
+    --ignore-rule "$LAB_DIR/ignore-differences.yaml" \
+    --report "$LAB_DIR/argocd-app-report.txt"
+else
+  echo "Analyzer is intentionally not run by default; inspect desired/live replicas, controller ownership, self-heal, ignore rule, and Git-owned field evidence first, then run:"
+  echo "  python3 labs/platform-academy/trace-argocd-drift/drift_analyzer.py \\"
+  echo "    --desired labs/platform-academy/trace-argocd-drift/desired.yaml \\"
+  echo "    --live labs/platform-academy/trace-argocd-drift/live.yaml \\"
+  echo "    --ignore-rule labs/platform-academy/trace-argocd-drift/ignore-differences.yaml \\"
+  echo "    --report labs/platform-academy/trace-argocd-drift/argocd-app-report.txt"
+fi
 
 echo
 echo "Next: fill $evidence_file, then run:"

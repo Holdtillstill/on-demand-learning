@@ -7,15 +7,17 @@ TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/linux_failure_analyzer.py"
 
 evidence_file="/tmp/linux-failure-evidence.md"
+run_analyzer=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/inspect-linux-failure-evidence/setup.sh [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/inspect-linux-failure-evidence/setup.sh [--no-cluster] [--run-analyzer] [--evidence <file>]
 
 Options:
-  --no-cluster   Prepare the local Evidence note and run the Linux failure analyzer. This is the default.
-  --evidence     Evidence note path to create when it does not already exist.
+  --no-cluster     Prepare the local Evidence note and stage Linux failure artifacts. This is the default.
+  --run-analyzer   Run the Linux failure analyzer after staging evidence.
+  --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
 
@@ -27,6 +29,9 @@ fail() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-cluster|--transcript)
+      ;;
+    --run-analyzer)
+      run_analyzer=true
       ;;
     --cluster)
       fail "inspect-linux-failure-evidence uses captured evidence and does not support cluster setup"
@@ -55,11 +60,26 @@ else
 fi
 
 echo
-python3 "$ANALYZER" \
-  --describe "$LAB_DIR/pod-describe.txt" \
-  --previous-log "$LAB_DIR/previous.log" \
-  --id-output "$LAB_DIR/id-output.txt" \
-  --remediation "$LAB_DIR/remediation-note.md"
+echo "Staged Linux failure evidence bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt"
+echo "  sed -n '1,120p' labs/platform-academy/inspect-linux-failure-evidence/previous.log"
+echo "  sed -n '1,80p' labs/platform-academy/inspect-linux-failure-evidence/id-output.txt"
+echo "  sed -n '1,180p' labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md"
+echo
+if [[ "$run_analyzer" == true ]]; then
+  python3 "$ANALYZER" \
+    --describe "$LAB_DIR/pod-describe.txt" \
+    --previous-log "$LAB_DIR/previous.log" \
+    --id-output "$LAB_DIR/id-output.txt" \
+    --remediation "$LAB_DIR/remediation-note.md"
+else
+  echo "Analyzer is intentionally not run by default; inspect state, restart count, exit code, failing path, UID/GID, and rejected workaround evidence first, then run:"
+  echo "  python3 labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analyzer.py \\"
+  echo "    --describe labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt \\"
+  echo "    --previous-log labs/platform-academy/inspect-linux-failure-evidence/previous.log \\"
+  echo "    --id-output labs/platform-academy/inspect-linux-failure-evidence/id-output.txt \\"
+  echo "    --remediation labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md"
+fi
 
 echo
 echo "Next: fill $evidence_file, then run:"

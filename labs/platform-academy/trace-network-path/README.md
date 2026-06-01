@@ -24,7 +24,7 @@ sed -n '1,220p' labs/platform-academy/trace-network-path/ingress-service.yaml
 sed -n '1,160p' labs/platform-academy/trace-network-path/evidence-template.md
 ```
 
-Run the local analyzer:
+Setup creates the broken cluster state or stages the captured network packet, but it does not run the analyzer by default. Run the local analyzer after you inspect the hop-by-hop evidence, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/trace-network-path/network_path_analyzer.py \

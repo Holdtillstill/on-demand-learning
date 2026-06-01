@@ -13,17 +13,19 @@ source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 mode="no-cluster"
 evidence_file="/tmp/trace-service-evidence.md"
 preflight_only=false
+run_analyzer=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/trace-service-to-pod/setup.sh [--cluster] [--preflight] [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/trace-service-to-pod/setup.sh [--cluster] [--preflight] [--no-cluster] [--run-analyzer] [--evidence <file>]
 
 Options:
-  --cluster      Apply the broken manifest to a disposable Kubernetes context.
-  --preflight    Check kubectl, context safety, API reachability, permissions, and namespace state, then exit.
-  --no-cluster   Copy the evidence template and print the captured broken-state transcript. This is the default.
-  --evidence     Evidence note path to create when it does not already exist.
+  --cluster        Apply the broken manifest to a disposable Kubernetes context.
+  --preflight      Check kubectl, context safety, API reachability, permissions, and namespace state, then exit.
+  --no-cluster     Copy the evidence template and print the captured broken-state transcript. This is the default.
+  --run-analyzer   Run the local Service route analyzer after staging evidence.
+  --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
 
@@ -44,6 +46,9 @@ while [[ $# -gt 0 ]]; do
     --no-cluster|--transcript)
       [[ "$preflight_only" == false ]] || fail "--preflight is only valid for cluster setup"
       mode="no-cluster"
+      ;;
+    --run-analyzer)
+      run_analyzer=true
       ;;
     --evidence)
       shift
@@ -76,7 +81,15 @@ if [[ "$mode" == "no-cluster" ]]; then
   echo "Captured broken-state transcript:"
   sed -n '1,220p' "$TRANSCRIPT"
   echo
-  python3 "$ANALYZER" --start "$START" --fixed "$FIXED" --transcript "$TRANSCRIPT"
+  if [[ "$run_analyzer" == true ]]; then
+    python3 "$ANALYZER" --start "$START" --fixed "$FIXED" --transcript "$TRANSCRIPT"
+  else
+    echo "Analyzer is intentionally not run by default; inspect selector, Pod label, EndpointSlice, and source manifest evidence first, then run:"
+    echo "  python3 labs/platform-academy/trace-service-to-pod/service_route_analyzer.py \\"
+    echo "    --start labs/platform-academy/trace-service-to-pod/start.yaml \\"
+    echo "    --fixed labs/platform-academy/trace-service-to-pod/fixed.yaml \\"
+    echo "    --transcript labs/platform-academy/trace-service-to-pod/broken-evidence.txt"
+  fi
   echo
   echo "Next: fill $evidence_file, then run:"
   echo "  bash labs/platform-academy/trace-service-to-pod/validate.sh --evidence $evidence_file"
@@ -99,7 +112,11 @@ kubectl delete namespace payments --ignore-not-found >/dev/null
 kubectl apply -f "$START"
 kubectl rollout status deploy/checkout -n payments --timeout=90s
 prepare_evidence_note
-python3 "$ANALYZER" --start "$START" --fixed "$FIXED" --transcript "$TRANSCRIPT"
+if [[ "$run_analyzer" == true ]]; then
+  python3 "$ANALYZER" --start "$START" --fixed "$FIXED" --transcript "$TRANSCRIPT"
+else
+  echo "Analyzer is intentionally not run by default; inspect the live Service, Pod labels, and EndpointSlice before running the analyzer."
+fi
 
 echo
 echo "Broken Service lab is ready in namespace payments."

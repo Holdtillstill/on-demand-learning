@@ -14,17 +14,19 @@ source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 mode="no-cluster"
 evidence_file="/tmp/network-path-evidence.md"
 preflight_only=false
+run_analyzer=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/trace-network-path/setup.sh [--cluster] [--preflight] [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/trace-network-path/setup.sh [--cluster] [--preflight] [--no-cluster] [--run-analyzer] [--evidence <file>]
 
 Options:
-  --cluster      Apply the broken manifest to a disposable Kubernetes context.
-  --preflight    Check kubectl, context safety, API reachability, permissions, and namespace state, then exit.
-  --no-cluster   Copy the evidence template and print the captured network evidence. This is the default.
-  --evidence     Evidence note path to create when it does not already exist.
+  --cluster        Apply the broken manifest to a disposable Kubernetes context.
+  --preflight      Check kubectl, context safety, API reachability, permissions, and namespace state, then exit.
+  --no-cluster     Copy the evidence template and print the captured network evidence. This is the default.
+  --run-analyzer   Run the local network path analyzer after staging evidence.
+  --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
 
@@ -45,6 +47,9 @@ while [[ $# -gt 0 ]]; do
     --no-cluster|--transcript)
       [[ "$preflight_only" == false ]] || fail "--preflight is only valid for cluster setup"
       mode="no-cluster"
+      ;;
+    --run-analyzer)
+      run_analyzer=true
       ;;
     --evidence)
       shift
@@ -80,7 +85,16 @@ if [[ "$mode" == "no-cluster" ]]; then
   echo "Captured network evidence:"
   sed -n '1,180p' "$NETWORK_EVIDENCE"
   echo
-  python3 "$ANALYZER" --handoff "$HANDOFF" --evidence "$NETWORK_EVIDENCE" --broken "$BROKEN" --fixed "$FIXED"
+  if [[ "$run_analyzer" == true ]]; then
+    python3 "$ANALYZER" --handoff "$HANDOFF" --evidence "$NETWORK_EVIDENCE" --broken "$BROKEN" --fixed "$FIXED"
+  else
+    echo "Analyzer is intentionally not run by default; inspect DNS, ALB, Ingress, Service, Pod port, owner, and source evidence first, then run:"
+    echo "  python3 labs/platform-academy/trace-network-path/network_path_analyzer.py \\"
+    echo "    --handoff labs/platform-academy/trace-network-path/incident-handoff.md \\"
+    echo "    --evidence labs/platform-academy/trace-network-path/network-evidence.md \\"
+    echo "    --broken labs/platform-academy/trace-network-path/ingress-service.yaml \\"
+    echo "    --fixed labs/platform-academy/trace-network-path/fixed-ingress-service.yaml"
+  fi
   echo
   echo "Next: fill $evidence_file, then run:"
   echo "  bash labs/platform-academy/trace-network-path/validate.sh --evidence $evidence_file"
@@ -104,7 +118,11 @@ kubectl delete namespace payments --ignore-not-found >/dev/null
 kubectl apply -f "$BROKEN"
 kubectl wait --for=condition=Ready pod/checkout-example -n payments --timeout=90s
 prepare_evidence_note
-python3 "$ANALYZER" --handoff "$HANDOFF" --evidence "$NETWORK_EVIDENCE" --broken "$BROKEN" --fixed "$FIXED"
+if [[ "$run_analyzer" == true ]]; then
+  python3 "$ANALYZER" --handoff "$HANDOFF" --evidence "$NETWORK_EVIDENCE" --broken "$BROKEN" --fixed "$FIXED"
+else
+  echo "Analyzer is intentionally not run by default; inspect live Ingress, Service, EndpointSlice, and Pod port evidence before running the analyzer."
+fi
 
 echo
 echo "Broken network-path lab is ready in namespace payments."

@@ -44,7 +44,7 @@ No-cluster path:
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md
 ```
 
-Run the local analyzer:
+Setup creates the broken cluster state or stages the transcript, but it does not run the analyzer by default. Run the local analyzer after you inspect the Service, Pod labels, and EndpointSlice evidence, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/trace-service-to-pod/service_route_analyzer.py \

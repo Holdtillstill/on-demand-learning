@@ -14,17 +14,19 @@ source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 mode="no-cluster"
 evidence_file="/tmp/alb-health-path-evidence.md"
 preflight_only=false
+run_analyzer=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/debug-aws-alb-health-path/setup.sh [--cluster] [--preflight] [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/debug-aws-alb-health-path/setup.sh [--cluster] [--preflight] [--no-cluster] [--run-analyzer] [--evidence <file>]
 
 Options:
-  --cluster      Apply the broken manifest to a disposable Kubernetes context.
-  --preflight    Check kubectl, context safety, API reachability, permissions, and namespace state, then exit.
-  --no-cluster   Copy the evidence template and print the captured ALB/controller evidence. This is the default.
-  --evidence     Evidence note path to create when it does not already exist.
+  --cluster        Apply the broken manifest to a disposable Kubernetes context.
+  --preflight      Check kubectl, context safety, API reachability, permissions, and namespace state, then exit.
+  --no-cluster     Copy the evidence template and print the captured ALB/controller evidence. This is the default.
+  --run-analyzer   Run the local ALB health path analyzer after staging evidence.
+  --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
 
@@ -45,6 +47,9 @@ while [[ $# -gt 0 ]]; do
     --no-cluster|--transcript)
       [[ "$preflight_only" == false ]] || fail "--preflight is only valid for cluster setup"
       mode="no-cluster"
+      ;;
+    --run-analyzer)
+      run_analyzer=true
       ;;
     --evidence)
       shift
@@ -80,7 +85,16 @@ if [[ "$mode" == "no-cluster" ]]; then
   echo "Captured controller events:"
   sed -n '1,180p' "$EVENTS"
   echo
-  python3 "$ANALYZER" --target-health "$HEALTH" --events "$EVENTS" --broken "$BROKEN" --fixed "$FIXED"
+  if [[ "$run_analyzer" == true ]]; then
+    python3 "$ANALYZER" --target-health "$HEALTH" --events "$EVENTS" --broken "$BROKEN" --fixed "$FIXED"
+  else
+    echo "Analyzer is intentionally not run by default; inspect ALB target health, controller events, health path, targetPort, and owner evidence first, then run:"
+    echo "  python3 labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py \\"
+    echo "    --target-health labs/platform-academy/debug-aws-alb-health-path/target-health.json \\"
+    echo "    --events labs/platform-academy/debug-aws-alb-health-path/events.txt \\"
+    echo "    --broken labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml \\"
+    echo "    --fixed labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml"
+  fi
   echo
   echo "Next: fill $evidence_file, then run:"
   echo "  bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --evidence $evidence_file"
@@ -105,7 +119,11 @@ kubectl delete namespace payments --ignore-not-found >/dev/null
 kubectl apply -f "$BROKEN"
 kubectl wait --for=condition=Ready pod/checkout-example -n payments --timeout=90s
 prepare_evidence_note
-python3 "$ANALYZER" --target-health "$HEALTH" --events "$EVENTS" --broken "$BROKEN" --fixed "$FIXED"
+if [[ "$run_analyzer" == true ]]; then
+  python3 "$ANALYZER" --target-health "$HEALTH" --events "$EVENTS" --broken "$BROKEN" --fixed "$FIXED"
+else
+  echo "Analyzer is intentionally not run by default; inspect live Ingress, Service, EndpointSlice, and health endpoint evidence before running the analyzer."
+fi
 
 echo
 echo "Broken ALB health-path lab is ready in namespace payments."

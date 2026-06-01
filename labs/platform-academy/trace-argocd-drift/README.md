@@ -22,7 +22,7 @@ sed -n '1,220p' labs/platform-academy/trace-argocd-drift/live.yaml
 diff -u labs/platform-academy/trace-argocd-drift/desired.yaml labs/platform-academy/trace-argocd-drift/live.yaml || true
 ```
 
-Run the local drift analyzer:
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default. Run the local drift analyzer after you inspect the desired/live diff, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/trace-argocd-drift/drift_analyzer.py \
