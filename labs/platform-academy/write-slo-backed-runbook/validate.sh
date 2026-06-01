@@ -9,6 +9,7 @@ TEMPLATE="$LAB_DIR/runbook-template.md"
 RUNBOOK="$LAB_DIR/completed-runbook.md"
 DECISION="$LAB_DIR/incident-decision.md"
 EVIDENCE_TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/slo_runbook_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -71,9 +72,17 @@ grep -q "Platform owner: add dashboard panel" "$RUNBOOK" || fail "completed-runb
 
 grep -q "Collect read-only evidence first" "$DECISION" || fail "incident-decision.md should state evidence-first decision"
 grep -q "Owner Split" "$DECISION" || fail "incident-decision.md should include owner split"
+grep -q "SLO runbook analysis passed" "$ANALYZER" || fail "slo_runbook_analyzer.py should report a successful local analysis"
 grep -q "## SLO And Alert Evidence" "$EVIDENCE_TEMPLATE" || fail "evidence-template.md should prompt for SLO and alert evidence"
 grep -q "## Rollout And Symptom Evidence" "$EVIDENCE_TEMPLATE" || fail "evidence-template.md should prompt for rollout and symptom evidence"
 grep -q "## Mitigation Decision" "$EVIDENCE_TEMPLATE" || fail "evidence-template.md should prompt for mitigation decision"
+
+python3 "$ANALYZER" \
+  --signals "$SIGNALS" \
+  --rule "$RULE" \
+  --runbook "$RUNBOOK" \
+  --decision "$DECISION" \
+  --quiet
 
 run_structural_check
 echo "File checks passed for write-slo-backed-runbook."
@@ -87,6 +96,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "readiness or target-health symptom" "readiness flapping|target-health|target group unhealthy|pods readiness"
   require_evidence_match "$evidence_file" "evidence-first safe commands" "read-only|safe first|rollout history|events|logs|evidence first"
   require_evidence_match "$evidence_file" "mitigation or rollback criteria" "rollback|revision 42|traffic-shift|mitigation|escalation"
+  require_evidence_match "$evidence_file" "local SLO runbook analyzer evidence" "SLO runbook analysis passed|SLO runbook analyzer|Safe first commands|Mitigation boundary"
   require_evidence_match "$evidence_file" "validation and follow-up ownership" "validation|5xx|follow-up|owner|dashboard|alert improvement"
   echo "Evidence checks passed for write-slo-backed-runbook."
 fi

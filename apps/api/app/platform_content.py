@@ -3598,28 +3598,45 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/write-slo-backed-runbook/setup.sh --evidence /tmp/slo-runbook-evidence.md",
             "sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/signals.md",
             "sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/runbook-template.md",
         ],
         "commands": [
             "grep -n \"CheckoutHighErrorBudgetBurn\\|0.02\\|severity: page\" labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml",
             "grep -n \"revision 43\\|readiness flapping\\|Mitigation\" labs/platform-academy/write-slo-backed-runbook/signals.md",
+            (
+                "python3 labs/platform-academy/write-slo-backed-runbook/slo_runbook_analyzer.py "
+                "--signals labs/platform-academy/write-slo-backed-runbook/signals.md "
+                "--rule labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml "
+                "--runbook labs/platform-academy/write-slo-backed-runbook/completed-runbook.md "
+                "--decision labs/platform-academy/write-slo-backed-runbook/incident-decision.md"
+            ),
             "diff -u labs/platform-academy/write-slo-backed-runbook/runbook-template.md labs/platform-academy/write-slo-backed-runbook/completed-runbook.md || true",
         ],
         "practice_steps": [
             "Name the user-visible SLO and burn signal.",
             "Tie the alert to rollout and Kubernetes event evidence.",
+            "Use the local analyzer to prove the alert, rollout correlation, safe commands, and mitigation boundary.",
             "Fill the runbook with safe commands, mitigation choices, and follow-up owners.",
         ],
         "expected_evidence": [
             "The alert pages on a checkout 5xx ratio over 2%.",
             "The signals connect rollout revision 43 with readiness flapping.",
             "The runbook template separates evidence, mitigation, and follow-up.",
+            "The local analyzer reports SLO runbook analysis passed.",
             "The completed runbook ties rollback criteria to revision 43 and post-mitigation validation.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/write-slo-backed-runbook/validate.sh",
             "bash labs/platform-academy/write-slo-backed-runbook/validate.sh --evidence /tmp/slo-runbook-evidence.md",
+            (
+                "python3 labs/platform-academy/write-slo-backed-runbook/slo_runbook_analyzer.py "
+                "--signals labs/platform-academy/write-slo-backed-runbook/signals.md "
+                "--rule labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml "
+                "--runbook labs/platform-academy/write-slo-backed-runbook/completed-runbook.md "
+                "--decision labs/platform-academy/write-slo-backed-runbook/incident-decision.md"
+            ),
             "grep -n \"Collect read-only evidence first\" labs/platform-academy/write-slo-backed-runbook/incident-decision.md",
         ],
         "cleanup_commands": ["bash labs/platform-academy/write-slo-backed-runbook/cleanup.sh"],
@@ -4830,7 +4847,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-live-rollback safety boundary recorded",
-            "SLO target and burn alert evidence captured",
+            "SLO target, burn alert, and SLO runbook analysis output captured",
             "Revision 43 and symptom evidence captured",
             "Safe first commands and mitigation criteria written",
             "Owner split and follow-up actions recorded",
@@ -4839,7 +4856,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["no live rollback", "signals.md", "CheckoutHighErrorBudgetBurn", "reviewer"],
-            ["99.9%", "CheckoutHighErrorBudgetBurn", "2% 5xx", "14 minutes", "dashboard"],
+            ["99.9%", "CheckoutHighErrorBudgetBurn", "2% 5xx", "14 minutes", "dashboard", "SLO runbook analysis passed"],
             ["revision 43", "readiness flapping", "target group unhealthy", "dependency", "rollout"],
             ["kubectl rollout history", "read-only", "rollback", "traffic", "escalation"],
             ["Incident commander", "App owner", "Platform owner", "SRE owner", "validation"],
@@ -5025,6 +5042,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/write-slo-backed-runbook/runbook-template.md",
         "labs/platform-academy/write-slo-backed-runbook/completed-runbook.md",
         "labs/platform-academy/write-slo-backed-runbook/incident-decision.md",
+        "labs/platform-academy/write-slo-backed-runbook/slo_runbook_analyzer.py",
+        "labs/platform-academy/write-slo-backed-runbook/setup.sh",
         "labs/platform-academy/write-slo-backed-runbook/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
         "labs/platform-academy/write-slo-backed-runbook/validate.sh",

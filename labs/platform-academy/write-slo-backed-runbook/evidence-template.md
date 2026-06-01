@@ -26,6 +26,7 @@
 
 ## Mitigation Decision
 
+- Local SLO runbook analyzer result:
 - Safe first commands:
 - Rollback criterion:
 - Traffic-shift criterion:

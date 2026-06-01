@@ -154,8 +154,15 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "write-slo-backed-runbook": {
-        "files": {"evidence-template.md"},
-        "terms": {"CheckoutHighErrorBudgetBurn", "99.9%", "2% 5xx", "revision 43", "Incident commander"},
+        "files": {"evidence-template.md", "setup.sh", "slo_runbook_analyzer.py"},
+        "terms": {
+            "CheckoutHighErrorBudgetBurn",
+            "99.9%",
+            "2% 5xx",
+            "revision 43",
+            "Incident commander",
+            "SLO runbook analysis passed",
+        },
     },
     "design-opentelemetry-signal-path": {
         "files": {"evidence-template.md"},

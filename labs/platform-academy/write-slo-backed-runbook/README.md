@@ -17,16 +17,26 @@ No cluster or Prometheus server is required. Use the supplied alert rule and sig
 Inspect the SLO signal packet and runbook template:
 
 ```bash
+bash labs/platform-academy/write-slo-backed-runbook/setup.sh --evidence /tmp/slo-runbook-evidence.md
 sed -n '1,220p' labs/platform-academy/write-slo-backed-runbook/signals.md
 sed -n '1,220p' labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml
 sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/runbook-template.md
-cp labs/platform-academy/write-slo-backed-runbook/evidence-template.md /tmp/slo-runbook-evidence.md
 ```
 
 Compare the template with the completed runbook:
 
 ```bash
 diff -u labs/platform-academy/write-slo-backed-runbook/runbook-template.md labs/platform-academy/write-slo-backed-runbook/completed-runbook.md || true
+```
+
+Run the local analyzer:
+
+```bash
+python3 labs/platform-academy/write-slo-backed-runbook/slo_runbook_analyzer.py \
+  --signals labs/platform-academy/write-slo-backed-runbook/signals.md \
+  --rule labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml \
+  --runbook labs/platform-academy/write-slo-backed-runbook/completed-runbook.md \
+  --decision labs/platform-academy/write-slo-backed-runbook/incident-decision.md
 ```
 
 ## Investigation
@@ -39,6 +49,7 @@ Find:
 - The safe first commands.
 - Rollback, traffic-shift, and escalation criteria.
 - Follow-up owners and alert/dashboard changes.
+- Whether the local analyzer connects the burn alert, rollout correlation, safe commands, rollback boundary, and owners.
 
 ## Remediation Target
 
@@ -57,4 +68,5 @@ bash labs/platform-academy/write-slo-backed-runbook/validate.sh --evidence /tmp/
 - You choose read-only evidence before mitigation.
 - You define rollback criteria tied to revision 43 and target health.
 - You include follow-up owners, due dates, and alert/dashboard improvements.
+- You use analyzer output as evidence for the runbook decision.
 - Your evidence note names SLO target, burn threshold, alert duration, rollout revision, symptoms, safe commands, mitigation criteria, owners, validation, and saved evidence.
