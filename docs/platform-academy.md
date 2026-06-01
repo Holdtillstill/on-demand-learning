@@ -20,7 +20,7 @@ Open:
 - Resources API: http://localhost:8000/api/platform-academy/resources
 - Interview prep API: http://localhost:8000/api/platform-academy/interview-prep
 
-The academy is instructional and local-first. Do not run `terraform apply`, do not deploy to AWS, and do not add real credentials. AWS CLI examples are labeled as inspection/design examples, not required commands for this repo.
+The academy is instructional and local-first. Do not run `terraform apply`, do not deploy to AWS, and do not add real credentials. AWS CLI examples are labeled as inspection/design examples, not required commands for this repo. Start hands-on lab work from [labs/platform-academy/README.md](../labs/platform-academy/README.md).
 
 ## Level Structure
 
@@ -57,6 +57,8 @@ The catalog is organized into three learning levels, forming a zero-to-hero path
 - Platform Engineering Job Search Sprint: skill gap maps, portfolio evidence, resume bullets, recruiter screens, STAR stories, and a 30-day interview-prep operating plan.
 
 Current seed count: 21 courses, 84 lessons, 21 labs, 320 reusable resources, and 219 interview questions.
+Interview prep also supports browser-local custom study plans: learners can save selected question sets from active or filtered prep packs and download a Markdown plan with related labs, resources, and official docs.
+Portable guest backups include these local study plans alongside lesson progress, saved activity, and lab workbooks.
 
 ## How To Learn From It
 
@@ -124,7 +126,86 @@ Each course has a lab tied to a real lesson ID:
 - Create a service golden path.
 - Build a platform career proof pack.
 
-Labs are written as realistic production drills with commands, signals to inspect, and checklists. They avoid cloud mutation and are safe to discuss, rehearse, or adapt to a local kind/minikube cluster.
+Labs have been moved from short drill cards to repository-backed local exercises. Each current lab now includes setup or evidence files under `labs/platform-academy`, expected evidence, validation commands, cleanup guidance, no-cluster fallback notes, worksheet prompts, validation checks, learner artifact paths, instructor/source artifact paths, and a rubric.
+
+Kubernetes labs can be run against a disposable local cluster or checked with client dry-run. AWS, EKS, ArgoCD, Terraform, incident, FinOps, and career labs use captured evidence packs so learners can practice without cloud credentials or live mutation. Observability and incident labs also include a small local signal simulator for fresh log and metric samples.
+
+All 21 practical labs now include deeper evidence templates and captured transcripts or review packets: `trace-service-to-pod`, `debug-crashloop-imagepull`, `review-yaml-before-apply`, `inspect-linux-failure-evidence`, `trace-network-path`, `debug-aws-alb-health-path`, `diagnose-eks-ip-exhaustion`, `design-production-eks-review`, `review-terraform-eks-plan`, `debug-irsa-access-denied`, `audit-tenant-boundaries`, `validate-helm-release-artifact`, `trace-argocd-drift`, `review-docker-image-supply-chain`, `design-safe-release-pipeline`, `create-platform-golden-path`, `write-slo-backed-runbook`, `design-opentelemetry-signal-path`, `run-incident-commander-tabletop`, `audit-eks-cost-drivers`, and `build-platform-career-proof-pack`. These expose lab-specific workbook prompts, validation checks, rubric items, and evidence-aware rubric feedback through the API instead of relying only on generic worksheet prompts.
+
+The current flagship incident/review labs also include richer handoff artifacts: `trace-network-path` has an incident pager handoff, `debug-irsa-access-denied` has workload-side SDK failure logs, and `trace-argocd-drift` has an ArgoCD application report with sync-policy context. Their validators require learners to use those artifacts instead of jumping straight to the fix.
+
+Labs retain an explicit tier field for future content planning:
+
+- `full`: folder-level lab with README, solution, validator, cleanup, and target artifacts.
+- `guided`: guided design or implementation exercise with local artifacts.
+- `evidence-pack`: captured production-style evidence for cloud or incident scenarios that should not require credentials.
+
+All 21 current labs are promoted to the `full` tier with local READMEs, expected solutions, validation scripts, cleanup scripts, and fixed target artifacts where relevant:
+
+- `trace-service-to-pod`
+- `debug-crashloop-imagepull`
+- `review-yaml-before-apply`
+- `validate-helm-release-artifact`
+- `trace-argocd-drift`
+- `review-terraform-eks-plan`
+- `debug-irsa-access-denied`
+- `debug-aws-alb-health-path`
+- `trace-network-path`
+- `audit-tenant-boundaries`
+- `design-safe-release-pipeline`
+- `create-platform-golden-path`
+- `review-docker-image-supply-chain`
+- `build-platform-career-proof-pack`
+- `diagnose-eks-ip-exhaustion`
+- `write-slo-backed-runbook`
+- `design-production-eks-review`
+- `inspect-linux-failure-evidence`
+- `design-opentelemetry-signal-path`
+- `run-incident-commander-tabletop`
+- `audit-eks-cost-drivers`
+
+The lab detail page includes a guided run sequence, a learner-safe artifact map, a profile-backed workbook for worksheet answers, validation state, generated score, rubric feedback, an API-backed Markdown lab packet download at `/api/platform-academy/labs/{lab_slug}/packet`, a learner-safe workspace zip at `/api/platform-academy/labs/{lab_slug}/workspace-bundle`, and a complete instructor/source artifact bundle at `/api/platform-academy/labs/{lab_slug}/bundle`. The run sequence turns each lab into prepare, investigate, prove, and cleanup/handoff phases so learners can see how setup commands, evidence files, validators, and cleanup steps fit together before they start editing the workbook; the downloaded lab packet mirrors that sequence and artifact map. Public lab `artifact_paths` are learner-safe and match `learner_artifact_paths`; source `README.md` and `solution.md` stay out of the public learner payload. Learner workspace bundles and local `run-lab.sh workspace` folders include generated `README.md`, `evidence.md`, local `setup.sh` / `validate.sh` / `cleanup.sh` helpers, and inspection artifacts while withholding source `README.md` and `solution.md` by default. Instructor/source bundles include `SOURCE-MANIFEST.txt` plus the complete source artifact set for review and answer-key workflows; outside local/test/development they require `X-Platform-Source-Bundle-Token`, and `PLATFORM_SOURCE_BUNDLE_PUBLIC=true` is rejected at API startup. The workbook still keeps a local browser copy as a fallback, but the primary state now persists through `/api/platform-academy/labs/{lab_slug}/submission/{user_id}` and `/api/platform-academy/labs/{lab_slug}/submission`.
+
+Every full Platform Academy lab also exposes optional evidence-note self-checks through `validate.sh --evidence <file>` and `run-lab.sh validate <slug> --evidence <file>`. These checks verify that learner writeups name the critical incident facts, review blockers, owner split, validation, and cleanup or no-runtime handoff without requiring live AWS, CI, ArgoCD, or cluster credentials for captured-evidence labs.
+
+Seven practical labs are flagged as portfolio-grade in the API and lab UI: `trace-service-to-pod`, `debug-crashloop-imagepull`, `trace-network-path`, `debug-irsa-access-denied`, `trace-argocd-drift`, `design-safe-release-pipeline`, and `write-slo-backed-runbook`. Their release gate parses key YAML and JSON artifacts structurally, so the broken and fixed states are proven by contract instead of only by text search.
+
+Rubric feedback is deterministic and local to the API. It compares worksheet notes with lab-specific evidence terms, validation state, and action language, then returns `missing`, `needs-evidence`, `passes`, or `strong` feedback for each rubric criterion. Deepened labs can attach criterion-specific evidence terms, so a learner who writes "the Service seems wrong" gets different feedback from a learner who cites `app=checkout`, `app=checkout-api`, and the empty EndpointSlice.
+
+The app also loads `/api/platform-academy/lab-submissions/{user_id}` on startup so the dashboard, lab queue, and `/labs/history` evidence journal can show active workbooks, submitted state, rubric signals, evidence terms, and score without opening each lab. The journal exports a Markdown evidence report with worksheet notes, expected evidence, learner artifact paths, validation commands, and rubric follow-ups for portfolio notes or review.
+
+Guest profiles can export and import a JSON backup from the recovery dialog. The API scopes backups to Platform Academy lesson progress, saved activity, and lab workbook submissions, so imported state can restore a guest workspace without mixing in Zhongwen lesson progress. Imported backups are bounded by row count and worksheet-answer size so the public demo endpoint cannot accept unbounded profile payloads.
+
+### Portable Learner State API
+
+Guest recovery uses two public API endpoints:
+
+- `GET /api/platform-academy/state/{user_id}/export` returns a schema-versioned JSON backup for a guest profile.
+- `POST /api/platform-academy/state/import` imports that backup into a target guest profile and returns row counts for progress, activity, and lab workbook submissions.
+
+The backup contract is intentionally narrow. It contains Platform Academy lesson progress, Platform Academy saved activity, and Platform Academy lab workbook submissions only. It does not include Zhongwen course progress, credentials, secrets, or browser storage values.
+
+Current payload limits:
+
+- Guest learner profile key: 1 to 80 characters; letters, numbers, dot, underscore, colon, and hyphen only.
+- Activity `target_type`, `target_id`, and `state`: letters, numbers, dot, underscore, colon, and hyphen only.
+- Lab workbook status: `in_progress` or `submitted`.
+- Progress rows: 120.
+- Activity rows: 600.
+- Lab submissions: 40.
+- Worksheet fields per lab submission: 80.
+- Checked fields per lab submission: 160.
+- Worksheet and checked-item key length: 100 characters.
+- Worksheet answer length: 4000 characters.
+- Accepted backup schema version: 1.
+
+The import endpoint ignores unknown non-platform lesson IDs and unknown lab slugs, then recalculates lab scores from the imported worksheet answers and checked items. Completed imported Platform Academy lessons regain lesson-completion XP for the target profile.
+
+The Platform Academy dashboard now shows platform-specific achievement badges. These are awarded from persisted product signals such as completing a platform lesson, saving a resource review, practicing an interview question, and saving or submitting a full lab workbook.
+
+Full-lab verification is scriptable with `bash labs/platform-academy/verify-full-labs.sh`. Cluster mode is available with `--cluster`, but the scripts refuse non-disposable Kubernetes contexts by default so a learner does not accidentally mutate an EKS or production context.
+
+Prometheus exposes Platform Academy product counters for activity saves, guest recovery restores, lab workbook submissions, lab packet downloads, lab bundle downloads, and dashboard reads. The local Grafana overview includes panels for those signals, and `make platform-api-smoke API_BASE=<api-origin>` verifies that the metrics move after smoke activity.
 
 ## Product Boundary
 
@@ -132,9 +213,6 @@ Platform Academy is no longer a nav item inside the Zhongwen app. The Zhongwen f
 
 ## Next Iterations
 
-- Add downloadable kind manifests for selected labs.
-- Add lab worksheet state, answers, and rubric feedback.
-- Add platform-specific achievements such as `cluster_debugger`, `helm_release_operator`, and `gitops_owner`.
-- Add a mock incident simulator that emits local metrics/logs for observability labs.
-- Add Alembic migrations before a production-grade persistent deployment.
+- Add manual instructor review or LLM-assisted critique as an optional layer on top of deterministic rubric feedback.
+- Move backend tests from direct `Base.metadata.create_all` fixtures to an Alembic-backed fixture once migration speed and isolation are acceptable.
 - Add a split static public catalog if a read-only CloudFront/S3 surface becomes useful.

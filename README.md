@@ -1,10 +1,10 @@
 # On-Demand Learning / Platform Academy
 
-[![Backend](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/backend.yml/badge.svg?branch=master)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/backend.yml)
-[![Frontend](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/frontend.yml/badge.svg?branch=master)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/frontend.yml)
-[![Docker build](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/docker-build.yml/badge.svg?branch=master)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/docker-build.yml)
-[![Platform validate](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-validate.yml/badge.svg?branch=master)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-validate.yml)
-[![Security](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/security.yml/badge.svg?branch=master)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/security.yml)
+[![Backend](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/backend.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/backend.yml)
+[![Frontend](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/frontend.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/frontend.yml)
+[![Docker build](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/docker-build.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/docker-build.yml)
+[![Platform validate](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-validate.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-validate.yml)
+[![Security](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/security.yml)
 
 Zhongwen Cloud Learning Platform is a local-first, production-style portfolio project with two frontend product surfaces: a Mandarin/Chinese culture learning app and a standalone Cloud Native Platform Academy for Kubernetes, EKS, Helm, ArgoCD, security, and SRE. The portfolio story is the platform around them: Docker Compose, FastAPI, React, PostgreSQL, Redis, a worker, metrics, traces, JSON logs, Kubernetes manifests, Terraform AWS scaffolding, CI/CD, SLOs, and runbooks.
 
@@ -54,7 +54,7 @@ Then open OpenSearch Dashboards at http://localhost:5601.
 - Dockerfiles and Docker Compose for app, DB, Redis, Prometheus, Grafana, Jaeger, and optional OpenSearch/Fluent Bit.
 - Kubernetes deployment scaffolding with probes, HPAs, PDBs, network policy, ingress, configmaps, and secret template.
 - Terraform scaffold for AWS `us-west-2`: VPC, EKS, ECR, S3, RDS, ElastiCache, IAM roles, and Budget alert.
-- GitHub Actions for backend, frontend, Docker build, security scan, and manual deploy template.
+- GitHub Actions for backend, frontend, Docker build, Platform Academy validation/image smoke, scheduled deployed smoke, dependency/security scans, and manual deploy template.
 
 ## Common Commands
 
@@ -67,7 +67,28 @@ make backend-test
 make worker-test
 make frontend-test   # Forces devDependencies even when npm config omit=dev is set
 make platform-academy-test
+make platform-lab-matrix
+make platform-lab-verify
+make platform-review-manifest
+make k8s-platform-contract
+make api-image-migration-check
+make platform-api-smoke API_BASE=http://localhost:8000
+make platform-browser-smoke WEB_BASE=http://localhost:8090
+make platform-container-smoke
+make platform-deployed-smoke API_BASE=https://preview.academy.ybz.dev WEB_BASE=https://preview.academy.ybz.dev
 make test
+make workflow-lint
+make doc-link-check
+make env-contract-check
+make working-tree-hygiene-check
+make script-syntax-check
+make smoke-helper-check
+make release-check
+make platform-release-check
+make platform-release-evidence
+make platform-review-pack
+make clean-generated
+make clean-smoke-images
 ```
 
 ## API Examples
@@ -107,17 +128,18 @@ apps/platform-academy Standalone React/Vite Platform Academy UI
 apps/worker       background worker
 infra/k8s         Kubernetes manifests
 infra/terraform   AWS scaffold, not auto-applied
+labs/platform-academy Repository-backed Platform Academy lab artifacts and validators
 observability     Prometheus, Grafana, logging config
 docs              SRE and platform engineering docs
 ```
 
 ## Platform Academy
 
-Open http://localhost:8090 for the standalone Kubernetes/EKS/Helm/ArgoCD/security/SRE learning product. The current seed includes 21 courses, 84 lessons, 21 labs, 320 resources, and 219 interview questions across Kubernetes, Docker, Terraform, AWS operations, IAM, EKS, CI/CD, observability, incident response, FinOps, platform engineering, and career prep. The Zhongwen frontend on http://localhost:8080 intentionally does not include Platform Academy in its sidebar; both apps share the same local FastAPI backend.
+Open http://localhost:8090 for the standalone Kubernetes/EKS/Helm/ArgoCD/security/SRE learning product. The current seed includes 21 courses, 84 lessons, 21 labs, 7 portfolio-grade practical labs, 320 resources, and 219 interview questions across Kubernetes, Docker, Terraform, AWS operations, IAM, EKS, CI/CD, observability, incident response, FinOps, platform engineering, and career prep. The Zhongwen frontend on http://localhost:8080 intentionally does not include Platform Academy in its sidebar; both apps share the same local FastAPI backend.
 
-See [docs/platform-academy.md](docs/platform-academy.md) for the curriculum outline and local-safe lab story.
+See [docs/platform-academy.md](docs/platform-academy.md) for the curriculum outline and local-safe lab story, and [labs/platform-academy/README.md](labs/platform-academy/README.md) for the hands-on lab runner entrypoint.
 See [docs/deployment.md](docs/deployment.md) for local, Docker Compose, shared-EKS preview, production API, and smoke-test deployment planning.
-See [docs/smoke-test-checklist.md](docs/smoke-test-checklist.md) for release verification, [docs/cost-notes.md](docs/cost-notes.md) for the low-cost hosting posture, and [docs/backlog.md](docs/backlog.md) for the next improvement queue.
+See [docs/platform-academy-handoff.md](docs/platform-academy-handoff.md), [docs/release-checklist.md](docs/release-checklist.md), and [docs/smoke-test-checklist.md](docs/smoke-test-checklist.md) for handoff and release verification, [docs/cost-notes.md](docs/cost-notes.md) for the low-cost hosting posture, and [docs/backlog.md](docs/backlog.md) for the next improvement queue.
 
 ## Deployment and Cost Notes
 
@@ -126,13 +148,13 @@ See [docs/smoke-test-checklist.md](docs/smoke-test-checklist.md) for release ver
 - Use `academy.ybz.dev` later as the stable public entry and `preview.academy.ybz.dev` for on-demand shared-EKS previews.
 - Do not deploy as pure static S3 unless the public surface is split into a read-only catalog/marketing/docs site.
 - Avoid an always-on dedicated EKS cluster; use shared infrastructure, TTL previews, and budgets.
-- Add reviewed Alembic migrations before true production persistence.
+- Run Alembic migrations before production-like persistent API startup.
 
 ## Known Limitations
 
 - Auth is represented by a mock `demo-user`; production auth would use OIDC or a managed identity provider.
 - Subscription/payment status is a mock field, with no real payment integration.
-- SQLAlchemy creates schema at startup for local/demo speed; production would use reviewed Alembic migrations.
+- SQLAlchemy creates schema at startup for local/demo speed; production-like deployments should run Alembic separately with `CREATE_SCHEMA_ON_STARTUP=false`.
 - Platform Academy anonymous progress uses browser-local guest IDs plus backend rows; clearing local storage creates a new guest profile unless the learner saved the recovery key.
 - The OpenSearch logging profile is intentionally optional because it is heavier than the default local stack.
 - Terraform is scaffold-only and should be reviewed before any `apply`.

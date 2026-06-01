@@ -37,8 +37,8 @@ bash scripts/generate_learner_activity.sh
 
 Then show:
 
-- `/metrics` includes request, learning event, XP, achievement, SRS, and DB health metrics.
-- Grafana panels move for learning events, XP awarded, SRS reviews, due cards, request rate, and p95 latency.
+- `/metrics` includes request, learning event, XP, achievement, SRS, Platform Academy product, and DB health metrics.
+- Grafana panels move for learning events, XP awarded, SRS reviews, due cards, Platform Academy activity saves, lab submissions, packet and bundle downloads, dashboard reads, request rate, and p95 latency.
 - Jaeger shows API and worker traces after activity and worker refresh jobs.
 
 ## 4. Explain Platform Guardrails

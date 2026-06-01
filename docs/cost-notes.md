@@ -30,5 +30,5 @@ Platform Academy has an API, persistent learner progress, Redis-backed platform 
 - Confirm `API URL`, `CORS_ORIGINS`, `DATABASE_URL`, `REDIS_URL`, and `OTEL_EXPORTER_OTLP_ENDPOINT`.
 - Add or confirm AWS Budgets and anomaly detection in the target account.
 - Confirm rollback, backup, and restore expectations for learner progress.
-- Add Alembic migrations before treating the database as production data.
+- Run the Alembic migration check and attach the target revision before treating the database as production data.
 - Prefer GitHub OIDC over long-lived AWS access keys.

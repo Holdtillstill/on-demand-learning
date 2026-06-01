@@ -156,9 +156,5 @@ Browser QA:
 
 ## Remaining backlog
 
-- Add copy buttons to command consoles and preserve exact-command horizontal scrolling for long snippets.
-- Add pagination or a real “load more” interaction for the resource library instead of a static 36-item cap.
-- Add visible official-source URLs, last-reviewed timestamps, and version context once the API exposes those fields.
-- Add more detail-route tests for `/labs/:slug` and `/resources/:slug`.
 - Consider a compact/table toggle for the resources page once filters become heavily used.
 - Add responsive/mobile visual QA for the canonical shell beyond desktop browser checks.

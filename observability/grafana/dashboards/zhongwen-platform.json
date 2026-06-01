@@ -213,6 +213,99 @@
       ],
       "title": "Worker Due Flashcards",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 0,
+        "y": 22
+      },
+      "id": 9,
+      "targets": [
+        {
+          "expr": "sum by (target_type, state) (increase(zhongwen_platform_activity_saves_total[1h]))",
+          "legendFormat": "{{target_type}} {{state}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Platform Activity Saves",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 6,
+        "y": 22
+      },
+      "id": 10,
+      "targets": [
+        {
+          "expr": "sum by (status) (increase(zhongwen_platform_lab_submissions_total[1h]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Platform Lab Submissions",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 12,
+        "y": 22
+      },
+      "id": 11,
+      "targets": [
+        {
+          "expr": "sum(increase(zhongwen_platform_lab_packet_downloads_total[1h]))",
+          "legendFormat": "packets",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(zhongwen_platform_lab_bundle_downloads_total[1h]))",
+          "legendFormat": "bundles",
+          "refId": "B"
+        }
+      ],
+      "title": "Lab Downloads",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 22
+      },
+      "id": 12,
+      "targets": [
+        {
+          "expr": "sum by (domain) (increase(zhongwen_platform_dashboard_reads_total[1h]))",
+          "legendFormat": "{{domain}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Dashboard Reads",
+      "type": "stat"
     }
   ],
   "refresh": "30s",

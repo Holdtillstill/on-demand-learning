@@ -13,6 +13,11 @@ Prometheus scrapes:
 - `zhongwen_xp_awarded_total`
 - `zhongwen_achievements_awarded_total`
 - `zhongwen_srs_reviews_total`
+- `zhongwen_platform_activity_saves_total`
+- `zhongwen_platform_lab_submissions_total`
+- `zhongwen_platform_lab_packet_downloads_total`
+- `zhongwen_platform_lab_bundle_downloads_total`
+- `zhongwen_platform_dashboard_reads_total`
 - `zhongwen_worker_jobs_total`
 - `zhongwen_worker_job_failures_total`
 - `zhongwen_worker_recommendations`
@@ -27,6 +32,11 @@ sum(rate(zhongwen_api_errors_total[5m]))
 increase(zhongwen_worker_job_failures_total[1h])
 increase(zhongwen_xp_awarded_total[1h])
 increase(zhongwen_srs_reviews_total[1h])
+sum by (target_type, state) (increase(zhongwen_platform_activity_saves_total[1h]))
+sum by (status) (increase(zhongwen_platform_lab_submissions_total[1h]))
+sum(increase(zhongwen_platform_lab_packet_downloads_total[1h]))
+sum(increase(zhongwen_platform_lab_bundle_downloads_total[1h]))
+sum by (domain) (increase(zhongwen_platform_dashboard_reads_total[1h]))
 ```
 
 ## Alerts
@@ -57,8 +67,8 @@ Create an index pattern for `zhongwen-logs` in OpenSearch Dashboards.
 
 ## Dashboard
 
-Grafana provisions `Zhongwen Platform Overview`, showing API request rate, p95 latency, DB health, learning events, worker jobs, XP awarded, SRS reviews, and worker due-card counts.
+Grafana provisions `Zhongwen Platform Overview`, showing API request rate, p95 latency, DB health, learning events, worker jobs, XP awarded, SRS reviews, worker due-card counts, Platform Academy activity saves, lab submissions, lab packet and bundle downloads, and dashboard reads.
 
 ## Demo Activity
 
-Run `bash scripts/generate_learner_activity.sh` after Compose is up to create lesson completions, quiz attempts, SRS reviews, dashboard reads, traces, and Prometheus counter movement for an interviewer walkthrough.
+Run `bash scripts/generate_learner_activity.sh` after Compose is up to create lesson completions, quiz attempts, SRS reviews, Platform Academy activity saves, guest recovery activity, lab submissions, lab packet and bundle downloads, dashboard reads, traces, and Prometheus counter movement for an interviewer walkthrough.

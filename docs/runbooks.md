@@ -17,6 +17,37 @@ Production notes:
 - Check RDS events, connection saturation, security groups, and recent deployments.
 - Roll back the API if readiness began after a release.
 
+## Failed Database Migration
+
+Symptoms:
+- The `backend-migrations` Job fails or restarts.
+- `alembic upgrade head` exits non-zero.
+- API pods with `CREATE_SCHEMA_ON_STARTUP=false` fail after a release because tables or columns are missing.
+
+Immediate containment:
+1. Stop the rollout before starting more API pods on the new image.
+2. Keep the pre-release database snapshot; do not delete or overwrite it.
+3. Record the failing migration revision, API image tag, Git SHA, and full migration logs.
+4. Run `alembic current` against the target database and compare it with the image's `alembic heads`.
+
+Diagnosis:
+1. Confirm the API image contains the expected `alembic.ini` and `alembic/versions`.
+2. Confirm `DATABASE_URL` points at the intended database, not a stale preview or local database.
+3. If the database was created earlier with `Base.metadata.create_all`, inspect whether baseline tables already exist before running the initial Alembic revision.
+4. Run the migration against a restored copy or temporary database before retrying production.
+
+Recovery:
+- If no data was changed, fix the migration or config and rerun `alembic upgrade head`.
+- If the migration partially applied, prefer a forward repair migration over manual table edits.
+- If the application is down and the old image is schema-compatible, roll back the image tag without rolling back schema.
+- If data corruption is suspected, restore to a temporary database first and validate with `make platform-api-smoke API_BASE=<temporary-api-origin>`.
+
+Validation:
+- `alembic current` reports the expected revision.
+- `/readyz` returns `200`.
+- `make platform-api-smoke API_BASE=<api-origin>` passes.
+- Release notes include the failing revision, recovery action, and final revision.
+
 ## Elevated API Error Rate
 
 Symptoms:
@@ -30,6 +61,47 @@ Steps:
 4. If DB-related, verify RDS CPU, connections, locks, and storage.
 5. Roll back or disable the failing feature flag if available.
 
+## Unexpected Rate Limiting
+
+Symptoms:
+- Users receive `429 rate limit exceeded`.
+- Ingress logs show many different users, but API logs appear to group them under one client.
+
+Steps:
+1. Confirm `/healthz`, `/readyz`, and `/metrics` are not being counted against learner request budgets.
+2. Check whether the API is behind an ingress, load balancer, or reverse proxy.
+3. Confirm `TRUSTED_PROXY_CIDRS` contains only the immediate trusted proxy source ranges.
+4. Verify the proxy sends `X-Forwarded-For` or `X-Real-IP`.
+5. If forwarded headers are absent or the proxy is not trusted, the limiter intentionally falls back to the direct peer IP.
+6. If one learner is noisy, keep the limit in place and inspect request IDs before raising the global limit.
+
+Safety note:
+- Do not set `TRUSTED_PROXY_CIDRS=0.0.0.0/0` on a public deployment; that lets clients spoof rate-limit identity with headers.
+
+## API Cache Misconfiguration
+
+Symptoms:
+- Platform Academy dashboard, lab history, workbook state, or interview/resource activity looks stale after refresh.
+- Browser network responses for `/api/platform-academy/*`, `/api/users/*`, `/api/progress/*`, or `/api/reviews/*` are missing `Cache-Control: no-store`.
+- A CDN or ingress returns cached API JSON for different guest profiles.
+
+Steps:
+1. Check the API directly, bypassing the frontend cache:
+
+```bash
+curl -I "$API_BASE/api/platform-academy/catalog"
+curl -I "$API_BASE/api/users/<guest-id>/dashboard?domain=platform"
+```
+
+2. Confirm dynamic API responses include `Cache-Control: no-store` and `Pragma: no-cache`.
+3. Confirm the frontend sends requests with `cache: "no-store"`.
+4. Confirm ingress/CDN rules do not cache `/api/*`, `/healthz`, `/readyz`, or `/metrics`.
+5. If only static assets are cached, verify they are hashed files under the frontend build and keep their long immutable cache policy.
+6. Re-run `make platform-api-smoke API_BASE=<api-origin>` after config changes.
+
+Safety note:
+- Never cache guest-specific dashboard, progress, lab submission, activity, or review endpoints at a shared proxy.
+
 ## Worker Job Failures
 
 Symptoms:
@@ -41,6 +113,83 @@ Steps:
 2. Verify the API has seeded data.
 3. Verify Postgres and Redis are reachable.
 4. Restart the worker after dependency recovery.
+
+## Platform Learner State Backup And Restore
+
+Scope:
+- Database-backed learner state: `users`, `progress`, `review_states`, `platform_activity`, `platform_lab_submissions`, `xp_events`, `user_achievements`, `quiz_attempts`, and `recommendations`.
+- Static curriculum, labs, resources, and interview prep live in Git and should be restored by redeploying the matching image/revision.
+
+Preflight before backup:
+1. Record the deployed Git SHA, API image tag, and `alembic current` output.
+2. Confirm `DATABASE_URL` points at the intended database.
+3. Run `make platform-api-smoke API_BASE=<api-origin>` and save the output with the release notes.
+4. Confirm whether the backup is a full database backup or a learner-state-only export.
+
+Postgres backup:
+1. Prefer an RDS snapshot or provider-native point-in-time backup for production-like data.
+2. For an operator-managed dump, convert SQLAlchemy URLs from `postgresql+psycopg://...` to `postgresql://...`.
+3. Run a custom-format dump:
+
+```bash
+pg_dump --format=custom --file "backups/platform-academy-$(date +%Y%m%d%H%M%S).dump" "$DATABASE_URL"
+```
+
+Local Compose backup:
+
+```bash
+docker compose exec postgres pg_dump -U zhongwen -d zhongwen --format=custom > backups/local-platform-academy.dump
+```
+
+Restore drill:
+1. Restore into a temporary database first, never directly over live learner traffic.
+2. Apply schema first: `DATABASE_URL=<temporary-db> alembic upgrade head`.
+3. Restore the dump into the temporary database with `pg_restore --clean --if-exists --dbname "$DATABASE_URL" <dump-file>`.
+4. Point a temporary API instance at the restored database with `CREATE_SCHEMA_ON_STARTUP=false`.
+5. Run `make platform-api-smoke API_BASE=<temporary-api-origin>`.
+6. Compare basic row counts before approving production restore:
+
+```sql
+select count(*) from users;
+select count(*) from progress;
+select count(*) from platform_activity;
+select count(*) from platform_lab_submissions;
+```
+
+Production restore notes:
+- Freeze writes by pausing public traffic or scaling the API down before restoring into the primary database.
+- Keep the pre-restore snapshot until the restored API passes smoke checks and stakeholder review.
+- Do not roll back app images across incompatible Alembic revisions without an explicit forward-fix or compatibility note.
+
+## Broken Guest Profile Recovery
+
+Symptoms:
+- A learner restores a saved `guest-...` recovery key but sees empty progress.
+- New profile generation works, but old progress cannot be found.
+- Browser local storage contains a learner ID different from the expected recovery key.
+
+Steps:
+1. Confirm the key format is `guest-` plus 12 alphanumeric characters. The frontend rejects other values.
+2. Ask the learner for the exact recovery key they copied, not a display name or browser profile name.
+3. Query the backend for that profile:
+
+```bash
+curl -fsS "$API_BASE/api/users/<guest-id>/dashboard?domain=platform"
+curl -fsS "$API_BASE/api/progress/<guest-id>"
+curl -fsS "$API_BASE/api/platform-academy/lab-submissions/<guest-id>"
+curl -fsS "$API_BASE/api/platform-academy/activity/<guest-id>"
+curl -fsS "$API_BASE/api/platform-academy/state/<guest-id>/export"
+```
+
+4. If the learner has a JSON profile backup, import it from the recovery dialog while the expected guest profile is active.
+5. If backend rows exist, clear only the Platform Academy learner ID in browser storage and restore the key again through the recovery dialog.
+6. If backend rows do not exist, check whether the learner used another browser/device, cleared server data, imported the wrong backup, or restored the wrong key.
+7. If data existed before a deployment, use the learner-state backup and restore runbook to inspect a temporary restored database.
+
+Validation:
+- The dashboard endpoint returns the restored `user_id`.
+- `/labs/history` shows saved lab submissions for that key when they exist.
+- New activity writes use the restored key in API payloads and logs.
 
 ## Elevated API Latency
 
