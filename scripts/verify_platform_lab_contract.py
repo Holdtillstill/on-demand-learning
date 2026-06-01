@@ -307,6 +307,7 @@ from app.platform_content import (  # noqa: E402
 )
 from app.platform_lab_artifacts import (  # noqa: E402
     LabArtifactError,
+    cluster_workspace_commands,
     lab_packet_markdown,
     learner_artifact_paths,
     write_lab_workspace,
@@ -565,6 +566,20 @@ def verify_cluster_validator_contract(full_labs: list[dict]) -> None:
         runner_command = f"bash labs/platform-academy/run-lab.sh validate {slug} --cluster"
         if not any(runner_command == str(command) for command in labs_by_slug[slug].get("validation_commands", [])):
             fail(f"{slug} validation_commands must advertise the runner cluster validator: {runner_command}")
+        workflow_text = "\n".join(cluster_workspace_commands(labs_by_slug[slug]))
+        for snippet in [
+            f"bootstrap-local-cluster.sh --preflight {slug}",
+            "./setup.sh --preflight",
+            "./setup.sh --cluster",
+            "./validate.sh --cluster",
+            "No app namespace or Pods need to exist before setup",
+        ]:
+            if snippet not in workflow_text:
+                fail(f"{slug} cluster workspace commands must include snippet: {snippet}")
+
+    for lab in full_labs:
+        if lab["slug"] not in cluster_slugs and cluster_workspace_commands(lab):
+            fail(f"{lab['slug']} must not expose cluster workspace commands without a cluster validator")
 
 
 

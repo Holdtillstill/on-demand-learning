@@ -64,6 +64,7 @@ from app.platform_content import (
 )
 from app.platform_lab_artifacts import (
     LabArtifactError,
+    cluster_workspace_commands,
     lab_packet_markdown,
     learner_artifact_paths,
     write_learner_workspace_archive,
@@ -540,6 +541,7 @@ def platform_lab_payloads(courses: list[Course]) -> list[dict]:
                 "workspace_archive_name": lab.get("workspace_archive_name", ""),
                 "workspace_root": lab.get("workspace_root", ""),
                 "workspace_quickstart_commands": lab.get("workspace_quickstart_commands", []),
+                "cluster_workspace_commands": cluster_workspace_commands(lab),
                 "worksheet_prompts": lab.get("worksheet_prompts", []),
                 "rubric": lab.get("rubric", []),
                 "validation_checks": lab.get("validation_checks", []),

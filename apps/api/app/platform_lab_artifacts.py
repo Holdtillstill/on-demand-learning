@@ -152,7 +152,7 @@ def _workspace_quickstart_commands(lab: dict) -> list[str]:
     ]
 
 
-def _cluster_workspace_commands(lab: dict) -> list[str]:
+def cluster_workspace_commands(lab: dict) -> list[str]:
     slug = lab["slug"]
     setup_commands = [str(command) for command in lab.get("setup_commands", [])]
     validation_commands = [str(command) for command in lab.get("validation_commands", [])]
@@ -186,7 +186,7 @@ def _extracted_workspace_section(lab: dict) -> str:
 
 
 def _optional_cluster_workspace_section(lab: dict) -> str:
-    return _markdown_section("Optional cluster workflow", _cluster_workspace_commands(lab))
+    return _markdown_section("Optional cluster workflow", cluster_workspace_commands(lab))
 
 
 def lab_packet_markdown(lab: dict, include_downloaded_workspace: bool = True) -> str:
@@ -412,7 +412,7 @@ def learner_workspace_manifest(
         "Repo validation:",
         f"- bash labs/platform-academy/run-lab.sh validate {slug} --evidence {evidence_path}",
     ]
-    cluster_commands = _cluster_workspace_commands(lab)
+    cluster_commands = cluster_workspace_commands(lab)
     if cluster_commands:
         lines.extend([
             "",

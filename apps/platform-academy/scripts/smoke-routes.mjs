@@ -29,7 +29,7 @@ const ROUTES = [
   {
     path: "/labs/trace-service-to-pod",
     heading: "Trace Service traffic to ready Pods",
-    visibleText: ["Worksheet and validation state", "Learner workspace contract", "Validation commands"],
+    visibleText: ["Worksheet and validation state", "Learner workspace contract", "Optional cluster workflow", "Validation commands"],
   },
   {
     path: "/roadmap",
@@ -63,6 +63,14 @@ const PORTFOLIO_LAB_SLUGS = [
   "write-slo-backed-runbook",
 ];
 const PORTFOLIO_LAB_SLUG_SET = new Set(PORTFOLIO_LAB_SLUGS);
+const CLUSTER_LAB_SLUGS = [
+  "trace-service-to-pod",
+  "debug-crashloop-imagepull",
+  "trace-network-path",
+  "debug-aws-alb-health-path",
+  "audit-tenant-boundaries",
+];
+const CLUSTER_LAB_SLUG_SET = new Set(CLUSTER_LAB_SLUGS);
 
 function normalizeBase(value) {
   return value.replace(/\/+$/, "");
@@ -195,6 +203,27 @@ async function fetchAcademyCatalog() {
   if (invalidWorkspaceMetadata.length) {
     throw new Error(
       `Expected all labs to expose downloaded workspace metadata; invalid labs: ${invalidWorkspaceMetadata.map((lab) => lab.slug || "unknown").join(", ")}`
+    );
+  }
+  const invalidClusterWorkflowMetadata = labs.filter((lab) => {
+    const commands = Array.isArray(lab.cluster_workspace_commands) ? lab.cluster_workspace_commands : [];
+    const text = commands.join("\n");
+    if (CLUSTER_LAB_SLUG_SET.has(lab.slug)) {
+      return (
+        !text.includes(`bootstrap-local-cluster.sh --preflight ${lab.slug}`) ||
+        !text.includes("./setup.sh --preflight") ||
+        !text.includes("./setup.sh --cluster") ||
+        !text.includes("./validate.sh --cluster") ||
+        !text.includes("No app namespace or Pods need to exist before setup")
+      );
+    }
+    return commands.length > 0;
+  });
+  if (invalidClusterWorkflowMetadata.length) {
+    throw new Error(
+      `Expected only cluster labs to expose optional workspace cluster workflows; invalid labs: ${invalidClusterWorkflowMetadata
+        .map((lab) => lab.slug || "unknown")
+        .join(", ")}`
     );
   }
   const portfolioLabs = labs.filter((lab) => lab.portfolio_grade === true);
@@ -538,6 +567,12 @@ async function assertAllLabDetailRoutes(page, labs) {
       "./cleanup.sh",
     ]) {
       await expect(page.getByText(command, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
+    }
+    if (lab.cluster_workspace_commands?.length) {
+      await expect(page.getByText("Optional cluster workflow").first()).toBeVisible({ timeout: TIMEOUT_MS });
+      for (const command of ["./setup.sh --preflight", "./setup.sh --cluster", "./validate.sh --cluster"]) {
+        await expect(page.getByText(command, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
+      }
     }
     await expect(page.getByText("Lab not found.")).toHaveCount(0);
   }

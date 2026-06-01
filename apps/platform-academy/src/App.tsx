@@ -738,6 +738,10 @@ function labWorkspaceQuickstartCommands(lab: PlatformLab) {
       ];
 }
 
+function labClusterWorkspaceCommands(lab: PlatformLab) {
+  return lab.cluster_workspace_commands ?? [];
+}
+
 function compactLabItems(items: Array<string | undefined>, limit = 4) {
   return items.filter((item): item is string => Boolean(item?.trim())).slice(0, limit);
 }
@@ -902,6 +906,7 @@ function LabContractPanel({ lab }: { lab: PlatformLab }) {
 }
 
 function LabWorkspaceQuickstart({ lab }: { lab: PlatformLab }) {
+  const clusterCommands = labClusterWorkspaceCommands(lab);
   return (
     <section className="lab-workspace-quickstart" aria-label="Downloaded workspace quickstart">
       <div className="section-heading">
@@ -912,6 +917,7 @@ function LabWorkspaceQuickstart({ lab }: { lab: PlatformLab }) {
         <span>{labWorkspaceArchiveName(lab)}</span>
       </div>
       <CommandBlock commands={labWorkspaceQuickstartCommands(lab)} title="Workspace commands" />
+      {clusterCommands.length ? <CommandBlock commands={clusterCommands} title="Optional cluster workflow" /> : null}
     </section>
   );
 }

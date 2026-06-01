@@ -147,6 +147,13 @@ expected_portfolio_slugs = {
     "design-safe-release-pipeline",
     "write-slo-backed-runbook",
 }
+expected_cluster_slugs = {
+    "trace-service-to-pod",
+    "debug-crashloop-imagepull",
+    "trace-network-path",
+    "debug-aws-alb-health-path",
+    "audit-tenant-boundaries",
+}
 portfolio_labs = [lab for lab in labs if lab.get("portfolio_grade") is True]
 if len(portfolio_labs) != expected_portfolio_count:
     raise SystemExit(f"expected {expected_portfolio_count} portfolio-grade labs, got {len(portfolio_labs)}")
@@ -174,6 +181,20 @@ for lab in labs:
     for key in ["setup_commands", "validation_commands", "cleanup_commands", "worksheet_prompts", "rubric", "validation_checks"]:
         if not lab.get(key):
             raise SystemExit(f"{slug} missing {key}")
+    cluster_commands = lab.get("cluster_workspace_commands") or []
+    cluster_text = "\n".join(cluster_commands)
+    if slug in expected_cluster_slugs:
+        for snippet in [
+            f"bootstrap-local-cluster.sh --preflight {slug}",
+            "./setup.sh --preflight",
+            "./setup.sh --cluster",
+            "./validate.sh --cluster",
+            "No app namespace or Pods need to exist before setup",
+        ]:
+            if snippet not in cluster_text:
+                raise SystemExit(f"{slug} missing cluster workspace command snippet: {snippet}")
+    elif cluster_commands:
+        raise SystemExit(f"{slug} should not expose cluster workspace commands")
 
 with open(slug_list_path, "w", encoding="utf-8") as handle:
     for lab in labs:

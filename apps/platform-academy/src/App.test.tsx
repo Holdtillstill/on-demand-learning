@@ -122,6 +122,14 @@ const catalog = {
         "./validate.sh",
         "./cleanup.sh"
       ],
+      cluster_workspace_commands: [
+        "From the full repo, create/select a disposable context: bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod",
+        "From this extracted bundle, after a disposable context is selected: ./setup.sh --preflight",
+        "Create the broken lab state: ./setup.sh --cluster",
+        "After filling evidence.md, verify files, evidence, and cluster state: ./validate.sh --cluster",
+        "Clean up the lab namespace/resources: ./cleanup.sh",
+        "No app namespace or Pods need to exist before setup; setup creates or recreates the lab namespace."
+      ],
       worksheet_prompts: ["What evidence proves the Service selector mismatch?"],
       rubric: ["Captures selector, Pod label, EndpointSlice, and cleanup evidence."],
       validation_checks: ["Expected evidence captured"],
@@ -1333,9 +1341,14 @@ describe("Platform Academy app", () => {
     expect(screen.getByRole("heading", { name: "Run from extracted bundle" })).toBeInTheDocument();
     expect(screen.getByText(/unzip trace-service-to-pod-learner-workspace\.zip/)).toBeInTheDocument();
     expect(screen.getByText(/cd trace-service-to-pod/)).toBeInTheDocument();
-    expect(screen.getByText(/\.\/setup\.sh/)).toBeInTheDocument();
+    expect(screen.getAllByText(/\.\/setup\.sh/).length).toBeGreaterThan(0);
     expect(screen.getByText(/\.\/validate\.sh --files-only/)).toBeInTheDocument();
-    expect(screen.getByText(/\.\/cleanup\.sh/)).toBeInTheDocument();
+    expect(screen.getAllByText(/\.\/cleanup\.sh/).length).toBeGreaterThan(0);
+    expect(screen.getByText("Optional cluster workflow")).toBeInTheDocument();
+    expect(screen.getByText(/bootstrap-local-cluster\.sh --preflight trace-service-to-pod/)).toBeInTheDocument();
+    expect(screen.getByText(/\.\/setup\.sh --cluster/)).toBeInTheDocument();
+    expect(screen.getByText(/\.\/validate\.sh --cluster/)).toBeInTheDocument();
+    expect(screen.getByText(/No app namespace or Pods need to exist before setup/)).toBeInTheDocument();
     expect(await screen.findByText("Saved to profile")).toBeInTheDocument();
     expect(screen.getByLabelText("What evidence proves the Service selector mismatch?")).toBeInTheDocument();
     expect(screen.getByLabelText("Expected evidence captured")).toBeInTheDocument();

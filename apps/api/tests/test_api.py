@@ -302,6 +302,15 @@ def test_platform_academy_catalog_roadmap_and_labs():
         "./validate.sh",
         "./cleanup.sh",
     ]
+    assert trace_lab["cluster_workspace_commands"] == [
+        "From the full repo, create/select a disposable context: "
+        "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod",
+        "From this extracted bundle, after a disposable context is selected: ./setup.sh --preflight",
+        "Create the broken lab state: ./setup.sh --cluster",
+        "After filling evidence.md, verify files, evidence, and cluster state: ./validate.sh --cluster",
+        "Clean up the lab namespace/resources: ./cleanup.sh",
+        "No app namespace or Pods need to exist before setup; setup creates or recreates the lab namespace.",
+    ]
     assert any("run-lab.sh setup trace-service-to-pod" in command for command in trace_lab["setup_commands"])
     assert any("labs/platform-academy/trace-service-to-pod/start.yaml" in command for command in trace_lab["setup_commands"])
     for lab in lab_payloads:
@@ -325,6 +334,14 @@ def test_platform_academy_catalog_roadmap_and_labs():
         assert lab["workspace_quickstart_commands"][0] == f"unzip {lab['slug']}-learner-workspace.zip", lab["slug"]
         assert lab["workspace_quickstart_commands"][1] == f"cd {lab['slug']}", lab["slug"]
         assert "./validate.sh --files-only" in lab["workspace_quickstart_commands"], lab["slug"]
+        if lab["slug"] in CLUSTER_LAB_SLUGS:
+            assert f"bootstrap-local-cluster.sh --preflight {lab['slug']}" in "\n".join(lab["cluster_workspace_commands"]), lab["slug"]
+            assert "./setup.sh --preflight" in "\n".join(lab["cluster_workspace_commands"]), lab["slug"]
+            assert "./setup.sh --cluster" in "\n".join(lab["cluster_workspace_commands"]), lab["slug"]
+            assert "./validate.sh --cluster" in "\n".join(lab["cluster_workspace_commands"]), lab["slug"]
+            assert "No app namespace or Pods need to exist before setup" in "\n".join(lab["cluster_workspace_commands"]), lab["slug"]
+        else:
+            assert lab["cluster_workspace_commands"] == [], lab["slug"]
         assert set(lab["artifact_paths"]).issubset(set(LAB_ARTIFACT_PATHS[lab["slug"]])), lab["slug"]
         assert not any(path.endswith("/solution.md") for path in lab["learner_artifact_paths"]), lab["slug"]
         assert not any(path.endswith("/README.md") for path in lab["learner_artifact_paths"]), lab["slug"]

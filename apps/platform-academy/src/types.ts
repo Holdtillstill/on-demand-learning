@@ -202,6 +202,7 @@ export interface PlatformLab {
   workspace_archive_name?: string;
   workspace_root?: string;
   workspace_quickstart_commands?: string[];
+  cluster_workspace_commands?: string[];
   worksheet_prompts?: string[];
   rubric?: string[];
   validation_checks?: string[];
