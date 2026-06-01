@@ -46,8 +46,9 @@ REQUIRED_ROOT_README_SNIPPETS = {
 }
 DEEPENED_LAB_CONTRACT = {
     "trace-service-to-pod": {
-        "files": {"broken-evidence.txt", "evidence-template.md", "service_route_analyzer.py"},
+        "files": {"broken-evidence.txt", "evidence-template.md", "service_route_analyzer.py", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "Service selector",
             "Pod label",
             "EndpointSlice",
@@ -57,11 +58,12 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "debug-crashloop-imagepull": {
-        "files": {"broken-evidence.txt", "evidence-template.md", "failure_mode_analyzer.py"},
+        "files": {"broken-evidence.txt", "evidence-template.md", "failure_mode_analyzer.py", "triage-notes.md"},
         "terms": {
             "CrashLoop/ImagePull analysis passed",
             "CrashLoopBackOff",
             "ImagePullBackOff",
+            "False Leads",
             "previous",
             "registry",
             "cleanup",
@@ -90,9 +92,10 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "trace-network-path": {
-        "files": {"evidence-template.md", "network_path_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "hop-trace.md", "network_path_analyzer.py", "setup.sh"},
         "terms": {
             "HTTP/2 503",
+            "Hop Trace",
             "Network path analysis passed",
             "Target.ResponseCodeMismatch",
             "targetPort web",

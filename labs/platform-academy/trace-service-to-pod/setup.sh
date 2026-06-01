@@ -7,6 +7,7 @@ START="$LAB_DIR/start.yaml"
 FIXED="$LAB_DIR/fixed.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 TRANSCRIPT="$LAB_DIR/broken-evidence.txt"
+TRIAGE="$LAB_DIR/triage-notes.md"
 ANALYZER="$LAB_DIR/service_route_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
@@ -78,6 +79,9 @@ prepare_evidence_note() {
 if [[ "$mode" == "no-cluster" ]]; then
   prepare_evidence_note
   echo
+  echo "Captured triage notes:"
+  sed -n '1,220p' "$TRIAGE"
+  echo
   echo "Captured broken-state transcript:"
   sed -n '1,220p' "$TRANSCRIPT"
   echo
@@ -123,6 +127,7 @@ echo "Broken Service lab is ready in namespace payments."
 echo "The Deployment is available, but the Service selector does not match the Pod labels."
 echo
 echo "Start with:"
+echo "  sed -n '1,220p' labs/platform-academy/trace-service-to-pod/triage-notes.md"
 echo "  kubectl describe svc checkout -n payments"
 echo "  kubectl get pods -n payments --show-labels"
 echo "  kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout -o wide"

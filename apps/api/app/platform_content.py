@@ -2816,6 +2816,7 @@ PLATFORM_LABS = [
         ],
         "setup_commands": [
             "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/trace-service-to-pod/triage-notes.md",
             "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod",
             "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight",
             "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --cluster",
@@ -2836,6 +2837,7 @@ PLATFORM_LABS = [
             ),
         ],
         "practice_steps": [
+            "Read the triage notes and rule out the plausible false leads before choosing a fix.",
             "Read the Service selector and write down the label key/value it expects.",
             "Compare that selector with the labels on the checkout Pods.",
             "Confirm whether EndpointSlices have ready backend addresses.",
@@ -2843,6 +2845,7 @@ PLATFORM_LABS = [
             "Apply the fixed manifest only after you can explain why the starting manifest fails.",
         ],
         "expected_evidence": [
+            "The triage notes rule out Pod readiness, Service port wiring, node pressure, and a live-only patch.",
             "The Service selector starts as app=checkout.",
             "The checkout Pods are labeled app=checkout-api.",
             "EndpointSlice output has no ready checkout backend addresses until the selector is fixed.",
@@ -2865,6 +2868,7 @@ PLATFORM_LABS = [
         "cleanup_commands": ["bash labs/platform-academy/trace-service-to-pod/cleanup.sh"],
         "no_cluster_fallback": [
             "Run bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md to copy the evidence template and print the captured transcript.",
+            "Read labs/platform-academy/trace-service-to-pod/triage-notes.md and record which false leads were ruled out.",
             "Open labs/platform-academy/trace-service-to-pod/start.yaml and compare the Service selector with the Deployment Pod template labels.",
             "Write the one-line YAML change needed to make the Service select the running Pods.",
         ],
@@ -2893,6 +2897,7 @@ PLATFORM_LABS = [
         ],
         "setup_commands": [
             "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --evidence /tmp/crashloop-imagepull-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/debug-crashloop-imagepull/triage-notes.md",
             "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight debug-crashloop-imagepull",
             "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --preflight",
             "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --cluster",
@@ -2913,6 +2918,7 @@ PLATFORM_LABS = [
             ),
         ],
         "practice_steps": [
+            "Read the triage notes and rule out restart, resource, and node-pressure false leads.",
             "Use describe output to identify which Pod started and then exited.",
             "Use previous logs only for the container that actually started.",
             "Use events to identify the Pod that never started because the image could not be pulled.",
@@ -2920,6 +2926,7 @@ PLATFORM_LABS = [
             "State which fix belongs to app/config and which fix belongs to image registry or manifest ownership.",
         ],
         "expected_evidence": [
+            "The triage notes show restarting Pods and increasing resources are not supported by the evidence.",
             "The checkout-crash Pod reaches CrashLoopBackOff and has previous logs that say missing DB_URL.",
             "The checkout-pull Pod reaches ErrImagePull or ImagePullBackOff and has image pull events.",
             "Previous logs are useful for CrashLoopBackOff but not for a container that never pulled.",
@@ -2943,6 +2950,7 @@ PLATFORM_LABS = [
         "cleanup_commands": ["bash labs/platform-academy/debug-crashloop-imagepull/cleanup.sh"],
         "no_cluster_fallback": [
             "Run bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --evidence /tmp/crashloop-imagepull-evidence.md to copy the evidence template and print the captured transcript.",
+            "Read labs/platform-academy/debug-crashloop-imagepull/triage-notes.md and record which false leads were ruled out.",
             "Open labs/platform-academy/debug-crashloop-imagepull/start.yaml and identify which Deployment can start and which one cannot pull an image.",
             "Write the first command you would run for each symptom and what signal you expect from it.",
         ],
@@ -3796,12 +3804,14 @@ RUNNABLE_LAB_UPDATES = {
         "setup_commands": [
             "bash labs/platform-academy/trace-network-path/setup.sh --evidence /tmp/network-path-evidence.md",
             "sed -n '1,220p' labs/platform-academy/trace-network-path/incident-handoff.md",
+            "sed -n '1,220p' labs/platform-academy/trace-network-path/hop-trace.md",
             "sed -n '1,220p' labs/platform-academy/trace-network-path/network-evidence.md",
             "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-network-path",
             "bash labs/platform-academy/trace-network-path/setup.sh --preflight",
             "bash labs/platform-academy/trace-network-path/setup.sh --cluster --evidence /tmp/network-path-evidence.md",
         ],
         "commands": [
+            "grep -n \"DNS is not\\|console-only\\|targetPort: http\" labs/platform-academy/trace-network-path/hop-trace.md",
             "grep -n \"HTTP/2 503\\|Target.ResponseCodeMismatch\\|targetPort web\" labs/platform-academy/trace-network-path/incident-handoff.md labs/platform-academy/trace-network-path/network-evidence.md labs/platform-academy/trace-network-path/ingress-service.yaml",
             "grep -n \"name: http\\|targetPort: web\" labs/platform-academy/trace-network-path/ingress-service.yaml",
             (
@@ -3814,6 +3824,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "practice_steps": [
             "Start from the pager handoff and preserve the no-live-change boundary.",
+            "Use hop-trace.md to rule out DNS, ALB listener, Pod recreation, and console-only false leads.",
             "Identify which hop emits the 503.",
             "Compare ALB target health with Kubernetes Service and Pod port names.",
             "Use the local analyzer to prove edge, ALB, Ingress, Service/Pod, fixed-target, and owner evidence.",
@@ -3821,6 +3832,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "expected_evidence": [
             "The incident handoff names the checkout health path impact and safety boundary.",
+            "The hop trace records DNS, ALB, Ingress, Service, and Pod owner notes.",
             "The client receives a 503 from awselb.",
             "One target is unhealthy with response code mismatch.",
             "The Service targetPort is web while the Pod port is named http.",
@@ -3843,7 +3855,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/trace-network-path/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use incident-handoff.md and network-evidence.md as a captured request trace.",
+            "Use incident-handoff.md, hop-trace.md, and network-evidence.md as a captured request trace.",
             "Write the hop-by-hop owner note without live DNS or ALB access.",
         ],
     },
@@ -4328,6 +4340,7 @@ DEEPENED_LAB_UPDATES = {
     "trace-service-to-pod": {
         "worksheet_prompts": [
             "Record the current context or no-cluster transcript used, namespace, and cleanup command before changing anything.",
+            "Read triage-notes.md and list the False Leads ruled out before choosing the selector fix.",
             "Paste the Service selector evidence and the exact label key/value the Service expects.",
             "Paste the Pod label evidence and the exact label key/value the running Pods expose.",
             "Paste the EndpointSlice evidence before the fix and explain why the Service has no ready backends.",
@@ -4336,6 +4349,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Names the namespace, context or transcript source, and cleanup boundary before acting.",
+            "Uses triage notes to rule out readiness, port wiring, node pressure, and live-only patch False Leads.",
             "Captures Service selector evidence with the exact `app=checkout` value.",
             "Captures Pod label evidence with the exact `app=checkout-api` value.",
             "Explains why a healthy Deployment can still produce empty EndpointSlices.",
@@ -4344,6 +4358,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "Safety context or no-cluster transcript recorded",
+            "Triage False Leads ruled out",
             "Service selector evidence captured",
             "Pod label evidence captured",
             "EndpointSlice empty-backend evidence captured",
@@ -4353,6 +4368,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["namespace", "context", "no-cluster", "cleanup", "payments"],
+            ["triage-notes.md", "False Leads", "readiness", "node pressure", "live-only patch"],
             ["Service selector", "app=checkout", "selector"],
             ["Pod label", "app=checkout-api", "Pod labels"],
             ["EndpointSlice", "no ready", "empty", "backends"],
@@ -4363,6 +4379,7 @@ DEEPENED_LAB_UPDATES = {
     "debug-crashloop-imagepull": {
         "worksheet_prompts": [
             "Record the current context or no-cluster transcript used, namespace, and cleanup command before changing anything.",
+            "Read triage-notes.md and list the False Leads ruled out before splitting the owners.",
             "Classify each workload by status and whether its container actually started.",
             "Paste the CrashLoopBackOff Last State, exit code, and previous-log evidence.",
             "Paste the ImagePullBackOff image reference and event reason evidence.",
@@ -4371,6 +4388,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Separates CrashLoopBackOff from ImagePullBackOff without mixing evidence sources.",
+            "Uses triage notes to rule out restart, resource, node-pressure, and one-outage False Leads.",
             "Uses `logs --previous` only for the container that started and exited.",
             "Uses events and image reference evidence for the container that never started.",
             "Names `missing DB_URL` and exit code 42 as app/config evidence.",
@@ -4379,6 +4397,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "Safety context or no-cluster transcript recorded",
+            "Triage False Leads ruled out",
             "Failure modes classified",
             "CrashLoopBackOff previous-log evidence captured",
             "ImagePullBackOff event evidence captured",
@@ -4388,6 +4407,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["checkout-crash", "CrashLoopBackOff", "checkout-pull", "ImagePullBackOff", "started"],
+            ["triage-notes.md", "False Leads", "restart", "resource", "node pressure", "owner split"],
             ["logs --previous", "previous logs", "exit code 42", "missing DB_URL", "last state"],
             ["registry.invalid.example/checkout:missing", "ImagePullBackOff", "ErrImagePull", "event", "registry"],
             ["missing DB_URL", "exit code 42", "app/config", "owner"],
@@ -4503,6 +4523,7 @@ DEEPENED_LAB_UPDATES = {
     "trace-network-path": {
         "worksheet_prompts": [
             "Record the incident handoff, host/path, evidence source, manifest files, and confirmation that no live DNS, ALB, or cluster change is being made.",
+            "Use the Hop Trace to list DNS, ALB, Pod recreation, and console-only False Leads ruled out.",
             "Paste the client `HTTP/2 503`, `awselb/2.0` server header, DNS target, and expected traffic path.",
             "Paste the ALB `Target.ResponseCodeMismatch` target-health evidence and the unhealthy target status.",
             "Paste the Ingress backend, Service `targetPort web`, Pod port name `http`, and readiness or EndpointSlice evidence.",
@@ -4511,6 +4532,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Uses the incident handoff to preserve impact context and avoid live DNS, ALB, or cluster mutation.",
+            "Uses the Hop Trace to rule out DNS, ALB listener, Pod recreation, and console-only False Leads.",
             "Captures `HTTP/2 503`, `awselb/2.0`, DNS target, and expected host/path route evidence.",
             "Names `Target.ResponseCodeMismatch` as the ALB target-health symptom instead of guessing.",
             "Connects Ingress backend, Service `targetPort web`, and Pod port name `http` to the failed hop.",
@@ -4519,6 +4541,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "Incident handoff and no-live-network-change safety boundary recorded",
+            "Hop Trace False Leads ruled out",
             "Client 503 and DNS evidence captured",
             "ALB Target.ResponseCodeMismatch evidence captured",
             "Ingress backend evidence captured",
@@ -4528,6 +4551,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["incident-handoff.md", "Pager Snapshot", "impact", "no live DNS", "no live ALB"],
+            ["hop-trace.md", "Hop Trace", "False Leads", "console-only", "DNS owner"],
             ["HTTP/2 503", "awselb/2.0", "k8s-payments-checkout-123456", "checkout.example.com"],
             ["Target.ResponseCodeMismatch", "unhealthy", "Health checks failed", "target health"],
             ["Ingress", "Service", "targetPort web", "targetPort: web", "Pod port", "http"],
@@ -5128,6 +5152,7 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/trace-service-to-pod/start.yaml",
         "labs/platform-academy/trace-service-to-pod/fixed.yaml",
         "labs/platform-academy/trace-service-to-pod/broken-evidence.txt",
+        "labs/platform-academy/trace-service-to-pod/triage-notes.md",
         "labs/platform-academy/trace-service-to-pod/evidence-template.md",
         "labs/platform-academy/lib/cluster-safety.sh",
         "labs/platform-academy/lib/evidence-check.sh",
@@ -5142,6 +5167,7 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/debug-crashloop-imagepull/start.yaml",
         "labs/platform-academy/debug-crashloop-imagepull/fixed.yaml",
         "labs/platform-academy/debug-crashloop-imagepull/broken-evidence.txt",
+        "labs/platform-academy/debug-crashloop-imagepull/triage-notes.md",
         "labs/platform-academy/debug-crashloop-imagepull/evidence-template.md",
         "labs/platform-academy/lib/cluster-safety.sh",
         "labs/platform-academy/lib/evidence-check.sh",
@@ -5264,6 +5290,7 @@ LAB_ARTIFACT_PATHS = {
     "trace-network-path": [
         "labs/platform-academy/trace-network-path/README.md",
         "labs/platform-academy/trace-network-path/incident-handoff.md",
+        "labs/platform-academy/trace-network-path/hop-trace.md",
         "labs/platform-academy/trace-network-path/network-evidence.md",
         "labs/platform-academy/trace-network-path/ingress-service.yaml",
         "labs/platform-academy/trace-network-path/fixed-ingress-service.yaml",

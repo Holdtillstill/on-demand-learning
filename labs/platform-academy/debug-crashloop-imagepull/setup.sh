@@ -7,6 +7,7 @@ START="$LAB_DIR/start.yaml"
 FIXED="$LAB_DIR/fixed.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 TRANSCRIPT="$LAB_DIR/broken-evidence.txt"
+TRIAGE="$LAB_DIR/triage-notes.md"
 ANALYZER="$LAB_DIR/failure_mode_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
@@ -78,6 +79,9 @@ prepare_evidence_note() {
 if [[ "$mode" == "no-cluster" ]]; then
   prepare_evidence_note
   echo
+  echo "Captured triage notes:"
+  sed -n '1,220p' "$TRIAGE"
+  echo
   echo "Captured broken-state transcript:"
   sed -n '1,260p' "$TRANSCRIPT"
   echo
@@ -133,6 +137,7 @@ echo "Broken crash/image-pull lab is ready in namespace payments-debug."
 echo "One workload should show CrashLoopBackOff; the other should show ErrImagePull or ImagePullBackOff."
 echo
 echo "Start with:"
+echo "  sed -n '1,220p' labs/platform-academy/debug-crashloop-imagepull/triage-notes.md"
 echo "  kubectl describe pods -n payments-debug -l app=checkout-crash"
 echo "  kubectl logs -n payments-debug -l app=checkout-crash --previous"
 echo "  kubectl describe pods -n payments-debug -l app=checkout-pull"

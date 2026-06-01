@@ -961,8 +961,8 @@ def test_platform_lab_submission_persists_workbook_state():
 
 def test_deepened_platform_lab_feedback_uses_criterion_specific_evidence():
     user_id = "lab-rubric-specific-user"
-    checked_items = {f"worksheet-{index}": True for index in range(6)}
-    checked_items.update({f"validation-{index}": True for index in range(7)})
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
 
     response = client.post(
         "/api/platform-academy/labs/debug-crashloop-imagepull/submission",
@@ -970,11 +970,15 @@ def test_deepened_platform_lab_feedback_uses_criterion_specific_evidence():
             "user_id": user_id,
             "worksheet_answers": {
                 "worksheet-0": "payments-debug no-cluster transcript used, cleanup documented, local context not mutated.",
-                "worksheet-1": "checkout-crash is CrashLoopBackOff and started; checkout-pull is ImagePullBackOff and never started.",
-                "worksheet-2": "Last State terminated, exit code 42, logs --previous / previous logs show missing DB_URL.",
-                "worksheet-3": "registry.invalid.example/checkout:missing causes ErrImagePull/ImagePullBackOff events from the registry.",
-                "worksheet-4": "app/config owner fixes DB_URL; image/registry owner fixes the tag or registry; rollback if needed.",
-                "worksheet-5": "rollout validation passed for both Deployments, validate output saved, cleanup or fallback recorded.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out restart, resource, node pressure, "
+                    "and confirm the owner split."
+                ),
+                "worksheet-2": "checkout-crash is CrashLoopBackOff and started; checkout-pull is ImagePullBackOff and never started.",
+                "worksheet-3": "Last State terminated, exit code 42, logs --previous / previous logs show missing DB_URL.",
+                "worksheet-4": "registry.invalid.example/checkout:missing causes ErrImagePull/ImagePullBackOff events from the registry.",
+                "worksheet-5": "app/config owner fixes DB_URL; image/registry owner fixes the tag or registry; rollback if needed.",
+                "worksheet-6": "rollout validation passed for both Deployments, validate output saved, cleanup or fallback recorded.",
             },
             "checked_items": checked_items,
             "status": "submitted",
@@ -983,10 +987,13 @@ def test_deepened_platform_lab_feedback_uses_criterion_specific_evidence():
 
     assert response.status_code == 200
     feedback = response.json()["rubric_feedback"]
-    assert len(feedback) == 6
+    assert len(feedback) == 7
+    triage_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
     previous_log_feedback = next(item for item in feedback if "logs --previous" in item["criterion"])
     registry_feedback = next(item for item in feedback if "invalid registry reference" in item["criterion"])
     validation_feedback = next(item for item in feedback if "Validates both fixed Deployments" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
     assert previous_log_feedback["status"] == "strong"
     assert "missing db-url" in previous_log_feedback["evidence_terms"]
     assert registry_feedback["status"] == "strong"
@@ -1129,8 +1136,8 @@ def test_sre_lab_feedback_tracks_slo_evidence_and_owner_split():
 
 
 def test_network_lab_feedback_tracks_hop_and_owner_evidence():
-    checked_items = {f"worksheet-{index}": True for index in range(6)}
-    checked_items.update({f"validation-{index}": True for index in range(7)})
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
 
     response = client.post(
         "/api/platform-academy/labs/trace-network-path/submission",
@@ -1141,14 +1148,18 @@ def test_network_lab_feedback_tracks_hop_and_owner_evidence():
                     "incident-handoff.md Pager Snapshot impact and network-evidence.md for checkout.example.com/healthz; "
                     "no live DNS or ALB change."
                 ),
-                "worksheet-1": "HTTP/2 503 from awselb/2.0 with DNS target k8s-payments-checkout-123456.",
-                "worksheet-2": "ALB target health shows Target.ResponseCodeMismatch and unhealthy target.",
-                "worksheet-3": "Ingress Service targetPort web and targetPort: web mismatch Pod port http.",
-                "worksheet-4": (
+                "worksheet-1": (
+                    "hop-trace.md Hop Trace False Leads rule out DNS owner, ALB listener, "
+                    "Pod recreation, and console-only changes."
+                ),
+                "worksheet-2": "HTTP/2 503 from awselb/2.0 with DNS target k8s-payments-checkout-123456.",
+                "worksheet-3": "ALB target health shows Target.ResponseCodeMismatch and unhealthy target.",
+                "worksheet-4": "Ingress Service targetPort web and targetPort: web mismatch Pod port http.",
+                "worksheet-5": (
                     "DNS owner and ALB owner are ruled out; app/platform owner uses source-manifest "
                     "fixed-ingress-service.yaml targetPort: http."
                 ),
-                "worksheet-5": "diff, validate, cleanup, no-cluster evidence-template.md saved.",
+                "worksheet-6": "diff, validate, cleanup, no-cluster evidence-template.md saved.",
             },
             "checked_items": checked_items,
             "status": "submitted",
@@ -1157,9 +1168,12 @@ def test_network_lab_feedback_tracks_hop_and_owner_evidence():
 
     assert response.status_code == 200
     feedback = response.json()["rubric_feedback"]
+    hop_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
     alb_feedback = next(item for item in feedback if "Target.ResponseCodeMismatch" in item["criterion"])
     port_feedback = next(item for item in feedback if "targetPort web" in item["criterion"])
     fix_feedback = next(item for item in feedback if "targetPort: http" in item["criterion"])
+    assert hop_feedback["status"] == "strong"
+    assert "hop-trace.md" in hop_feedback["evidence_terms"]
     assert alb_feedback["status"] == "strong"
     assert "target.responsecodemismatch" in alb_feedback["evidence_terms"]
     assert port_feedback["status"] == "strong"

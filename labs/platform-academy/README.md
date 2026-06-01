@@ -114,11 +114,11 @@ The runner exposes the same `--evidence` flag for all current lab slugs. These c
 
 These labs have extra captured evidence, worksheet templates, and lab-specific rubric prompts so they work even when the learner does not have a disposable cluster or AWS access:
 
-- [`trace-service-to-pod`](trace-service-to-pod/README.md): Service selector, Pod label, EndpointSlice, source-manifest fix, and cleanup evidence.
-- [`debug-crashloop-imagepull`](debug-crashloop-imagepull/README.md): CrashLoopBackOff vs ImagePullBackOff classification, previous-log evidence, event evidence, owner split, and rollout validation.
+- [`trace-service-to-pod`](trace-service-to-pod/README.md): triage notes, false leads, Service selector, Pod label, EndpointSlice, source-manifest fix, and cleanup evidence.
+- [`debug-crashloop-imagepull`](debug-crashloop-imagepull/README.md): triage notes, false leads, CrashLoopBackOff vs ImagePullBackOff classification, previous-log evidence, event evidence, owner split, and rollout validation.
 - [`review-yaml-before-apply`](review-yaml-before-apply/README.md): manifest inventory, ClusterRole secret access, privileged mode, hostPath, credential placeholder, vendor questions, and no-live-apply evidence.
 - [`inspect-linux-failure-evidence`](inspect-linux-failure-evidence/README.md): CrashLoopBackOff, exit code 126, permission denied, runtime UID/GID, rejected memory/root workarounds, and image-permission remediation evidence.
-- [`trace-network-path`](trace-network-path/README.md): client 503, DNS, ALB target-health reason, Ingress backend, Service targetPort, Pod port, owner handoff, and source-manifest fix evidence.
+- [`trace-network-path`](trace-network-path/README.md): hop trace, false leads, client 503, DNS, ALB target-health reason, Ingress backend, Service targetPort, Pod port, owner handoff, and source-manifest fix evidence.
 - [`debug-aws-alb-health-path`](debug-aws-alb-health-path/README.md): ALB target health, health path contract, Service-to-Pod port mismatch, controller event, owner decision, and source-manifest handoff.
 - [`diagnose-eks-ip-exhaustion`](diagnose-eks-ip-exhaustion/README.md): scheduler pressure, CNI sandbox failures, subnet IPv4 exhaustion, maxPods, prefix delegation, owner split, and capacity remediation evidence.
 - [`design-production-eks-review`](design-production-eks-review/README.md): endpoint posture, missing PDB, zonal storage, cost labels, upgrade/add-on risk, launch blockers, owners, and no-AWS review evidence.

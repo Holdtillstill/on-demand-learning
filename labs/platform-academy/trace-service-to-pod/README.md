@@ -42,6 +42,8 @@ No-cluster path:
 
 ```bash
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md
+sed -n '1,220p' labs/platform-academy/trace-service-to-pod/triage-notes.md
+sed -n '1,220p' labs/platform-academy/trace-service-to-pod/broken-evidence.txt
 ```
 
 Setup creates the broken cluster state or stages the transcript, but it does not run the analyzer by default. Run the local analyzer after you inspect the Service, Pod labels, and EndpointSlice evidence, or use setup with `--run-analyzer`:
@@ -63,7 +65,7 @@ kubectl get pods -n payments --show-labels
 kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout -o wide
 ```
 
-Capture the selector, the Pod labels, and the EndpointSlice result in your worksheet.
+Capture the triage false leads, the selector, the Pod labels, and the EndpointSlice result in your worksheet.
 If you are using the no-cluster transcript, capture the same fields from `broken-evidence.txt`.
 Use the analyzer output to prove the selector mismatch and source-manifest fix before applying anything.
 
@@ -102,6 +104,6 @@ bash labs/platform-academy/trace-service-to-pod/validate.sh --cluster
 - You can name the exact selector mismatch.
 - You captured evidence before changing the manifest.
 - You captured the local Service routing analyzer result.
-- Your evidence note names the Service selector, Pod label, EndpointSlice state, fix, validation, and cleanup.
+- Your evidence note names the triage notes, false leads, Service selector, Pod label, EndpointSlice state, fix, validation, and cleanup.
 - The fixed manifest changes source control intent, not just the live Service.
 - Cleanup removes the disposable namespace.

@@ -7,6 +7,7 @@ BROKEN="$LAB_DIR/ingress-service.yaml"
 FIXED="$LAB_DIR/fixed-ingress-service.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 HANDOFF="$LAB_DIR/incident-handoff.md"
+HOP_TRACE="$LAB_DIR/hop-trace.md"
 NETWORK_EVIDENCE="$LAB_DIR/network-evidence.md"
 ANALYZER="$LAB_DIR/network_path_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
@@ -82,6 +83,9 @@ if [[ "$mode" == "no-cluster" ]]; then
   echo "Captured incident handoff:"
   sed -n '1,180p' "$HANDOFF"
   echo
+  echo "Captured hop trace:"
+  sed -n '1,220p' "$HOP_TRACE"
+  echo
   echo "Captured network evidence:"
   sed -n '1,180p' "$NETWORK_EVIDENCE"
   echo
@@ -130,6 +134,7 @@ echo "The Service routes to targetPort web, but the selected Pod only exposes a 
 echo "No real DNS, ALB, or Ingress controller is required for this local cluster path."
 echo
 echo "Start with:"
+echo "  sed -n '1,220p' labs/platform-academy/trace-network-path/hop-trace.md"
 echo "  kubectl describe ingress checkout -n payments"
 echo "  kubectl describe svc checkout -n payments"
 echo "  kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout -o yaml"

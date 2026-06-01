@@ -21,6 +21,7 @@ Because selectors are exact label matches, the Service has no ready checkout bac
 
 Expected evidence from the broken state:
 
+- `triage-notes.md` rules out Pod readiness, Service port wiring, node/CNI pressure, and a live-only patch as false leads.
 - `kubectl describe svc checkout -n payments` shows `Selector: app=checkout`.
 - `kubectl get pods -n payments --show-labels` shows `app=checkout-api`.
 - `kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout` has no ready backend addresses for the checkout Pods.
@@ -50,7 +51,7 @@ The fixed manifest keeps the Deployment labels unchanged and updates the Service
 
 ## Handoff Note
 
-A good handoff says: Deployment is available, but the Service selector is `app=checkout` while Pods are labeled `app=checkout-api`, so EndpointSlices have no ready addresses. The source fix is to update the Service selector in `fixed.yaml`, apply it, verify ready EndpointSlice addresses, and clean up `payments`.
+A good handoff says: `triage-notes.md` shows the Deployment rollout was healthy and the false leads were ruled out. The Service selector is `app=checkout` while Pods are labeled `app=checkout-api`, so EndpointSlices have no ready addresses. The source fix is to update the Service selector in `fixed.yaml`, apply it, verify ready EndpointSlice addresses, and clean up `payments`.
 
 ## Validation
 

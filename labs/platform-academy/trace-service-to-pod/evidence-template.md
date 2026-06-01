@@ -13,6 +13,13 @@
 - Observed selector:
 - Why this selector is or is not safe:
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- Rollout/deployment health clue:
+- False leads ruled out:
+- Strongest clue from triage notes:
+
 ## Pod Label Evidence
 
 - Command:

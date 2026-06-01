@@ -3,11 +3,19 @@
 ## Request And Edge Evidence
 
 - Handoff file reviewed:
+- Hop trace reviewed:
 - Impact and safety boundary:
 - Client status and server header:
 - DNS target:
 - ALB target-health symptom:
 - Failing hop hypothesis:
+
+## False Leads Ruled Out
+
+- DNS evidence:
+- ALB/Ingress evidence:
+- Pod readiness or port evidence:
+- Why not a console-only fix:
 
 ## Ingress, Service, And Pod Evidence
 

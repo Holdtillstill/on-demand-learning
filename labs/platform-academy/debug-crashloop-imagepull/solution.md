@@ -10,6 +10,7 @@
 
 Expected evidence:
 
+- `triage-notes.md` rules out restart, resource, node-pressure, and single-owner false leads before splitting the failure modes.
 - `checkout-crash` has restart/backoff evidence plus previous logs containing `missing DB_URL`.
 - `checkout-pull` has events such as failed pull, pull access denied, DNS failure, or ImagePullBackOff.
 - Only the crash case has useful previous container logs.
@@ -32,7 +33,7 @@ The fixed manifest keeps `checkout-crash` alive with a harmless command and chan
 
 ## Handoff Note
 
-A good handoff says: `checkout-crash` started and exited with code 42 after printing `missing DB_URL`, so app config owns that fix. `checkout-pull` never started because `registry.invalid.example/checkout:missing` cannot be pulled, so registry/image ownership comes first and `logs --previous` is not useful for that Pod.
+A good handoff says: `triage-notes.md` rules out restart and resource false leads. `checkout-crash` started and exited with code 42 after printing `missing DB_URL`, so app config owns that fix. `checkout-pull` never started because `registry.invalid.example/checkout:missing` cannot be pulled, so registry/image ownership comes first and `logs --previous` is not useful for that Pod. Keep the owner split explicit.
 
 ## Validation
 

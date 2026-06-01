@@ -27,6 +27,7 @@ The Service references a named target port that does not exist on the Pod. The c
 Expected evidence:
 
 - `incident-handoff.md` records the impact, safety boundary, and owner notes.
+- `hop-trace.md` records the Hop Trace and rules out DNS, ALB listener, Pod recreation, and console-only false leads.
 - Client receives `HTTP/2 503` from `awselb/2.0`.
 - ALB target health includes `Target.ResponseCodeMismatch` and an unhealthy target.
 - Ingress routes `checkout.example.com/healthz` to Service `checkout` port `http`.
@@ -60,7 +61,7 @@ targetPort: http
 
 ## Evidence to Save
 
-Save the request status, DNS target, ALB reason, Ingress backend, Service targetPort, Pod port name, owners ruled out, source-manifest fix, validation output, and no-cluster note in `evidence-template.md`.
+Save the Hop Trace, false leads ruled out, request status, DNS target, ALB reason, Ingress backend, Service targetPort, Pod port name, owners ruled out, source-manifest fix, validation output, and no-cluster note in `evidence-template.md`.
 
 ## Cleanup
 

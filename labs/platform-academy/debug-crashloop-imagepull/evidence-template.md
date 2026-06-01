@@ -14,6 +14,13 @@
 | checkout-crash | | | |
 | checkout-pull | | | |
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- Restart or resource false lead ruled out:
+- Container that never started:
+- Owner split clue:
+
 ## CrashLoopBackOff Evidence
 
 - `describe` signal:

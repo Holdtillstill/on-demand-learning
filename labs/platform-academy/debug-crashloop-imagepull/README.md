@@ -43,6 +43,8 @@ No-cluster path:
 
 ```bash
 bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --evidence /tmp/crashloop-imagepull-evidence.md
+sed -n '1,220p' labs/platform-academy/debug-crashloop-imagepull/triage-notes.md
+sed -n '1,260p' labs/platform-academy/debug-crashloop-imagepull/broken-evidence.txt
 ```
 
 Setup creates the broken cluster state or stages the transcript, but it does not run the analyzer by default. Run the local analyzer after you inspect Pod state, events, previous logs, and image evidence, or use setup with `--run-analyzer`:
@@ -65,7 +67,7 @@ kubectl describe pods -n payments-debug -l app=checkout-pull
 kubectl get events -n payments-debug --sort-by=.lastTimestamp
 ```
 
-Write down which signal came from Pod status, which came from events, and which came from previous logs.
+Write down which false leads were ruled out, which signal came from Pod status, which came from events, and which came from previous logs.
 If you are using the no-cluster transcript, classify the same signals from `broken-evidence.txt`.
 Use the analyzer output to verify that you separated runtime-crash evidence from image-pull evidence.
 
@@ -102,4 +104,4 @@ bash labs/platform-academy/debug-crashloop-imagepull/validate.sh --cluster
 - You can explain why image pull events matter before logs exist.
 - You captured the local failure-mode analyzer result.
 - You assign the fixes to the right owner: app/config for the crash, registry/image reference for the pull failure.
-- Your evidence note separates current status, last state, previous logs, image reference, event reason, owner, fix, validation, and cleanup.
+- Your evidence note separates triage false leads, current status, last state, previous logs, image reference, event reason, owner, fix, validation, and cleanup.

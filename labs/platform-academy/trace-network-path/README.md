@@ -19,6 +19,7 @@ Open the evidence pack:
 ```bash
 bash labs/platform-academy/trace-network-path/setup.sh --evidence /tmp/network-path-evidence.md
 sed -n '1,220p' labs/platform-academy/trace-network-path/incident-handoff.md
+sed -n '1,220p' labs/platform-academy/trace-network-path/hop-trace.md
 sed -n '1,220p' labs/platform-academy/trace-network-path/network-evidence.md
 sed -n '1,220p' labs/platform-academy/trace-network-path/ingress-service.yaml
 sed -n '1,160p' labs/platform-academy/trace-network-path/evidence-template.md
@@ -52,6 +53,7 @@ Answer these before opening the solution:
 - Does the Ingress route the expected host and path?
 - Does the Service point at the right backend port name?
 - Do the Pods expose a matching named port?
+- Which false leads does `hop-trace.md` rule out?
 - Which owner should act if DNS and ALB routing are still pointed at the expected backend?
 - Whether the local analyzer confirms the Service-to-Pod mismatch and source fix.
 - Which owner should change the source manifest, and what validation output should be saved?
