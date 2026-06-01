@@ -148,10 +148,10 @@ docker run -d \
   --name "${web_container}" \
   --network "${network_name}" \
   -e PLATFORM_API_UPSTREAM=http://api:8000 \
-  -p 127.0.0.1::80 \
+  -p 127.0.0.1::8080 \
   "${web_image}" >/dev/null
 
-web_port="$(docker port "${web_container}" 80/tcp | awk -F: 'NR == 1 {print $NF}')"
+web_port="$(docker port "${web_container}" 8080/tcp | awk -F: 'NR == 1 {print $NF}')"
 web_base="http://127.0.0.1:${web_port}"
 
 echo "Waiting for Platform Academy web container at ${web_base}"
