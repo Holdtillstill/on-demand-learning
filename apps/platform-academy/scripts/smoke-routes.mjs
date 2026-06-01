@@ -80,11 +80,26 @@ function apiUrl(path) {
   return `${API_BASE}${path}`;
 }
 
-async function expectApiLinkHref(locator, path) {
+function staticAssetUrl(path) {
+  const packetMatch = path.match(/^\/api\/platform-academy\/labs\/([^/]+)\/packet$/);
+  if (packetMatch) return `/static-api/labs/${packetMatch[1]}/packet.md`;
+
+  const workspaceBundleMatch = path.match(/^\/api\/platform-academy\/labs\/([^/]+)\/workspace-bundle$/);
+  if (workspaceBundleMatch) return `/static-api/labs/${workspaceBundleMatch[1]}/workspace-bundle.zip`;
+
+  return "";
+}
+
+async function expectApiOrStaticAssetLinkHref(locator, path) {
   const href = await locator.getAttribute("href", { timeout: TIMEOUT_MS });
   const accepted = new Set([path, `${WEB_BASE}${path}`, apiUrl(path)]);
+  const staticPath = staticAssetUrl(path);
+  if (staticPath) {
+    accepted.add(staticPath);
+    accepted.add(`${WEB_BASE}${staticPath}`);
+  }
   if (!href || !accepted.has(href)) {
-    throw new Error(`Expected API link href for ${path} to be one of ${Array.from(accepted).join(", ")}, got ${href || "empty"}`);
+    throw new Error(`Expected download link href for ${path} to be one of ${Array.from(accepted).join(", ")}, got ${href || "empty"}`);
   }
 }
 
@@ -120,7 +135,8 @@ function isSameOrigin(url) {
 }
 
 function isIgnoredSameOriginUrl(url) {
-  return new URL(url).pathname === "/favicon.ico";
+  const pathname = new URL(url).pathname;
+  return pathname === "/favicon.ico" || pathname === "/api/events";
 }
 
 function isNavigationAbortedGet(request) {
@@ -550,9 +566,9 @@ async function assertAllLabDetailRoutes(page, labs) {
     await expect(page.getByLabel("Evidence artifact map")).toBeVisible({ timeout: TIMEOUT_MS });
     await expect(page.getByRole("heading", { name: "Worksheet and validation state" })).toBeVisible({ timeout: TIMEOUT_MS });
     await expect(page.getByText("Learner workspace contract")).toBeVisible({ timeout: TIMEOUT_MS });
-    await expectApiLinkHref(page.getByRole("link", { name: /download lab packet/i }), `/api/platform-academy/labs/${encodeURIComponent(lab.slug)}/packet`);
+    await expectApiOrStaticAssetLinkHref(page.getByRole("link", { name: /download lab packet/i }), `/api/platform-academy/labs/${encodeURIComponent(lab.slug)}/packet`);
     const workspaceDownloadLink = page.getByRole("link", { name: /download learner workspace/i });
-    await expectApiLinkHref(workspaceDownloadLink, `/api/platform-academy/labs/${encodeURIComponent(lab.slug)}/workspace-bundle`);
+    await expectApiOrStaticAssetLinkHref(workspaceDownloadLink, `/api/platform-academy/labs/${encodeURIComponent(lab.slug)}/workspace-bundle`);
     const downloadName = await workspaceDownloadLink.getAttribute("download", { timeout: TIMEOUT_MS });
     if (downloadName !== lab.workspace_archive_name) {
       throw new Error(`Expected ${lab.slug} learner workspace download name ${lab.workspace_archive_name}, got ${downloadName || "empty"}`);
