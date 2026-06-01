@@ -177,8 +177,7 @@ main {
 .workspace-actions,
 .section-heading,
 .course-title-line,
-.runbook-meta,
-.resource-feature-footer {
+.runbook-meta {
   display: flex;
   align-items: center;
 }
@@ -481,8 +480,7 @@ main {
 .workspace-panel p,
 .course-row p,
 .lab-queue-row p,
-.resource-row p,
-.resource-feature p {
+.resource-row p {
   color: #52625c;
   line-height: 1.55;
 }
@@ -802,8 +800,7 @@ main {
   line-height: 1.25;
 }
 
-.runbook-workspace,
-.resource-feature {
+.runbook-workspace {
   min-width: 0;
   border: 1px solid #cad4cf;
   border-radius: 8px;
@@ -1532,37 +1529,7 @@ main {
 }
 
 .resource-layout {
-  grid-template-columns: minmax(320px, 0.44fr) minmax(0, 1fr);
-}
-
-.resource-feature {
-  position: sticky;
-  top: 82px;
-  display: grid;
-  align-content: start;
-  gap: 14px;
-}
-
-.resources-page .resource-feature {
-  position: static;
-  top: auto;
-}
-
-.resource-feature h2 {
-  margin: 0;
-  font-size: 2rem;
-  line-height: 1.05;
-}
-
-.resource-feature-footer {
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.resource-feature-footer > span {
-  color: #52625c;
-  font-weight: 850;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .resource-row {
@@ -2111,7 +2078,6 @@ main {
     grid-template-columns: 1fr;
   }
 
-  .resource-feature,
   .interview-pack-list {
     position: static;
   }
@@ -3434,7 +3400,6 @@ pre {
 .course-row strong,
 .resource-mini-row strong,
 .next-work-grid strong,
-.resource-feature h2,
 .runbook-workspace h3,
 .lab-queue-row h2,
 .resource-row h2,
@@ -3455,7 +3420,6 @@ pre {
 .section-heading > span,
 .course-row > span,
 .course-row b,
-.resource-feature-footer > span,
 .resource-mini-row span,
 .resource-stats dt,
 .stage-header span:not(.level-badge),
@@ -3928,7 +3892,6 @@ pre {
 .workspace-panel,
 .ops-summary article,
 .runbook-workspace,
-.resource-feature,
 .resource-stats div,
 .dashboard-hero,
 .course-hero,
@@ -3952,8 +3915,7 @@ pre {
 
 .workspace-panel::before,
 .ops-summary article::before,
-.runbook-workspace::before,
-.resource-feature::before {
+.runbook-workspace::before {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -3965,8 +3927,7 @@ pre {
 
 .workspace-panel > *,
 .ops-summary article > *,
-.runbook-workspace > *,
-.resource-feature > * {
+.runbook-workspace > * {
   position: relative;
 }
 
@@ -4001,7 +3962,6 @@ pre {
 .course-row p,
 .lab-queue-row p,
 .resource-row p,
-.resource-feature p,
 .level-strip p,
 .course-card p,
 .lab-card p,
@@ -4917,8 +4877,7 @@ pre {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
 }
 
-.runbook-workspace,
-.resource-feature {
+.runbook-workspace {
   border-color: rgba(125, 243, 211, 0.24);
 }
 

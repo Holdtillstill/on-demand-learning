@@ -2845,12 +2845,9 @@ function ResourcesPage({ data }: { data: AcademyData }) {
       text.includes(query.toLowerCase())
     );
   });
-  const featuredResource = filteredResources[0];
   const visibleResources = filteredResources.slice(0, visibleLimit);
   const hiddenResourceCount = Math.max(filteredResources.length - visibleResources.length, 0);
   const nextPageCount = Math.min(36, hiddenResourceCount);
-  const featuredLab = featuredResource ? data.catalog.labs.find((lab) => featuredResource.related_labs.includes(lab.slug)) : undefined;
-  const featuredSources = featuredResource ? officialSourcesForResource(featuredResource) : [];
   const hasActiveFilters = selectedDomain !== "All" || selectedType !== "All" || query.trim().length > 0;
 
   useEffect(() => {
@@ -2926,39 +2923,6 @@ function ResourcesPage({ data }: { data: AcademyData }) {
       </section>
 
       <section className="resource-layout">
-        <article className="resource-feature">
-          {featuredResource ? (
-            <>
-              <div className="resource-card-top">
-                <LevelBadge level={featuredResource.level_group} />
-                <span>{featuredResource.resource_type}</span>
-                <span>{featuredResource.safety_level}</span>
-              </div>
-              <h2>{featuredResource.title}</h2>
-              <p>{featuredResource.summary}</p>
-              {featuredSources.length > 0 && (
-                <div className="resource-source-strip" aria-label="Official links">
-                  {featuredSources.slice(0, 3).map((source) => (
-                    <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>
-                      <ExternalLink aria-hidden="true" />
-                      {source.label}
-                    </a>
-                  ))}
-                </div>
-              )}
-              <CommandBlock commands={featuredResource.commands.slice(0, 3)} title="Primary snippets" />
-              <div className="resource-feature-footer">
-                {featuredLab && <span>Related lab: {featuredLab.title}</span>}
-                <Link className="primary-action" to={`/resources/${featuredResource.slug}`}>
-                  Open resource <ArrowRight aria-hidden="true" />
-                </Link>
-              </div>
-            </>
-          ) : (
-            <EmptyState title="No resources match those filters." />
-          )}
-        </article>
-
         <section className="resource-index" aria-label="Platform Academy resources">
           <div className="section-heading">
             <div>
