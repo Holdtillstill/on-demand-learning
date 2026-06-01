@@ -698,6 +698,7 @@ def verify_contract() -> list[str]:
     verify_root_readme_contract(full_slugs)
     verify_platform_lab_docs_contract()
     verify_portfolio_metadata_contract(full_labs)
+    verify_lab_review_mode_contract(full_labs)
 
     for lab in full_labs:
         slug = lab["slug"]
@@ -755,13 +756,50 @@ def print_lab_summary(lab: dict) -> None:
 
 
 def lab_review_mode(lab: dict) -> str:
-    slug = lab["slug"]
+    command_text = "\n".join(
+        str(item)
+        for field in ["setup_commands", "commands", "validation_commands", "cleanup_commands", "no_cluster_fallback"]
+        for item in lab.get(field, [])
+    )
+    if "--preflight" in command_text:
+        return "local cluster with preflight"
+    if "--cluster" in command_text:
+        return "optional local cluster"
     artifact_paths = lab.get("artifact_paths", [])
-    if f"labs/platform-academy/{slug}/setup.sh" in artifact_paths:
-        return "local cluster-capable"
-    if any(path.endswith((".yaml", ".yml", ".json", ".txt", ".log", ".csv")) for path in artifact_paths):
+    if any(path.endswith((".json", ".txt", ".log", ".csv")) for path in artifact_paths):
         return "captured evidence"
+    if "dry-run" in command_text:
+        return "no-live-apply review"
+    if any(path.endswith((".yaml", ".yml")) for path in artifact_paths):
+        return "artifact review"
     return "design/review packet"
+
+
+def verify_lab_review_mode_contract(full_labs: list[dict]) -> None:
+    modes = {lab["slug"]: lab_review_mode(lab) for lab in full_labs}
+    expected = {
+        "trace-service-to-pod": "local cluster with preflight",
+        "debug-crashloop-imagepull": "local cluster with preflight",
+        "trace-network-path": "optional local cluster",
+        "debug-aws-alb-health-path": "optional local cluster",
+        "audit-tenant-boundaries": "optional local cluster",
+        "review-yaml-before-apply": "no-live-apply review",
+        "diagnose-eks-ip-exhaustion": "captured evidence",
+        "validate-helm-release-artifact": "artifact review",
+        "debug-irsa-access-denied": "captured evidence",
+        "design-safe-release-pipeline": "artifact review",
+        "create-platform-golden-path": "artifact review",
+        "design-production-eks-review": "design/review packet",
+        "build-platform-career-proof-pack": "captured evidence",
+    }
+    for slug, expected_mode in expected.items():
+        actual_mode = modes.get(slug)
+        if actual_mode != expected_mode:
+            fail(f"{slug} lab review mode should be {expected_mode!r}, got {actual_mode!r}")
+
+    cluster_modes = {mode for mode in modes.values() if "cluster" in mode}
+    if cluster_modes == set(modes.values()):
+        fail("lab review matrix should not classify every full lab as cluster-capable")
 
 
 def print_lab_review_matrix() -> None:
@@ -790,6 +828,9 @@ def print_lab_review_matrix() -> None:
     print(
         "Learner files exclude source-only `README.md` and `solution.md`; "
         "source files are protected by the instructor/source bundle token outside local/test/development."
+    )
+    print(
+        "Mode is derived from advertised setup/validation commands, not merely from the presence of a setup script."
     )
 
 
