@@ -30,6 +30,7 @@
 
 ## Onboarding Decision
 
+- Local tenant boundary analyzer result:
 - Decision:
 - Blocking findings:
 - Required changes:

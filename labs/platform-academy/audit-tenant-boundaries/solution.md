@@ -25,9 +25,20 @@ Block onboarding until:
 
 `fixed-tenant-a.yaml` removes the ClusterRoleBinding, drops secret access, sets Pod Security enforcement to `restricted`, and replaces allow-all egress with default-deny egress.
 
+The local tenant boundary analyzer verifies the block decision without a cluster:
+
+```bash
+python3 labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py \
+  --broken labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml \
+  --fixed labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml \
+  --review labs/platform-academy/audit-tenant-boundaries/review.md
+```
+
+Expected result: `Tenant boundary analysis passed`, with RBAC risk, secret risk, Pod Security risk, NetworkPolicy risk, safer target, and blocked onboarding decision.
+
 ## Evidence to Save
 
-Save the diff, the specific RBAC resources, and the onboarding decision. This is the kind of artifact that is useful in a platform/security portfolio because it shows risk judgment, not just command use.
+Save the diff, the specific RBAC resources, local tenant boundary analyzer output, and the onboarding decision. This is the kind of artifact that is useful in a platform/security portfolio because it shows risk judgment, not just command use.
 
 ## Handoff Note
 

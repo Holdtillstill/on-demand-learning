@@ -3568,21 +3568,35 @@ RUNNABLE_LAB_UPDATES = {
         "commands": [
             "grep -n \"cluster-admin\\|secrets\\|allow-all-egress\\|pod-security\" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
             "grep -n \"Block onboarding\\|secret access\\|egress\" labs/platform-academy/audit-tenant-boundaries/review.md",
+            (
+                "python3 labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py "
+                "--broken labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml "
+                "--fixed labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml "
+                "--review labs/platform-academy/audit-tenant-boundaries/review.md"
+            ),
         ],
         "practice_steps": [
             "Find broad RBAC and secret access.",
             "Check whether NetworkPolicy creates a real boundary.",
+            "Use the local analyzer to prove the RBAC, Pod Security, NetworkPolicy, and safer-target evidence.",
             "Record exception owners and expiry requirements before onboarding.",
         ],
         "expected_evidence": [
             "A temporary ClusterRoleBinding grants cluster-admin.",
             "The Role can list and watch secrets.",
             "The NetworkPolicy allows all egress.",
+            "The local analyzer reports Tenant boundary analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/audit-tenant-boundaries/validate.sh",
             "bash labs/platform-academy/audit-tenant-boundaries/validate.sh --evidence /tmp/tenant-boundaries-evidence.md",
             "bash labs/platform-academy/audit-tenant-boundaries/validate.sh --cluster",
+            (
+                "python3 labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py "
+                "--broken labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml "
+                "--fixed labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml "
+                "--review labs/platform-academy/audit-tenant-boundaries/review.md"
+            ),
             "grep -n \"name: cluster-admin\" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
             "grep -n \"resources: \\[\\\"secrets\\\"\\]\" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
         ],
@@ -4549,7 +4563,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["tenant-a", "shared cluster", "cleanup", "manifest", "dry-run"],
-            ["tenant-a-temporary-admin", "cluster-admin", "deployer", "secrets", "Role"],
+            ["tenant-a-temporary-admin", "cluster-admin", "deployer", "secrets", "Role", "Tenant boundary analysis passed"],
             ["pod-security.kubernetes.io/enforce: baseline", "restricted", "Pod Security", "exception"],
             ["allow-all-egress", "egress", "default-deny", "NetworkPolicy", "boundary"],
             ["Block onboarding", "owner", "expiry", "required changes", "exception"],
@@ -5030,6 +5044,7 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/audit-tenant-boundaries/evidence-template.md",
         "labs/platform-academy/lib/cluster-safety.sh",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py",
         "labs/platform-academy/audit-tenant-boundaries/setup.sh",
         "labs/platform-academy/audit-tenant-boundaries/validate.sh",
         "labs/platform-academy/audit-tenant-boundaries/cleanup.sh",

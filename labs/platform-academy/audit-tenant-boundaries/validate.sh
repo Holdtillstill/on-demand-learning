@@ -7,6 +7,7 @@ BROKEN="$LAB_DIR/tenant-a.yaml"
 FIXED="$LAB_DIR/fixed-tenant-a.yaml"
 REVIEW="$LAB_DIR/review.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/tenant_boundary_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
@@ -47,6 +48,9 @@ grep -q "name: default-deny-egress" "$FIXED" || fail "fixed-tenant-a.yaml should
 grep -q "## RBAC Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for RBAC evidence"
 grep -q "## Pod Security Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for Pod Security evidence"
 grep -q "## NetworkPolicy Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for NetworkPolicy evidence"
+grep -q "Tenant boundary analysis passed" "$ANALYZER" || fail "tenant_boundary_analyzer.py should report a successful local analysis"
+
+python3 "$ANALYZER" --broken "$BROKEN" --fixed "$FIXED" --review "$REVIEW" --quiet
 
 echo "File checks passed for audit-tenant-boundaries."
 
@@ -57,6 +61,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "secret access rule" "secrets|secret access|get.*list.*watch"
   require_evidence_match "$evidence_file" "Pod Security baseline vs restricted" "baseline|restricted|Pod Security"
   require_evidence_match "$evidence_file" "allow-all egress not a boundary" "allow-all-egress|default-deny|egress"
+  require_evidence_match "$evidence_file" "local tenant boundary analyzer evidence" "Tenant boundary analysis passed|tenant boundary analyzer|RBAC risk|NetworkPolicy risk"
   require_evidence_match "$evidence_file" "block onboarding decision" "Block onboarding|block|not onboard"
   require_evidence_match "$evidence_file" "required safer changes" "remove cluster-admin|secret access|default-deny|exception|expiry"
   require_evidence_match "$evidence_file" "owner or validation evidence" "owner|validation|validate|cleanup"

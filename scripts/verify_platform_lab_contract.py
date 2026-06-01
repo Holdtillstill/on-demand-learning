@@ -109,8 +109,15 @@ DEEPENED_LAB_CONTRACT = {
         "terms": {"ServiceAccount", "AccessDenied", "PutObject", "system:serviceaccount:payments:checkout", "least-privilege"},
     },
     "audit-tenant-boundaries": {
-        "files": {"evidence-template.md"},
-        "terms": {"cluster-admin", "secrets", "restricted", "allow-all-egress", "Block onboarding"},
+        "files": {"evidence-template.md", "setup.sh", "tenant_boundary_analyzer.py"},
+        "terms": {
+            "cluster-admin",
+            "secrets",
+            "restricted",
+            "allow-all-egress",
+            "Block onboarding",
+            "Tenant boundary analysis passed",
+        },
     },
     "validate-helm-release-artifact": {
         "files": {"evidence-template.md"},

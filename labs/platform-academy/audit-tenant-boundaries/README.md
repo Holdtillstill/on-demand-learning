@@ -20,6 +20,15 @@ sed -n '1,240p' labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml
 sed -n '1,180p' labs/platform-academy/audit-tenant-boundaries/review.md
 ```
 
+Run the local analyzer:
+
+```bash
+python3 labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py \
+  --broken labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml \
+  --fixed labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml \
+  --review labs/platform-academy/audit-tenant-boundaries/review.md
+```
+
 Optional parse check:
 
 ```bash
@@ -42,6 +51,7 @@ Find:
 - Pod Security level.
 - Whether NetworkPolicy actually blocks egress.
 - Which exception needs an owner and expiry date.
+- Whether the local analyzer proves the RBAC, secret, Pod Security, NetworkPolicy, safer-target, and onboarding decision evidence.
 
 ## Remediation Target
 
@@ -65,4 +75,5 @@ bash labs/platform-academy/audit-tenant-boundaries/cleanup.sh
 - You block onboarding until broad admin and secret access are removed.
 - You identify the false boundary in the allow-all egress NetworkPolicy.
 - You propose a restricted baseline with documented exceptions.
+- You use analyzer output as evidence for the block decision.
 - Your evidence note names RBAC, secret access, Pod Security, egress, owner/expiry, onboarding decision, validation, and cleanup or no-runtime-review evidence.

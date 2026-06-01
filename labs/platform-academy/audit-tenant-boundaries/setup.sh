@@ -4,8 +4,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/audit-tenant-boundaries"
 BROKEN="$LAB_DIR/tenant-a.yaml"
+FIXED="$LAB_DIR/fixed-tenant-a.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 REVIEW="$LAB_DIR/review.md"
+ANALYZER="$LAB_DIR/tenant_boundary_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
 mode="no-cluster"
@@ -18,7 +20,7 @@ Usage:
 
 Options:
   --cluster      Apply the risky tenant manifest to a disposable Kubernetes context.
-  --no-cluster   Copy the evidence template and print the review packet. This is the default.
+  --no-cluster   Copy the evidence template and run the local tenant boundary analyzer. This is the default.
   --evidence     Evidence note path to create when it does not already exist.
 EOF
 }
@@ -64,6 +66,8 @@ prepare_evidence_note() {
 if [[ "$mode" == "no-cluster" ]]; then
   prepare_evidence_note
   echo
+  python3 "$ANALYZER" --broken "$BROKEN" --fixed "$FIXED" --review "$REVIEW"
+  echo
   echo "Captured tenant boundary review:"
   sed -n '1,180p' "$REVIEW"
   echo
@@ -73,6 +77,7 @@ if [[ "$mode" == "no-cluster" ]]; then
 fi
 
 require_disposable_kube_context
+python3 "$ANALYZER" --broken "$BROKEN" --fixed "$FIXED" --review "$REVIEW"
 kubectl delete clusterrolebinding tenant-a-temporary-admin --ignore-not-found >/dev/null
 kubectl delete namespace tenant-a --ignore-not-found >/dev/null
 kubectl apply -f "$BROKEN"
