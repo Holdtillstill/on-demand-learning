@@ -651,6 +651,17 @@ async function assertLabWorkbookFlow(page) {
   await expect(page.getByRole("heading", { name: "Trace Service traffic to ready Pods" })).toBeVisible({ timeout: TIMEOUT_MS });
   await expect(page.getByRole("heading", { name: "Worksheet and validation state" })).toBeVisible({ timeout: TIMEOUT_MS });
   await expect(page.getByText("Saved to profile")).toBeVisible({ timeout: TIMEOUT_MS });
+  const commandDeck = page.getByLabel("Lab phase command deck");
+  await expect(commandDeck).toBeVisible({ timeout: TIMEOUT_MS });
+  await expect(commandDeck.getByRole("heading", { name: "Copy by lab phase" })).toBeVisible({ timeout: TIMEOUT_MS });
+  await expect(commandDeck.getByRole("button", { name: /Setup:/ })).toHaveAttribute("aria-pressed", "true", { timeout: TIMEOUT_MS });
+  await expect(commandDeck.getByText("kubectl apply -f labs/platform-academy/trace-service-to-pod/start.yaml", { exact: false })).toBeVisible({ timeout: TIMEOUT_MS });
+  await commandDeck.getByRole("button", { name: /Validation:/ }).click();
+  await expect(commandDeck.getByText("bash labs/platform-academy/trace-service-to-pod/validate.sh", { exact: false })).toBeVisible({ timeout: TIMEOUT_MS });
+  await commandDeck.getByRole("button", { name: /Closeout:/ }).click();
+  await expect(commandDeck.getByText("bash labs/platform-academy/trace-service-to-pod/cleanup.sh", { exact: false })).toBeVisible({ timeout: TIMEOUT_MS });
+  await commandDeck.getByRole("button", { name: /Evidence:/ }).click();
+  await expect(commandDeck.getByText("kubectl describe svc checkout -n payments", { exact: false })).toBeVisible({ timeout: TIMEOUT_MS });
 
   await page
     .getByLabel(/Evidence note:/)
