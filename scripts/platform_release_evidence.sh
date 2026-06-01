@@ -23,6 +23,15 @@ count_lines() {
   fi
 }
 
+count_py_tests() {
+  if [ ! -d "${1:-}" ]; then
+    printf '0'
+    return
+  fi
+
+  find "$1" -name 'test_*.py' -type f -exec grep -hE '^[[:space:]]*(async[[:space:]]+)?def test_' {} + 2>/dev/null | wc -l | tr -d ' '
+}
+
 generated_artifacts="$(
   cd "$ROOT"
   find . \( -name '.git' -o -name 'node_modules' -o -name '.venv' \) -prune -o \
@@ -54,6 +63,8 @@ local_changed_count="$(count_lines "$status")"
 generated_count="$(count_lines "$generated_artifacts")"
 image_count="$(count_lines "$smoke_images")"
 container_count="$(count_lines "$smoke_containers")"
+api_test_count="$(count_py_tests "$ROOT/apps/api")"
+worker_test_count="$(count_py_tests "$ROOT/apps/worker")"
 generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
 cat <<EOF
@@ -83,8 +94,8 @@ Paste the most recent successful \`make platform-release-check\` tail here:
 
 ## Verified Release Scope
 
-- API tests: 59 expected.
-- Worker tests: 1 expected.
+- API tests: ${api_test_count} expected.
+- Worker tests: ${worker_test_count} expected.
 - Zhongwen frontend tests: 1 expected.
 - Platform Academy frontend tests: 32 expected.
 - Full labs: 21 expected.
