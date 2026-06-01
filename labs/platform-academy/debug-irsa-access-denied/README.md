@@ -22,6 +22,8 @@ sed -n '1,220p' labs/platform-academy/debug-irsa-access-denied/trust-policy.json
 sed -n '1,220p' labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json
 ```
 
+Setup stages the evidence note and points at the evidence bundle. It does not run the simulator by default, so you can write your trust and permission hypothesis before checking it.
+
 Optional parse check:
 
 ```bash
@@ -37,6 +39,12 @@ python3 labs/platform-academy/debug-irsa-access-denied/irsa_simulator.py \
   --fixed-trust-policy labs/platform-academy/debug-irsa-access-denied/fixed-trust-policy.json \
   --cloudtrail-event labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json \
   --permission-policy labs/platform-academy/debug-irsa-access-denied/least-privilege-policy.json
+```
+
+You can also ask setup to run the same check after staging evidence:
+
+```bash
+bash labs/platform-academy/debug-irsa-access-denied/setup.sh --run-simulator --evidence /tmp/irsa-access-denied-evidence.md
 ```
 
 ## Investigation

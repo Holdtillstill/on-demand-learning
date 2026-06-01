@@ -761,6 +761,10 @@ def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path
         "trace-service-to-pod": "Service routing analysis passed",
         "debug-crashloop-imagepull": "CrashLoop/ImagePull analysis passed",
         "review-yaml-before-apply": "YAML manifest risk analysis passed",
+        "debug-irsa-access-denied": "Simulator is intentionally not run by default",
+    }
+    setup_smoke_absences = {
+        "debug-irsa-access-denied": "IRSA simulation passed",
     }
 
     for slug in FULL_LAB_SLUGS:
@@ -785,6 +789,8 @@ def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path
             )
             assert setup_smoke_expectations[slug] in setup_result.stdout
             assert str(workspace / "evidence.md") in setup_result.stdout
+            if slug in setup_smoke_absences:
+                assert setup_smoke_absences[slug] not in setup_result.stdout
         result = subprocess.run(
             ["bash", str(workspace / "validate.sh"), "--files-only"],
             cwd=workspace,

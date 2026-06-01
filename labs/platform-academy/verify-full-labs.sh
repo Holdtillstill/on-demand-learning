@@ -462,6 +462,9 @@ for setup_lab in "${FULL_LABS[@]}"; do
   grep -q "Next: fill $tmpdir/generic-$setup_lab-evidence.md" "$tmpdir/runner-generic-setup-$setup_lab.txt" || fail "generic setup did not print next validation step for $setup_lab"
 done
 
+"$LAB_ROOT/run-lab.sh" setup debug-irsa-access-denied --run-simulator --evidence "$tmpdir/irsa-simulator-evidence.md" >"$tmpdir/runner-irsa-simulator-setup.txt"
+grep -q "IRSA simulation passed" "$tmpdir/runner-irsa-simulator-setup.txt" || fail "IRSA setup --run-simulator should execute the simulator"
+
 for evidence_lab in "${EVIDENCE_VALIDATION_LABS[@]}"; do
   "$LAB_ROOT/run-lab.sh" validate "$evidence_lab" --evidence "$LAB_ROOT/$evidence_lab/solution.md" >"$tmpdir/runner-evidence-$evidence_lab.txt"
   grep -q "Evidence checks passed for $evidence_lab" "$tmpdir/runner-evidence-$evidence_lab.txt" || fail "lab runner did not validate $evidence_lab evidence"
