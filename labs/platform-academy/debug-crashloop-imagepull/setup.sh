@@ -4,8 +4,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/debug-crashloop-imagepull"
 START="$LAB_DIR/start.yaml"
+FIXED="$LAB_DIR/fixed.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 TRANSCRIPT="$LAB_DIR/broken-evidence.txt"
+ANALYZER="$LAB_DIR/failure_mode_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
 mode="no-cluster"
@@ -67,6 +69,8 @@ if [[ "$mode" == "no-cluster" ]]; then
   echo "Captured broken-state transcript:"
   sed -n '1,260p' "$TRANSCRIPT"
   echo
+  python3 "$ANALYZER" --start "$START" --fixed "$FIXED" --transcript "$TRANSCRIPT"
+  echo
   echo "Next: fill $evidence_file, then run:"
   echo "  bash labs/platform-academy/debug-crashloop-imagepull/validate.sh --evidence $evidence_file"
   exit 0
@@ -88,6 +92,7 @@ done
 
 kubectl get pods -n payments-debug
 prepare_evidence_note
+python3 "$ANALYZER" --start "$START" --fixed "$FIXED" --transcript "$TRANSCRIPT"
 
 echo
 echo "Broken crash/image-pull lab is ready in namespace payments-debug."

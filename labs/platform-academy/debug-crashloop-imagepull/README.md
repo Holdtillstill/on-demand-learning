@@ -36,6 +36,15 @@ No-cluster path:
 bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --evidence /tmp/crashloop-imagepull-evidence.md
 ```
 
+Run the local analyzer:
+
+```bash
+python3 labs/platform-academy/debug-crashloop-imagepull/failure_mode_analyzer.py \
+  --start labs/platform-academy/debug-crashloop-imagepull/start.yaml \
+  --fixed labs/platform-academy/debug-crashloop-imagepull/fixed.yaml \
+  --transcript labs/platform-academy/debug-crashloop-imagepull/broken-evidence.txt
+```
+
 ## Investigation
 
 Run:
@@ -49,6 +58,7 @@ kubectl get events -n payments-debug --sort-by=.lastTimestamp
 
 Write down which signal came from Pod status, which came from events, and which came from previous logs.
 If you are using the no-cluster transcript, classify the same signals from `broken-evidence.txt`.
+Use the analyzer output to verify that you separated runtime-crash evidence from image-pull evidence.
 
 ## Fix
 
@@ -76,5 +86,6 @@ Use `--cluster` to apply and verify the fixed manifest in a local cluster.
 
 - You can explain why previous logs help for CrashLoopBackOff.
 - You can explain why image pull events matter before logs exist.
+- You captured the local failure-mode analyzer result.
 - You assign the fixes to the right owner: app/config for the crash, registry/image reference for the pull failure.
 - Your evidence note separates current status, last state, previous logs, image reference, event reason, owner, fix, validation, and cleanup.

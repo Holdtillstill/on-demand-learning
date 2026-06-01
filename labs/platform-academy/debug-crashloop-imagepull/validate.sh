@@ -7,6 +7,7 @@ START="$LAB_DIR/start.yaml"
 FIXED="$LAB_DIR/fixed.yaml"
 EVIDENCE="$LAB_DIR/broken-evidence.txt"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/failure_mode_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
@@ -63,6 +64,9 @@ grep -q "ImagePullBackOff" "$EVIDENCE" || fail "broken-evidence.txt should inclu
 grep -q "registry.invalid.example/checkout:missing" "$EVIDENCE" || fail "broken-evidence.txt should include the invalid image reference"
 grep -q "## Failure Classification" "$TEMPLATE" || fail "evidence-template.md should prompt for failure classification"
 grep -q "## ImagePullBackOff Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for image-pull evidence"
+grep -q "CrashLoop/ImagePull analysis passed" "$ANALYZER" || fail "failure_mode_analyzer.py should report a successful local analysis"
+
+python3 "$ANALYZER" --start "$START" --fixed "$FIXED" --transcript "$EVIDENCE" --quiet
 
 run_structural_check
 echo "File checks passed for debug-crashloop-imagepull."
@@ -76,6 +80,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "checkout-pull workload evidence" "checkout-pull"
   require_evidence_match "$evidence_file" "image pull failure status" "ImagePullBackOff|ErrImagePull"
   require_evidence_match "$evidence_file" "invalid image reference" "registry\\.invalid\\.example/checkout:missing"
+  require_evidence_match "$evidence_file" "local failure-mode analyzer evidence" "CrashLoop/ImagePull analysis passed|failure-mode analyzer|CrashLoop evidence|ImagePull evidence"
   require_evidence_match "$evidence_file" "app/config owner action" "app/config|app config|application config"
   require_evidence_match "$evidence_file" "image or registry owner action" "image/registry|registry/image|image registry|registry owner|image reference"
   require_evidence_match "$evidence_file" "validation plus cleanup or fallback" "rollout|validate|validation|cleanup|fallback"

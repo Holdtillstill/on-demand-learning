@@ -54,8 +54,15 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "debug-crashloop-imagepull": {
-        "files": {"broken-evidence.txt", "evidence-template.md"},
-        "terms": {"CrashLoopBackOff", "ImagePullBackOff", "previous", "registry", "cleanup"},
+        "files": {"broken-evidence.txt", "evidence-template.md", "failure_mode_analyzer.py"},
+        "terms": {
+            "CrashLoop/ImagePull analysis passed",
+            "CrashLoopBackOff",
+            "ImagePullBackOff",
+            "previous",
+            "registry",
+            "cleanup",
+        },
     },
     "review-yaml-before-apply": {
         "files": {"evidence-template.md"},

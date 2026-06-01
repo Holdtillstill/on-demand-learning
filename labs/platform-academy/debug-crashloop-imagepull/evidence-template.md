@@ -32,6 +32,7 @@
 
 ## Decision
 
+- Local failure-mode analyzer result:
 - App/config action:
 - Image/registry action:
 - Rollback or mitigation:

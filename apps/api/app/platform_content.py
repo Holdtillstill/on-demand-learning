@@ -2898,21 +2898,35 @@ PLATFORM_LABS = [
             "kubectl logs -n payments-debug -l app=checkout-crash --previous",
             "kubectl describe pods -n payments-debug -l app=checkout-pull",
             "kubectl get events -n payments-debug --sort-by=.lastTimestamp",
+            (
+                "python3 labs/platform-academy/debug-crashloop-imagepull/failure_mode_analyzer.py "
+                "--start labs/platform-academy/debug-crashloop-imagepull/start.yaml "
+                "--fixed labs/platform-academy/debug-crashloop-imagepull/fixed.yaml "
+                "--transcript labs/platform-academy/debug-crashloop-imagepull/broken-evidence.txt"
+            ),
         ],
         "practice_steps": [
             "Use describe output to identify which Pod started and then exited.",
             "Use previous logs only for the container that actually started.",
             "Use events to identify the Pod that never started because the image could not be pulled.",
+            "Use the local analyzer to prove the CrashLoop/ImagePull split and ownership boundary.",
             "State which fix belongs to app/config and which fix belongs to image registry or manifest ownership.",
         ],
         "expected_evidence": [
             "The checkout-crash Pod reaches CrashLoopBackOff and has previous logs that say missing DB_URL.",
             "The checkout-pull Pod reaches ErrImagePull or ImagePullBackOff and has image pull events.",
             "Previous logs are useful for CrashLoopBackOff but not for a container that never pulled.",
+            "The local analyzer reports CrashLoop/ImagePull analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/debug-crashloop-imagepull/validate.sh",
             "bash labs/platform-academy/debug-crashloop-imagepull/validate.sh --evidence /tmp/crashloop-imagepull-evidence.md",
+            (
+                "python3 labs/platform-academy/debug-crashloop-imagepull/failure_mode_analyzer.py "
+                "--start labs/platform-academy/debug-crashloop-imagepull/start.yaml "
+                "--fixed labs/platform-academy/debug-crashloop-imagepull/fixed.yaml "
+                "--transcript labs/platform-academy/debug-crashloop-imagepull/broken-evidence.txt"
+            ),
             "kubectl apply -f labs/platform-academy/debug-crashloop-imagepull/fixed.yaml",
             "kubectl rollout status deploy/checkout-crash -n payments-debug --timeout=90s",
             "kubectl rollout status deploy/checkout-pull -n payments-debug --timeout=90s",
@@ -4268,7 +4282,7 @@ DEEPENED_LAB_UPDATES = {
             "CrashLoopBackOff previous-log evidence captured",
             "ImagePullBackOff event evidence captured",
             "Owners and fixes separated",
-            "Rollout validation captured",
+            "Rollout validation and local analysis captured",
             "Cleanup or fallback note recorded",
         ],
         "rubric_evidence_terms": [
@@ -4277,7 +4291,7 @@ DEEPENED_LAB_UPDATES = {
             ["registry.invalid.example/checkout:missing", "ImagePullBackOff", "ErrImagePull", "event", "registry"],
             ["missing DB_URL", "exit code 42", "app/config", "owner"],
             ["registry.invalid.example/checkout:missing", "image/registry", "owner", "registry", "fix"],
-            ["rollout", "validate", "cleanup", "fallback", "Deployments"],
+            ["rollout", "validate", "cleanup", "fallback", "Deployments", "CrashLoop/ImagePull analysis passed"],
         ],
     },
     "review-yaml-before-apply": {
@@ -5002,6 +5016,7 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/debug-crashloop-imagepull/evidence-template.md",
         "labs/platform-academy/lib/cluster-safety.sh",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/debug-crashloop-imagepull/failure_mode_analyzer.py",
         "labs/platform-academy/debug-crashloop-imagepull/setup.sh",
         "labs/platform-academy/debug-crashloop-imagepull/validate.sh",
         "labs/platform-academy/debug-crashloop-imagepull/cleanup.sh",

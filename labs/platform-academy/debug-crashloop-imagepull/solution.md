@@ -15,6 +15,17 @@ Expected evidence:
 - Only the crash case has useful previous container logs.
 - `broken-evidence.txt` contains the same split for learners using the no-cluster path.
 
+The local failure-mode analyzer verifies the split without a cluster:
+
+```bash
+python3 labs/platform-academy/debug-crashloop-imagepull/failure_mode_analyzer.py \
+  --start labs/platform-academy/debug-crashloop-imagepull/start.yaml \
+  --fixed labs/platform-academy/debug-crashloop-imagepull/fixed.yaml \
+  --transcript labs/platform-academy/debug-crashloop-imagepull/broken-evidence.txt
+```
+
+Expected result: `CrashLoop/ImagePull analysis passed`, with CrashLoop evidence, ImagePull evidence, ownership split, fixed target, and cleanup evidence.
+
 ## Fix
 
 The fixed manifest keeps `checkout-crash` alive with a harmless command and changes `checkout-pull` to a pullable `nginx:1.25-alpine` image.
