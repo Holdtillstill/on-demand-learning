@@ -11,7 +11,7 @@ USER_ID="${USER_ID:-platform-api-smoke-${SMOKE_RUN_ID}}"
 EXPECTED_COURSES="${EXPECTED_COURSES:-21}"
 EXPECTED_LESSONS="${EXPECTED_LESSONS:-84}"
 EXPECTED_LABS="${EXPECTED_LABS:-21}"
-EXPECTED_PORTFOLIO_LABS="${EXPECTED_PORTFOLIO_LABS:-20}"
+EXPECTED_PORTFOLIO_LABS="${EXPECTED_PORTFOLIO_LABS:-21}"
 EXPECTED_RESOURCES="${EXPECTED_RESOURCES:-320}"
 EXPECTED_INTERVIEW_PACKS="${EXPECTED_INTERVIEW_PACKS:-22}"
 EXPECTED_INTERVIEW_QUESTIONS="${EXPECTED_INTERVIEW_QUESTIONS:-219}"
@@ -288,6 +288,7 @@ expected_portfolio_slugs = {
     "run-incident-commander-tabletop",
     "create-platform-golden-path",
     "inspect-linux-failure-evidence",
+    "build-platform-career-proof-pack",
 }
 portfolio_labs = [lab for lab in catalog.get("labs", []) if lab.get("portfolio_grade") is True]
 if len(portfolio_labs) != expected_portfolio_labs:

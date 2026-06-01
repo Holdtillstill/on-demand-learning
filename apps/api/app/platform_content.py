@@ -5662,6 +5662,7 @@ PORTFOLIO_LAB_SLUGS = {
     "run-incident-commander-tabletop",
     "create-platform-golden-path",
     "inspect-linux-failure-evidence",
+    "build-platform-career-proof-pack",
 }
 
 PORTFOLIO_LAB_FOCUS = {
@@ -5685,6 +5686,7 @@ PORTFOLIO_LAB_FOCUS = {
     "run-incident-commander-tabletop": "incident command tabletop",
     "create-platform-golden-path": "service golden path contract",
     "inspect-linux-failure-evidence": "Linux failure evidence diagnosis",
+    "build-platform-career-proof-pack": "portfolio proof pack",
 }
 
 EVIDENCE_PACK_LAB_SLUGS: set[str] = set()

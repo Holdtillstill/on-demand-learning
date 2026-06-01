@@ -41,6 +41,7 @@ PORTFOLIO_LABS = [
     "run-incident-commander-tabletop",
     "create-platform-golden-path",
     "inspect-linux-failure-evidence",
+    "build-platform-career-proof-pack",
 ]
 
 
@@ -104,6 +105,15 @@ def text_line_matching(text: str, pattern: str, label: str) -> str:
         if re.search(pattern, line):
             return line.strip()
     fail(f"missing {label}")
+
+
+def markdown_bullets(text: str) -> list[str]:
+    return [line.strip() for line in text.splitlines() if line.startswith("- ")]
+
+
+def markdown_section(text: str, heading: str) -> str:
+    match = re.search(rf"(?ms)^## {re.escape(heading)}\n(?P<body>.*?)(?=^## |\Z)", text)
+    return match.group("body") if match else ""
 
 
 def mapping(value: Any, label: str) -> dict[str, Any]:
@@ -1525,6 +1535,118 @@ def verify_inspect_linux_failure_evidence() -> None:
         require(term in analyzer, f"Linux failure analyzer should include {term}")
 
 
+def verify_build_platform_career_proof_pack() -> None:
+    slug = "build-platform-career-proof-pack"
+    skills = text_doc(slug, "job-skills.txt")
+    inventory = text_doc(slug, "evidence-inventory.md")
+    template = text_doc(slug, "readme-template.md")
+    proof = text_doc(slug, "completed-proof-readme.md")
+    bullets = text_doc(slug, "resume-bullets.md")
+    star = text_doc(slug, "star-stories.md")
+    triage = text_doc(slug, "triage-notes.md")
+    evidence_template = text_doc(slug, "evidence-template.md")
+    analyzer = text_doc(slug, "career_proof_analyzer.py")
+
+    for term in [
+        "Kubernetes",
+        "Terraform",
+        "AWS",
+        "CI/CD",
+        "incident response",
+        "observability",
+        "EKS",
+        "Helm",
+        "ArgoCD",
+        "Docker",
+        "supply chain",
+        "release engineering",
+    ]:
+        require(term in skills, f"career proof skill demand should include {term}")
+    for term in [
+        "Candidate artifacts",
+        "Trace Service traffic to ready Pods",
+        "Terraform EKS plan review",
+        "SLO-backed runbook",
+        "Tenant boundary audit",
+        "Cost driver audit",
+        "Missing proof to collect",
+        "Screenshots of lab output",
+        "Before/after manifest snippets",
+        "One architecture diagram",
+        "One measurable business or reliability outcome",
+    ]:
+        require(term in inventory, f"career proof inventory should include {term}")
+    require(len(markdown_bullets(inventory)) >= 10, "career proof inventory should include candidate and missing-proof bullets")
+    for heading in [
+        "## Problem",
+        "## Environment",
+        "## Commands And Evidence",
+        "## Decision",
+        "## Validation",
+        "## Rollback",
+        "## Interview Talking Points",
+    ]:
+        require(heading in template, f"career proof README template should include {heading}")
+        require(heading in proof, f"completed career proof README should include {heading}")
+    for term in [
+        "Kubernetes Service Debugging and Release Safety",
+        "kubectl describe svc checkout -n payments",
+        "kubectl get endpointslice -n payments",
+        "diff -u labs/platform-academy/design-safe-release-pipeline/pipeline.yaml",
+        "bash labs/platform-academy/verify-full-labs.sh",
+        "Service selector did not match ready Pod labels",
+        "digest promotion",
+        "staging smoke test",
+        "canary",
+        "bash labs/platform-academy/trace-service-to-pod/validate.sh",
+        "bash labs/platform-academy/design-safe-release-pipeline/validate.sh",
+    ]:
+        require(term in proof, f"completed career proof README should include {term}")
+    for term in [
+        "repository-backed Kubernetes and platform engineering labs",
+        "profile-backed lab workbooks",
+        "portfolio-ready proof",
+        "digest, SBOM, scan",
+        "STAR stories",
+    ]:
+        require(term in bullets, f"career proof resume bullets should include {term}")
+    require(len(markdown_bullets(bullets)) >= 5, "career proof resume file should include at least five bullets")
+
+    for story in ["Incident Response", "Security", "Cost", "Release Safety"]:
+        body = markdown_section(star, story)
+        require(body, f"career proof STAR stories should include {story}")
+        for label in ["Situation:", "Task:", "Action:", "Result:"]:
+            require(label in body, f"career proof {story} STAR story should include {label}")
+    for term in [
+        "A long list of completed labs is not proof",
+        "Resume bullets are weak",
+        "STAR stories are not credible",
+        "Screenshots and diagrams help only when they are public-safe",
+        "Missing proof should be named directly",
+        "Redaction is part of the artifact",
+    ]:
+        require(term in triage, f"career proof triage notes should include {term}")
+    for heading in [
+        "## Triage Notes And False Leads",
+        "## Skill Demand Evidence",
+        "## Portfolio Artifact Evidence",
+        "## Interview And Resume Evidence",
+    ]:
+        require(heading in evidence_template, f"career proof evidence template should include {heading}")
+    for term in [
+        "Career proof pack analysis passed",
+        "Skill demand",
+        "Evidence inventory",
+        "Proof README",
+        "Resume bullets",
+        "STAR stories",
+        "public proof avoids obvious secrets",
+    ]:
+        require(term in analyzer, f"career proof analyzer should include {term}")
+    for private_value in ["secret=", "password=", "customer@example.com", "prod-111122223333"]:
+        require(private_value not in proof + bullets + star, f"career proof public artifacts should not include {private_value}")
+
+
 VERIFY_BY_LAB = {
     "trace-service-to-pod": verify_trace_service_to_pod,
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
@@ -1546,6 +1668,7 @@ VERIFY_BY_LAB = {
     "run-incident-commander-tabletop": verify_run_incident_commander_tabletop,
     "create-platform-golden-path": verify_create_platform_golden_path,
     "inspect-linux-failure-evidence": verify_inspect_linux_failure_evidence,
+    "build-platform-career-proof-pack": verify_build_platform_career_proof_pack,
 }
 
 
