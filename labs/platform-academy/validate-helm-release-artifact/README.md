@@ -20,6 +20,8 @@ sed -n '1,220p' labs/platform-academy/validate-helm-release-artifact/rendered-be
 sed -n '1,260p' labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml
 ```
 
+Setup stages the evidence note and rendered artifact paths. It does not run the analyzer by default, so you can inspect the rendered release delta and write the block/promote decision before checking the local analyzer.
+
 Compare the release delta:
 
 ```bash
@@ -34,6 +36,12 @@ python3 labs/platform-academy/validate-helm-release-artifact/helm_release_analyz
   --after labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml \
   --safe labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml \
   --notes labs/platform-academy/validate-helm-release-artifact/review-notes.md
+```
+
+You can also ask setup to run the same check after staging evidence:
+
+```bash
+bash labs/platform-academy/validate-helm-release-artifact/setup.sh --run-analyzer --evidence /tmp/helm-release-evidence.md
 ```
 
 ## Investigation

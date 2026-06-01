@@ -464,6 +464,12 @@ done
 
 "$LAB_ROOT/run-lab.sh" setup debug-irsa-access-denied --run-simulator --evidence "$tmpdir/irsa-simulator-evidence.md" >"$tmpdir/runner-irsa-simulator-setup.txt"
 grep -q "IRSA simulation passed" "$tmpdir/runner-irsa-simulator-setup.txt" || fail "IRSA setup --run-simulator should execute the simulator"
+"$LAB_ROOT/run-lab.sh" setup diagnose-eks-ip-exhaustion --run-analyzer --evidence "$tmpdir/ip-exhaustion-analyzer-evidence.md" >"$tmpdir/runner-ip-exhaustion-analyzer-setup.txt"
+grep -q "EKS IP exhaustion analysis passed" "$tmpdir/runner-ip-exhaustion-analyzer-setup.txt" || fail "EKS IP setup --run-analyzer should execute the analyzer"
+"$LAB_ROOT/run-lab.sh" setup review-terraform-eks-plan --run-analyzer --evidence "$tmpdir/terraform-plan-analyzer-evidence.md" >"$tmpdir/runner-terraform-plan-analyzer-setup.txt"
+grep -q "Terraform plan risk analysis passed" "$tmpdir/runner-terraform-plan-analyzer-setup.txt" || fail "Terraform plan setup --run-analyzer should execute the analyzer"
+"$LAB_ROOT/run-lab.sh" setup validate-helm-release-artifact --run-analyzer --evidence "$tmpdir/helm-release-analyzer-evidence.md" >"$tmpdir/runner-helm-release-analyzer-setup.txt"
+grep -q "Helm release artifact analysis passed" "$tmpdir/runner-helm-release-analyzer-setup.txt" || fail "Helm release setup --run-analyzer should execute the analyzer"
 
 for evidence_lab in "${EVIDENCE_VALIDATION_LABS[@]}"; do
   "$LAB_ROOT/run-lab.sh" validate "$evidence_lab" --evidence "$LAB_ROOT/$evidence_lab/solution.md" >"$tmpdir/runner-evidence-$evidence_lab.txt"

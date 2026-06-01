@@ -761,9 +761,15 @@ def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path
         "trace-service-to-pod": "Service routing analysis passed",
         "debug-crashloop-imagepull": "CrashLoop/ImagePull analysis passed",
         "review-yaml-before-apply": "YAML manifest risk analysis passed",
+        "diagnose-eks-ip-exhaustion": "Analyzer is intentionally not run by default",
+        "validate-helm-release-artifact": "Analyzer is intentionally not run by default",
+        "review-terraform-eks-plan": "Analyzer is intentionally not run by default",
         "debug-irsa-access-denied": "Simulator is intentionally not run by default",
     }
     setup_smoke_absences = {
+        "diagnose-eks-ip-exhaustion": "EKS IP exhaustion analysis passed",
+        "validate-helm-release-artifact": "Helm release artifact analysis passed",
+        "review-terraform-eks-plan": "Terraform plan risk analysis passed",
         "debug-irsa-access-denied": "IRSA simulation passed",
     }
 

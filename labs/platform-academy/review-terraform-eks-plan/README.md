@@ -20,11 +20,19 @@ sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/tfplan.txt
 sed -n '1,180p' labs/platform-academy/review-terraform-eks-plan/review.md
 ```
 
+Setup stages the evidence note and plan-review paths. It does not run the analyzer by default, so you can make the approve/block decision before checking the local risk summary.
+
 Run the local plan risk analyzer:
 
 ```bash
 python3 labs/platform-academy/review-terraform-eks-plan/plan_analyzer.py \
   --plan labs/platform-academy/review-terraform-eks-plan/tfplan.txt
+```
+
+You can also ask setup to run the same check after staging evidence:
+
+```bash
+bash labs/platform-academy/review-terraform-eks-plan/setup.sh --run-analyzer --evidence /tmp/terraform-eks-plan-evidence.md
 ```
 
 ## Investigation

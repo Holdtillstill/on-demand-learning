@@ -22,6 +22,8 @@ sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapsho
 sed -n '1,180p' labs/platform-academy/diagnose-eks-ip-exhaustion/evidence-template.md
 ```
 
+Setup stages the evidence note and evidence paths. It does not run the analyzer by default, so you can decide whether the bottleneck is scheduler pressure, VPC CNI IP exhaustion, subnet capacity, or maxPods before checking the local analyzer.
+
 Review the remediation target:
 
 ```bash
@@ -33,6 +35,12 @@ Run the local analyzer:
 ```bash
 python3 labs/platform-academy/diagnose-eks-ip-exhaustion/ip_exhaustion_analyzer.py \
   --snapshot labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt
+```
+
+You can also ask setup to run the same check after staging evidence:
+
+```bash
+bash labs/platform-academy/diagnose-eks-ip-exhaustion/setup.sh --run-analyzer --evidence /tmp/eks-ip-exhaustion-evidence.md
 ```
 
 ## Investigation
