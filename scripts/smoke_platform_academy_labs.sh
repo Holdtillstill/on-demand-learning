@@ -427,6 +427,25 @@ with ZipFile(zip_path) as archive:
     for snippet in ["./setup.sh", "./validate.sh --files-only", "./cleanup.sh"]:
         if snippet not in manifest:
             raise SystemExit(f"{slug} workspace manifest missing quick-start snippet: {snippet}")
+    readme = archive.read(f"{slug}/README.md").decode()
+    has_cluster_workflow = any("--preflight" in command for command in lab.get("setup_commands", [])) and any(
+        "--cluster" in command and "validate" in command for command in lab.get("validation_commands", [])
+    )
+    if has_cluster_workflow:
+        for snippet in [
+            "Optional cluster workflow",
+            f"bootstrap-local-cluster.sh --preflight {slug}",
+            "./setup.sh --preflight",
+            "./setup.sh --cluster",
+            "./validate.sh --cluster",
+            "No app namespace or Pods need to exist before setup",
+        ]:
+            if snippet not in manifest:
+                raise SystemExit(f"{slug} workspace manifest missing cluster workflow snippet: {snippet}")
+            if snippet not in readme:
+                raise SystemExit(f"{slug} workspace README missing cluster workflow snippet: {snippet}")
+    elif "Optional cluster workflow" in manifest or "Optional cluster workflow" in readme:
+        raise SystemExit(f"{slug} non-cluster workspace should not include cluster workflow snippets")
     for member in archive.infolist():
         target = (extract_dir / member.filename).resolve()
         try:

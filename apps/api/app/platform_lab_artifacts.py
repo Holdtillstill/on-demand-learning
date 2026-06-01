@@ -152,6 +152,24 @@ def _workspace_quickstart_commands(lab: dict) -> list[str]:
     ]
 
 
+def _cluster_workspace_commands(lab: dict) -> list[str]:
+    slug = lab["slug"]
+    setup_commands = [str(command) for command in lab.get("setup_commands", [])]
+    validation_commands = [str(command) for command in lab.get("validation_commands", [])]
+    has_preflight = any("--preflight" in command for command in setup_commands)
+    has_cluster_validator = any("--cluster" in command and "validate" in command for command in validation_commands)
+    if not has_preflight or not has_cluster_validator:
+        return []
+    return [
+        f"From the full repo, create/select a disposable context: bash labs/platform-academy/bootstrap-local-cluster.sh --preflight {slug}",
+        "From this extracted bundle, after a disposable context is selected: ./setup.sh --preflight",
+        "Create the broken lab state: ./setup.sh --cluster",
+        "After filling evidence.md, verify files, evidence, and cluster state: ./validate.sh --cluster",
+        "Clean up the lab namespace/resources: ./cleanup.sh",
+        "No app namespace or Pods need to exist before setup; setup creates or recreates the lab namespace.",
+    ]
+
+
 def _extracted_workspace_section(lab: dict) -> str:
     slug = lab["slug"]
     return _markdown_section(
@@ -165,6 +183,10 @@ def _extracted_workspace_section(lab: dict) -> str:
             f"Repo paths listed below are preserved under artifacts/labs/platform-academy/{slug}/.",
         ],
     )
+
+
+def _optional_cluster_workspace_section(lab: dict) -> str:
+    return _markdown_section("Optional cluster workflow", _cluster_workspace_commands(lab))
 
 
 def lab_packet_markdown(lab: dict, include_downloaded_workspace: bool = True) -> str:
@@ -191,6 +213,7 @@ def lab_packet_markdown(lab: dict, include_downloaded_workspace: bool = True) ->
             [f"bash labs/platform-academy/run-lab.sh workspace {lab['slug']} --dir /tmp/platform-academy-workspaces"],
         )
         + downloaded_workspace_section
+        + _optional_cluster_workspace_section(lab)
         + _markdown_section("Practice steps", lab.get("practice_steps"), True)
         + _markdown_section("Runbook commands", lab.get("commands"))
         + _markdown_section("Expected evidence", lab.get("expected_evidence"), True)
@@ -388,10 +411,19 @@ def learner_workspace_manifest(
         "",
         "Repo validation:",
         f"- bash labs/platform-academy/run-lab.sh validate {slug} --evidence {evidence_path}",
+    ]
+    cluster_commands = _cluster_workspace_commands(lab)
+    if cluster_commands:
+        lines.extend([
+            "",
+            "Optional cluster workflow:",
+            *[f"- {command}" for command in cluster_commands],
+        ])
+    lines.extend([
         "",
         "Copied artifacts:",
         *[f"- {artifact}" for artifact in copied_artifacts],
-    ]
+    ])
     if withheld_artifacts:
         lines.extend([
             "",

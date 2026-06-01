@@ -377,6 +377,18 @@ for workspace_lab in "${FULL_LABS[@]}"; do
   grep -q "Withheld source-only artifacts" "$workspace_dir/MANIFEST.txt" || fail "workspace manifest should list withheld source-only artifacts for $workspace_lab"
   grep -q "labs/platform-academy/$workspace_lab/README.md" "$workspace_dir/MANIFEST.txt" || fail "workspace manifest should list withheld source README.md for $workspace_lab"
   grep -q "labs/platform-academy/$workspace_lab/solution.md" "$workspace_dir/MANIFEST.txt" || fail "workspace manifest should list withheld solution.md for $workspace_lab"
+  if printf "%s\n" "${CLUSTER_LABS[@]}" | grep -qx "$workspace_lab"; then
+    grep -q "Optional cluster workflow" "$workspace_dir/README.md" || fail "cluster workspace README should include optional cluster workflow for $workspace_lab"
+    grep -q "Optional cluster workflow:" "$workspace_dir/MANIFEST.txt" || fail "cluster workspace manifest should include optional cluster workflow for $workspace_lab"
+    grep -q "bootstrap-local-cluster.sh --preflight $workspace_lab" "$workspace_dir/MANIFEST.txt" || fail "cluster workspace manifest should include bootstrap helper for $workspace_lab"
+    grep -q "./setup.sh --preflight" "$workspace_dir/MANIFEST.txt" || fail "cluster workspace manifest should include setup preflight for $workspace_lab"
+    grep -q "./setup.sh --cluster" "$workspace_dir/MANIFEST.txt" || fail "cluster workspace manifest should include cluster setup for $workspace_lab"
+    grep -q "./validate.sh --cluster" "$workspace_dir/MANIFEST.txt" || fail "cluster workspace manifest should include cluster validation for $workspace_lab"
+    grep -q "No app namespace or Pods need to exist before setup" "$workspace_dir/MANIFEST.txt" || fail "cluster workspace manifest should explain namespace creation for $workspace_lab"
+  else
+    ! grep -q "Optional cluster workflow" "$workspace_dir/README.md" || fail "non-cluster workspace README should not include optional cluster workflow for $workspace_lab"
+    ! grep -q "Optional cluster workflow:" "$workspace_dir/MANIFEST.txt" || fail "non-cluster workspace manifest should not include optional cluster workflow for $workspace_lab"
+  fi
 done
 
 if "$LAB_ROOT/run-lab.sh" workspace trace-service-to-pod --dir "$tmpdir/workspaces" >"$tmpdir/runner-workspace-existing.txt" 2>&1; then

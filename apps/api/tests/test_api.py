@@ -54,6 +54,13 @@ def clear_rate_limit_windows():
 
 
 FULL_LAB_SLUGS = sorted(PLATFORM_FULL_LAB_SLUGS)
+CLUSTER_LAB_SLUGS = {
+    "trace-service-to-pod",
+    "debug-crashloop-imagepull",
+    "trace-network-path",
+    "debug-aws-alb-health-path",
+    "audit-tenant-boundaries",
+}
 
 
 def assert_no_store_headers(response, path: str):
@@ -396,6 +403,11 @@ def test_platform_lab_bundle_download_contains_packet_and_artifacts():
     assert "unzip trace-service-to-pod-learner-workspace.zip" in packet_response.text
     assert "cd trace-service-to-pod" in packet_response.text
     assert "./validate.sh --files-only" in packet_response.text
+    assert "## Optional cluster workflow" in packet_response.text
+    assert "bootstrap-local-cluster.sh --preflight trace-service-to-pod" in packet_response.text
+    assert "./setup.sh --preflight" in packet_response.text
+    assert "./validate.sh --cluster" in packet_response.text
+    assert "No app namespace or Pods need to exist before setup" in packet_response.text
     assert "## Validation checks" in packet_response.text
     assert "## Rubric" in packet_response.text
 
@@ -442,8 +454,15 @@ def test_platform_lab_bundle_download_contains_packet_and_artifacts():
         assert "- labs/platform-academy/trace-service-to-pod/README.md" in manifest
         assert "- labs/platform-academy/trace-service-to-pod/solution.md" in manifest
         assert "./validate.sh --files-only" in manifest
+        assert "Optional cluster workflow:" in manifest
+        assert "bootstrap-local-cluster.sh --preflight trace-service-to-pod" in manifest
+        assert "./setup.sh --preflight" in manifest
+        assert "./setup.sh --cluster" in manifest
+        assert "./validate.sh --cluster" in manifest
         workspace_readme = archive.read("trace-service-to-pod/README.md").decode()
         assert "## Downloaded workspace quickstart" not in workspace_readme
+        assert "## Optional cluster workflow" in workspace_readme
+        assert "./setup.sh --preflight" in workspace_readme
 
 
 def test_platform_source_bundle_requires_token_outside_local():
@@ -707,6 +726,17 @@ def test_all_platform_lab_workspace_bundles_withhold_solutions():
             assert "./setup.sh" in manifest
             assert "./validate.sh --files-only" in manifest
             assert "./cleanup.sh" in manifest
+            if slug in CLUSTER_LAB_SLUGS:
+                assert "Optional cluster workflow" in readme
+                assert "Optional cluster workflow:" in manifest
+                assert f"bootstrap-local-cluster.sh --preflight {slug}" in manifest
+                assert "./setup.sh --preflight" in manifest
+                assert "./setup.sh --cluster" in manifest
+                assert "./validate.sh --cluster" in manifest
+                assert "No app namespace or Pods need to exist before setup" in manifest
+            else:
+                assert "Optional cluster workflow" not in readme
+                assert "Optional cluster workflow:" not in manifest
 
 
 def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path):
