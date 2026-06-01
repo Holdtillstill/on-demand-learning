@@ -7,6 +7,14 @@
 - Confirmation that the risky manifest was not applied to a shared cluster:
 - Cleanup command if a disposable cluster was used:
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False lead about temporary cluster-admin:
+- False lead about secret debugging:
+- False lead about NetworkPolicy object presence:
+- False lead about dry-run approval:
+
 ## RBAC Evidence
 
 - ClusterRoleBinding:

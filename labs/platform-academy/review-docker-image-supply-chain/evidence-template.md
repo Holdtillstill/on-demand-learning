@@ -7,6 +7,15 @@
 - Captured history file:
 - Confirmation that the unsafe secret pattern will not be reused:
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False lead about `latest` freshness:
+- False lead about deleted secret layers:
+- False lead about runtime-only non-root controls:
+- False lead about post-promotion SBOM/scan:
+- False lead about rollback tag without digest:
+
 ## Tag, Digest, And Promotion Evidence
 
 - RepoTags:

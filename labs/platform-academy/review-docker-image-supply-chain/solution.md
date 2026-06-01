@@ -6,6 +6,7 @@ Block the image from production promotion.
 
 ## Findings
 
+- The triage notes rule out approving `latest` because it was recently pushed, trusting a deleted secret layer, relying only on Kubernetes `runAsNonRoot`, scanning after promotion, or keeping only a rollback tag.
 - `image-inspect.json` shows `RepoTags: ["checkout:latest"]` and an empty `RepoDigests` list.
 - `API_TOKEN=do-not-bake-secrets` appears in the Dockerfile, image config, and history.
 - The runtime image does not set a non-root user.

@@ -16,6 +16,7 @@ Do not apply `tenant-a.yaml` to a shared cluster. The default path is manifest r
 
 ```bash
 bash labs/platform-academy/audit-tenant-boundaries/setup.sh --evidence /tmp/tenant-boundaries-evidence.md
+sed -n '1,220p' labs/platform-academy/audit-tenant-boundaries/triage-notes.md
 sed -n '1,240p' labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml
 sed -n '1,180p' labs/platform-academy/audit-tenant-boundaries/review.md
 ```
@@ -47,6 +48,7 @@ bash labs/platform-academy/audit-tenant-boundaries/setup.sh --cluster --evidence
 
 Find:
 
+- The triage False Leads that would approve the tenant too quickly.
 - Any ClusterRoleBinding.
 - Any `cluster-admin` path.
 - Any permission to read secrets.
@@ -76,6 +78,7 @@ bash labs/platform-academy/audit-tenant-boundaries/cleanup.sh
 ## Success Criteria
 
 - You block onboarding until broad admin and secret access are removed.
+- You rule out false confidence from dry-run, temporary admin, and policy-object presence.
 - You identify the false boundary in the allow-all egress NetworkPolicy.
 - You propose a restricted baseline with documented exceptions.
 - You use analyzer output as evidence for the block decision.

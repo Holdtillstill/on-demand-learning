@@ -8,6 +8,7 @@ FIXED="$LAB_DIR/fixed-tenant-a.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 REVIEW="$LAB_DIR/review.md"
 ANALYZER="$LAB_DIR/tenant_boundary_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
 mode="no-cluster"
@@ -78,10 +79,14 @@ prepare_evidence_note() {
 if [[ "$mode" == "no-cluster" ]]; then
   prepare_evidence_note
   echo
+  echo "Captured tenant boundary triage notes:"
+  sed -n '1,220p' "$TRIAGE"
+  echo
   echo "Captured tenant boundary review:"
   sed -n '1,180p' "$REVIEW"
   echo
   echo "Staged tenant boundary manifests:"
+  echo "  sed -n '1,220p' labs/platform-academy/audit-tenant-boundaries/triage-notes.md"
   echo "  sed -n '1,240p' labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml"
   echo "  diff -u labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml || true"
   echo

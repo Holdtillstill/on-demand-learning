@@ -16,6 +16,7 @@ The default path does not require Docker. Use the supplied Dockerfile, `image-in
 
 ```bash
 bash labs/platform-academy/review-docker-image-supply-chain/setup.sh --evidence /tmp/docker-supply-chain-evidence.md
+sed -n '1,220p' labs/platform-academy/review-docker-image-supply-chain/triage-notes.md
 sed -n '1,180p' labs/platform-academy/review-docker-image-supply-chain/Dockerfile
 sed -n '1,180p' labs/platform-academy/review-docker-image-supply-chain/image-inspect.json
 sed -n '1,120p' labs/platform-academy/review-docker-image-supply-chain/history.txt
@@ -44,6 +45,7 @@ python3 labs/platform-academy/review-docker-image-supply-chain/supply_chain_anal
 
 Find:
 
+- The triage False Leads that would approve a mutable or secret-bearing image.
 - Whether the image is promoted by mutable tag or immutable digest.
 - Whether a secret appears in Dockerfile, image config, or history.
 - Whether the runtime image includes the source tree and build dependencies.
@@ -66,6 +68,7 @@ bash labs/platform-academy/review-docker-image-supply-chain/validate.sh --eviden
 ## Success Criteria
 
 - You block the unsafe image from production promotion.
+- You rule out false confidence from recent `latest` pushes, deleted secrets, runtime-only non-root settings, and post-promotion scans.
 - You explain tag versus digest evidence.
 - You identify secret leakage and root runtime risk.
 - You use analyzer output as evidence for the promotion block.

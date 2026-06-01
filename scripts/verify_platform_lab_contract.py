@@ -164,8 +164,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "audit-tenant-boundaries": {
-        "files": {"evidence-template.md", "setup.sh", "tenant_boundary_analyzer.py"},
+        "files": {"evidence-template.md", "setup.sh", "tenant_boundary_analyzer.py", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "cluster-admin",
             "secrets",
             "restricted",
@@ -199,8 +200,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "review-docker-image-supply-chain": {
-        "files": {"evidence-template.md", "setup.sh", "supply_chain_analyzer.py"},
+        "files": {"evidence-template.md", "setup.sh", "supply_chain_analyzer.py", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "checkout:latest",
             "RepoDigests",
             "API_TOKEN=do-not-bake-secrets",
@@ -210,8 +212,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "design-safe-release-pipeline": {
-        "files": {"evidence-template.md", "release_pipeline_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "release_pipeline_analyzer.py", "setup.sh", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "deploy-prod",
             "github.ref == 'refs/heads/main'",
             "image-digest.txt",

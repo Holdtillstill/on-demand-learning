@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/review-docker-image-supply-chain"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/supply_chain_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/docker-supply-chain-evidence.md"
 run_analyzer=false
@@ -57,7 +58,11 @@ else
 fi
 
 echo
+echo "Captured Docker image supply-chain triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged Docker image supply-chain review bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/review-docker-image-supply-chain/triage-notes.md"
 echo "  sed -n '1,220p' labs/platform-academy/review-docker-image-supply-chain/Dockerfile"
 echo "  sed -n '1,160p' labs/platform-academy/review-docker-image-supply-chain/image-inspect.json"
 echo "  sed -n '1,160p' labs/platform-academy/review-docker-image-supply-chain/history.txt"

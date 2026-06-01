@@ -3658,6 +3658,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --evidence /tmp/tenant-boundaries-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/audit-tenant-boundaries/triage-notes.md",
             "kubectl create --dry-run=client --validate=false -f labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
             "sed -n '1,180p' labs/platform-academy/audit-tenant-boundaries/review.md",
             "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight audit-tenant-boundaries",
@@ -3665,6 +3666,7 @@ RUNNABLE_LAB_UPDATES = {
             "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --cluster --evidence /tmp/tenant-boundaries-evidence.md",
         ],
         "commands": [
+            "grep -n \"False Leads\\|temporary cluster-admin\\|dry-run\" labs/platform-academy/audit-tenant-boundaries/triage-notes.md",
             "grep -n \"cluster-admin\\|secrets\\|allow-all-egress\\|pod-security\" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
             "grep -n \"Block onboarding\\|secret access\\|egress\" labs/platform-academy/audit-tenant-boundaries/review.md",
             (
@@ -3675,12 +3677,14 @@ RUNNABLE_LAB_UPDATES = {
             ),
         ],
         "practice_steps": [
+            "Read the triage notes and rule out shortcuts that would approve the tenant too quickly.",
             "Find broad RBAC and secret access.",
             "Check whether NetworkPolicy creates a real boundary.",
             "Use the local analyzer to prove the RBAC, Pod Security, NetworkPolicy, and safer-target evidence.",
             "Record exception owners and expiry requirements before onboarding.",
         ],
         "expected_evidence": [
+            "The triage notes rule out temporary admin, secret debugging, policy-object presence, and dry-run approval shortcuts.",
             "A temporary ClusterRoleBinding grants cluster-admin.",
             "The Role can list and watch secrets.",
             "The NetworkPolicy allows all egress.",
@@ -3702,7 +3706,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/audit-tenant-boundaries/cleanup.sh"],
         "no_cluster_fallback": [
-            "Review tenant-a.yaml directly and write the onboarding blockers.",
+            "Review triage-notes.md and tenant-a.yaml directly and write the onboarding blockers.",
             "Use review.md as the expected finding checklist.",
         ],
     },
@@ -3968,10 +3972,12 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/design-safe-release-pipeline/setup.sh --evidence /tmp/release-pipeline-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/design-safe-release-pipeline/triage-notes.md",
             "sed -n '1,180p' labs/platform-academy/design-safe-release-pipeline/pipeline.yaml",
             "sed -n '1,180p' labs/platform-academy/design-safe-release-pipeline/release-checklist.md",
         ],
         "commands": [
+            "grep -n \"False Leads\\|green build\\|SHA tag\\|rollback digest\" labs/platform-academy/design-safe-release-pipeline/triage-notes.md",
             "grep -n \"main\\|deploy-prod\\|helm upgrade\\|missing digest\" labs/platform-academy/design-safe-release-pipeline/pipeline.yaml",
             "grep -n \"digest\\|smoke\\|rollback\\|approval\" labs/platform-academy/design-safe-release-pipeline/release-checklist.md",
             (
@@ -3984,12 +3990,14 @@ RUNNABLE_LAB_UPDATES = {
             "diff -u labs/platform-academy/design-safe-release-pipeline/pipeline.yaml labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml || true",
         ],
         "practice_steps": [
+            "Read the triage notes and rule out fast-but-unsafe approval paths.",
             "Identify missing quality gates before production.",
             "Add immutable digest promotion and smoke-test expectations.",
             "Use the local analyzer to prove the unsafe path and safe gate chain.",
             "Name rollback criteria and permission boundaries.",
         ],
         "expected_evidence": [
+            "The triage notes rule out green-build-only approval, SHA-tag-only promotion, late scans, approval without artifacts, and rollback without digest.",
             "The sample pipeline deploys from main directly to production.",
             "The build step does not promote by digest.",
             "The checklist requires scan, smoke, rollback, and approval gates.",
@@ -4010,7 +4018,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/design-safe-release-pipeline/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use pipeline.yaml and release-checklist.md as the review packet.",
+            "Use triage-notes.md, pipeline.yaml, and release-checklist.md as the review packet.",
             "Write the minimum gate set before touching a real CI system.",
         ],
     },
@@ -4075,10 +4083,12 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/review-docker-image-supply-chain/setup.sh --evidence /tmp/docker-supply-chain-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/review-docker-image-supply-chain/triage-notes.md",
             "sed -n '1,160p' labs/platform-academy/review-docker-image-supply-chain/Dockerfile",
             "sed -n '1,160p' labs/platform-academy/review-docker-image-supply-chain/history.txt",
         ],
         "commands": [
+            "grep -n \"False Leads\\|latest\\|secret\\|rollback digest\" labs/platform-academy/review-docker-image-supply-chain/triage-notes.md",
             "grep -n \"FROM\\|COPY\\|API_TOKEN\\|USER\" labs/platform-academy/review-docker-image-supply-chain/Dockerfile labs/platform-academy/review-docker-image-supply-chain/image-inspect.json",
             "grep -n \"latest\\|RepoDigests\\|secret\\|COPY\" labs/platform-academy/review-docker-image-supply-chain/image-inspect.json labs/platform-academy/review-docker-image-supply-chain/history.txt",
             (
@@ -4092,12 +4102,14 @@ RUNNABLE_LAB_UPDATES = {
             "diff -u labs/platform-academy/review-docker-image-supply-chain/Dockerfile labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile || true",
         ],
         "practice_steps": [
+            "Read the triage notes and rule out false promotion signals before reviewing the image.",
             "Identify base image, runtime user, copied files, exposed ports, and entrypoint.",
             "Compare tag evidence with digest evidence.",
             "Use the local analyzer to convert supply-chain findings into a block-or-promote decision.",
             "Flag secret leakage and oversized runtime image risk.",
         ],
         "expected_evidence": [
+            "The triage notes rule out latest-tag freshness, deleted-secret-layer confidence, runtime-only non-root controls, post-promotion scans, and rollback tags without digest.",
             "The image uses the mutable latest tag and has no RepoDigests.",
             "No runtime user is configured.",
             "API_TOKEN appears in Dockerfile, inspect metadata, and history.",
@@ -4119,7 +4131,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/review-docker-image-supply-chain/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use the supplied Dockerfile, inspect JSON, and history text instead of building an image.",
+            "Use triage-notes.md, Dockerfile, inspect JSON, and history text instead of building an image.",
             "Write a promotion note naming digest, SBOM, scan, runtime user, and rollback requirements.",
         ],
     },
@@ -4754,6 +4766,7 @@ DEEPENED_LAB_UPDATES = {
     "audit-tenant-boundaries": {
         "worksheet_prompts": [
             "Record the manifest reviewed, tenant namespace, safety boundary, and cleanup command if a disposable cluster was used.",
+            "Read triage-notes.md and list the False Leads ruled out before approving tenant onboarding.",
             "Paste the ClusterRoleBinding, bound subject, cluster-admin role, and secret access evidence.",
             "Paste the Pod Security enforcement level and the required restricted target.",
             "Paste the NetworkPolicy egress rule and explain why it is not a default-deny boundary.",
@@ -4762,6 +4775,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the no-shared-cluster safety boundary and names the tenant namespace.",
+            "Uses triage notes to rule out temporary admin, secret debugging, policy-object presence, baseline-default, and dry-run approval False Leads.",
             "Captures cluster-admin and secret-read RBAC evidence with exact resources and subjects.",
             "Identifies Pod Security `baseline` as weaker than the required `restricted` target.",
             "Explains why `allow-all-egress` is not tenant isolation and names the default-deny target.",
@@ -4770,6 +4784,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-shared-cluster safety boundary recorded",
+            "Triage False Leads ruled out",
             "ClusterRoleBinding and cluster-admin evidence captured",
             "Secret access evidence captured",
             "Pod Security baseline/restricted evidence captured",
@@ -4779,6 +4794,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["tenant-a", "shared cluster", "cleanup", "manifest", "dry-run"],
+            ["triage-notes.md", "False Leads", "temporary cluster-admin", "secret", "NetworkPolicy object", "dry-run"],
             ["tenant-a-temporary-admin", "cluster-admin", "deployer", "secrets", "Role", "Tenant boundary analysis passed"],
             ["pod-security.kubernetes.io/enforce: baseline", "restricted", "Pod Security", "exception"],
             ["allow-all-egress", "egress", "default-deny", "NetworkPolicy", "boundary"],
@@ -4878,6 +4894,7 @@ DEEPENED_LAB_UPDATES = {
     "review-docker-image-supply-chain": {
         "worksheet_prompts": [
             "Record the Dockerfile, captured inspect/history files, reviewer, and confirmation that the unsafe secret pattern will not be reused.",
+            "Read triage-notes.md and list the False Leads ruled out before approving image promotion.",
             "Paste `checkout:latest`, digest, promotion artifact, and rollback artifact evidence.",
             "Paste every place `API_TOKEN` appears and the blank runtime user evidence.",
             "Paste the runtime image bloat evidence, including copied source/build files and base image risk.",
@@ -4886,6 +4903,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the captured-evidence safety boundary and avoids reusing the secret pattern.",
+            "Uses triage notes to rule out latest freshness, deleted secret layers, runtime-only non-root controls, post-promotion scans, and rollback tag False Leads.",
             "Captures `checkout:latest` tag-only promotion, missing RepoDigests, and rollback artifact gaps.",
             "Finds secret leakage in Dockerfile, inspect metadata, and layer history plus blank runtime user.",
             "Explains runtime bloat and root-runtime risk with source/build-copy evidence.",
@@ -4894,6 +4912,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "Captured-evidence safety boundary recorded",
+            "Triage False Leads ruled out",
             "Docker supply-chain analysis passed output captured",
             "Tag and missing digest evidence captured",
             "Secret leakage evidence captured",
@@ -4904,6 +4923,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["Dockerfile", "image-inspect.json", "history.txt", "secret pattern", "reviewer"],
+            ["triage-notes.md", "False Leads", "latest", "deleted secret", "runAsNonRoot", "rollback digest"],
             ["checkout:latest", "RepoDigests", "rollback digest", "promotion artifact", "Docker supply-chain analysis passed"],
             ["API_TOKEN=do-not-bake-secrets", "Dockerfile", "image config", "history", "\"User\": \"\""],
             ["COPY --from=build /app .", "node:22", "root", "source tree", "runtime"],
@@ -4914,6 +4934,7 @@ DEEPENED_LAB_UPDATES = {
     "design-safe-release-pipeline": {
         "worksheet_prompts": [
             "Record the unsafe workflow, checklist, reviewer, and confirmation that no real CI runner, registry, or cluster is being changed.",
+            "Read triage-notes.md and list the False Leads ruled out before approving the production pipeline.",
             "Paste `deploy-prod`, `github.ref == 'refs/heads/main'`, direct Helm production deployment, and missing digest-promotion evidence.",
             "Paste the missing gate evidence and the required `image-digest.txt`, `trivy image`, SBOM, render, schema, and policy gates.",
             "Paste `deploy-staging`, smoke test, `environment: production`, canary, and approval boundary evidence.",
@@ -4922,6 +4943,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the no-live-CI safety boundary and names the reviewed pipeline artifacts.",
+            "Uses triage notes to rule out green-build-only approval, SHA-tag-only promotion, post-deploy scans, approval without artifacts, and rollback-without-digest False Leads.",
             "Blocks `deploy-prod` from `main` and explains why tag-only promotion is weaker than digest promotion.",
             "Requires `image-digest.txt`, `trivy image`, SBOM, manifest render, `kubeconform`, and policy evidence before deployment.",
             "Requires `deploy-staging`, smoke tests, `environment: production`, approval, and canary rollout before production.",
@@ -4930,6 +4952,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-live-CI safety boundary recorded",
+            "Triage False Leads ruled out",
             "Safe release pipeline analysis passed output captured",
             "Direct main-to-production deploy evidence captured",
             "Digest-promotion gap captured",
@@ -4940,6 +4963,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["pipeline.yaml", "release-checklist.md", "no real CI", "registry", "cluster"],
+            ["triage-notes.md", "False Leads", "green build", "SHA tag", "post-deploy scans", "rollback digest"],
             [
                 "deploy-prod",
                 "github.ref == 'refs/heads/main'",
@@ -5298,6 +5322,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "audit-tenant-boundaries": [
         "labs/platform-academy/audit-tenant-boundaries/README.md",
+        "labs/platform-academy/audit-tenant-boundaries/triage-notes.md",
         "labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
         "labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml",
         "labs/platform-academy/audit-tenant-boundaries/review.md",
@@ -5387,6 +5412,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "design-safe-release-pipeline": [
         "labs/platform-academy/design-safe-release-pipeline/README.md",
+        "labs/platform-academy/design-safe-release-pipeline/triage-notes.md",
         "labs/platform-academy/design-safe-release-pipeline/pipeline.yaml",
         "labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml",
         "labs/platform-academy/design-safe-release-pipeline/release-checklist.md",
@@ -5416,6 +5442,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "review-docker-image-supply-chain": [
         "labs/platform-academy/review-docker-image-supply-chain/README.md",
+        "labs/platform-academy/review-docker-image-supply-chain/triage-notes.md",
         "labs/platform-academy/review-docker-image-supply-chain/Dockerfile",
         "labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile",
         "labs/platform-academy/review-docker-image-supply-chain/image-inspect.json",

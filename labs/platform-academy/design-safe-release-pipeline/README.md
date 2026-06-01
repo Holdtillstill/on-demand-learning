@@ -18,6 +18,7 @@ Inspect the unsafe pipeline:
 
 ```bash
 bash labs/platform-academy/design-safe-release-pipeline/setup.sh --evidence /tmp/release-pipeline-evidence.md
+sed -n '1,220p' labs/platform-academy/design-safe-release-pipeline/triage-notes.md
 sed -n '1,220p' labs/platform-academy/design-safe-release-pipeline/pipeline.yaml
 sed -n '1,220p' labs/platform-academy/design-safe-release-pipeline/release-checklist.md
 sed -n '1,180p' labs/platform-academy/design-safe-release-pipeline/evidence-template.md
@@ -45,6 +46,7 @@ python3 labs/platform-academy/design-safe-release-pipeline/release_pipeline_anal
 
 Find:
 
+- The triage False Leads that would approve a fast but unsafe production path.
 - Whether production deploys directly from `main`.
 - Whether the image is promoted by immutable digest.
 - Whether scan, SBOM, manifest render, schema, and policy gates exist before deployment.
@@ -68,6 +70,7 @@ bash labs/platform-academy/design-safe-release-pipeline/validate.sh --evidence /
 ## Success Criteria
 
 - You block the unsafe direct-to-production pipeline.
+- You rule out false confidence from green builds, SHA tags, late scans, and approval without artifacts.
 - You explain why tag-only promotion is weaker than digest promotion.
 - You name the minimum pre-deploy gates and post-deploy checks.
 - You can defend the production approval, canary, and rollback boundary.

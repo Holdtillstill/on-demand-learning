@@ -575,8 +575,8 @@ def test_practical_platform_labs_expose_specific_evidence_guides():
             "terms": {"ServiceAccount", "AWS_ROLE_ARN", "AccessDenied", "s3:PutObject", "least-privilege"},
         },
         "audit-tenant-boundaries": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"cluster-admin", "restricted", "allow-all-egress", "Blocks onboarding"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "cluster-admin", "restricted", "allow-all-egress", "Blocks onboarding"},
         },
         "validate-helm-release-artifact": {
             "artifacts": {"evidence-template.md"},
@@ -587,12 +587,18 @@ def test_practical_platform_labs_expose_specific_evidence_guides():
             "terms": {"ArgoCD report", "selfHeal", "replicas: 3", "replicas: 9", "/spec/replicas", "Git-owned"},
         },
         "review-docker-image-supply-chain": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"checkout:latest", "RepoDigests", "API_TOKEN", "SBOM"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "checkout:latest", "RepoDigests", "API_TOKEN", "SBOM"},
         },
         "design-safe-release-pipeline": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"deploy-prod", "github.ref == 'refs/heads/main'", "image-digest.txt", "rollback-if-slo-breach"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {
+                "False Leads",
+                "deploy-prod",
+                "github.ref == 'refs/heads/main'",
+                "image-digest.txt",
+                "rollback-if-slo-breach",
+            },
         },
         "create-platform-golden-path": {
             "artifacts": {"evidence-template.md"},
@@ -1104,6 +1110,95 @@ def test_delivery_lab_feedback_blocks_tag_only_image_promotion():
     assert secret_feedback["status"] == "strong"
     assert "api-token=do-not-bake-secrets" in secret_feedback["evidence_terms"]
     assert promotion_feedback["status"] == "strong"
+
+
+def test_security_lab_feedback_tracks_tenant_false_leads_and_boundary_evidence():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/audit-tenant-boundaries/submission",
+        json={
+            "user_id": "lab-tenant-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed tenant-a.yaml for tenant-a with shared cluster safety, dry-run only, cleanup/no-runtime note.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads ruled out temporary cluster-admin, secret debugging, "
+                    "NetworkPolicy object presence, and dry-run approval."
+                ),
+                "worksheet-2": (
+                    "tenant-a-temporary-admin binds deployer to cluster-admin; Role grants secrets and "
+                    "Tenant boundary analysis passed output is saved."
+                ),
+                "worksheet-3": "pod-security.kubernetes.io/enforce: baseline should move to restricted Pod Security with exception review.",
+                "worksheet-4": "allow-all-egress egress rule is not a NetworkPolicy boundary; target is default-deny.",
+                "worksheet-5": "Block onboarding until owner, expiry, required changes, and exception controls are recorded.",
+                "worksheet-6": "fixed-tenant-a.yaml diff, validate output, cleanup, and no-runtime evidence saved.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "temporary admin" in item["criterion"])
+    rbac_feedback = next(item for item in feedback if "cluster-admin and secret-read" in item["criterion"])
+    network_feedback = next(item for item in feedback if "allow-all-egress" in item["criterion"])
+    decision_feedback = next(item for item in feedback if "Blocks onboarding" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert rbac_feedback["status"] == "strong"
+    assert "tenant-a-temporary-admin" in rbac_feedback["evidence_terms"]
+    assert network_feedback["status"] == "strong"
+    assert decision_feedback["status"] == "strong"
+
+
+def test_release_pipeline_lab_feedback_tracks_false_leads_and_gate_chain():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(9)})
+
+    response = client.post(
+        "/api/platform-academy/labs/design-safe-release-pipeline/submission",
+        json={
+            "user_id": "lab-release-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed pipeline.yaml and release-checklist.md; no real CI, registry, or cluster changes.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads ruled out green build approval, SHA tag promotion, "
+                    "post-deploy scans, and rollback digest gaps."
+                ),
+                "worksheet-2": (
+                    "deploy-prod runs on github.ref == 'refs/heads/main' with helm upgrade --install and "
+                    "missing digest promotion; Safe release pipeline analysis passed."
+                ),
+                "worksheet-3": "Required gates include image-digest.txt, trivy image, syft, helm template, kubeconform, and conftest test.",
+                "worksheet-4": "deploy-staging, smoke.sh, environment: production, rollout.strategy=canary, and approval are required.",
+                "worksheet-5": "rollback-if-slo-breach uses rollback owner SLO production criteria and rollback artifact.",
+                "worksheet-6": (
+                    "safe-pipeline.yaml, decision-record.md, validate output, evidence-template.md, "
+                    "and no-runtime evidence saved."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "green-build-only" in item["criterion"])
+    direct_feedback = next(item for item in feedback if "Blocks `deploy-prod`" in item["criterion"])
+    gate_feedback = next(item for item in feedback if "Requires `image-digest.txt`" in item["criterion"])
+    rollout_feedback = next(item for item in feedback if "Requires `deploy-staging`" in item["criterion"])
+    rollback_feedback = next(item for item in feedback if "rollback-if-slo-breach" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert direct_feedback["status"] == "strong"
+    assert "deploy-prod" in direct_feedback["evidence_terms"]
+    assert gate_feedback["status"] == "strong"
+    assert rollout_feedback["status"] == "strong"
+    assert rollback_feedback["status"] == "strong"
 
 
 def test_sre_lab_feedback_tracks_slo_evidence_and_owner_split():

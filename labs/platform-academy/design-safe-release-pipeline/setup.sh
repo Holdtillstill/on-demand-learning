@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/design-safe-release-pipeline"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/release_pipeline_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/release-pipeline-evidence.md"
 run_analyzer=false
@@ -57,7 +58,11 @@ else
 fi
 
 echo
+echo "Captured release pipeline triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged release pipeline review bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/design-safe-release-pipeline/triage-notes.md"
 echo "  sed -n '1,220p' labs/platform-academy/design-safe-release-pipeline/pipeline.yaml"
 echo "  sed -n '1,220p' labs/platform-academy/design-safe-release-pipeline/release-checklist.md"
 echo "  diff -u labs/platform-academy/design-safe-release-pipeline/pipeline.yaml labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml || true"

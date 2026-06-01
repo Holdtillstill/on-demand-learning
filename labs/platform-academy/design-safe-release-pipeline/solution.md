@@ -6,6 +6,7 @@ Block the unsafe pipeline.
 
 ## Findings
 
+- The triage notes rule out approving the release because the build is green, because a SHA tag exists, because scans can run later, because a manual approval exists without artifacts, or because rollback has no digest-backed target.
 - `deploy-prod` runs from `main` without a staging gate.
 - The image is referenced by `${GITHUB_SHA}` tag only; the pipeline does not preserve or promote the immutable digest.
 - There is no vulnerability scan, SBOM artifact, rendered-manifest review, schema validation, or policy check.

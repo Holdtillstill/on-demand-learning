@@ -4,6 +4,8 @@
 
 The tenant should not be onboarded with the starting manifest.
 
+The triage notes are part of the solution because they prevent four tempting shortcuts: approving temporary cluster-admin for onboarding, treating secret access as debugging convenience, mistaking a NetworkPolicy object for isolation, and treating dry-run as a security review.
+
 Blocking findings:
 
 - `tenant-a-temporary-admin` binds the tenant service account to `cluster-admin`.

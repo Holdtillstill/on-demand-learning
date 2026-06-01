@@ -1,5 +1,14 @@
 # Safe Release Pipeline Evidence Template
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False lead about green build approval:
+- False lead about SHA tag versus digest:
+- False lead about post-deploy scans:
+- False lead about approval without artifacts:
+- False lead about rollback without digest:
+
 ## Unsafe Production Path Evidence
 
 - Production deploy trigger:
