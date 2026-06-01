@@ -21,6 +21,7 @@ from yaml_contract import YamlContractError, load_single_yaml_document, load_yam
 PORTFOLIO_LABS = [
     "trace-service-to-pod",
     "debug-crashloop-imagepull",
+    "review-yaml-before-apply",
     "trace-network-path",
     "debug-irsa-access-denied",
     "trace-argocd-drift",
@@ -267,6 +268,60 @@ def verify_debug_crashloop_imagepull() -> None:
     )
 
 
+def verify_review_yaml_before_apply() -> None:
+    slug = "review-yaml-before-apply"
+    vendor = yaml_docs(slug, "vendor.yaml")
+    safe = yaml_docs(slug, "safe-baseline.yaml")
+    find_doc(vendor, "Namespace", "vendor-payments")
+    secret = find_doc(vendor, "Secret", "vendor-api-token", "vendor-payments")
+    cluster_role = find_doc(vendor, "ClusterRole", "vendor-platform-reader")
+    deployment = find_doc(vendor, "Deployment", "vendor-agent", "vendor-payments")
+    safe_deployment = find_doc(safe, "Deployment", "vendor-agent", "vendor-payments")
+
+    require(secret.get("stringData") == {"token": "replace-me"}, "vendor Secret should expose the token placeholder review point")
+    rules = get_list(cluster_role, "rules", "vendor ClusterRole")
+    require(len(rules) == 1, "vendor ClusterRole should contain one focused evidence rule")
+    rule = mapping(rules[0], "vendor ClusterRole rule")
+    require(
+        set(get_list(rule, "resources", "vendor ClusterRole rule")) == {"pods", "secrets"},
+        "vendor ClusterRole should grant pod and secret access",
+    )
+    require(
+        {"get", "list", "watch"}.issubset(set(get_list(rule, "verbs", "vendor ClusterRole rule"))),
+        "vendor ClusterRole should grant get/list/watch evidence",
+    )
+
+    selector = deployment_selector(deployment, "vendor Deployment")
+    labels = deployment_pod_labels(deployment, "vendor Deployment")
+    require(selector == {"app": "vendor-agent"} and selector.items() <= labels.items(), "vendor Deployment selector should match Pods")
+    container = deployment_container(deployment, "agent", "vendor Deployment")
+    require(container.get("image") == "busybox:1.36", "vendor Deployment should use the expected sample image")
+    security_context = get_map(container, "securityContext", "vendor Deployment container")
+    require(security_context.get("privileged") is True, "vendor Deployment should request privileged runtime")
+    template = get_map(spec(deployment, "vendor Deployment"), "template", "vendor Deployment.spec")
+    pod_spec = get_map(template, "spec", "vendor Deployment.template")
+    volumes = get_list(pod_spec, "volumes", "vendor Pod spec")
+    require(
+        any(mapping(volume, "vendor volume").get("hostPath", {}).get("path") == "/" for volume in volumes),
+        "vendor Deployment should mount hostPath /",
+    )
+
+    safe_kinds = {str(document.get("kind", "")) for document in safe}
+    require("ClusterRole" not in safe_kinds, "safe baseline should remove the ClusterRole")
+    require("Secret" not in safe_kinds, "safe baseline should remove committed Secret material")
+    safe_selector = deployment_selector(safe_deployment, "safe Deployment")
+    safe_labels = deployment_pod_labels(safe_deployment, "safe Deployment")
+    require(safe_selector == selector and safe_selector.items() <= safe_labels.items(), "safe Deployment should preserve matching labels")
+    safe_container = deployment_container(safe_deployment, "agent", "safe Deployment")
+    safe_security_context = get_map(safe_container, "securityContext", "safe Deployment container")
+    require(safe_security_context.get("allowPrivilegeEscalation") is False, "safe Deployment should disable privilege escalation")
+    require(safe_security_context.get("readOnlyRootFilesystem") is True, "safe Deployment should use a read-only root filesystem")
+    require(safe_security_context.get("privileged") is not True, "safe Deployment should not be privileged")
+    safe_template = get_map(spec(safe_deployment, "safe Deployment"), "template", "safe Deployment.spec")
+    safe_pod_spec = get_map(safe_template, "spec", "safe Deployment.template")
+    require(not safe_pod_spec.get("volumes"), "safe Deployment should remove the hostPath volume")
+
+
 def verify_trace_network_path() -> None:
     slug = "trace-network-path"
     broken = yaml_docs(slug, "ingress-service.yaml")
@@ -435,6 +490,7 @@ def verify_write_slo_backed_runbook() -> None:
 VERIFY_BY_LAB = {
     "trace-service-to-pod": verify_trace_service_to_pod,
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
+    "review-yaml-before-apply": verify_review_yaml_before_apply,
     "trace-network-path": verify_trace_network_path,
     "debug-irsa-access-denied": verify_debug_irsa_access_denied,
     "trace-argocd-drift": verify_trace_argocd_drift,

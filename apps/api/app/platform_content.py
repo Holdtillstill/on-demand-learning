@@ -5644,6 +5644,7 @@ FULL_LAB_SLUGS = {
 PORTFOLIO_LAB_SLUGS = {
     "trace-service-to-pod",
     "debug-crashloop-imagepull",
+    "review-yaml-before-apply",
     "trace-network-path",
     "debug-irsa-access-denied",
     "trace-argocd-drift",
@@ -5654,6 +5655,7 @@ PORTFOLIO_LAB_SLUGS = {
 PORTFOLIO_LAB_FOCUS = {
     "trace-service-to-pod": "Kubernetes Service routing",
     "debug-crashloop-imagepull": "Pod failure classification",
+    "review-yaml-before-apply": "pre-apply manifest safety",
     "trace-network-path": "HTTP path diagnosis",
     "debug-irsa-access-denied": "EKS workload identity",
     "trace-argocd-drift": "GitOps ownership decisions",

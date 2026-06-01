@@ -8,7 +8,7 @@ SMOKE_RUN_ID="${SMOKE_RUN_ID:-$(date -u +%Y%m%d%H%M%S)-$$}"
 USER_ID="${USER_ID:-platform-lab-smoke-${SMOKE_RUN_ID}}"
 LAB_SLUG="${LAB_SLUG:-trace-service-to-pod}"
 EXPECTED_LABS="${EXPECTED_LABS:-21}"
-EXPECTED_PORTFOLIO_LABS="${EXPECTED_PORTFOLIO_LABS:-7}"
+EXPECTED_PORTFOLIO_LABS="${EXPECTED_PORTFOLIO_LABS:-8}"
 PLATFORM_SOURCE_BUNDLE_TOKEN="${PLATFORM_SOURCE_BUNDLE_TOKEN:-}"
 CURL_CONNECT_TIMEOUT="${CURL_CONNECT_TIMEOUT:-5}"
 CURL_MAX_TIME="${CURL_MAX_TIME:-30}"
@@ -141,6 +141,7 @@ if non_full:
 expected_portfolio_slugs = {
     "trace-service-to-pod",
     "debug-crashloop-imagepull",
+    "review-yaml-before-apply",
     "trace-network-path",
     "debug-irsa-access-denied",
     "trace-argocd-drift",
