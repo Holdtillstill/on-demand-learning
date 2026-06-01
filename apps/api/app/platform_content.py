@@ -5474,6 +5474,16 @@ PORTFOLIO_LAB_FOCUS = {
 
 EVIDENCE_PACK_LAB_SLUGS: set[str] = set()
 
+
+def _is_lab_self_check_command(command: object) -> bool:
+    command_text = str(command)
+    return "analyzer.py" in command_text or "simulator.py" in command_text
+
+
+def _without_lab_self_check_commands(commands: list[object]) -> list[str]:
+    return [str(command) for command in commands if not _is_lab_self_check_command(command)]
+
+
 for lab in PLATFORM_LABS:
     runnable_update = RUNNABLE_LAB_UPDATES.get(lab["slug"])
     if runnable_update:
@@ -5487,6 +5497,8 @@ for lab in PLATFORM_LABS:
         existing_setup_commands = lab.get("setup_commands", [])
         if not any(setup_command in command for command in existing_setup_commands):
             lab["setup_commands"] = [setup_command, *existing_setup_commands]
+        lab["setup_commands"] = _without_lab_self_check_commands(lab.get("setup_commands", []))
+        lab["commands"] = _without_lab_self_check_commands(lab.get("commands", []))
     elif lab["slug"] in EVIDENCE_PACK_LAB_SLUGS:
         lab["lab_tier"] = "evidence-pack"
     else:

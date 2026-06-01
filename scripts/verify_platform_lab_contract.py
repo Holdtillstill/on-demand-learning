@@ -296,6 +296,7 @@ MUTATING_KUBECTL_COMMANDS = {
 }
 MUTATING_KUBECTL_ROLLOUT_COMMANDS = {"restart", "undo"}
 EXPECTED_PORTFOLIO_LAB_COUNT = 7
+SELF_CHECK_COMMAND_MARKERS = ("analyzer.py", "simulator.py")
 
 sys.path.insert(0, str(API_ROOT))
 
@@ -359,6 +360,14 @@ def referenced_repo_paths(values: Iterable[str]) -> set[str]:
         for match in REPO_PATH_PATTERN.findall(value):
             paths.add(match.rstrip("`'\".,:)"))
     return paths
+
+
+def self_check_commands(values: Iterable[str]) -> list[str]:
+    return [str(value) for value in values if any(marker in str(value) for marker in SELF_CHECK_COMMAND_MARKERS)]
+
+
+def has_self_check_artifact(lab: dict) -> bool:
+    return any(any(marker in str(path) for marker in SELF_CHECK_COMMAND_MARKERS) for path in lab.get("artifact_paths", []))
 
 
 def verify_unique_slugs() -> None:
@@ -752,6 +761,12 @@ def verify_metadata_contract(slug: str, lab: dict) -> None:
         fail(f"{slug} validation_commands must include its validate.sh")
     if not any(f"labs/platform-academy/{slug}/cleanup.sh" in command for command in lab["cleanup_commands"]):
         fail(f"{slug} cleanup_commands must include its cleanup.sh")
+    for field in ["setup_commands", "commands"]:
+        misplaced_self_checks = self_check_commands(lab[field])
+        if misplaced_self_checks:
+            fail(f"{slug} metadata field {field} must not expose analyzer/simulator commands: {misplaced_self_checks}")
+    if has_self_check_artifact(lab) and not self_check_commands(lab["validation_commands"]):
+        fail(f"{slug} validation_commands must include its analyzer or simulator self-check command")
 
     command_like_values: list[str] = []
     for field in ["setup_commands", "commands", "validation_commands", "cleanup_commands", "no_cluster_fallback"]:

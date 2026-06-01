@@ -876,6 +876,13 @@ def test_full_platform_labs_include_guides_solutions_and_validators():
             assert str(path.relative_to(REPO_ROOT)) in artifact_paths
         assert any("validate.sh" in command for command in lab["validation_commands"])
         assert any("cleanup.sh" in command for command in lab["cleanup_commands"])
+        for field in ["setup_commands", "commands"]:
+            assert all("analyzer.py" not in command and "simulator.py" not in command for command in lab[field])
+        if any("analyzer.py" in path or "simulator.py" in path for path in artifact_paths):
+            assert any(
+                "analyzer.py" in command or "simulator.py" in command
+                for command in lab["validation_commands"]
+            )
         subprocess.run(["bash", str(lab_dir / "validate.sh")], check=True, capture_output=True, text=True)
 
 
