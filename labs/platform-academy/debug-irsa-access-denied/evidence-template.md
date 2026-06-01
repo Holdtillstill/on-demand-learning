@@ -44,5 +44,6 @@
 - Trust policy change:
 - Permission policy change:
 - Least-privilege resource scope:
+- Local simulator result:
 - Owner:
 - Validation or rollout handoff:

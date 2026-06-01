@@ -3734,6 +3734,7 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/debug-irsa-access-denied/setup.sh --evidence /tmp/irsa-access-denied-evidence.md",
             "kubectl create --dry-run=client --validate=false -f labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml",
             "sed -n '1,180p' labs/platform-academy/debug-irsa-access-denied/workload-error.log",
             "sed -n '1,180p' labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json",
@@ -3741,22 +3742,26 @@ RUNNABLE_LAB_UPDATES = {
         "commands": [
             "grep -n \"role-arn\\|serviceAccountName\\|AWS_ROLE_ARN\" labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml labs/platform-academy/debug-irsa-access-denied/workload-error.log",
             "grep -n \"system:serviceaccount\\|AccessDenied\\|PutObject\" labs/platform-academy/debug-irsa-access-denied/trust-policy.json labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json",
+            "python3 labs/platform-academy/debug-irsa-access-denied/irsa_simulator.py --serviceaccount labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml --trust-policy labs/platform-academy/debug-irsa-access-denied/trust-policy.json --fixed-trust-policy labs/platform-academy/debug-irsa-access-denied/fixed-trust-policy.json --cloudtrail-event labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json --permission-policy labs/platform-academy/debug-irsa-access-denied/least-privilege-policy.json",
         ],
         "practice_steps": [
             "Match the Pod service account to the annotated IAM role.",
             "Compare the application-side SDK failure with the CloudTrail denial.",
             "Compare the trust policy subject with the real namespace and service account.",
             "Use the CloudTrail action and resource to decide whether the trust policy or permissions policy is wrong.",
+            "Run the local simulator to prove the proposed trust subject and S3 object-prefix permission cover the captured request.",
         ],
         "expected_evidence": [
             "The ServiceAccount is payments/checkout.",
             "The workload log shows AWS_ROLE_ARN for payments-checkout-readonly and an SDK AccessDenied on PutObject.",
             "The trust policy subject allows default/checkout instead.",
             "CloudTrail denies s3:PutObject through the readonly role.",
+            "The simulator proves the fixed trust subject and least-privilege policy allow the captured request without broad S3 scope.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/debug-irsa-access-denied/validate.sh",
             "bash labs/platform-academy/debug-irsa-access-denied/validate.sh --evidence /tmp/irsa-access-denied-evidence.md",
+            "python3 labs/platform-academy/debug-irsa-access-denied/irsa_simulator.py --serviceaccount labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml --trust-policy labs/platform-academy/debug-irsa-access-denied/trust-policy.json --fixed-trust-policy labs/platform-academy/debug-irsa-access-denied/fixed-trust-policy.json --cloudtrail-event labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json --permission-policy labs/platform-academy/debug-irsa-access-denied/least-privilege-policy.json",
             "grep -n \"namespace: payments\" labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml",
             "grep -n \"system:serviceaccount:default:checkout\" labs/platform-academy/debug-irsa-access-denied/trust-policy.json",
         ],
@@ -4958,6 +4963,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json",
         "labs/platform-academy/debug-irsa-access-denied/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/debug-irsa-access-denied/irsa_simulator.py",
+        "labs/platform-academy/debug-irsa-access-denied/setup.sh",
         "labs/platform-academy/debug-irsa-access-denied/validate.sh",
         "labs/platform-academy/debug-irsa-access-denied/cleanup.sh",
         "labs/platform-academy/debug-irsa-access-denied/solution.md",

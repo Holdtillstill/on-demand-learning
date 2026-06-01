@@ -10,6 +10,7 @@ EVENT="$LAB_DIR/cloudtrail-event.json"
 POLICY="$LAB_DIR/least-privilege-policy.json"
 WORKLOAD_LOG="$LAB_DIR/workload-error.log"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+SIMULATOR="$LAB_DIR/irsa_simulator.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -64,10 +65,19 @@ grep -q "payments-prod-receipts" "$EVENT" || fail "cloudtrail-event.json should 
 grep -q '"Action": "s3:PutObject"' "$POLICY" || fail "least-privilege-policy.json should allow only s3:PutObject"
 grep -q "arn:aws:s3:::payments-prod-receipts/receipts/\\*" "$POLICY" || fail "least-privilege-policy.json should scope the object prefix"
 ! grep -q '"Action": "s3:\*"' "$POLICY" || fail "least-privilege-policy.json should not use s3:*"
+grep -q "IRSA simulation passed" "$SIMULATOR" || fail "irsa_simulator.py should report a successful local simulation"
 grep -q "## Kubernetes Identity Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for Kubernetes identity evidence"
 grep -q "## Application Error Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for application error evidence"
 grep -q "## Trust Policy Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for trust policy evidence"
 grep -q "## CloudTrail Permission Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for CloudTrail permission evidence"
+
+python3 "$SIMULATOR" \
+  --serviceaccount "$SA" \
+  --trust-policy "$TRUST" \
+  --fixed-trust-policy "$FIXED_TRUST" \
+  --cloudtrail-event "$EVENT" \
+  --permission-policy "$POLICY" \
+  --quiet
 
 run_structural_check
 echo "File checks passed for debug-irsa-access-denied."
@@ -82,6 +92,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "CloudTrail AccessDenied" "AccessDenied|CloudTrail"
   require_evidence_match "$evidence_file" "S3 PutObject and bucket prefix" "s3:PutObject|PutObject|payments-prod-receipts|receipts/"
   require_evidence_match "$evidence_file" "least-privilege permission scope" "least-privilege|least privilege|narrow|object-prefix|receipts/\\*"
+  require_evidence_match "$evidence_file" "local simulator decision" "simulator|simulation|IRSA simulation passed|trust subject"
   require_evidence_match "$evidence_file" "wildcard scope rejected" "wildcard|s3:\\*|whole bucket|not use"
   require_evidence_match "$evidence_file" "validation or handoff" "validation|validate|handoff|rollout|cleanup"
   echo "Evidence checks passed for debug-irsa-access-denied."

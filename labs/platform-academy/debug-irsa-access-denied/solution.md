@@ -22,13 +22,24 @@ Then add the narrow permission needed by the workload:
 s3:PutObject arn:aws:s3:::payments-prod-receipts/receipts/*
 ```
 
+The local simulator verifies both pieces without AWS credentials:
+
+```bash
+python3 labs/platform-academy/debug-irsa-access-denied/irsa_simulator.py \
+  --serviceaccount labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml \
+  --trust-policy labs/platform-academy/debug-irsa-access-denied/trust-policy.json \
+  --fixed-trust-policy labs/platform-academy/debug-irsa-access-denied/fixed-trust-policy.json \
+  --cloudtrail-event labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json \
+  --permission-policy labs/platform-academy/debug-irsa-access-denied/least-privilege-policy.json
+```
+
 ## What Not To Do
 
 Do not use wildcard service accounts, wildcard namespaces, or `s3:*` on the whole bucket unless a separate review explicitly approves that blast radius.
 
 ## Handoff Note
 
-A good handoff says: Kubernetes shows `payments/checkout` annotated to assume `payments-checkout-readonly`, `workload-error.log` shows the runtime `AWS_ROLE_ARN` and botocore `AccessDenied`, but IAM trust allows `system:serviceaccount:default:checkout`. CloudTrail separately shows `AccessDenied` for `s3:PutObject` to `payments-prod-receipts/receipts/...`, so the fix needs both exact trust subject and narrow object-prefix write permission.
+A good handoff says: Kubernetes shows `payments/checkout` annotated to assume `payments-checkout-readonly`, `workload-error.log` shows the runtime `AWS_ROLE_ARN` and botocore `AccessDenied`, but IAM trust allows `system:serviceaccount:default:checkout`. CloudTrail separately shows `AccessDenied` for `s3:PutObject` to `payments-prod-receipts/receipts/...`, and the simulator proves the proposed fix needs both exact trust subject and narrow object-prefix write permission.
 
 ## Cleanup
 
