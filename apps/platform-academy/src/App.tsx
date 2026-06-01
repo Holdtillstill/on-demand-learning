@@ -99,11 +99,6 @@ const labTierLabels: Record<PlatformLab["lab_tier"], string> = {
   "evidence-pack": "Evidence pack"
 };
 const labTierOrder: PlatformLab["lab_tier"][] = ["full", "guided", "evidence-pack"];
-const labScopeLabels = {
-  All: "All labs",
-  Portfolio: "Portfolio-grade"
-} as const;
-type LabScopeFilter = keyof typeof labScopeLabels;
 const labRuntimeLabels = {
   All: "All runtimes",
   Cluster: "Cluster setup",
@@ -1586,7 +1581,6 @@ function LabsPage({ data }: { data: AcademyData }) {
   const [selectedLevel, setSelectedLevel] = useState("All");
   const [selectedTopic, setSelectedTopic] = useState("All");
   const [selectedTier, setSelectedTier] = useState<"All" | PlatformLab["lab_tier"]>("All");
-  const [selectedScope, setSelectedScope] = useState<LabScopeFilter>("All");
   const [selectedRuntime, setSelectedRuntime] = useState<LabRuntimeFilter>("All");
   const completedLabs = completedActivityIds(data.activity, "lab");
   const fullLabCount = data.catalog.labs.filter((lab) => lab.lab_tier === "full").length;
@@ -1596,7 +1590,6 @@ function LabsPage({ data }: { data: AcademyData }) {
   const tierOptions = labTierFilterOptions(data.catalog.labs);
   const filteredLabs = data.catalog.labs.filter(
     (lab) =>
-      (selectedScope === "All" || isPortfolioLab(lab)) &&
       (selectedRuntime === "All" || (selectedRuntime === "Cluster" ? isClusterRunnableLab(lab) : !isClusterRunnableLab(lab))) &&
       (selectedLevel === "All" || lab.level_group === selectedLevel) &&
       (selectedTopic === "All" || lab.track === selectedTopic) &&
@@ -1639,15 +1632,6 @@ function LabsPage({ data }: { data: AcademyData }) {
       <LabStarterPath data={data} />
 
       <section className="toolbar compact canonical-toolbar" aria-label="Lab filters">
-        {portfolioLabCount > 0 ? (
-          <div className="segmented lab-scope-filter">
-            {(Object.keys(labScopeLabels) as LabScopeFilter[]).map((scope) => (
-              <button key={scope} className={selectedScope === scope ? "selected" : ""} onClick={() => setSelectedScope(scope)}>
-                {labScopeLabels[scope]}
-              </button>
-            ))}
-          </div>
-        ) : null}
         {clusterLabCount > 0 ? (
           <div className="segmented lab-runtime-filter">
             {(Object.keys(labRuntimeLabels) as LabRuntimeFilter[]).map((runtime) => (

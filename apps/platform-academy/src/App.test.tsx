@@ -1098,7 +1098,7 @@ describe("Platform Academy app", () => {
     expect(screen.getAllByText(/In progress · 50%/).length).toBeGreaterThan(0);
     expect(screen.getByText("50% workbook score")).toBeInTheDocument();
     expect(screen.getByText("1 cluster-ready / 1 portfolio-grade / 1 active / 1 full lab")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Portfolio-grade" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Portfolio-grade" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cluster setup" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "File-only" })).toBeInTheDocument();
     expect(screen.getAllByText("Cluster setup included").length).toBeGreaterThan(0);
