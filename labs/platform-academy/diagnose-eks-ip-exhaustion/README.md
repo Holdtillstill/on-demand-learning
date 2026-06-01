@@ -17,6 +17,7 @@ No AWS credentials or cluster access are required. Use the captured evidence pac
 Inspect the evidence:
 
 ```bash
+bash labs/platform-academy/diagnose-eks-ip-exhaustion/setup.sh --evidence /tmp/eks-ip-exhaustion-evidence.md
 sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt
 sed -n '1,180p' labs/platform-academy/diagnose-eks-ip-exhaustion/evidence-template.md
 ```
@@ -27,6 +28,13 @@ Review the remediation target:
 sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/remediation-plan.md
 ```
 
+Run the local analyzer:
+
+```bash
+python3 labs/platform-academy/diagnose-eks-ip-exhaustion/ip_exhaustion_analyzer.py \
+  --snapshot labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt
+```
+
 ## Investigation
 
 Find:
@@ -35,6 +43,7 @@ Find:
 - Which subnet has the lowest available IPv4 count.
 - Whether nodes are at or near maxPods.
 - Whether prefix delegation is enabled.
+- Whether the local analyzer separates scheduler pressure from VPC CNI IP exhaustion.
 - Which team owns workload scale, node group capacity, CNI settings, and subnet planning.
 - Which evidence proves this is not an application restart or blind node-scaling problem.
 
@@ -54,5 +63,6 @@ bash labs/platform-academy/diagnose-eks-ip-exhaustion/validate.sh --evidence /tm
 - You identify `subnet-bbb222` as the most constrained subnet.
 - You separate maxPods pressure from subnet IP exhaustion.
 - You explain why prefix delegation, subnet capacity, and node-group sizing are separate decisions.
+- You use the analyzer output as evidence for the owner/remediation split.
 - You produce a no-credential incident note that a platform owner could act on.
 - You assign application, platform, and network owners with validation and rollback evidence.

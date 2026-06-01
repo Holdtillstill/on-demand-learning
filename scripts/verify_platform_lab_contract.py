@@ -79,13 +79,15 @@ DEEPENED_LAB_CONTRACT = {
         "terms": {"ALB", "Target.ResponseCodeMismatch", "targetPort", "health", "owner"},
     },
     "diagnose-eks-ip-exhaustion": {
-        "files": {"evidence-template.md"},
+        "files": {"evidence-template.md", "ip_exhaustion_analyzer.py", "setup.sh"},
         "terms": {
             "FailedScheduling",
             "FailedCreatePodSandBox",
             "subnet-bbb222",
             "AvailableIPv4AddressCount=7",
             "prefix delegation disabled",
+            "EKS IP exhaustion analysis passed",
+            "Nodes near maxPods",
         },
     },
     "design-production-eks-review": {

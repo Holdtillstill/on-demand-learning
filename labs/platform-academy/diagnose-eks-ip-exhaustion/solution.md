@@ -16,9 +16,20 @@ Pause the scale-up and escalate to platform/network ownership for VPC CNI capaci
 
 `remediation-plan.md` separates immediate safety, owner path, medium-term fixes, validation, and rollback.
 
+## Local Analyzer
+
+The local IP exhaustion analyzer verifies the same split without AWS credentials:
+
+```bash
+python3 labs/platform-academy/diagnose-eks-ip-exhaustion/ip_exhaustion_analyzer.py \
+  --snapshot labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt
+```
+
+Expected result: `EKS IP exhaustion analysis passed`, with scheduler pressure, VPC CNI pressure, `subnet-bbb222`, nodes near maxPods, and prefix delegation disabled.
+
 ## Evidence to Save
 
-Save the event lines, node pod-density summary, subnet inventory, `aws-node` logs, owner split, validation output, and the decision record in `evidence-template.md`.
+Save the event lines, node pod-density summary, subnet inventory, `aws-node` logs, local IP exhaustion analyzer output, owner split, validation output, and the decision record in `evidence-template.md`.
 
 ## Cleanup
 
