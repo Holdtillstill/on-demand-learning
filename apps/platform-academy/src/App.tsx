@@ -720,6 +720,22 @@ function labContractArtifacts(lab: PlatformLab) {
   }));
 }
 
+function labWorkspaceArchiveName(lab: PlatformLab) {
+  return `${lab.slug}-learner-workspace.zip`;
+}
+
+function labWorkspaceQuickstartCommands(lab: PlatformLab) {
+  return [
+    `unzip ${labWorkspaceArchiveName(lab)}`,
+    `cd ${lab.slug}`,
+    "./setup.sh",
+    "# Fill evidence.md with your investigation notes",
+    "./validate.sh --files-only",
+    "./validate.sh",
+    "./cleanup.sh"
+  ];
+}
+
 function compactLabItems(items: Array<string | undefined>, limit = 4) {
   return items.filter((item): item is string => Boolean(item?.trim())).slice(0, limit);
 }
@@ -883,6 +899,21 @@ function LabContractPanel({ lab }: { lab: PlatformLab }) {
   );
 }
 
+function LabWorkspaceQuickstart({ lab }: { lab: PlatformLab }) {
+  return (
+    <section className="lab-workspace-quickstart" aria-label="Downloaded workspace quickstart">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Downloaded workspace</p>
+          <h3>Run from extracted bundle</h3>
+        </div>
+        <span>{labWorkspaceArchiveName(lab)}</span>
+      </div>
+      <CommandBlock commands={labWorkspaceQuickstartCommands(lab)} title="Workspace commands" />
+    </section>
+  );
+}
+
 function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; learnerId: string; onSaveSubmission: SaveLabSubmission }) {
   const storageKey = `${LAB_WORKBOOK_STATE_PREFIX}${learnerId}:${lab.slug}`;
   const legacyStorageKey = `${LAB_WORKBOOK_STATE_PREFIX}${lab.slug}`;
@@ -1023,7 +1054,7 @@ function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; l
             <Download aria-hidden="true" />
             Download lab packet
           </a>
-          <a className="download-lab-button" href={api.labWorkspaceBundleUrl(lab.slug)}>
+          <a className="download-lab-button" download={labWorkspaceArchiveName(lab)} href={api.labWorkspaceBundleUrl(lab.slug)}>
             <Download aria-hidden="true" />
             Download learner workspace
           </a>
@@ -1080,6 +1111,7 @@ function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; l
           })}
         </section>
       </div>
+      <LabWorkspaceQuickstart lab={lab} />
       <LabContractPanel lab={lab} />
       {learnerArtifactPaths(lab).length ? (
         <div className="lab-artifact-list" aria-label="Learner artifact paths">

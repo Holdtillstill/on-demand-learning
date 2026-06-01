@@ -1016,6 +1016,25 @@ main {
   font-size: 0.92rem;
 }
 
+.lab-workspace-quickstart {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  border-top: 1px solid rgba(52, 86, 74, 0.24);
+  padding-top: 14px;
+}
+
+.lab-workspace-quickstart .section-heading {
+  margin: 0;
+}
+
+.lab-workspace-quickstart .section-heading > span {
+  overflow-wrap: anywhere;
+  color: var(--pa-muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
 .lab-contract-panel {
   display: grid;
   gap: 12px;

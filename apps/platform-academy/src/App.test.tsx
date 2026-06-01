@@ -1314,6 +1314,17 @@ describe("Platform Academy app", () => {
       "href",
       "/api/platform-academy/labs/trace-service-to-pod/workspace-bundle"
     );
+    expect(screen.getByRole("link", { name: /download learner workspace/i })).toHaveAttribute(
+      "download",
+      "trace-service-to-pod-learner-workspace.zip"
+    );
+    expect(screen.getByText("Downloaded workspace")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Run from extracted bundle" })).toBeInTheDocument();
+    expect(screen.getByText(/unzip trace-service-to-pod-learner-workspace\.zip/)).toBeInTheDocument();
+    expect(screen.getByText(/cd trace-service-to-pod/)).toBeInTheDocument();
+    expect(screen.getByText(/\.\/setup\.sh/)).toBeInTheDocument();
+    expect(screen.getByText(/\.\/validate\.sh --files-only/)).toBeInTheDocument();
+    expect(screen.getByText(/\.\/cleanup\.sh/)).toBeInTheDocument();
     expect(await screen.findByText("Saved to profile")).toBeInTheDocument();
     expect(screen.getByLabelText("What evidence proves the Service selector mismatch?")).toBeInTheDocument();
     expect(screen.getByLabelText("Expected evidence captured")).toBeInTheDocument();
