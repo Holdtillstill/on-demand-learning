@@ -92,7 +92,7 @@ Paste the most recent successful \`make platform-release-check\` tail here:
 - API image migration smoke: \`alembic upgrade head\`, \`alembic current\`, \`alembic check\`, and bundled lab verifier with \`CREATE_SCHEMA_ON_STARTUP=false\`.
 - Review scope: branch-aware manifest and review pack compare against the review base and include local modified, staged, or untracked files.
 - Working-tree hygiene: local modified, staged, and untracked files are checked for generated artifacts, executable shell helpers, trailing whitespace, CRLF line endings, conflict markers, and missing final newlines.
-- Workflow contract: expected GitHub Actions workflow set, Platform Academy image path filters, migration/scan/container-smoke-before-push ordering, backend API smoke, frontend browser smoke, and platform validation gates.
+- Workflow contract: expected GitHub Actions workflow set, Platform Academy image path filters, migration/scan/container-smoke-before-push ordering, backend API smoke, frontend browser smoke, deployed smoke origin/token/skip wiring, and platform validation gates.
 
 ## Cleanup Status
 

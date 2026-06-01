@@ -49,6 +49,34 @@ PLATFORM_VALIDATE_COMMANDS = {
     "make workflow-lint PYTHON=python3",
 }
 
+DEPLOYED_SMOKE_INPUTS = {
+    "api_base",
+    "web_base",
+    "smoke_viewports",
+    "skip_workbook_flow",
+    "skip_lab_details",
+    "skip_learning_routes",
+    "skip_resource_details",
+    "skip_interview_packs",
+    "source_bundle_token_required",
+}
+
+DEPLOYED_SMOKE_RESOLVE_ENV = {
+    "INPUT_API_BASE",
+    "INPUT_WEB_BASE",
+    "INPUT_SMOKE_VIEWPORTS",
+    "INPUT_SKIP_WORKBOOK_FLOW",
+    "INPUT_SKIP_LAB_DETAILS",
+    "INPUT_SKIP_LEARNING_ROUTES",
+    "INPUT_SKIP_RESOURCE_DETAILS",
+    "INPUT_SKIP_INTERVIEW_PACKS",
+    "INPUT_SOURCE_BUNDLE_TOKEN_REQUIRED",
+    "VAR_PLATFORM_API_BASE",
+    "VAR_PLATFORM_WEB_BASE",
+    "VAR_PLATFORM_SOURCE_BUNDLE_TOKEN_REQUIRED",
+    "SECRET_PLATFORM_SOURCE_BUNDLE_TOKEN",
+}
+
 
 def fail(message: str) -> None:
     raise SystemExit(f"FAIL: {message}")
@@ -187,12 +215,79 @@ def verify_platform_validate_workflow() -> None:
     require(not missing, f"{name} missing local contract commands: {missing}")
 
 
+def verify_platform_deployed_smoke_workflow() -> None:
+    name = "platform-deployed-smoke.yml"
+    data = workflow(name)
+    on_config = data.get("on", {})
+    require(isinstance(on_config, dict), f"{name} must define event triggers")
+    dispatch = on_config.get("workflow_dispatch", {})
+    require(isinstance(dispatch, dict), f"{name} must support workflow_dispatch")
+    inputs = dispatch.get("inputs", {})
+    require(isinstance(inputs, dict), f"{name} workflow_dispatch must define inputs")
+    missing_inputs = sorted(DEPLOYED_SMOKE_INPUTS - set(inputs))
+    require(not missing_inputs, f"{name} missing workflow_dispatch inputs: {missing_inputs}")
+    schedule = on_config.get("schedule", [])
+    require(isinstance(schedule, list) and schedule, f"{name} must keep a scheduled smoke trigger")
+
+    permissions = data.get("permissions", {})
+    require(permissions.get("contents") == "read", f"{name} must keep contents: read permission")
+
+    jobs = data.get("jobs", {})
+    require(isinstance(jobs, dict), f"{name} must define jobs")
+    smoke_job = jobs.get("smoke", {})
+    require(isinstance(smoke_job, dict), f"{name} must define smoke job")
+    require(
+        "vars.PLATFORM_API_BASE" in str(smoke_job.get("if", "")),
+        f"{name} scheduled smoke should require PLATFORM_API_BASE",
+    )
+
+    smoke_steps = steps(data, "smoke", name)
+    resolve_step = step_by_name(smoke_steps, "Resolve smoke origins", name)
+    resolve_env = resolve_step.get("env", {})
+    require(isinstance(resolve_env, dict), f"{name} resolve step must define env")
+    missing_env = sorted(DEPLOYED_SMOKE_RESOLVE_ENV - set(resolve_env))
+    require(not missing_env, f"{name} resolve step missing env inputs: {missing_env}")
+    require_run_contains(resolve_step, "PLATFORM_API_BASE", f"{name} resolve step")
+    require_run_contains(resolve_step, "PLATFORM_WEB_BASE", f"{name} resolve step")
+    require_run_contains(resolve_step, "PLATFORM_SOURCE_BUNDLE_TOKEN_REQUIRED", f"{name} resolve step")
+    require_run_contains(resolve_step, "PLATFORM_SOURCE_BUNDLE_TOKEN secret is required", f"{name} resolve step")
+    require_run_contains(resolve_step, "SMOKE_EXPECT_SOURCE_BUNDLE_TOKEN_REQUIRED", f"{name} resolve step")
+    for skip_output in [
+        "SMOKE_SKIP_WORKBOOK_FLOW",
+        "SMOKE_SKIP_ALL_LAB_DETAILS",
+        "SMOKE_SKIP_ALL_LEARNING_ROUTES",
+        "SMOKE_SKIP_ALL_RESOURCE_DETAILS",
+        "SMOKE_SKIP_ALL_INTERVIEW_PACKS",
+    ]:
+        require_run_contains(resolve_step, skip_output, f"{name} resolve step")
+
+    install_step = step_by_name(smoke_steps, "Install Platform Academy browser dependencies", name)
+    require_run_contains(install_step, "npm ci", f"{name} browser install")
+    require_run_contains(install_step, "npx playwright install --with-deps chromium", f"{name} browser install")
+
+    run_step = step_by_name(smoke_steps, "Run Platform Academy deployed smoke", name)
+    require_run_contains(run_step, "SMOKE_INSTALL_BROWSER_DEPS=false", f"{name} deployed smoke")
+    require_run_contains(run_step, "SMOKE_ARTIFACT_DIR", f"{name} deployed smoke")
+    require_run_contains(run_step, "scripts/smoke_platform_academy_deployed.sh", f"{name} deployed smoke")
+    run_env = run_step.get("env", {})
+    require(isinstance(run_env, dict), f"{name} deployed smoke step must define env")
+    require("PLATFORM_SOURCE_BUNDLE_TOKEN" in run_env, f"{name} deployed smoke must pass source bundle token secret")
+
+    upload_step = step_by_name(smoke_steps, "Upload deployed browser smoke artifacts", name)
+    upload_with = upload_step.get("with", {})
+    require(upload_with.get("path") == "smoke-artifacts", f"{name} artifact upload must collect smoke-artifacts")
+
+    summary_step = step_by_name(smoke_steps, "Write smoke summary", name)
+    require_run_contains(summary_step, "Source bundle token gate expected", f"{name} summary")
+
+
 def main() -> None:
     verify_expected_workflows()
     verify_platform_image_workflow()
     verify_docker_build_workflow()
     verify_backend_frontend_smokes()
     verify_platform_validate_workflow()
+    verify_platform_deployed_smoke_workflow()
     print("Verified GitHub Actions release workflow contracts.")
 
 
