@@ -23,6 +23,7 @@ PORTFOLIO_LABS = [
     "trace-service-to-pod",
     "debug-crashloop-imagepull",
     "review-yaml-before-apply",
+    "validate-helm-release-artifact",
     "diagnose-eks-ip-exhaustion",
     "trace-network-path",
     "review-terraform-eks-plan",
@@ -328,6 +329,72 @@ def verify_review_yaml_before_apply() -> None:
     safe_template = get_map(spec(safe_deployment, "safe Deployment"), "template", "safe Deployment.spec")
     safe_pod_spec = get_map(safe_template, "spec", "safe Deployment.template")
     require(not safe_pod_spec.get("volumes"), "safe Deployment should remove the hostPath volume")
+
+
+def verify_validate_helm_release_artifact() -> None:
+    slug = "validate-helm-release-artifact"
+    before = yaml_docs(slug, "rendered-before.yaml")
+    after = yaml_docs(slug, "rendered-after.yaml")
+    safe = yaml_docs(slug, "safe-rendered-after.yaml")
+    review = text_doc(slug, "review-notes.md")
+    triage = text_doc(slug, "triage-notes.md")
+
+    before_deployment = find_doc(before, "Deployment", "checkout", "payments")
+    after_deployment = find_doc(after, "Deployment", "checkout", "payments")
+    after_service = find_doc(after, "Service", "checkout", "payments")
+    safe_deployment = find_doc(safe, "Deployment", "checkout", "payments")
+    safe_service = find_doc(safe, "Service", "checkout", "payments")
+
+    stable_selector = {"app.kubernetes.io/name": "checkout"}
+    unsafe_selector = {"app": "checkout"}
+    require(deployment_selector(before_deployment, "before Deployment") == stable_selector, "before Deployment should use stable selector")
+    require(
+        deployment_pod_labels(before_deployment, "before Deployment") == stable_selector,
+        "before Deployment Pod labels should match stable selector",
+    )
+    before_container = deployment_container(before_deployment, "checkout", "before Deployment")
+    require(before_container.get("image") == "registry.example.com/checkout@sha256:1111", "before image should be digest-pinned")
+    before_security = get_map(before_container, "securityContext", "before Deployment container")
+    require(before_security.get("runAsNonRoot") is True, "before render should require non-root")
+    require(before_security.get("allowPrivilegeEscalation") is False, "before render should disable privilege escalation")
+
+    require(deployment_selector(after_deployment, "after Deployment") == unsafe_selector, "after Deployment should change selector")
+    require(
+        deployment_pod_labels(after_deployment, "after Deployment") == unsafe_selector,
+        "after Pod labels should match changed selector",
+    )
+    after_container = deployment_container(after_deployment, "checkout", "after Deployment")
+    require(after_container.get("image") == "registry.example.com/checkout:latest", "after image should regress to latest")
+    require(
+        get_map(after_container, "securityContext", "after Deployment container").get("privileged") is True,
+        "after render should make the container privileged",
+    )
+    require(spec(after_service, "after Service").get("type") == "LoadBalancer", "after Service should expose a LoadBalancer")
+    require(
+        get_map(spec(after_service, "after Service"), "selector", "after Service.spec") == unsafe_selector,
+        "after Service selector should match",
+    )
+    require(service_port(after_service, "http", "after Service").get("targetPort") == "http", "after Service should preserve targetPort")
+
+    require(deployment_selector(safe_deployment, "safe Deployment") == stable_selector, "safe Deployment should keep stable selector")
+    require(deployment_pod_labels(safe_deployment, "safe Deployment") == stable_selector, "safe Pod labels should match stable selector")
+    safe_container = deployment_container(safe_deployment, "checkout", "safe Deployment")
+    require(safe_container.get("image") == "registry.example.com/checkout@sha256:2222", "safe image should promote by digest")
+    safe_security = get_map(safe_container, "securityContext", "safe Deployment container")
+    require(safe_security.get("runAsNonRoot") is True, "safe render should require non-root")
+    require(safe_security.get("allowPrivilegeEscalation") is False, "safe render should disable privilege escalation")
+    require(safe_security.get("privileged") is not True, "safe render should not be privileged")
+    require(spec(safe_service, "safe Service").get("type") == "ClusterIP", "safe Service should stay internal")
+    require(
+        get_map(spec(safe_service, "safe Service"), "selector", "safe Service.spec") == stable_selector,
+        "safe Service selector should match",
+    )
+    require(service_port(safe_service, "http", "safe Service").get("targetPort") == "http", "safe Service should preserve targetPort")
+
+    for term in ["Block the release", "selector compatibility", "image immutability", "Service exposure"]:
+        require(term in review, f"Helm review notes should include {term}")
+    for term in ["successful Helm render is not release approval", "immutable selector", "checkout:latest", "LoadBalancer"]:
+        require(term in triage, f"Helm triage notes should rule out or flag {term}")
 
 
 def verify_diagnose_eks_ip_exhaustion() -> None:
@@ -690,6 +757,7 @@ VERIFY_BY_LAB = {
     "trace-service-to-pod": verify_trace_service_to_pod,
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
     "review-yaml-before-apply": verify_review_yaml_before_apply,
+    "validate-helm-release-artifact": verify_validate_helm_release_artifact,
     "diagnose-eks-ip-exhaustion": verify_diagnose_eks_ip_exhaustion,
     "trace-network-path": verify_trace_network_path,
     "review-terraform-eks-plan": verify_review_terraform_eks_plan,

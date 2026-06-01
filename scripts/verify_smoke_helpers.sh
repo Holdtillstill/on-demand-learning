@@ -127,8 +127,8 @@ grep -q "# Platform Academy Review Scope" "$REVIEW_PACK_DIR/review-scope.md" || 
 grep -q "Review changed files:" "$REVIEW_PACK_DIR/review-scope.md" || fail "review pack review scope missing changed file count"
 grep -q "Suggested Review Order" "$REVIEW_PACK_DIR/review-scope.md" || fail "review pack review scope missing review order"
 grep -q "| \`trace-service-to-pod\` | Kubernetes Service routing | yes |" "$REVIEW_PACK_DIR/lab-review-matrix.md" || fail "review pack lab matrix missing trace-service-to-pod portfolio metadata"
-grep -q "Verified structural artifacts for 11 Platform Academy portfolio labs." "$REVIEW_PACK_DIR/portfolio-artifact-contract.txt" || fail "review pack portfolio artifact contract missing verifier output"
-grep -q "Verified Platform Academy content counts: courses=21, lessons=84, labs=21, portfolio=11, resources=320, packs=22, questions=219." "$REVIEW_PACK_DIR/content-count-contract.txt" || fail "review pack content count contract missing verifier output"
+grep -q "Verified structural artifacts for 12 Platform Academy portfolio labs." "$REVIEW_PACK_DIR/portfolio-artifact-contract.txt" || fail "review pack portfolio artifact contract missing verifier output"
+grep -q "Verified Platform Academy content counts: courses=21, lessons=84, labs=21, portfolio=12, resources=320, packs=22, questions=219." "$REVIEW_PACK_DIR/content-count-contract.txt" || fail "review pack content count contract missing verifier output"
 grep -q "Verified GitHub Actions release workflow contracts." "$REVIEW_PACK_DIR/workflow-contracts.txt" || fail "review pack workflow contract missing verifier output"
 expect_failure "review pack positional argument validation" "does not accept positional arguments" \
   "$ROOT/scripts/platform_review_pack.sh" unexpected-arg
