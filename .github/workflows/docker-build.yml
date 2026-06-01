@@ -31,4 +31,48 @@ jobs:
           context: .
           file: ${{ matrix.service.dockerfile }}
           push: false
+          load: true
           tags: zhongwen/${{ matrix.service.name }}:${{ github.sha }}
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: zhongwen/${{ matrix.service.name }}:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  platform-academy-container-smoke:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      API_IMAGE: on-demand-platform-smoke-api:${{ github.sha }}
+      WEB_IMAGE: on-demand-platform-smoke-web:${{ github.sha }}
+      RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/platform-academy/package-lock.json
+      - name: Verify API image migrations
+        run: API_IMAGE_SKIP_BUILD=false scripts/verify_api_image_migrations.sh
+      - name: Build Platform Academy web smoke image
+        run: docker build -f apps/platform-academy/Dockerfile -t "${WEB_IMAGE}" .
+      - name: Install browser smoke dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+        working-directory: apps/platform-academy
+      - name: Run Platform Academy container smoke
+        run: SMOKE_SKIP_BUILD=true SMOKE_ARTIFACT_DIR="${GITHUB_WORKSPACE}/smoke-artifacts" scripts/smoke_platform_academy_container.sh
+      - name: Upload container smoke artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-academy-container-smoke
+          path: smoke-artifacts
+          if-no-files-found: ignore

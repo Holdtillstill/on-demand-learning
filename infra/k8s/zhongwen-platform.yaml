@@ -24,8 +24,14 @@ metadata:
   namespace: zhongwen
 data:
   ENVIRONMENT: demo
-  CORS_ORIGINS: https://learn.example.com
+  CORS_ORIGINS: https://learn.example.com,https://academy.example.com
   AUTO_SEED: "false"
+  CREATE_SCHEMA_ON_STARTUP: "false"
+  RATE_LIMIT_PER_MINUTE: "120"
+  RATE_LIMIT_EXEMPT_PATHS: /healthz,/readyz,/metrics
+  # Demo scaffold. Restrict this to ingress/load-balancer source CIDRs in real environments.
+  TRUSTED_PROXY_CIDRS: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+  PLATFORM_SOURCE_BUNDLE_PUBLIC: "false"
   REDIS_URL: redis://redis:6379/0
   OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger-collector.observability:4318
 ---
@@ -38,6 +44,42 @@ type: Opaque
 stringData:
   # Template only. Use External Secrets or sealed secrets in real environments.
   DATABASE_URL: postgresql+psycopg://replace:replace@rds-endpoint:5432/zhongwen
+  PLATFORM_SOURCE_BUNDLE_TOKEN: replace-with-instructor-source-bundle-token
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: backend-migrations
+  namespace: zhongwen
+  labels:
+    app: backend-migrations
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: backend-migrations
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: zhongwen-api
+      containers:
+        - name: alembic
+          image: ghcr.io/example/zhongwen-api:replace-me
+          imagePullPolicy: IfNotPresent
+          command: ["alembic", "upgrade", "head"]
+          envFrom:
+            - configMapRef:
+                name: zhongwen-config
+            - secretRef:
+                name: zhongwen-secrets-template
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -217,6 +259,65 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: platform-academy
+  namespace: zhongwen
+  labels:
+    app: platform-academy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: platform-academy
+  template:
+    metadata:
+      labels:
+        app: platform-academy
+    spec:
+      containers:
+        - name: platform-academy
+          image: ghcr.io/example/platform-academy-web:replace-me
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          env:
+            - name: PLATFORM_API_UPSTREAM
+              value: http://backend:8000
+          readinessProbe:
+            httpGet:
+              path: /dashboard/home
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /dashboard/home
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 192Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: platform-academy
+  namespace: zhongwen
+spec:
+  selector:
+    app: platform-academy
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: redis
   namespace: zhongwen
   labels:
@@ -260,6 +361,26 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  name: platform-academy
+  namespace: zhongwen
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: platform-academy
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
   name: backend
   namespace: zhongwen
 spec:
@@ -296,6 +417,17 @@ spec:
         target:
           type: Utilization
           averageUtilization: 70
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: platform-academy
+  namespace: zhongwen
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: platform-academy
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -343,6 +475,8 @@ spec:
           port: 443
         - protocol: TCP
           port: 80
+        - protocol: TCP
+          port: 5432
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -357,6 +491,27 @@ spec:
     - host: learn.example.com
       http:
         paths:
+          - path: /healthz
+            pathType: Exact
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /readyz
+            pathType: Exact
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /metrics
+            pathType: Exact
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
           - path: /api
             pathType: Prefix
             backend:
@@ -369,5 +524,43 @@ spec:
             backend:
               service:
                 name: frontend
+                port:
+                  number: 80
+    - host: academy.example.com
+      http:
+        paths:
+          - path: /healthz
+            pathType: Exact
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /readyz
+            pathType: Exact
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /metrics
+            pathType: Exact
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: platform-academy
                 port:
                   number: 80

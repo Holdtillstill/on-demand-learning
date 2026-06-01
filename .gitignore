@@ -19,6 +19,7 @@ coverage/
 *.tfplan
 crash.log
 *.log
+!labs/platform-academy/**/*.log
 .vite/
 .vitest/
 playwright-report/

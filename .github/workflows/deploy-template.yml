@@ -24,4 +24,6 @@ jobs:
       - name: Validate Kubernetes manifests
         run: docker run --rm -v "${PWD}:/work" ghcr.io/yannh/kubeconform:v0.6.7 -strict -summary /work/infra/k8s/zhongwen-platform.yaml
       - name: Render intended image tag
-        run: echo "Would deploy image tag ${{ inputs.image_tag }} after explicit approval."
+        run: printf 'Would deploy image tag %s after explicit approval.\n' "${IMAGE_TAG}"
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}

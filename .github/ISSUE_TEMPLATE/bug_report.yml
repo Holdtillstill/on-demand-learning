@@ -1,0 +1,57 @@
+name: Bug Report
+description: Report broken behavior in the API, frontend, worker, labs, or infrastructure scaffold.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected Surface
+      options:
+        - Platform Academy frontend
+        - Zhongwen frontend
+        - FastAPI backend
+        - Worker
+        - Labs
+        - Docker Compose
+        - Kubernetes/Terraform scaffold
+        - CI/CD
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Describe the user-visible behavior and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction Steps
+      description: Include commands, routes, inputs, and browser/API state.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Paste relevant logs, screenshots, request IDs, failing test output, or smoke command output.
+      render: shell
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or Image Tag
+      description: Git SHA, image tag, or branch where this was seen.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks Run
+      options:
+        - label: I checked `/healthz` or `/readyz` if the API is involved.
+        - label: I checked the browser console or API logs if the UI is involved.
+        - label: I confirmed whether this reproduces on a fresh browser profile or clean local state.

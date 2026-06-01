@@ -22,9 +22,61 @@ jobs:
           cache: pip
           cache-dependency-path: apps/api/requirements.txt
       - run: pip install -r requirements.txt
-      - run: ruff check app tests
+      - run: ruff check app tests alembic
+      - name: Verify Alembic migrations
+        run: ../../scripts/verify_api_migrations.sh
+        env:
+          DATABASE_URL: sqlite:////tmp/on-demand-api-migration-check.db
+          REDIS_URL: redis://localhost:6379/0
+          OTEL_EXPORTER_OTLP_ENDPOINT: ""
       - run: pytest
         env:
           DATABASE_URL: sqlite:///./ci-test.db
           REDIS_URL: redis://localhost:6379/0
           OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      - name: Smoke Platform Academy API
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/smoke-artifacts"
+          api_log="${GITHUB_WORKSPACE}/smoke-artifacts/platform-academy-api-smoke.log"
+
+          python -u -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > "${api_log}" 2>&1 &
+          server_pid=$!
+          trap 'kill "${server_pid}" >/dev/null 2>&1 || true' EXIT
+
+          for _ in {1..30}; do
+            if curl --connect-timeout 5 --max-time 5 -fsS http://127.0.0.1:8000/healthz >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          curl --connect-timeout 5 --max-time 30 -fsS http://127.0.0.1:8000/healthz >/dev/null
+
+          smoke_status=0
+          ../../scripts/smoke_platform_academy_api.sh || smoke_status=$?
+
+          kill "${server_pid}" >/dev/null 2>&1 || true
+          wait "${server_pid}" >/dev/null 2>&1 || true
+          trap - EXIT
+
+          log_status=0
+          ../../scripts/audit_api_log.sh "${api_log}" "Platform Academy API smoke" || log_status=$?
+
+          if [ "${smoke_status}" -ne 0 ] || [ "${log_status}" -ne 0 ]; then
+            exit 1
+          fi
+        env:
+          API_BASE: http://127.0.0.1:8000
+          DATABASE_URL: sqlite:///./ci-smoke.db
+          CREATE_SCHEMA_ON_STARTUP: "true"
+          AUTO_SEED: "true"
+          REDIS_URL: redis://localhost:6379/0
+          RATE_LIMIT_PER_MINUTE: "1000"
+          OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      - name: Upload API smoke artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-academy-api-smoke
+          path: smoke-artifacts
+          if-no-files-found: ignore

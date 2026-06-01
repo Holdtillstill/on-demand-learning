@@ -1,0 +1,60 @@
+name: Deployment Task
+description: Track preview, production-like deployment, smoke test, migration, or rollback work.
+title: "[Deploy]: "
+labels: ["deployment"]
+body:
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Local Docker Compose
+        - Shared EKS preview
+        - Stable production-like
+        - CI/CD
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What should be deployed, changed, validated, or rolled back?
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Required Settings
+      description: List relevant image tags, API base URL, CORS origins, database target, Redis target, trusted proxy CIDRs, and source-bundle protection settings.
+      value: |
+        - API image:
+        - Web image:
+        - API_BASE:
+        - DATABASE_URL target:
+        - CORS_ORIGINS:
+        - TRUSTED_PROXY_CIDRS:
+        - PLATFORM_SOURCE_BUNDLE_PUBLIC: false outside local/test/development
+        - Protected source-bundle smoke:
+  - type: checkboxes
+    id: gates
+    attributes:
+      label: Required Gates
+      options:
+        - label: "`make release-check` passed."
+        - label: "`make platform-content-count-check` passed or the review pack includes `content-count-contract.txt`."
+        - label: "`make workflow-contract-check` passed or the review pack includes `workflow-contracts.txt`."
+        - label: "`make platform-release-check` passed for image, proxy, API, Platform Academy frontend, or lab-bundle changes."
+        - label: "`make api-image-migration-check` or `API_IMAGE=<published-candidate> make api-image-migration-check` passed for API image changes."
+        - label: "`alembic current` was recorded for the target database."
+        - label: "`make platform-api-smoke API_BASE=...` passed."
+        - label: "`make platform-browser-smoke WEB_BASE=...` passed."
+        - label: "`make platform-deployed-smoke API_BASE=... WEB_BASE=...` or the `platform-deployed-smoke` workflow passed with the full browser profile for release evidence."
+        - label: "Protected instructor/source bundle smoke ran with `SMOKE_EXPECT_SOURCE_BUNDLE_TOKEN_REQUIRED=true` or workflow `source_bundle_token_required=true` when the target environment protects `/api/platform-academy/labs/{slug}/bundle`."
+        - label: Backup/snapshot ID and rollback image tag are attached.
+        - label: "`/healthz`, `/readyz`, `/metrics`, and `/api/*` route to the backend."
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes, Risks, or Rollback Plan
+      description: Include links to release notes, smoke output, runbooks, or known tradeoffs.
