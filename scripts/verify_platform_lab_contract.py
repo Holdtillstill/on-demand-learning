@@ -406,8 +406,8 @@ def verify_script_contract(slug: str, script: Path, artifacts: set[str]) -> None
     if "evidence-check.sh" in content and "labs/platform-academy/lib/evidence-check.sh" not in artifacts:
         fail(f"{slug} script {script.name} sources evidence-check.sh but the bundle omits it")
     mutating_lines = mutating_kubectl_line_numbers(content)
-    uses_guarded_namespace_delete = "delete_namespace_if_disposable" in content
-    if mutating_lines or uses_guarded_namespace_delete:
+    uses_guarded_cleanup = "delete_namespace_if_disposable" in content or "delete_clusterrolebinding_if_disposable" in content
+    if mutating_lines or uses_guarded_cleanup:
         if "cluster-safety.sh" not in content:
             fail(f"{slug} script {script.name} mutates Kubernetes without sourcing cluster-safety.sh")
         if "labs/platform-academy/lib/cluster-safety.sh" not in artifacts:
@@ -424,8 +424,8 @@ def verify_script_contract(slug: str, script: Path, artifacts: set[str]) -> None
             )
     if script.name == "cleanup.sh":
         if mutating_lines:
-            fail(f"{slug}/cleanup.sh should use delete_namespace_if_disposable instead of raw mutating kubectl")
-        if "No cleanup needed" not in content and not uses_guarded_namespace_delete:
+            fail(f"{slug}/cleanup.sh should use guarded cleanup helpers instead of raw mutating kubectl")
+        if "No cleanup needed" not in content and not uses_guarded_cleanup:
             fail(f"{slug}/cleanup.sh should either use guarded namespace cleanup or clearly state that no cleanup is needed")
 
 

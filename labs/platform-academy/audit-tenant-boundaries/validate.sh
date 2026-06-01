@@ -7,6 +7,7 @@ BROKEN="$LAB_DIR/tenant-a.yaml"
 FIXED="$LAB_DIR/fixed-tenant-a.yaml"
 REVIEW="$LAB_DIR/review.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -14,9 +15,13 @@ fail() {
   exit 1
 }
 
+run_cluster=false
 evidence_file=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --cluster)
+      run_cluster=true
+      ;;
     --evidence)
       shift
       [[ -n "${1:-}" ]] || fail "--evidence requires a file path"
@@ -56,4 +61,32 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "required safer changes" "remove cluster-admin|secret access|default-deny|exception|expiry"
   require_evidence_match "$evidence_file" "owner or validation evidence" "owner|validation|validate|cleanup"
   echo "Evidence checks passed for audit-tenant-boundaries."
+fi
+
+if [[ "$run_cluster" == true ]]; then
+  require_disposable_kube_context
+  kubectl delete clusterrolebinding tenant-a-temporary-admin --ignore-not-found >/dev/null
+  kubectl delete namespace tenant-a --ignore-not-found >/dev/null
+  kubectl apply -f "$BROKEN"
+
+  role_ref="$(kubectl get clusterrolebinding tenant-a-temporary-admin -o jsonpath='{.roleRef.name}')"
+  [[ "$role_ref" == "cluster-admin" ]] || fail "risky manifest should bind cluster-admin, saw '$role_ref'"
+  kubectl auth can-i get secrets --as=system:serviceaccount:tenant-a:deployer -n tenant-a | grep -q yes || fail "risky deployer should be able to get secrets"
+  pod_security="$(kubectl get namespace tenant-a -o jsonpath='{.metadata.labels.pod-security\.kubernetes\.io/enforce}')"
+  [[ "$pod_security" == "baseline" ]] || fail "risky namespace should enforce baseline, saw '$pod_security'"
+  kubectl get networkpolicy allow-all-egress -n tenant-a -o yaml | grep -q "egress:" || fail "risky policy should include egress rules"
+
+  kubectl apply -f "$FIXED"
+  kubectl delete clusterrolebinding tenant-a-temporary-admin --ignore-not-found >/dev/null
+
+  if kubectl get clusterrolebinding tenant-a-temporary-admin >/dev/null 2>&1; then
+    fail "fixed state should remove tenant-a-temporary-admin"
+  fi
+  if kubectl auth can-i get secrets --as=system:serviceaccount:tenant-a:deployer -n tenant-a | grep -q yes; then
+    fail "fixed deployer should not be able to get secrets"
+  fi
+  fixed_pod_security="$(kubectl get namespace tenant-a -o jsonpath='{.metadata.labels.pod-security\.kubernetes\.io/enforce}')"
+  [[ "$fixed_pod_security" == "restricted" ]] || fail "fixed namespace should enforce restricted, saw '$fixed_pod_security'"
+  kubectl get networkpolicy default-deny-egress -n tenant-a >/dev/null
+  kubectl get namespace,role,rolebinding,networkpolicy -n tenant-a
 fi

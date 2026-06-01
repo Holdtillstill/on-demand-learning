@@ -65,3 +65,27 @@ delete_namespace_if_disposable() {
 
   kubectl delete namespace "$namespace" --ignore-not-found
 }
+
+delete_clusterrolebinding_if_disposable() {
+  local binding="$1"
+
+  if ! command -v kubectl >/dev/null 2>&1; then
+    echo "No Kubernetes cleanup performed: kubectl is not installed."
+    return 0
+  fi
+
+  local context
+  context="$(current_context)"
+  if [[ -z "$context" ]]; then
+    echo "No Kubernetes cleanup performed: kubectl has no current context."
+    return 0
+  fi
+
+  if ! is_disposable_kube_context "$context"; then
+    echo "No Kubernetes cleanup performed: refusing to mutate context '$context'."
+    echo "Use kind, minikube, Docker Desktop, Rancher Desktop, or set PLATFORM_LAB_ALLOW_NONLOCAL_CLUSTER=1 for an approved sandbox."
+    return 0
+  fi
+
+  kubectl delete clusterrolebinding "$binding" --ignore-not-found
+}

@@ -10,20 +10,26 @@ Review a proposed tenant namespace before onboarding. The starting manifest inte
 
 ## Safety
 
-Do not apply `tenant-a.yaml` to a shared cluster. The default path is manifest review and client-side dry-run only.
+Do not apply `tenant-a.yaml` to a shared cluster. The default path is manifest review and client-side dry-run only. If you use `--cluster`, run it only against kind, minikube, Docker Desktop, Rancher Desktop, or another approved sandbox because the risky manifest creates a cluster-scoped binding.
 
 ## Starting State
 
 ```bash
+bash labs/platform-academy/audit-tenant-boundaries/setup.sh --evidence /tmp/tenant-boundaries-evidence.md
 sed -n '1,240p' labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml
 sed -n '1,180p' labs/platform-academy/audit-tenant-boundaries/review.md
-cp labs/platform-academy/audit-tenant-boundaries/evidence-template.md /tmp/tenant-boundary-evidence.md
 ```
 
 Optional parse check:
 
 ```bash
 kubectl create --dry-run=client --validate=false -f labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml
+```
+
+Optional local broken-state setup:
+
+```bash
+bash labs/platform-academy/audit-tenant-boundaries/setup.sh --cluster --evidence /tmp/tenant-boundaries-evidence.md
 ```
 
 ## Investigation
@@ -50,6 +56,8 @@ diff -u labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml labs/platfor
 ```bash
 bash labs/platform-academy/audit-tenant-boundaries/validate.sh
 bash labs/platform-academy/audit-tenant-boundaries/validate.sh --evidence /tmp/tenant-boundaries-evidence.md
+bash labs/platform-academy/audit-tenant-boundaries/validate.sh --cluster
+bash labs/platform-academy/audit-tenant-boundaries/cleanup.sh
 ```
 
 ## Success Criteria

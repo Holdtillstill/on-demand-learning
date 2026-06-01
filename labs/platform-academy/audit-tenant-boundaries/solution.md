@@ -35,4 +35,4 @@ A good handoff says: block onboarding because `tenant-a-temporary-admin` binds `
 
 ## Cleanup
 
-If you tested the manifests in a disposable cluster, run `bash labs/platform-academy/audit-tenant-boundaries/cleanup.sh` to remove the `tenant-a` namespace. If you only reviewed the files, no runtime cleanup is needed.
+If you tested the manifests in a disposable cluster, run `bash labs/platform-academy/audit-tenant-boundaries/cleanup.sh` to remove the `tenant-a` namespace and the temporary cluster-scoped binding. If you only reviewed the files, no runtime cleanup is needed.

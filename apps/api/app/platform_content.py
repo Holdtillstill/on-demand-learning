@@ -3547,10 +3547,13 @@ RUNNABLE_LAB_UPDATES = {
         "prerequisites": [
             "kubectl is optional; the default path is local manifest review.",
             "Do not apply this manifest to a shared cluster because it intentionally contains risky RBAC.",
+            "Optional cluster mode requires a disposable local Kubernetes context.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --evidence /tmp/tenant-boundaries-evidence.md",
             "kubectl create --dry-run=client --validate=false -f labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
             "sed -n '1,180p' labs/platform-academy/audit-tenant-boundaries/review.md",
+            "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --cluster --evidence /tmp/tenant-boundaries-evidence.md",
         ],
         "commands": [
             "grep -n \"cluster-admin\\|secrets\\|allow-all-egress\\|pod-security\" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
@@ -3569,6 +3572,7 @@ RUNNABLE_LAB_UPDATES = {
         "validation_commands": [
             "bash labs/platform-academy/audit-tenant-boundaries/validate.sh",
             "bash labs/platform-academy/audit-tenant-boundaries/validate.sh --evidence /tmp/tenant-boundaries-evidence.md",
+            "bash labs/platform-academy/audit-tenant-boundaries/validate.sh --cluster",
             "grep -n \"name: cluster-admin\" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
             "grep -n \"resources: \\[\\\"secrets\\\"\\]\" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
         ],
@@ -4889,6 +4893,7 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/audit-tenant-boundaries/evidence-template.md",
         "labs/platform-academy/lib/cluster-safety.sh",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/audit-tenant-boundaries/setup.sh",
         "labs/platform-academy/audit-tenant-boundaries/validate.sh",
         "labs/platform-academy/audit-tenant-boundaries/cleanup.sh",
         "labs/platform-academy/audit-tenant-boundaries/solution.md",
