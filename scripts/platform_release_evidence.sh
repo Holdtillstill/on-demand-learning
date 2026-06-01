@@ -159,5 +159,7 @@ cat <<'EOF'
 - Platform Academy UI: `apps/platform-academy/src/App.tsx`, `apps/platform-academy/src/styles.css`, `apps/platform-academy/src/api.ts`, `apps/platform-academy/src/types.ts`, `apps/platform-academy/src/App.test.tsx`.
 - Release/deployment: `Makefile`, `scripts/`, `.github/workflows/`, `.env.example`, `docker-compose.yml`, `infra/k8s/zhongwen-platform.yaml`, `docs/deployment.md`.
 
+Branch-aware helpers honor `GITHUB_BASE_REF` in GitHub Actions and `PLATFORM_REVIEW_BASE=<ref>` for local override.
+
 Run `make platform-lab-matrix` when reviewers need a lab-by-lab portfolio-focus, structural-gate, mode, artifact-count, and evidence-check index. Run `make platform-review-manifest` when reviewers need committed branch changes plus local modified, staged, or untracked files grouped by subsystem. Run `make platform-review-pack` when reviewers or deployment owners need one disposable bundle with the release scaffold, lab matrix, review-scope summary, changed-file manifest, commit plan with pathspec files, content-count contract, workflow contract, handoff docs, PR template, git status, and diff summaries.
 EOF

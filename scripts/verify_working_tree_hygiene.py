@@ -76,7 +76,12 @@ def resolve_review_base(base_ref: str | None, dirty_only: bool) -> ReviewBase | 
         if not merge_base:
             raise SystemExit(f"Unable to resolve review base: {configured}")
         return ReviewBase(ref=configured, merge_base=merge_base[0])
-    for candidate in ("origin/main", "main"):
+    github_base_ref = os.environ.get("GITHUB_BASE_REF", "").strip()
+    candidates = []
+    if github_base_ref:
+        candidates.extend([f"origin/{github_base_ref}", github_base_ref])
+    candidates.extend(["origin/main", "main"])
+    for candidate in candidates:
         merge_base = git_lines_optional("merge-base", "HEAD", candidate)
         if merge_base:
             return ReviewBase(ref=candidate, merge_base=merge_base[0])

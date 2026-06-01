@@ -195,7 +195,7 @@ This pack is a disposable reviewer/deployment handoff bundle for the Platform Ac
 - \`tracked-name-status.txt\`: branch-aware tracked file status.
 - \`untracked-files.txt\`: local untracked file list.
 
-Set \`PLATFORM_REVIEW_BASE=<ref>\` before running \`make platform-review-pack\` to compare against a target other than the default \`origin/main\` or \`main\`.
+In GitHub Actions, branch-aware helpers prefer \`GITHUB_BASE_REF\` when it is available. Set \`PLATFORM_REVIEW_BASE=<ref>\` before running \`make platform-review-pack\` locally to compare against a target other than the default \`origin/main\` or \`main\`.
 
 ## Required Gates
 

@@ -82,6 +82,8 @@ grep -q 'Rows with `Structural gate` set to `yes`' <<<"$lab_matrix_output" || fa
 
 working_tree_hygiene_output="$(expect_success "working tree hygiene target" "${WORKING_TREE_HYGIENE_TARGET[@]}")"
 grep -q "Verified working-tree hygiene" <<<"$working_tree_hygiene_output" || fail "working tree hygiene target did not report success"
+grep -q "review files" <<<"$working_tree_hygiene_output" || fail "working tree hygiene target did not report branch-aware file scope"
+grep -q "against" <<<"$working_tree_hygiene_output" || fail "working tree hygiene target did not report review base"
 
 review_manifest_output="$(expect_success "review manifest target" "${REVIEW_MANIFEST_TARGET[@]}")"
 grep -q "# Platform Academy Changed File Review Manifest" <<<"$review_manifest_output" || fail "review manifest missing heading"
