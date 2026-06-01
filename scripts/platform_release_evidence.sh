@@ -27,6 +27,7 @@ generated_artifacts="$(
   cd "$ROOT"
   find . \( -name '.git' -o -name 'node_modules' -o -name '.venv' \) -prune -o \
     \( -path './apps/frontend/dist' -o -path './apps/platform-academy/dist' -o -path './smoke-artifacts' \
+      -o -path './infra/terraform/.terraform' \
       -o -name '.pytest_cache' -o -name '__pycache__' -o -name '*.tsbuildinfo' \
       -o -name 'test.db' -o -name 'ci-test.db' -o -name 'ci-smoke.db' -o -name 'ci-platform-browser-smoke.db' \
       -o -name 'playwright-report' -o -name 'test-results' -o -name 'coverage' \) \

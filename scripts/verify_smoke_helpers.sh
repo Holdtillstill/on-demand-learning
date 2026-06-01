@@ -144,6 +144,7 @@ mkdir -p \
   "$CLEANUP_TEST_DIR/apps/platform-academy/playwright-report" \
   "$CLEANUP_TEST_DIR/apps/platform-academy/test-results" \
   "$CLEANUP_TEST_DIR/apps/platform-academy/coverage" \
+  "$CLEANUP_TEST_DIR/infra/terraform/.terraform" \
   "$CLEANUP_TEST_DIR/smoke-artifacts" \
   "$CLEANUP_TEST_DIR/scripts/__pycache__" \
   "$CLEANUP_TEST_DIR/labs/platform-academy/__pycache__"
@@ -165,6 +166,7 @@ touch \
   "$CLEANUP_TEST_DIR/apps/platform-academy/test-results/result.txt" \
   "$CLEANUP_TEST_DIR/apps/platform-academy/coverage/index.html" \
   "$CLEANUP_TEST_DIR/apps/platform-academy/tsconfig.tsbuildinfo" \
+  "$CLEANUP_TEST_DIR/infra/terraform/.terraform/terraform.tfstate" \
   "$CLEANUP_TEST_DIR/test.db" \
   "$CLEANUP_TEST_DIR/ci-platform-browser-smoke.db" \
   "$CLEANUP_TEST_DIR/smoke-artifacts/smoke.txt" \
@@ -172,10 +174,10 @@ touch \
   "$CLEANUP_TEST_DIR/labs/platform-academy/__pycache__/module.pyc"
 expect_success "clean-generated target in disposable tree" make -f "$ROOT/Makefile" -C "$CLEANUP_TEST_DIR" --no-print-directory clean-generated >/dev/null
 if find "$CLEANUP_TEST_DIR" \
-  \( -name '.pytest_cache' -o -name '__pycache__' -o -name '*.tsbuildinfo' -o -name 'test.db' -o -name 'ci-test.db' -o -name 'ci-smoke.db' -o -name 'ci-platform-browser-smoke.db' -o -name 'dist' -o -name '.vite' -o -name 'playwright-report' -o -name 'test-results' -o -name 'coverage' -o -name 'smoke-artifacts' \) \
+  \( -name '.pytest_cache' -o -name '__pycache__' -o -name '*.tsbuildinfo' -o -name 'test.db' -o -name 'ci-test.db' -o -name 'ci-smoke.db' -o -name 'ci-platform-browser-smoke.db' -o -name 'dist' -o -name '.vite' -o -name '.terraform' -o -name 'playwright-report' -o -name 'test-results' -o -name 'coverage' -o -name 'smoke-artifacts' \) \
   -print | grep -q .; then
   find "$CLEANUP_TEST_DIR" \
-    \( -name '.pytest_cache' -o -name '__pycache__' -o -name '*.tsbuildinfo' -o -name 'test.db' -o -name 'ci-test.db' -o -name 'ci-smoke.db' -o -name 'ci-platform-browser-smoke.db' -o -name 'dist' -o -name '.vite' -o -name 'playwright-report' -o -name 'test-results' -o -name 'coverage' -o -name 'smoke-artifacts' \) \
+    \( -name '.pytest_cache' -o -name '__pycache__' -o -name '*.tsbuildinfo' -o -name 'test.db' -o -name 'ci-test.db' -o -name 'ci-smoke.db' -o -name 'ci-platform-browser-smoke.db' -o -name 'dist' -o -name '.vite' -o -name '.terraform' -o -name 'playwright-report' -o -name 'test-results' -o -name 'coverage' -o -name 'smoke-artifacts' \) \
     -print >&2
   fail "clean-generated did not remove all disposable generated artifacts"
 fi

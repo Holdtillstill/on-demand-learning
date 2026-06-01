@@ -20,7 +20,7 @@ logs: ## Tail all service logs
 	docker compose logs -f
 
 clean-generated: ## Remove local test/build/smoke artifacts
-	rm -rf .pytest_cache apps/api/.pytest_cache apps/worker/.pytest_cache apps/frontend/.vite apps/platform-academy/.vite apps/frontend/dist apps/platform-academy/dist smoke-artifacts
+	rm -rf .pytest_cache apps/api/.pytest_cache apps/worker/.pytest_cache apps/frontend/.vite apps/platform-academy/.vite apps/frontend/dist apps/platform-academy/dist infra/terraform/.terraform smoke-artifacts
 	rm -rf apps/api/test.db apps/api/ci-test.db apps/api/ci-smoke.db test.db ci-platform-browser-smoke.db
 	rm -rf apps/frontend/playwright-report apps/frontend/test-results apps/frontend/coverage
 	rm -rf apps/platform-academy/playwright-report apps/platform-academy/test-results apps/platform-academy/coverage

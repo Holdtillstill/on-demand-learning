@@ -15,6 +15,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 GENERATED_DIR_NAMES = {
     ".pytest_cache",
+    ".terraform",
     ".vite",
     "__pycache__",
     "coverage",
