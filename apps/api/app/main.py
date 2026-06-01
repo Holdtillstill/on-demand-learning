@@ -530,6 +530,7 @@ def platform_lab_payloads(courses: list[Course]) -> list[dict]:
                 "skills": lab["skills"],
                 "prerequisites": lab.get("prerequisites", []),
                 "setup_commands": lab.get("setup_commands", []),
+                "setup_self_check_commands": lab.get("setup_self_check_commands", []),
                 "commands": lab["commands"],
                 "practice_steps": lab.get("practice_steps", []),
                 "expected_evidence": lab.get("expected_evidence", []),

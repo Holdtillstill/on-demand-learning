@@ -5484,6 +5484,20 @@ def _without_lab_self_check_commands(commands: list[object]) -> list[str]:
     return [str(command) for command in commands if not _is_lab_self_check_command(command)]
 
 
+def _lab_self_check_flags(slug: str) -> list[str]:
+    artifact_paths = LAB_ARTIFACT_PATHS.get(slug, [])
+    flags: list[str] = []
+    if any("analyzer.py" in artifact_path for artifact_path in artifact_paths):
+        flags.append("--run-analyzer")
+    if any("simulator.py" in artifact_path for artifact_path in artifact_paths):
+        flags.append("--run-simulator")
+    return flags
+
+
+def _lab_self_check_setup_commands(slug: str) -> list[str]:
+    return [f"bash labs/platform-academy/run-lab.sh setup {slug} {flag}" for flag in _lab_self_check_flags(slug)]
+
+
 for lab in PLATFORM_LABS:
     runnable_update = RUNNABLE_LAB_UPDATES.get(lab["slug"])
     if runnable_update:
@@ -5506,6 +5520,7 @@ for lab in PLATFORM_LABS:
     lab["portfolio_grade"] = lab["slug"] in PORTFOLIO_LAB_SLUGS
     lab["portfolio_focus"] = PORTFOLIO_LAB_FOCUS.get(lab["slug"], "")
     lab["artifact_paths"] = LAB_ARTIFACT_PATHS.get(lab["slug"], [])
+    lab["setup_self_check_commands"] = _lab_self_check_setup_commands(lab["slug"])
     lab["workspace_archive_name"] = f"{lab['slug']}-learner-workspace.zip"
     lab["workspace_root"] = lab["slug"]
     lab["workspace_quickstart_commands"] = [

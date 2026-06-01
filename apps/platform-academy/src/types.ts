@@ -191,6 +191,7 @@ export interface PlatformLab {
   skills: string[];
   prerequisites?: string[];
   setup_commands?: string[];
+  setup_self_check_commands?: string[];
   commands: string[];
   practice_steps?: string[];
   expected_evidence?: string[];

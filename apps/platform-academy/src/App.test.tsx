@@ -104,6 +104,7 @@ const catalog = {
       skills: ["service selectors", "EndpointSlices"],
       prerequisites: ["A local Kubernetes cluster."],
       setup_commands: ["kubectl apply -f labs/platform-academy/trace-service-to-pod/start.yaml"],
+      setup_self_check_commands: ["bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --run-analyzer"],
       commands: ["kubectl describe svc checkout -n payments"],
       practice_steps: ["Compare the Service selector with Pod labels."],
       expected_evidence: ["The Service selector does not match the Pod labels."],
@@ -1361,6 +1362,8 @@ describe("Platform Academy app", () => {
     expect(screen.getAllByText("validate.sh").length).toBeGreaterThan(0);
     expect(screen.getByText("Prerequisites")).toBeInTheDocument();
     expect(screen.getByText("Setup commands")).toBeInTheDocument();
+    expect(screen.getByText("Opt-in self-check commands")).toBeInTheDocument();
+    expect(screen.getByText("bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --run-analyzer")).toBeInTheDocument();
     expect(screen.getByText("Practice steps")).toBeInTheDocument();
     expect(screen.getByText("Expected evidence")).toBeInTheDocument();
     expect(screen.getByText("Validation commands")).toBeInTheDocument();

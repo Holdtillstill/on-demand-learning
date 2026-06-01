@@ -3118,6 +3118,9 @@ function LabDetailPage({
           <LabWorkbook lab={lab} learnerId={learnerId} onSaveSubmission={onSaveLabSubmission} />
           <LabListSection items={lab.prerequisites} title="Prerequisites" />
           {lab.setup_commands?.length ? <CommandBlock commands={lab.setup_commands} title="Setup commands" /> : null}
+          {lab.setup_self_check_commands?.length ? (
+            <CommandBlock commands={lab.setup_self_check_commands} title="Opt-in self-check commands" />
+          ) : null}
           <LabListSection items={lab.practice_steps} title="Practice steps" />
           <CommandBlock commands={lab.commands} title="Runbook commands" />
           <LabListSection items={lab.expected_evidence} title="Expected evidence" />

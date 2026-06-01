@@ -200,6 +200,7 @@ class PlatformLabOut(BaseModel):
     skills: list[str]
     prerequisites: list[str] = Field(default_factory=list)
     setup_commands: list[str] = Field(default_factory=list)
+    setup_self_check_commands: list[str] = Field(default_factory=list)
     commands: list[str]
     practice_steps: list[str] = Field(default_factory=list)
     expected_evidence: list[str] = Field(default_factory=list)

@@ -735,6 +735,7 @@ def verify_metadata_contract(slug: str, lab: dict) -> None:
     required_list_fields = [
         "prerequisites",
         "setup_commands",
+        "setup_self_check_commands",
         "commands",
         "practice_steps",
         "expected_evidence",
@@ -767,9 +768,19 @@ def verify_metadata_contract(slug: str, lab: dict) -> None:
             fail(f"{slug} metadata field {field} must not expose analyzer/simulator commands: {misplaced_self_checks}")
     if has_self_check_artifact(lab) and not self_check_commands(lab["validation_commands"]):
         fail(f"{slug} validation_commands must include its analyzer or simulator self-check command")
+    for command in lab["setup_self_check_commands"]:
+        if f"run-lab.sh setup {slug}" not in command or "--run-" not in command:
+            fail(f"{slug} setup_self_check_commands must use runner opt-in setup flags: {command}")
 
     command_like_values: list[str] = []
-    for field in ["setup_commands", "commands", "validation_commands", "cleanup_commands", "no_cluster_fallback"]:
+    for field in [
+        "setup_commands",
+        "setup_self_check_commands",
+        "commands",
+        "validation_commands",
+        "cleanup_commands",
+        "no_cluster_fallback",
+    ]:
         command_like_values.extend(str(value) for value in lab[field])
     for referenced_path in referenced_repo_paths(command_like_values):
         if not (REPO_ROOT / referenced_path).exists():

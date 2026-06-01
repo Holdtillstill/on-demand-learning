@@ -879,6 +879,8 @@ def test_full_platform_labs_include_guides_solutions_and_validators():
         for field in ["setup_commands", "commands"]:
             assert all("analyzer.py" not in command and "simulator.py" not in command for command in lab[field])
         if any("analyzer.py" in path or "simulator.py" in path for path in artifact_paths):
+            assert lab["setup_self_check_commands"]
+            assert all(f"run-lab.sh setup {slug}" in command and "--run-" in command for command in lab["setup_self_check_commands"])
             assert any(
                 "analyzer.py" in command or "simulator.py" in command
                 for command in lab["validation_commands"]
