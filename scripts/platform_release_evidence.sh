@@ -86,7 +86,7 @@ Paste the most recent successful \`make platform-release-check\` tail here:
 - API tests: 59 expected.
 - Worker tests: 1 expected.
 - Zhongwen frontend tests: 1 expected.
-- Platform Academy frontend tests: 31 expected.
+- Platform Academy frontend tests: 32 expected.
 - Full labs: 21 expected.
 - API smoke: catalog/resource/interview counts, no-store headers, OpenAPI backup/workbook/download contract, source-bundle token header contract, learner state export/import, achievements, and product metrics.
 - Browser smoke: 21 courses, 84 lessons, 21 lab detail routes, 7 portfolio-grade UI signals, 320 resource detail routes, 22 interview prep packs, desktop and mobile route checks.
