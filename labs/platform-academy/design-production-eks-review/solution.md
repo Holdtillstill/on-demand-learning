@@ -14,7 +14,9 @@ Block launch until required owners close the PDB, restore, cost-label, and upgra
 
 ## Evidence to Save
 
-Save the critical workload table, endpoint posture, missing PDB, zonal storage, cost/guardrail lines, upgrade pause points, launch blockers, owners, validation criteria, and no-AWS note in `evidence-template.md`.
+Save the critical workload table, endpoint posture, missing PDB, zonal storage, cost/guardrail lines, upgrade pause points, launch blockers, owners, validation criteria, local analyzer output, and no-AWS note in `evidence-template.md`.
+
+The local production review analyzer reports `Production EKS review analysis passed`.
 
 ## Cleanup
 

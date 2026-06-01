@@ -3095,12 +3095,13 @@ PLATFORM_LABS = [
             "kubectl get nodes -L topology.kubernetes.io/zone",
             "kubectl get pods -A -o wide",
             "kubectl get pv,pvc -A",
+            "python3 labs/platform-academy/design-production-eks-review/production_review_analyzer.py --review labs/platform-academy/design-production-eks-review/cluster-review.md --launch labs/platform-academy/design-production-eks-review/launch-review.md",
         ],
         "checklist": [
             "Confirm critical replicas spread across zones.",
             "Identify zonal storage and recovery expectations.",
             "Review cost labels, idle requests, load balancers, and NAT traffic.",
-            "Name upgrade pause points and deprecated API inventory.",
+            "Use the local analyzer to verify launch blockers, owners, and validation criteria.",
         ],
     },
     {
@@ -3580,27 +3581,32 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/design-production-eks-review/setup.sh --evidence /tmp/production-eks-review-evidence.md",
             "sed -n '1,220p' labs/platform-academy/design-production-eks-review/cluster-review.md",
         ],
         "commands": [
             "grep -n \"Missing cost label\\|pdb=missing\\|public and private\\|zonal\" labs/platform-academy/design-production-eks-review/cluster-review.md",
             "grep -n \"Upgrade pause\\|deprecated APIs\\|PDBs\" labs/platform-academy/design-production-eks-review/cluster-review.md",
             "sed -n '1,220p' labs/platform-academy/design-production-eks-review/launch-review.md",
+            "python3 labs/platform-academy/design-production-eks-review/production_review_analyzer.py --review labs/platform-academy/design-production-eks-review/cluster-review.md --launch labs/platform-academy/design-production-eks-review/launch-review.md",
         ],
         "practice_steps": [
             "Check critical workload spread and PDB coverage.",
             "Identify zonal storage and recovery expectations.",
             "Flag missing cost labels and upgrade pause points.",
+            "Run the local production review analyzer and connect its output to the launch decision.",
         ],
         "expected_evidence": [
             "One worker has a missing PDB.",
             "Postgres uses zonal storage with snapshot restore expectations.",
             "One apps node lacks a cost label.",
+            "The local analyzer reports Production EKS review analysis passed.",
             "The launch review blocks production until reliability, cost, and upgrade gaps are owned.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/design-production-eks-review/validate.sh",
             "bash labs/platform-academy/design-production-eks-review/validate.sh --evidence /tmp/production-eks-review-evidence.md",
+            "python3 labs/platform-academy/design-production-eks-review/production_review_analyzer.py --review labs/platform-academy/design-production-eks-review/cluster-review.md --launch labs/platform-academy/design-production-eks-review/launch-review.md",
             "grep -n \"Block production launch\" labs/platform-academy/design-production-eks-review/launch-review.md",
         ],
         "cleanup_commands": ["bash labs/platform-academy/design-production-eks-review/cleanup.sh"],
@@ -4432,7 +4438,7 @@ DEEPENED_LAB_UPDATES = {
             "Paste missing cost label, idle/NAT/LoadBalancer review gap, deprecated API, and add-on compatibility evidence.",
             "Separate immediate launch blockers from follow-up improvements and explain the reliability risk.",
             "Assign workload, platform, data, cost, and upgrade owners with validation criteria.",
-            "Capture launch decision, validation output, cleanup, and no-AWS evidence packet.",
+            "Capture launch decision, analyzer output, validation output, cleanup, and no-AWS evidence packet.",
         ],
         "rubric": [
             "Preserves the captured architecture-review safety boundary and avoids live AWS mutation.",
@@ -4449,7 +4455,7 @@ DEEPENED_LAB_UPDATES = {
             "Cost label and cost-review gap evidence captured",
             "Upgrade and add-on compatibility evidence captured",
             "Launch blockers, follow-ups, and owners recorded",
-            "Validation output and cleanup/no-AWS evidence recorded",
+            "Production review analyzer output, validation output, and cleanup/no-AWS evidence recorded",
         ],
         "rubric_evidence_terms": [
             ["cluster-review.md", "launch-review.md", "no AWS", "reviewer"],
@@ -4457,7 +4463,7 @@ DEEPENED_LAB_UPDATES = {
             ["Missing cost label on apps-c", "deprecated APIs", "controller add-ons", "compatibility matrix"],
             ["Block production launch", "follow-up", "reliability risk", "launch blockers"],
             ["workload owner", "platform owner", "data owner", "FinOps owner", "validation criteria"],
-            ["launch-review.md", "validate", "cleanup", "evidence-template.md", "no-AWS"],
+            ["launch-review.md", "validate", "cleanup", "evidence-template.md", "no-AWS", "Production EKS review analysis passed"],
         ],
     },
     "trace-network-path": {
@@ -5144,6 +5150,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/design-production-eks-review/launch-review.md",
         "labs/platform-academy/design-production-eks-review/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/design-production-eks-review/production_review_analyzer.py",
+        "labs/platform-academy/design-production-eks-review/setup.sh",
         "labs/platform-academy/design-production-eks-review/validate.sh",
         "labs/platform-academy/design-production-eks-review/cleanup.sh",
         "labs/platform-academy/design-production-eks-review/solution.md",

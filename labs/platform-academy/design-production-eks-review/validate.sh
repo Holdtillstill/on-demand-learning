@@ -6,6 +6,7 @@ LAB_DIR="$ROOT/labs/platform-academy/design-production-eks-review"
 REVIEW="$LAB_DIR/cluster-review.md"
 LAUNCH="$LAB_DIR/launch-review.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/production_review_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -43,6 +44,9 @@ grep -q "FinOps owner" "$LAUNCH" || fail "launch-review.md should include cost o
 grep -q "## Access And Resilience Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for access and resilience evidence"
 grep -q "## Cost And Upgrade Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for cost and upgrade evidence"
 grep -q "## Launch Decision Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for launch decision evidence"
+grep -q "Production EKS review analysis passed" "$ANALYZER" || fail "production_review_analyzer.py should report successful analysis"
+
+python3 "$ANALYZER" --review "$REVIEW" --launch "$LAUNCH" --quiet
 
 echo "File checks passed for design-production-eks-review."
 
@@ -53,6 +57,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "zonal storage and restore drill" "zonal|gp3-us-west-2a|restore drill|snapshot"
   require_evidence_match "$evidence_file" "missing cost label" "Missing cost label|cost label|FinOps"
   require_evidence_match "$evidence_file" "upgrade or add-on risk" "deprecated APIs|compatibility matrix|add-ons|upgrade"
+  require_evidence_match "$evidence_file" "local production review analyzer evidence" "Production EKS review analysis passed|production review analyzer|review analysis"
   require_evidence_match "$evidence_file" "block launch decision" "Block launch|Block production launch|block"
   require_evidence_match "$evidence_file" "owners and validation criteria" "owner|validation|restore|PDB|cost"
   require_evidence_match "$evidence_file" "no-AWS or cleanup note" "no-AWS|cleanup|no cleanup|architecture-review"

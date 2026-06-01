@@ -15,6 +15,7 @@
 - Deprecated API pause point:
 - Add-on compatibility risk:
 - Upgrade owner:
+- Local analyzer output:
 
 ## Launch Decision Evidence
 

@@ -114,13 +114,14 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "design-production-eks-review": {
-        "files": {"evidence-template.md"},
+        "files": {"evidence-template.md", "production_review_analyzer.py", "setup.sh"},
         "terms": {
             "Endpoint: public and private",
             "pdb=missing",
             "Missing cost label on apps-c",
             "controller add-ons",
             "FinOps owner",
+            "Production EKS review analysis passed",
         },
     },
     "review-terraform-eks-plan": {
