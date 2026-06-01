@@ -2851,6 +2851,7 @@ PLATFORM_LABS = [
         "validation_commands": [
             "bash labs/platform-academy/trace-service-to-pod/validate.sh",
             "bash labs/platform-academy/trace-service-to-pod/validate.sh --evidence /tmp/trace-service-evidence.md",
+            "bash labs/platform-academy/run-lab.sh validate trace-service-to-pod --cluster",
             (
                 "python3 labs/platform-academy/trace-service-to-pod/service_route_analyzer.py "
                 "--start labs/platform-academy/trace-service-to-pod/start.yaml "
@@ -2927,6 +2928,7 @@ PLATFORM_LABS = [
         "validation_commands": [
             "bash labs/platform-academy/debug-crashloop-imagepull/validate.sh",
             "bash labs/platform-academy/debug-crashloop-imagepull/validate.sh --evidence /tmp/crashloop-imagepull-evidence.md",
+            "bash labs/platform-academy/run-lab.sh validate debug-crashloop-imagepull --cluster",
             (
                 "python3 labs/platform-academy/debug-crashloop-imagepull/failure_mode_analyzer.py "
                 "--start labs/platform-academy/debug-crashloop-imagepull/start.yaml "
@@ -3663,6 +3665,7 @@ RUNNABLE_LAB_UPDATES = {
         "validation_commands": [
             "bash labs/platform-academy/audit-tenant-boundaries/validate.sh",
             "bash labs/platform-academy/audit-tenant-boundaries/validate.sh --evidence /tmp/tenant-boundaries-evidence.md",
+            "bash labs/platform-academy/run-lab.sh validate audit-tenant-boundaries --cluster",
             "bash labs/platform-academy/audit-tenant-boundaries/validate.sh --cluster",
             (
                 "python3 labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py "
@@ -3833,6 +3836,7 @@ RUNNABLE_LAB_UPDATES = {
                 "--broken labs/platform-academy/trace-network-path/ingress-service.yaml "
                 "--fixed labs/platform-academy/trace-network-path/fixed-ingress-service.yaml"
             ),
+            "bash labs/platform-academy/run-lab.sh validate trace-network-path --cluster",
             "bash labs/platform-academy/trace-network-path/validate.sh --cluster",
             "grep -n \"targetPort: web\" labs/platform-academy/trace-network-path/ingress-service.yaml",
             "grep -n \"name: http\" labs/platform-academy/trace-network-path/ingress-service.yaml",
@@ -4133,6 +4137,7 @@ RUNNABLE_LAB_UPDATES = {
                 "--broken labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml "
                 "--fixed labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml"
             ),
+            "bash labs/platform-academy/run-lab.sh validate debug-aws-alb-health-path --cluster",
             "bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --cluster",
             "grep -n \"Target.ResponseCodeMismatch\" labs/platform-academy/debug-aws-alb-health-path/target-health.json",
             "grep -n \"targetPort: web\" labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",

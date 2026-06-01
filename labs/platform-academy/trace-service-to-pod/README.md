@@ -93,6 +93,7 @@ bash labs/platform-academy/trace-service-to-pod/validate.sh --evidence /tmp/trac
 Cluster validation:
 
 ```bash
+bash labs/platform-academy/run-lab.sh validate trace-service-to-pod --cluster
 bash labs/platform-academy/trace-service-to-pod/validate.sh --cluster
 ```
 

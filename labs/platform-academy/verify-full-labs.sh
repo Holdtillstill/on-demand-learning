@@ -67,6 +67,14 @@ export PLATFORM_LAB_SKIP_CONTRACT=true
 CLUSTER_LABS=(
   "trace-service-to-pod"
   "debug-crashloop-imagepull"
+  "trace-network-path"
+  "debug-aws-alb-health-path"
+  "audit-tenant-boundaries"
+)
+
+TRANSCRIPT_SETUP_LABS=(
+  "trace-service-to-pod"
+  "debug-crashloop-imagepull"
 )
 
 PREFLIGHT_SETUP_LABS=(
@@ -276,7 +284,7 @@ fi
 grep -q "Confirm the permission directly: kubectl auth can-i create services -n payments" "$tmpdir/setup-preflight-denied.txt" || fail "preflight permission failure should include the exact can-i command"
 grep -q "without --cluster or --preflight" "$tmpdir/setup-preflight-denied.txt" || fail "preflight permission failure should include the captured-evidence fallback"
 
-for setup_lab in "${CLUSTER_LABS[@]}"; do
+for setup_lab in "${TRANSCRIPT_SETUP_LABS[@]}"; do
   "$LAB_ROOT/run-lab.sh" setup "$setup_lab" --evidence "$tmpdir/$setup_lab-evidence.md" >"$tmpdir/runner-setup-$setup_lab.txt"
   [[ -s "$tmpdir/$setup_lab-evidence.md" ]] || fail "lab runner setup did not create evidence note for $setup_lab"
   grep -q "Captured broken-state transcript" "$tmpdir/runner-setup-$setup_lab.txt" || fail "lab runner setup did not print transcript for $setup_lab"

@@ -38,6 +38,7 @@ REQUIRED_ROOT_README_SNIPPETS = {
     "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight",
     "bash labs/platform-academy/run-lab.sh setup review-yaml-before-apply",
     "bash labs/platform-academy/run-lab.sh validate trace-service-to-pod",
+    "bash labs/platform-academy/run-lab.sh validate trace-network-path --cluster",
     "bash labs/platform-academy/verify-full-labs.sh",
     "bash labs/platform-academy/verify-full-labs.sh --cluster",
     "PLATFORM_LAB_ALLOW_NONLOCAL_CLUSTER=1",
@@ -524,6 +525,48 @@ def verify_script_contract(slug: str, script: Path, artifacts: set[str]) -> None
             fail(f"{slug}/cleanup.sh should either use guarded namespace cleanup or clearly state that no cleanup is needed")
 
 
+def bash_array_values(script: Path, array_name: str) -> list[str]:
+    content = script.read_text()
+    match = re.search(rf"(?ms)^{re.escape(array_name)}=\(\n(?P<body>.*?)^\)", content)
+    if not match:
+        fail(f"{repo_relative(script)} missing {array_name} array")
+    return re.findall(r'"([^"]+)"', match.group("body"))
+
+
+def cluster_validator_slugs() -> list[str]:
+    slugs: list[str] = []
+    for validate_script in sorted(LAB_ROOT.glob("*/validate.sh")):
+        if re.search(r"(?m)^\s*--cluster\)", validate_script.read_text()):
+            slugs.append(validate_script.parent.name)
+    return slugs
+
+
+def verify_cluster_validator_contract(full_labs: list[dict]) -> None:
+    full_slugs = {lab["slug"] for lab in full_labs}
+    cluster_slugs = set(cluster_validator_slugs())
+    if not cluster_slugs.issubset(full_slugs):
+        fail(f"cluster validators must belong to full labs: {sorted(cluster_slugs - full_slugs)}")
+
+    run_lab_cluster_slugs = set(bash_array_values(LAB_ROOT / "run-lab.sh", "CLUSTER_LABS"))
+    verifier_cluster_slugs = set(bash_array_values(LAB_ROOT / "verify-full-labs.sh", "CLUSTER_LABS"))
+    if run_lab_cluster_slugs != cluster_slugs:
+        fail(
+            "run-lab.sh CLUSTER_LABS must match validate.sh --cluster support; "
+            f"missing={sorted(cluster_slugs - run_lab_cluster_slugs)}, extra={sorted(run_lab_cluster_slugs - cluster_slugs)}"
+        )
+    if verifier_cluster_slugs != cluster_slugs:
+        fail(
+            "verify-full-labs.sh CLUSTER_LABS must match validate.sh --cluster support; "
+            f"missing={sorted(cluster_slugs - verifier_cluster_slugs)}, extra={sorted(verifier_cluster_slugs - cluster_slugs)}"
+        )
+
+    labs_by_slug = {lab["slug"]: lab for lab in full_labs}
+    for slug in sorted(cluster_slugs):
+        runner_command = f"bash labs/platform-academy/run-lab.sh validate {slug} --cluster"
+        if not any(runner_command == str(command) for command in labs_by_slug[slug].get("validation_commands", [])):
+            fail(f"{slug} validation_commands must advertise the runner cluster validator: {runner_command}")
+
+
 
 def verify_artifact_paths(slug: str, lab_dir: Path, lab: dict) -> None:
     artifact_paths = lab.get("artifact_paths", [])
@@ -698,6 +741,7 @@ def verify_contract() -> list[str]:
     verify_root_readme_contract(full_slugs)
     verify_platform_lab_docs_contract()
     verify_portfolio_metadata_contract(full_labs)
+    verify_cluster_validator_contract(full_labs)
     verify_lab_review_mode_contract(full_labs)
 
     for lab in full_labs:

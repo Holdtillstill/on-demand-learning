@@ -18,6 +18,9 @@ fi
 CLUSTER_LABS=(
   "trace-service-to-pod"
   "debug-crashloop-imagepull"
+  "trace-network-path"
+  "debug-aws-alb-health-path"
+  "audit-tenant-boundaries"
 )
 
 EVIDENCE_VALIDATION_LABS=(
@@ -66,6 +69,7 @@ Examples:
   bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --cluster
   bash labs/platform-academy/run-lab.sh validate trace-service-to-pod
   bash labs/platform-academy/run-lab.sh validate trace-service-to-pod --cluster
+  bash labs/platform-academy/run-lab.sh validate trace-network-path --cluster
   bash labs/platform-academy/run-lab.sh validate trace-service-to-pod --evidence /tmp/trace-service-evidence.md
   bash labs/platform-academy/run-lab.sh cleanup trace-service-to-pod
 

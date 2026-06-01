@@ -69,6 +69,7 @@ diff -u labs/platform-academy/trace-network-path/ingress-service.yaml labs/platf
 ```bash
 bash labs/platform-academy/trace-network-path/validate.sh
 bash labs/platform-academy/trace-network-path/validate.sh --evidence /tmp/network-path-evidence.md
+bash labs/platform-academy/run-lab.sh validate trace-network-path --cluster
 bash labs/platform-academy/trace-network-path/validate.sh --cluster
 bash labs/platform-academy/trace-network-path/cleanup.sh
 ```

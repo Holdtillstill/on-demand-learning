@@ -68,6 +68,7 @@ diff -u labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml labs/platfor
 ```bash
 bash labs/platform-academy/audit-tenant-boundaries/validate.sh
 bash labs/platform-academy/audit-tenant-boundaries/validate.sh --evidence /tmp/tenant-boundaries-evidence.md
+bash labs/platform-academy/run-lab.sh validate audit-tenant-boundaries --cluster
 bash labs/platform-academy/audit-tenant-boundaries/validate.sh --cluster
 bash labs/platform-academy/audit-tenant-boundaries/cleanup.sh
 ```

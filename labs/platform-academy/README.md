@@ -41,6 +41,7 @@ bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight
 bash labs/platform-academy/run-lab.sh setup review-yaml-before-apply --evidence /tmp/yaml-review-evidence.md
 bash labs/platform-academy/run-lab.sh validate trace-service-to-pod
 bash labs/platform-academy/run-lab.sh validate trace-service-to-pod --evidence /tmp/trace-service-evidence.md
+bash labs/platform-academy/run-lab.sh validate trace-network-path --cluster
 bash labs/platform-academy/run-lab.sh cleanup trace-service-to-pod
 bash labs/platform-academy/run-lab.sh verify-all
 ```
@@ -76,6 +77,9 @@ bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --cluster
 bash labs/platform-academy/run-lab.sh validate trace-service-to-pod --cluster
+bash labs/platform-academy/run-lab.sh validate trace-network-path --cluster
+bash labs/platform-academy/run-lab.sh validate debug-aws-alb-health-path --cluster
+bash labs/platform-academy/run-lab.sh validate audit-tenant-boundaries --cluster
 bash labs/platform-academy/verify-full-labs.sh --cluster
 ```
 

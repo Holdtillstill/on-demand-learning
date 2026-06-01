@@ -89,7 +89,12 @@ Evidence-note validation:
 bash labs/platform-academy/debug-crashloop-imagepull/validate.sh --evidence /tmp/crashloop-imagepull-evidence.md
 ```
 
-Use `--cluster` to apply and verify the fixed manifest in a local cluster.
+Use `--cluster` to apply and verify the fixed manifest in a local cluster:
+
+```bash
+bash labs/platform-academy/run-lab.sh validate debug-crashloop-imagepull --cluster
+bash labs/platform-academy/debug-crashloop-imagepull/validate.sh --cluster
+```
 
 ## Success Criteria
 

@@ -68,6 +68,7 @@ diff -u labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml lab
 ```bash
 bash labs/platform-academy/debug-aws-alb-health-path/validate.sh
 bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --evidence /tmp/alb-health-path-evidence.md
+bash labs/platform-academy/run-lab.sh validate debug-aws-alb-health-path --cluster
 bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --cluster
 bash labs/platform-academy/debug-aws-alb-health-path/cleanup.sh
 ```
