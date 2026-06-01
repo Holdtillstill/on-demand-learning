@@ -392,6 +392,10 @@ def test_platform_lab_bundle_download_contains_packet_and_artifacts():
     assert "## Worksheet prompts" in packet_response.text
     assert "## Local workspace" in packet_response.text
     assert "run-lab.sh workspace trace-service-to-pod" in packet_response.text
+    assert "## Downloaded workspace quickstart" in packet_response.text
+    assert "unzip trace-service-to-pod-learner-workspace.zip" in packet_response.text
+    assert "cd trace-service-to-pod" in packet_response.text
+    assert "./validate.sh --files-only" in packet_response.text
     assert "## Validation checks" in packet_response.text
     assert "## Rubric" in packet_response.text
 
@@ -438,6 +442,8 @@ def test_platform_lab_bundle_download_contains_packet_and_artifacts():
         assert "- labs/platform-academy/trace-service-to-pod/README.md" in manifest
         assert "- labs/platform-academy/trace-service-to-pod/solution.md" in manifest
         assert "./validate.sh --files-only" in manifest
+        workspace_readme = archive.read("trace-service-to-pod/README.md").decode()
+        assert "## Downloaded workspace quickstart" not in workspace_readme
 
 
 def test_platform_source_bundle_requires_token_outside_local():

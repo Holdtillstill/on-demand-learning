@@ -136,7 +136,28 @@ def _artifact_map(lab: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def lab_packet_markdown(lab: dict) -> str:
+def _workspace_quickstart_commands(lab: dict) -> list[str]:
+    commands = lab.get("workspace_quickstart_commands") or []
+    if commands:
+        return list(commands)
+    slug = lab["slug"]
+    return [
+        f"unzip {slug}-learner-workspace.zip",
+        f"cd {slug}",
+        "./setup.sh",
+        "# Fill evidence.md with your investigation notes",
+        "./validate.sh --files-only",
+        "./validate.sh",
+        "./cleanup.sh",
+    ]
+
+
+def lab_packet_markdown(lab: dict, include_downloaded_workspace: bool = True) -> str:
+    downloaded_workspace_section = (
+        _markdown_section("Downloaded workspace quickstart", _workspace_quickstart_commands(lab))
+        if include_downloaded_workspace
+        else ""
+    )
     return (
         f"# {lab['title']}\n\n"
         f"Track: {lab['track']}\n"
@@ -154,6 +175,7 @@ def lab_packet_markdown(lab: dict) -> str:
             "Local workspace",
             [f"bash labs/platform-academy/run-lab.sh workspace {lab['slug']} --dir /tmp/platform-academy-workspaces"],
         )
+        + downloaded_workspace_section
         + _markdown_section("Practice steps", lab.get("practice_steps"), True)
         + _markdown_section("Runbook commands", lab.get("commands"))
         + _markdown_section("Expected evidence", lab.get("expected_evidence"), True)
@@ -352,7 +374,7 @@ def write_lab_workspace(
             raise LabArtifactError(f"{destination} already exists and is not empty; pass --force to replace it")
 
     destination.mkdir(parents=True, exist_ok=True)
-    (destination / "README.md").write_text(lab_packet_markdown(lab), encoding="utf-8")
+    (destination / "README.md").write_text(lab_packet_markdown(lab, include_downloaded_workspace=False), encoding="utf-8")
 
     evidence_template = repo_root / "labs" / "platform-academy" / slug / "evidence-template.md"
     if evidence_template.is_file():
@@ -385,7 +407,7 @@ def write_lab_workspace(
 
 def write_learner_workspace_archive(archive: ZipFile, lab: dict, repo_root: Path) -> WorkspaceArtifactSelection:
     slug = lab["slug"]
-    archive.writestr(f"{slug}/README.md", lab_packet_markdown(lab))
+    archive.writestr(f"{slug}/README.md", lab_packet_markdown(lab, include_downloaded_workspace=False))
     for script_name in LAB_WORKSPACE_SCRIPT_NAMES:
         write_executable_archive_text(archive, f"{slug}/{script_name}", workspace_script_text(slug, script_name))
 
