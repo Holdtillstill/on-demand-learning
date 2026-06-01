@@ -160,9 +160,11 @@ make platform-lab-verify
 
 The artifact verifier parses the highest-value practical labs structurally. It checks the broken and fixed Kubernetes manifests, ArgoCD ignore rule, IAM trust and least-privilege policies, release workflow gates, and SLO alert rule instead of relying only on text snippets.
 
+The lab contract also checks shell safety. Any lab script with mutating `kubectl` commands must source `lib/cluster-safety.sh` and call `require_disposable_kube_context` before the first mutation. Cleanup scripts must either use `delete_namespace_if_disposable` or clearly state that no cleanup is needed.
+
 ## Cleanup
 
-Kubernetes labs include namespace delete commands in the app. If a run is interrupted, clean up manually:
+Kubernetes labs include guarded namespace delete commands in the app. If a run is interrupted, clean up manually only from a disposable or approved sandbox context:
 
 ```bash
 kubectl delete namespace payments payments-debug --ignore-not-found

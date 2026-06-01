@@ -186,6 +186,18 @@ REQUIRED_README_SECTIONS = {
 }
 SOLUTION_PRIMARY_SECTIONS = {"## Blockers", "## Decision", "## Diagnosis", "## Findings"}
 REPO_PATH_PATTERN = re.compile(r"labs/platform-academy/[A-Za-z0-9_./-]+")
+MUTATING_KUBECTL_COMMANDS = {
+    "annotate",
+    "apply",
+    "create",
+    "delete",
+    "label",
+    "patch",
+    "replace",
+    "scale",
+    "set",
+}
+MUTATING_KUBECTL_ROLLOUT_COMMANDS = {"restart", "undo"}
 EXPECTED_PORTFOLIO_LAB_COUNT = 7
 
 sys.path.insert(0, str(API_ROOT))
@@ -358,6 +370,33 @@ def verify_solution_contract(slug: str, solution: Path) -> None:
         fail(f"{slug}/solution.md missing ## Cleanup section")
 
 
+def mutating_kubectl_line_numbers(content: str) -> list[int]:
+    lines: list[int] = []
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if stripped.startswith(("echo ", "printf ", "grep ")):
+            continue
+        match = re.search(r"\bkubectl\s+([a-z-]+)(?:\s+([a-z-]+))?", stripped)
+        if not match:
+            continue
+        command = match.group(1)
+        subcommand = match.group(2) or ""
+        if command in MUTATING_KUBECTL_COMMANDS:
+            lines.append(line_number)
+        elif command == "rollout" and subcommand in MUTATING_KUBECTL_ROLLOUT_COMMANDS:
+            lines.append(line_number)
+    return lines
+
+
+def first_line_number(content: str, needle: str) -> int | None:
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        if needle in line:
+            return line_number
+    return None
+
+
 def verify_script_contract(slug: str, script: Path, artifacts: set[str]) -> None:
     if not executable(script):
         fail(f"{repo_relative(script)} is not executable")
@@ -366,6 +405,29 @@ def verify_script_contract(slug: str, script: Path, artifacts: set[str]) -> None
         fail(f"{slug} script {script.name} sources cluster-safety.sh but the bundle omits it")
     if "evidence-check.sh" in content and "labs/platform-academy/lib/evidence-check.sh" not in artifacts:
         fail(f"{slug} script {script.name} sources evidence-check.sh but the bundle omits it")
+    mutating_lines = mutating_kubectl_line_numbers(content)
+    uses_guarded_namespace_delete = "delete_namespace_if_disposable" in content
+    if mutating_lines or uses_guarded_namespace_delete:
+        if "cluster-safety.sh" not in content:
+            fail(f"{slug} script {script.name} mutates Kubernetes without sourcing cluster-safety.sh")
+        if "labs/platform-academy/lib/cluster-safety.sh" not in artifacts:
+            fail(f"{slug} script {script.name} needs cluster-safety.sh in artifact_paths")
+    if mutating_lines:
+        guard_line = first_line_number(content, "require_disposable_kube_context")
+        if guard_line is None:
+            fail(f"{slug} script {script.name} mutates Kubernetes without require_disposable_kube_context")
+        first_mutation = min(mutating_lines)
+        if guard_line > first_mutation:
+            fail(
+                f"{slug} script {script.name} calls require_disposable_kube_context after "
+                f"the first mutating kubectl command on line {first_mutation}"
+            )
+    if script.name == "cleanup.sh":
+        if mutating_lines:
+            fail(f"{slug}/cleanup.sh should use delete_namespace_if_disposable instead of raw mutating kubectl")
+        if "No cleanup needed" not in content and not uses_guarded_namespace_delete:
+            fail(f"{slug}/cleanup.sh should either use guarded namespace cleanup or clearly state that no cleanup is needed")
+
 
 
 def verify_artifact_paths(slug: str, lab_dir: Path, lab: dict) -> None:
