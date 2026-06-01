@@ -152,11 +152,26 @@ def _workspace_quickstart_commands(lab: dict) -> list[str]:
     ]
 
 
+def _extracted_workspace_section(lab: dict) -> str:
+    slug = lab["slug"]
+    return _markdown_section(
+        "Run from extracted bundle",
+        [
+            "./setup.sh",
+            "Edit evidence.md with your investigation notes.",
+            "./validate.sh --files-only",
+            "./validate.sh",
+            "./cleanup.sh",
+            f"Repo paths listed below are preserved under artifacts/labs/platform-academy/{slug}/.",
+        ],
+    )
+
+
 def lab_packet_markdown(lab: dict, include_downloaded_workspace: bool = True) -> str:
     downloaded_workspace_section = (
         _markdown_section("Downloaded workspace quickstart", _workspace_quickstart_commands(lab))
         if include_downloaded_workspace
-        else ""
+        else _extracted_workspace_section(lab)
     )
     return (
         f"# {lab['title']}\n\n"
@@ -196,23 +211,53 @@ def workspace_script_text(slug: str, script_name: str) -> str:
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
+TARGET="$DIR/artifacts/labs/platform-academy/{slug}/setup.sh"
 TEMPLATE="$DIR/artifacts/labs/platform-academy/{slug}/evidence-template.md"
 
-if [[ -s "$DIR/evidence.md" ]]; then
-  echo "Evidence note already exists: $DIR/evidence.md"
-elif [[ -f "$TEMPLATE" ]]; then
-  cp "$TEMPLATE" "$DIR/evidence.md"
-  echo "Created evidence note: $DIR/evidence.md"
-else
-  echo "No evidence template found for {slug}; create $DIR/evidence.md before validation." >&2
-  exit 1
-fi
+use_default_evidence=true
+help_requested=false
+for arg in "$@"; do
+  case "$arg" in
+    --evidence)
+      use_default_evidence=false
+      ;;
+    -h|--help)
+      use_default_evidence=false
+      help_requested=true
+      ;;
+  esac
+done
 
-echo
-echo "Next:"
-echo "  Edit evidence.md with your investigation notes."
-echo "  ./validate.sh --files-only"
-echo "  ./validate.sh"
+if [[ -f "$TARGET" ]]; then
+  args=("$@")
+  if [[ "$use_default_evidence" == true ]]; then
+    args=("--evidence" "$DIR/evidence.md" "${{args[@]}}")
+  fi
+  bash "$TARGET" "${{args[@]}}"
+  if [[ "$help_requested" == false ]]; then
+    echo
+    echo "From this extracted workspace, continue with:"
+    echo "  ./validate.sh --files-only"
+    echo "  ./validate.sh"
+    echo "  ./cleanup.sh"
+  fi
+else
+  if [[ -s "$DIR/evidence.md" ]]; then
+    echo "Evidence note already exists: $DIR/evidence.md"
+  elif [[ -f "$TEMPLATE" ]]; then
+    cp "$TEMPLATE" "$DIR/evidence.md"
+    echo "Created evidence note: $DIR/evidence.md"
+  else
+    echo "No setup script or evidence template found for {slug}; create $DIR/evidence.md before validation." >&2
+    exit 1
+  fi
+
+  echo
+  echo "Next:"
+  echo "  Edit evidence.md with your investigation notes."
+  echo "  ./validate.sh --files-only"
+  echo "  ./validate.sh"
+fi
 """
 
     if script_name == "validate.sh":
@@ -329,14 +374,14 @@ def learner_workspace_manifest(
         "Files:",
         "- README.md: lab packet with run sequence, artifact map, prompts, commands, validation checks, and rubric.",
         "- evidence.md: learner evidence note copied from the lab evidence template.",
-        "- setup.sh: local helper that creates evidence.md when needed.",
+        "- setup.sh: local helper that runs the copied setup script with evidence.md by default.",
         "- validate.sh: local helper that validates copied artifacts and evidence.md.",
         "- cleanup.sh: local helper that runs the copied cleanup script.",
         "- artifacts/: copied repo-backed lab artifacts for local inspection.",
         "",
         "Quick start:",
         "- ./setup.sh",
-        "- Edit evidence.md with your investigation notes.",
+        "- Follow the setup output, then edit evidence.md with your investigation notes.",
         "- ./validate.sh --files-only",
         "- ./validate.sh",
         "- ./cleanup.sh",

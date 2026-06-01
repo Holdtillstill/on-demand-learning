@@ -698,15 +698,24 @@ def test_all_platform_lab_workspace_bundles_withhold_solutions():
             for artifact_path in lab["learner_artifact_paths"]:
                 assert f"{slug}/artifacts/{artifact_path}" in names
             manifest = archive.read(f"{slug}/MANIFEST.txt").decode()
+            readme = archive.read(f"{slug}/README.md").decode()
             assert "Withheld source-only artifacts" in manifest
             assert f"- labs/platform-academy/{slug}/README.md" in manifest
             assert f"- labs/platform-academy/{slug}/solution.md" in manifest
+            assert "## Run from extracted bundle" in readme
+            assert f"artifacts/labs/platform-academy/{slug}/" in readme
             assert "./setup.sh" in manifest
             assert "./validate.sh --files-only" in manifest
             assert "./cleanup.sh" in manifest
 
 
 def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path):
+    setup_smoke_expectations = {
+        "trace-service-to-pod": "Service routing analysis passed",
+        "debug-crashloop-imagepull": "CrashLoop/ImagePull analysis passed",
+        "review-yaml-before-apply": "YAML manifest risk analysis passed",
+    }
+
     for slug in FULL_LAB_SLUGS:
         response = client.get(f"/api/platform-academy/labs/{slug}/workspace-bundle")
         assert response.status_code == 200
@@ -719,6 +728,16 @@ def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path
         subprocess.run(["bash", "-n", str(workspace / "setup.sh")], check=True)
         subprocess.run(["bash", "-n", str(workspace / "validate.sh")], check=True)
         subprocess.run(["bash", "-n", str(workspace / "cleanup.sh")], check=True)
+        if slug in setup_smoke_expectations:
+            setup_result = subprocess.run(
+                ["bash", str(workspace / "setup.sh")],
+                cwd=workspace,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            assert setup_smoke_expectations[slug] in setup_result.stdout
+            assert str(workspace / "evidence.md") in setup_result.stdout
         result = subprocess.run(
             ["bash", str(workspace / "validate.sh"), "--files-only"],
             cwd=workspace,
