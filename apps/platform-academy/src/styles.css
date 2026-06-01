@@ -4576,6 +4576,178 @@ pre {
   color: #9ff9df;
 }
 
+.lab-workbook-panel {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(125, 243, 211, 0.24);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 12%, rgba(34, 211, 238, 0.1), transparent 26rem),
+    radial-gradient(circle at 0% 0%, rgba(51, 214, 166, 0.12), transparent 24rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.02)),
+    rgba(6, 18, 16, 0.8);
+  color: var(--pa-text);
+  box-shadow: var(--pa-shadow-soft);
+}
+
+.lab-workbook-panel::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(135deg, rgba(125, 243, 211, 0.1), transparent 44%);
+}
+
+.lab-workbook-panel > * {
+  position: relative;
+}
+
+.lab-workbook-panel .section-heading h2,
+.lab-workbook-panel .section-heading h3,
+.lab-workbook-grid h3 {
+  color: #f4fff9;
+}
+
+.lab-workbook-panel .section-heading > span,
+.lab-workbook-progress span,
+.lab-save-state,
+.lab-command-deck .section-heading > span,
+.lab-phase-status .section-heading > span {
+  color: var(--pa-readable-secondary);
+}
+
+.lab-phase-status,
+.lab-command-deck,
+.lab-workspace-quickstart {
+  border-top-color: rgba(158, 187, 177, 0.2);
+}
+
+.lab-phase-status-row {
+  border-top-color: rgba(158, 187, 177, 0.18);
+}
+
+.lab-phase-status-row svg {
+  color: #8ff8dd;
+}
+
+.lab-phase-status-copy {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.lab-phase-status-copy strong {
+  color: #f4fff9;
+}
+
+.lab-phase-status-copy span,
+.lab-phase-status-row small {
+  color: var(--pa-readable-secondary);
+}
+
+.lab-command-tabs button {
+  border-color: rgba(158, 187, 177, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.058), rgba(255, 255, 255, 0.025)),
+    rgba(7, 22, 19, 0.78);
+  color: var(--pa-text);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 12px 28px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.lab-command-tabs button:hover {
+  border-color: rgba(125, 243, 211, 0.42);
+  background:
+    linear-gradient(135deg, rgba(51, 214, 166, 0.13), rgba(34, 211, 238, 0.06)),
+    rgba(255, 255, 255, 0.045);
+  transform: translateY(-1px);
+}
+
+.lab-command-tabs button.active {
+  border-color: rgba(125, 243, 211, 0.62);
+  background:
+    linear-gradient(135deg, rgba(51, 214, 166, 0.2), rgba(34, 211, 238, 0.1)),
+    rgba(8, 34, 28, 0.82);
+  box-shadow:
+    0 0 0 1px rgba(125, 243, 211, 0.16),
+    0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+.lab-command-tabs svg {
+  color: #8ff8dd;
+}
+
+.lab-command-tabs strong {
+  color: #f4fff9;
+}
+
+.lab-command-tabs span {
+  color: var(--pa-readable-secondary);
+}
+
+.lab-check-row {
+  color: #e9fff7;
+  font-weight: 720;
+}
+
+.lab-check-row input {
+  appearance: none;
+  border: 1px solid rgba(210, 245, 234, 0.34);
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+    rgba(2, 14, 12, 0.7);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.48);
+}
+
+.lab-check-row input:checked {
+  border-color: rgba(125, 243, 211, 0.9);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23021411' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.4' d='M3.5 8.5 6.6 11 12.5 4.5'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, #7df3d3, #33d6a6);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 14px 14px, auto;
+  box-shadow: 0 0 0 2px rgba(125, 243, 211, 0.16);
+}
+
+.lab-check-row input:focus-visible {
+  outline: 2px solid rgba(34, 211, 238, 0.44);
+  outline-offset: 3px;
+}
+
+.lab-worksheet-answer textarea {
+  border-color: rgba(158, 187, 177, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.044), rgba(255, 255, 255, 0.018)),
+    rgba(2, 14, 12, 0.86);
+  color: #f2fff9;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    inset 0 0 0 1px rgba(2, 20, 17, 0.72);
+  caret-color: #7df3d3;
+}
+
+.lab-worksheet-answer textarea:focus {
+  border-color: rgba(125, 243, 211, 0.68);
+  outline: 2px solid rgba(34, 211, 238, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(125, 243, 211, 0.18),
+    0 18px 42px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.lab-artifact-list code {
+  border-color: rgba(158, 187, 177, 0.22);
+  background: rgba(2, 14, 12, 0.66);
+  color: var(--pa-readable-secondary);
+}
+
 .search-box {
   border-color: rgba(158, 187, 177, 0.2);
   background: rgba(255, 255, 255, 0.06);
