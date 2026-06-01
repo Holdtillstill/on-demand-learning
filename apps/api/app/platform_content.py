@@ -3871,12 +3871,14 @@ RUNNABLE_LAB_UPDATES = {
     },
     "debug-aws-alb-health-path": {
         "prerequisites": [
-            "No AWS credentials required; this lab uses local ALB and Kubernetes evidence.",
+            "No AWS credentials required for the default path; this lab uses local ALB and Kubernetes evidence.",
+            "Optional cluster mode requires a disposable local Kubernetes context.",
             "Run commands from the repository root.",
         ],
         "setup_commands": [
-            "kubectl create --dry-run=client --validate=false -f labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",
+            "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --evidence /tmp/alb-health-path-evidence.md",
             "sed -n '1,160p' labs/platform-academy/debug-aws-alb-health-path/target-health.json",
+            "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --cluster --evidence /tmp/alb-health-path-evidence.md",
         ],
         "commands": [
             "grep -n \"unhealthy\\|ResponseCodeMismatch\\|targetPort: web\" labs/platform-academy/debug-aws-alb-health-path/target-health.json labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",
@@ -3895,6 +3897,7 @@ RUNNABLE_LAB_UPDATES = {
         "validation_commands": [
             "bash labs/platform-academy/debug-aws-alb-health-path/validate.sh",
             "bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --evidence /tmp/alb-health-path-evidence.md",
+            "bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --cluster",
             "grep -n \"Target.ResponseCodeMismatch\" labs/platform-academy/debug-aws-alb-health-path/target-health.json",
             "grep -n \"targetPort: web\" labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",
         ],
@@ -4999,7 +5002,9 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml",
         "labs/platform-academy/debug-aws-alb-health-path/events.txt",
         "labs/platform-academy/debug-aws-alb-health-path/evidence-template.md",
+        "labs/platform-academy/lib/cluster-safety.sh",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/debug-aws-alb-health-path/setup.sh",
         "labs/platform-academy/debug-aws-alb-health-path/validate.sh",
         "labs/platform-academy/debug-aws-alb-health-path/cleanup.sh",
         "labs/platform-academy/debug-aws-alb-health-path/solution.md",

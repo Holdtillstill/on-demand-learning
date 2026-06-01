@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "No cleanup needed. This lab reviews captured ALB and Kubernetes evidence only."
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
+delete_namespace_if_disposable payments

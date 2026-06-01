@@ -30,4 +30,8 @@ A good handoff says: ALB reports `Target.ResponseCodeMismatch` with 404, the Ing
 
 ## Cleanup
 
-No cleanup is required for the default captured-evidence path.
+No cleanup is required for the default captured-evidence path. If you used the optional disposable-cluster path, run:
+
+```bash
+bash labs/platform-academy/debug-aws-alb-health-path/cleanup.sh
+```

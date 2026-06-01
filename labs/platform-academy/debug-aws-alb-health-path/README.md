@@ -2,7 +2,7 @@
 
 ## Goal
 
-Use captured ALB target health, Kubernetes Ingress/Service YAML, and controller events to identify why one target is unhealthy.
+Use captured ALB target health, Kubernetes Ingress/Service YAML, and controller events to identify why one target is unhealthy. The default path needs no AWS account; an optional disposable-cluster mode creates the broken Kubernetes objects locally.
 
 ## Time
 
@@ -10,21 +10,27 @@ Use captured ALB target health, Kubernetes Ingress/Service YAML, and controller 
 
 ## Safety
 
-No AWS account is required. This lab uses local exported evidence and a client-side Kubernetes parse check.
+No AWS account is required. This lab uses local exported evidence and a client-side Kubernetes parse check by default. If you use `--cluster`, run it only against kind, minikube, Docker Desktop, Rancher Desktop, or another approved sandbox.
 
 ## Starting State
 
 ```bash
+bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --evidence /tmp/alb-health-path-evidence.md
 sed -n '1,220p' labs/platform-academy/debug-aws-alb-health-path/target-health.json
 sed -n '1,260p' labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml
 sed -n '1,160p' labs/platform-academy/debug-aws-alb-health-path/events.txt
-cp labs/platform-academy/debug-aws-alb-health-path/evidence-template.md /tmp/alb-health-evidence.md
 ```
 
 Optional parse check:
 
 ```bash
 kubectl create --dry-run=client --validate=false -f labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml
+```
+
+Optional local broken-state setup:
+
+```bash
+bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --cluster --evidence /tmp/alb-health-path-evidence.md
 ```
 
 ## Investigation
@@ -49,6 +55,8 @@ diff -u labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml lab
 ```bash
 bash labs/platform-academy/debug-aws-alb-health-path/validate.sh
 bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --evidence /tmp/alb-health-path-evidence.md
+bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --cluster
+bash labs/platform-academy/debug-aws-alb-health-path/cleanup.sh
 ```
 
 ## Success Criteria
