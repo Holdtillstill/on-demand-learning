@@ -857,6 +857,14 @@ def verify_deepened_lab_contract(slug: str, lab_dir: Path, lab: dict) -> None:
     if missing_artifacts:
         fail(f"{slug} deepened lab artifact_paths missing files: {missing_artifacts}")
 
+    false_lead_artifact_names = {"triage-notes.md", "hop-trace.md"}
+    false_lead_artifacts = sorted(filename for filename in false_lead_artifact_names if (lab_dir / filename).is_file())
+    if not false_lead_artifacts:
+        fail(f"{slug} deepened lab needs triage-notes.md or hop-trace.md for false-lead review")
+    artifact_filenames = {Path(path).name for path in artifact_paths}
+    if not artifact_filenames.intersection(false_lead_artifact_names):
+        fail(f"{slug} deepened lab artifact_paths should expose a false-lead review artifact")
+
     for filename in contract["files"]:
         path = lab_dir / filename
         if not path.is_file():
@@ -864,6 +872,8 @@ def verify_deepened_lab_contract(slug: str, lab_dir: Path, lab: dict) -> None:
         content = path.read_text()
         if "Evidence" not in content:
             fail(f"{slug}/{filename} should be evidence-oriented")
+        if filename in false_lead_artifact_names and "False Leads" not in content:
+            fail(f"{slug}/{filename} should include False Leads")
 
     if len(lab.get("worksheet_prompts", [])) < 6:
         fail(f"{slug} deepened lab should expose at least six worksheet prompts")
@@ -887,6 +897,8 @@ def verify_deepened_lab_contract(slug: str, lab_dir: Path, lab: dict) -> None:
     missing_terms = sorted(term for term in contract["terms"] if term not in searchable_metadata)
     if missing_terms:
         fail(f"{slug} deepened lab metadata missing terms: {missing_terms}")
+    if "False Leads" not in searchable_metadata:
+        fail(f"{slug} deepened lab metadata should prompt for False Leads")
 
 
 def verify_contract() -> list[str]:
