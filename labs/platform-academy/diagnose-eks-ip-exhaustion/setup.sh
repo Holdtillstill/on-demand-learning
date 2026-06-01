@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/diagnose-eks-ip-exhaustion"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/ip_exhaustion_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/eks-ip-exhaustion-evidence.md"
 run_analyzer=false
@@ -57,7 +58,11 @@ else
 fi
 
 echo
+echo "Captured capacity triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged EKS IP exhaustion evidence bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md"
 echo "  sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt"
 echo "  sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/remediation-plan.md"
 echo "  sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/decision-record.md"

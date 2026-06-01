@@ -7,6 +7,13 @@
 - Ingress/service manifest:
 - Reason no live mutation is required:
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False leads ruled out:
+- Strongest ALB clue:
+- Strongest Kubernetes clue:
+
 ## ALB Target Health Evidence
 
 - Target group:

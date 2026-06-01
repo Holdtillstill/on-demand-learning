@@ -1,5 +1,12 @@
 # EKS IP Exhaustion Evidence Template
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False leads ruled out:
+- Strongest scheduler clue:
+- Strongest CNI/subnet clue:
+
 ## Scheduler And Sandbox Evidence
 
 - FailedScheduling evidence:

@@ -16,6 +16,7 @@ This lab uses captured evidence. Do not edit live IAM roles or policies from thi
 
 ```bash
 bash labs/platform-academy/debug-irsa-access-denied/setup.sh --evidence /tmp/irsa-access-denied-evidence.md
+sed -n '1,220p' labs/platform-academy/debug-irsa-access-denied/triage-notes.md
 sed -n '1,220p' labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml
 sed -n '1,180p' labs/platform-academy/debug-irsa-access-denied/workload-error.log
 sed -n '1,220p' labs/platform-academy/debug-irsa-access-denied/trust-policy.json
@@ -58,6 +59,7 @@ Find:
 - The denied AWS API action.
 - The requested S3 bucket and key path.
 - Whether the failure is trust, permission, or both.
+- Which false leads the triage notes rule out before editing IAM.
 - Whether the local simulator proves the fixed trust and least-privilege policy cover the captured request.
 
 ## Remediation Target
@@ -80,4 +82,4 @@ bash labs/platform-academy/debug-irsa-access-denied/validate.sh --evidence /tmp/
 - You identify `s3:PutObject` as the denied action path.
 - You propose a narrow trust and permission fix.
 - You use the local simulator output as evidence that the proposed trust and permission scope match the workload.
-- Your evidence note separates Kubernetes identity, IAM trust, CloudTrail permission, least-privilege scope, owner, and validation evidence.
+- Your evidence note separates triage false leads, Kubernetes identity, IAM trust, CloudTrail permission, least-privilege scope, owner, and validation evidence.

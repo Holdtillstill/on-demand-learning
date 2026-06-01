@@ -104,14 +104,23 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "debug-aws-alb-health-path": {
-        "files": {"alb_health_analyzer.py", "evidence-template.md", "setup.sh"},
-        "terms": {"ALB", "ALB health path analysis passed", "Target.ResponseCodeMismatch", "targetPort", "health", "owner"},
+        "files": {"alb_health_analyzer.py", "evidence-template.md", "setup.sh", "triage-notes.md"},
+        "terms": {
+            "ALB",
+            "ALB health path analysis passed",
+            "False Leads",
+            "Target.ResponseCodeMismatch",
+            "targetPort",
+            "health",
+            "owner",
+        },
     },
     "diagnose-eks-ip-exhaustion": {
-        "files": {"evidence-template.md", "ip_exhaustion_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "ip_exhaustion_analyzer.py", "setup.sh", "triage-notes.md"},
         "terms": {
             "FailedScheduling",
             "FailedCreatePodSandBox",
+            "False Leads",
             "subnet-bbb222",
             "AvailableIPv4AddressCount=7",
             "prefix delegation disabled",
@@ -142,10 +151,11 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "debug-irsa-access-denied": {
-        "files": {"evidence-template.md", "irsa_simulator.py", "setup.sh"},
+        "files": {"evidence-template.md", "irsa_simulator.py", "setup.sh", "triage-notes.md"},
         "terms": {
             "ServiceAccount",
             "AccessDenied",
+            "False Leads",
             "PutObject",
             "system:serviceaccount:payments:checkout",
             "least-privilege",

@@ -8,6 +8,13 @@
 - IAM role ARN:
 - Confirmation that no live IAM changes are being made:
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False leads ruled out:
+- Strongest trust clue:
+- Strongest permission clue:
+
 ## Kubernetes Identity Evidence
 
 - ServiceAccount manifest path:

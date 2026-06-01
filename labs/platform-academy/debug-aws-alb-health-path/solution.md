@@ -27,6 +27,8 @@ python3 labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py \
 
 Expected result: `ALB health path analysis passed`, with ALB, health-path, Service/Pod, controller-event, fixed-target, and owner-decision evidence.
 
+The triage notes rule out DNS, security groups, Pod recreation, and console-only ALB edits as first fixes before changing source manifests.
+
 ## Fix
 
 `fixed-ingress-service.yaml` changes:
@@ -38,7 +40,7 @@ In a real service, the better fix might be to implement `/healthz` in the app an
 
 ## Handoff Note
 
-A good handoff says: ALB reports `Target.ResponseCodeMismatch` with 404, the Ingress health check path is `/healthz`, the Service sends traffic to `targetPort: web`, and the Pod only exposes port name `http`. The source fix in this lab changes the health path to `/` and targetPort to `http`; in production, the app owner must confirm whether `/healthz` should exist instead.
+A good handoff says: `triage-notes.md` rules out DNS, security groups, Pod recreation, and console-only false leads. ALB reports `Target.ResponseCodeMismatch` with 404, the Ingress health check path is `/healthz`, the Service sends traffic to `targetPort: web`, and the Pod only exposes port name `http`. The source fix in this lab changes the health path to `/` and targetPort to `http`; in production, the app owner must confirm whether `/healthz` should exist instead.
 
 ## Cleanup
 

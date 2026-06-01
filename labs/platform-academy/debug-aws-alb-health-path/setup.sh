@@ -8,6 +8,7 @@ FIXED="$LAB_DIR/fixed-ingress-service.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 HEALTH="$LAB_DIR/target-health.json"
 EVENTS="$LAB_DIR/events.txt"
+TRIAGE="$LAB_DIR/triage-notes.md"
 ANALYZER="$LAB_DIR/alb_health_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
@@ -79,6 +80,9 @@ prepare_evidence_note() {
 if [[ "$mode" == "no-cluster" ]]; then
   prepare_evidence_note
   echo
+  echo "Captured triage notes:"
+  sed -n '1,220p' "$TRIAGE"
+  echo
   echo "Captured ALB target health:"
   sed -n '1,180p' "$HEALTH"
   echo
@@ -131,6 +135,7 @@ echo "The Ingress asks ALB to check /healthz, the app returns 404 there, and the
 echo "No AWS account or ALB controller is required for this local cluster path."
 echo
 echo "Start with:"
+echo "  sed -n '1,220p' labs/platform-academy/debug-aws-alb-health-path/triage-notes.md"
 echo "  kubectl describe ingress checkout -n payments"
 echo "  kubectl describe svc checkout -n payments"
 echo "  kubectl exec -n payments checkout-example -- python -c 'import http.client; c=http.client.HTTPConnection(\"127.0.0.1\", 8080); c.request(\"GET\", \"/healthz\"); print(c.getresponse().status)'"

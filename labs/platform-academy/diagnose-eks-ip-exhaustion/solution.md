@@ -11,6 +11,7 @@ Pause the scale-up and escalate to platform/network ownership for VPC CNI capaci
 - `subnet-bbb222` has only seven available IPv4 addresses.
 - Nodes are at 29/29, 28/29, and 29/29 running Pods.
 - Prefix delegation is disabled.
+- The triage notes rule out application Pod restarts, CPU/memory tuning, blind node scaling, and unreviewed live CIDR/CNI changes.
 
 ## Safer Target
 
@@ -29,7 +30,7 @@ Expected result: `EKS IP exhaustion analysis passed`, with scheduler pressure, V
 
 ## Evidence to Save
 
-Save the event lines, node pod-density summary, subnet inventory, `aws-node` logs, local IP exhaustion analyzer output, owner split, validation output, and the decision record in `evidence-template.md`.
+Save the triage false leads, event lines, node pod-density summary, subnet inventory, `aws-node` logs, local IP exhaustion analyzer output, owner split, validation output, and the decision record in `evidence-template.md`.
 
 ## Cleanup
 

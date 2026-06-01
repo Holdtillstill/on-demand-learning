@@ -16,6 +16,7 @@ No AWS account is required. This lab uses local exported evidence and a client-s
 
 ```bash
 bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --evidence /tmp/alb-health-path-evidence.md
+sed -n '1,220p' labs/platform-academy/debug-aws-alb-health-path/triage-notes.md
 sed -n '1,220p' labs/platform-academy/debug-aws-alb-health-path/target-health.json
 sed -n '1,260p' labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml
 sed -n '1,160p' labs/platform-academy/debug-aws-alb-health-path/events.txt
@@ -55,6 +56,7 @@ Find:
 - The Pod port name.
 - Any controller event that names the mismatch.
 - Whether the application path also returns a 404.
+- Which false leads the triage notes rule out before changing ALB or Kubernetes objects.
 - Whether the local analyzer confirms health-path, Service/Pod, and owner evidence.
 
 ## Remediation Target
@@ -80,4 +82,4 @@ bash labs/platform-academy/debug-aws-alb-health-path/cleanup.sh
 - You explain why `/healthz` returning 404 also needs owner confirmation.
 - You propose a source-manifest fix rather than a console-only change.
 - You capture the local ALB health analyzer result.
-- Your evidence note separates ALB target health, Kubernetes port wiring, application health contract, owners, validation, and handoff.
+- Your evidence note separates triage false leads, ALB target health, Kubernetes port wiring, application health contract, owners, validation, and handoff.

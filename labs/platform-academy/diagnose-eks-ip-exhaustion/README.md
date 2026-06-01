@@ -18,6 +18,7 @@ Inspect the evidence:
 
 ```bash
 bash labs/platform-academy/diagnose-eks-ip-exhaustion/setup.sh --evidence /tmp/eks-ip-exhaustion-evidence.md
+sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md
 sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt
 sed -n '1,180p' labs/platform-academy/diagnose-eks-ip-exhaustion/evidence-template.md
 ```
@@ -54,6 +55,7 @@ Find:
 - Whether the local analyzer separates scheduler pressure from VPC CNI IP exhaustion.
 - Which team owns workload scale, node group capacity, CNI settings, and subnet planning.
 - Which evidence proves this is not an application restart or blind node-scaling problem.
+- Which false leads the triage notes rule out before capacity changes.
 
 ## Remediation Target
 
@@ -74,3 +76,4 @@ bash labs/platform-academy/diagnose-eks-ip-exhaustion/validate.sh --evidence /tm
 - You use the analyzer output as evidence for the owner/remediation split.
 - You produce a no-credential incident note that a platform owner could act on.
 - You assign application, platform, and network owners with validation and rollback evidence.
+- Your evidence note records triage false leads before recommending capacity remediation.

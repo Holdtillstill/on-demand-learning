@@ -3467,21 +3467,25 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/diagnose-eks-ip-exhaustion/setup.sh --evidence /tmp/eks-ip-exhaustion-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md",
             "sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
         ],
         "commands": [
+            "grep -n \"False Leads\\|Blind node scaling\\|FailedCreatePodSandBox\" labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md",
             "grep -n \"FailedCreatePodSandBox\\|failed to assign IP\\|AvailableIPv4AddressCount\" labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
             "grep -n \"maxPods\\|runningPods\\|prefix delegation\" labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
             "python3 labs/platform-academy/diagnose-eks-ip-exhaustion/ip_exhaustion_analyzer.py --snapshot labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
             "sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/remediation-plan.md",
         ],
         "practice_steps": [
+            "Read triage-notes.md and rule out restart, CPU/memory, blind node scaling, and live capacity-change false leads.",
             "Separate scheduler max-pod pressure from VPC CNI IP allocation errors.",
             "Find the subnet with the lowest free IPv4 count.",
             "Use the local analyzer to confirm the scheduler, CNI, subnet, maxPods, and prefix-delegation signals agree.",
             "Decide whether prefix delegation, node group sizing, or CIDR planning is the correct owner path.",
         ],
         "expected_evidence": [
+            "The triage notes rule out app restarts, CPU/memory tuning, blind node scaling, and unreviewed live CIDR/CNI changes.",
             "Events include FailedCreatePodSandBox with failed IP assignment.",
             "One subnet has only seven available IPv4 addresses.",
             "Nodes are near maxPods and prefix delegation is disabled.",
@@ -3496,7 +3500,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/diagnose-eks-ip-exhaustion/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use the evidence pack as a captured incident transcript.",
+            "Use triage-notes.md and the evidence pack as a captured incident transcript.",
             "Write the decision note without running any cluster or AWS commands.",
         ],
     },
@@ -3905,16 +3909,19 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/debug-irsa-access-denied/setup.sh --evidence /tmp/irsa-access-denied-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/debug-irsa-access-denied/triage-notes.md",
             "kubectl create --dry-run=client --validate=false -f labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml",
             "sed -n '1,180p' labs/platform-academy/debug-irsa-access-denied/workload-error.log",
             "sed -n '1,180p' labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json",
         ],
         "commands": [
+            "grep -n \"False Leads\\|Wildcard trust\\|s3:\\*\" labs/platform-academy/debug-irsa-access-denied/triage-notes.md",
             "grep -n \"role-arn\\|serviceAccountName\\|AWS_ROLE_ARN\" labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml labs/platform-academy/debug-irsa-access-denied/workload-error.log",
             "grep -n \"system:serviceaccount\\|AccessDenied\\|PutObject\" labs/platform-academy/debug-irsa-access-denied/trust-policy.json labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json",
             "python3 labs/platform-academy/debug-irsa-access-denied/irsa_simulator.py --serviceaccount labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml --trust-policy labs/platform-academy/debug-irsa-access-denied/trust-policy.json --fixed-trust-policy labs/platform-academy/debug-irsa-access-denied/fixed-trust-policy.json --cloudtrail-event labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json --permission-policy labs/platform-academy/debug-irsa-access-denied/least-privilege-policy.json",
         ],
         "practice_steps": [
+            "Read triage-notes.md and rule out Pod restart, token rotation, bucket-policy-only, wildcard, and live-IAM false leads.",
             "Match the Pod service account to the annotated IAM role.",
             "Compare the application-side SDK failure with the CloudTrail denial.",
             "Compare the trust policy subject with the real namespace and service account.",
@@ -3922,6 +3929,7 @@ RUNNABLE_LAB_UPDATES = {
             "Run the local simulator to prove the proposed trust subject and S3 object-prefix permission cover the captured request.",
         ],
         "expected_evidence": [
+            "The triage notes rule out restarts, token rotation, bucket-policy-only changes, wildcard trust, and broad S3 permissions.",
             "The ServiceAccount is payments/checkout.",
             "The workload log shows AWS_ROLE_ARN for payments-checkout-readonly and an SDK AccessDenied on PutObject.",
             "The trust policy subject allows default/checkout instead.",
@@ -3937,7 +3945,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/debug-irsa-access-denied/cleanup.sh"],
         "no_cluster_fallback": [
-            "Review serviceaccount.yaml, workload-error.log, trust-policy.json, and cloudtrail-event.json as exported evidence.",
+            "Review triage-notes.md, serviceaccount.yaml, workload-error.log, trust-policy.json, and cloudtrail-event.json as exported evidence.",
             "Write whether the immediate blocker is trust subject mismatch, permission scope, or both.",
         ],
     },
@@ -4111,12 +4119,14 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --evidence /tmp/alb-health-path-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/debug-aws-alb-health-path/triage-notes.md",
             "sed -n '1,160p' labs/platform-academy/debug-aws-alb-health-path/target-health.json",
             "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight debug-aws-alb-health-path",
             "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --preflight",
             "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --cluster --evidence /tmp/alb-health-path-evidence.md",
         ],
         "commands": [
+            "grep -n \"False Leads\\|console-only\\|security groups\" labs/platform-academy/debug-aws-alb-health-path/triage-notes.md",
             "grep -n \"unhealthy\\|ResponseCodeMismatch\\|targetPort: web\" labs/platform-academy/debug-aws-alb-health-path/target-health.json labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",
             "grep -n \"healthcheck-path\\|targetPort web\\|no matching Pod port\" labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml labs/platform-academy/debug-aws-alb-health-path/events.txt",
             (
@@ -4128,12 +4138,14 @@ RUNNABLE_LAB_UPDATES = {
             ),
         ],
         "practice_steps": [
+            "Read triage-notes.md and rule out DNS, security group, Pod recreation, and console-only false leads.",
             "Confirm which target group symptom is failing.",
             "Compare ALB health path with Ingress, Service, and Pod port evidence.",
             "Use the local analyzer to prove ALB, health-path, Service/Pod, controller-event, and fixed-target evidence.",
             "Name whether the owner is AWS networking, ingress controller, or app manifest.",
         ],
         "expected_evidence": [
+            "The triage notes rule out DNS, security group, Pod recreation, and console-only ALB changes as first fixes.",
             "One target is unhealthy with Target.ResponseCodeMismatch.",
             "Ingress healthcheck path is /healthz.",
             "Service targetPort web does not match the Pod port named http.",
@@ -4156,7 +4168,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/debug-aws-alb-health-path/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use target-health.json, ingress-service.yaml, and events.txt as exported evidence.",
+            "Use triage-notes.md, target-health.json, ingress-service.yaml, and events.txt as exported evidence.",
             "Write the owner and next action without AWS CLI access.",
         ],
     },
@@ -4562,6 +4574,7 @@ DEEPENED_LAB_UPDATES = {
     "debug-aws-alb-health-path": {
         "worksheet_prompts": [
             "Record the evidence source, namespace, manifest files, and why no live AWS mutation is required.",
+            "Read triage-notes.md and list the False Leads ruled out before changing ALB or Kubernetes objects.",
             "Paste the ALB target health reason, unhealthy target, and observed HTTP status.",
             "Paste the Ingress health check path and explain whether it matches the app contract.",
             "Paste the Service targetPort, Pod port name, and controller event that prove the routing mismatch.",
@@ -4570,6 +4583,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Uses exported ALB and Kubernetes evidence without requiring AWS credentials.",
+            "Uses triage notes to rule out DNS, security group, Pod recreation, and console-only False Leads.",
             "Names `Target.ResponseCodeMismatch` and the 404 health-check symptom.",
             "Connects `/healthz` to the application health endpoint contract instead of assuming AWS is broken.",
             "Explains why `targetPort: web` does not match the Pod port named `http`.",
@@ -4578,6 +4592,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "Evidence source and no-live-mutation boundary recorded",
+            "Triage False Leads ruled out",
             "ALB target health reason captured",
             "Health check path reviewed",
             "Service-to-Pod port mismatch captured",
@@ -4587,6 +4602,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["evidence source", "no live AWS", "namespace", "manifest", "no live mutation"],
+            ["triage-notes.md", "False Leads", "security groups", "console-only", "Pod recreation"],
             ["Target.ResponseCodeMismatch", "404", "unhealthy target", "target health"],
             ["/healthz", "health check path", "app contract", "health endpoint"],
             ["targetPort: web", "targetPort web", "Pod port", "http", "controller event"],
@@ -4597,6 +4613,7 @@ DEEPENED_LAB_UPDATES = {
     "diagnose-eks-ip-exhaustion": {
         "worksheet_prompts": [
             "Record the cluster snapshot, namespace, rollout scale target, and confirmation that no AWS or cluster capacity change is being made.",
+            "Read triage-notes.md and list the False Leads ruled out before recommending capacity changes.",
             "Paste the `FailedScheduling` and `Insufficient pods` evidence that shows scheduler pod-density pressure.",
             "Paste the `FailedCreatePodSandBox` and aws-cni IP allocation evidence.",
             "Paste `subnet-bbb222`, `AvailableIPv4AddressCount=7`, node maxPods/runningPods, and `prefix delegation disabled` evidence.",
@@ -4605,6 +4622,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the no-live-capacity-change safety boundary and names the reviewed rollout.",
+            "Uses triage notes to rule out app restarts, CPU/memory tuning, blind node scaling, and live CNI/CIDR False Leads.",
             "Separates `FailedScheduling` pod-density evidence from application health assumptions.",
             "Connects `FailedCreatePodSandBox` and aws-cni logs to IP allocation failure.",
             "Identifies `subnet-bbb222`, `AvailableIPv4AddressCount=7`, maxPods pressure, and `prefix delegation disabled`.",
@@ -4613,6 +4631,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-live-capacity-change safety boundary recorded",
+            "Triage False Leads ruled out",
             "EKS IP exhaustion analysis passed output captured",
             "FailedScheduling pod-density evidence captured",
             "FailedCreatePodSandBox CNI evidence captured",
@@ -4623,6 +4642,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["cluster-snapshot.txt", "payments", "checkout scale", "no AWS", "no cluster capacity"],
+            ["triage-notes.md", "False Leads", "Blind node scaling", "CPU", "application Pods"],
             ["FailedScheduling", "Insufficient pods", "maxPods", "pod-density"],
             ["FailedCreatePodSandBox", "aws-cni", "failed to assign an IP address", "ipamd.go"],
             ["subnet-bbb222", "AvailableIPv4AddressCount=7", "runningPods=29", "prefix delegation disabled"],
@@ -4668,6 +4688,7 @@ DEEPENED_LAB_UPDATES = {
     "debug-irsa-access-denied": {
         "worksheet_prompts": [
             "Record the evidence source, namespace, ServiceAccount, IAM role ARN, and confirmation that no live IAM changes are being made.",
+            "Read triage-notes.md and list the False Leads ruled out before editing IAM.",
             "Paste the Kubernetes and runtime identity evidence: ServiceAccount namespace/name, Pod `serviceAccountName`, role annotation, and `AWS_ROLE_ARN`.",
             "Paste the application-side SDK error from workload-error.log and compare it with CloudTrail.",
             "Paste the trust policy subject, expected subject, and namespace mismatch.",
@@ -4677,6 +4698,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the captured-evidence safety boundary and avoids live IAM mutation.",
+            "Uses triage notes to rule out restarts, token rotation, bucket-policy-only changes, wildcard trust, and broad S3 False Leads.",
             "Captures Kubernetes identity and runtime `AWS_ROLE_ARN` evidence for `payments/checkout`.",
             "Connects the application SDK `AccessDenied` with the CloudTrail `s3:PutObject` denial.",
             "Identifies the trust subject mismatch between `default/checkout` and `payments/checkout`.",
@@ -4686,6 +4708,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-live-IAM safety boundary recorded",
+            "Triage False Leads ruled out",
             "ServiceAccount and runtime role identity evidence captured",
             "Application SDK AccessDenied evidence captured",
             "Trust subject mismatch captured",
@@ -4696,6 +4719,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["captured evidence", "no live IAM", "ServiceAccount", "role ARN", "payments"],
+            ["triage-notes.md", "False Leads", "token rotation", "wildcard", "s3:*"],
             ["payments/checkout", "serviceAccountName", "role-arn", "AWS_ROLE_ARN", "payments-checkout-readonly"],
             ["workload-error.log", "botocore", "AccessDenied", "PutObject", "SDK"],
             ["system:serviceaccount:default:checkout", "system:serviceaccount:payments:checkout", "trust policy", "namespace mismatch"],
@@ -5192,6 +5216,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "diagnose-eks-ip-exhaustion": [
         "labs/platform-academy/diagnose-eks-ip-exhaustion/README.md",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md",
         "labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
         "labs/platform-academy/diagnose-eks-ip-exhaustion/remediation-plan.md",
         "labs/platform-academy/diagnose-eks-ip-exhaustion/decision-record.md",
@@ -5318,6 +5343,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "debug-irsa-access-denied": [
         "labs/platform-academy/debug-irsa-access-denied/README.md",
+        "labs/platform-academy/debug-irsa-access-denied/triage-notes.md",
         "labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml",
         "labs/platform-academy/debug-irsa-access-denied/workload-error.log",
         "labs/platform-academy/debug-irsa-access-denied/trust-policy.json",
@@ -5378,6 +5404,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "debug-aws-alb-health-path": [
         "labs/platform-academy/debug-aws-alb-health-path/README.md",
+        "labs/platform-academy/debug-aws-alb-health-path/triage-notes.md",
         "labs/platform-academy/debug-aws-alb-health-path/target-health.json",
         "labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",
         "labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml",

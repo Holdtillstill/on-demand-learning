@@ -1025,8 +1025,8 @@ def test_deepened_platform_lab_feedback_flags_missing_specific_evidence():
 
 
 def test_security_lab_feedback_separates_identity_trust_and_permission():
-    checked_items = {f"worksheet-{index}": True for index in range(7)}
-    checked_items.update({f"validation-{index}": True for index in range(8)})
+    checked_items = {f"worksheet-{index}": True for index in range(8)}
+    checked_items.update({f"validation-{index}": True for index in range(9)})
 
     response = client.post(
         "/api/platform-academy/labs/debug-irsa-access-denied/submission",
@@ -1034,15 +1034,18 @@ def test_security_lab_feedback_separates_identity_trust_and_permission():
             "user_id": "lab-irsa-rubric-user",
             "worksheet_answers": {
                 "worksheet-0": "captured evidence only, no live IAM changes; ServiceAccount payments checkout uses role ARN.",
-                "worksheet-1": "payments/checkout serviceAccountName checkout has role-arn and AWS_ROLE_ARN payments-checkout-readonly.",
-                "worksheet-2": "workload-error.log shows botocore SDK AccessDenied for PutObject.",
-                "worksheet-3": (
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out token rotation, wildcard trust, and s3:* broad fixes."
+                ),
+                "worksheet-2": "payments/checkout serviceAccountName checkout has role-arn and AWS_ROLE_ARN payments-checkout-readonly.",
+                "worksheet-3": "workload-error.log shows botocore SDK AccessDenied for PutObject.",
+                "worksheet-4": (
                     "trust policy has system:serviceaccount:default:checkout but expected "
                     "system:serviceaccount:payments:checkout, a namespace mismatch."
                 ),
-                "worksheet-4": "CloudTrail AccessDenied for PutObject to payments-prod-receipts receipts/2026/05/30/example.json.",
-                "worksheet-5": "trust owner and permission owner are separate; avoid wildcard s3:* fixes.",
-                "worksheet-6": (
+                "worksheet-5": "CloudTrail AccessDenied for PutObject to payments-prod-receipts receipts/2026/05/30/example.json.",
+                "worksheet-6": "trust owner and permission owner are separate; avoid wildcard s3:* fixes.",
+                "worksheet-7": (
                     "Use s3:PutObject on arn:aws:s3:::payments-prod-receipts/receipts/* "
                     "with least-privilege validation and handoff."
                 ),
@@ -1054,10 +1057,13 @@ def test_security_lab_feedback_separates_identity_trust_and_permission():
 
     assert response.status_code == 200
     feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
     trust_feedback = next(item for item in feedback if "trust subject mismatch" in item["criterion"])
     permission_feedback = next(item for item in feedback if "application SDK" in item["criterion"])
     cloudtrail_feedback = next(item for item in feedback if "bucket and key-prefix" in item["criterion"])
     fix_feedback = next(item for item in feedback if "least-privilege permission scope" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
     assert trust_feedback["status"] == "strong"
     assert "system:serviceaccount:payments:checkout" in trust_feedback["evidence_terms"]
     assert permission_feedback["status"] == "strong"
