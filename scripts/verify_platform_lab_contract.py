@@ -214,8 +214,15 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "run-incident-commander-tabletop": {
-        "files": {"evidence-template.md"},
-        "terms": {"SEV-2", "0.2%", "9.4%", "revision 42", "Communications lead"},
+        "files": {"evidence-template.md", "incident_tabletop_analyzer.py", "setup.sh"},
+        "terms": {
+            "SEV-2",
+            "0.2%",
+            "9.4%",
+            "revision 42",
+            "Communications lead",
+            "Incident commander tabletop analysis passed",
+        },
     },
     "audit-eks-cost-drivers": {
         "files": {"evidence-template.md", "cost_analyzer.py", "setup.sh"},

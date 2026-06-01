@@ -36,4 +36,5 @@
 - Timeline entries added:
 - Evidence linked to each decision:
 - Owner for each decision:
+- Local analyzer output:
 - Follow-up evidence to save:

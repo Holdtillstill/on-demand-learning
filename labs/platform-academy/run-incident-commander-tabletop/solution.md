@@ -14,7 +14,9 @@ Confirm SEV-2, assign incident roles, and prepare rollback unless impact drops w
 
 ## Evidence to Save
 
-Save role assignments, current impact, mitigation decision, next update time, and a timeline entry for each decision.
+Save role assignments, current impact, mitigation decision, next update time, local analyzer output, and a timeline entry for each decision.
+
+The local incident tabletop analyzer reports `Incident commander tabletop analysis passed`.
 
 ## Handoff Note
 
