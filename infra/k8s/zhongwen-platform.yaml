@@ -278,20 +278,28 @@ spec:
           image: ghcr.io/example/platform-academy-web:replace-me
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           env:
             - name: PLATFORM_API_UPSTREAM
               value: http://backend:8000
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           readinessProbe:
             httpGet:
               path: /dashboard/home
-              port: 80
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /dashboard/home
-              port: 80
+              port: 8080
             initialDelaySeconds: 15
             periodSeconds: 20
           resources:
@@ -313,7 +321,7 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 80
+      targetPort: 8080
 ---
 apiVersion: apps/v1
 kind: Deployment
