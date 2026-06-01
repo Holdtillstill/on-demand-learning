@@ -29,6 +29,7 @@
 - Namespace/name scoped:
 - JSON pointer:
 - Fields intentionally not ignored:
+- Local drift analyzer result:
 
 ## Validation And Handoff
 

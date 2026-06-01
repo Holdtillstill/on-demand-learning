@@ -24,13 +24,23 @@ The report also shows `selfHeal: true`. If ArgoCD self-heals before ownership is
 
 If an HPA or autoscaler owns replica count, configure ArgoCD to ignore only `/spec/replicas` for the `checkout` Deployment. Do not ignore the full object.
 
+The local drift analyzer checks that exact boundary:
+
+```bash
+python3 labs/platform-academy/trace-argocd-drift/drift_analyzer.py \
+  --desired labs/platform-academy/trace-argocd-drift/desired.yaml \
+  --live labs/platform-academy/trace-argocd-drift/live.yaml \
+  --ignore-rule labs/platform-academy/trace-argocd-drift/ignore-differences.yaml \
+  --report labs/platform-academy/trace-argocd-drift/argocd-app-report.txt
+```
+
 ## Why Narrow Scope Matters
 
 ArgoCD should still detect drift in image, resource requests, labels, probes, security context, and other production-owned fields. A broad ignore rule would hide real incidents.
 
 ## Handoff Note
 
-A good handoff says: `argocd-app-report.txt` reports `OutOfSync` on `/spec/replicas`; Git declares `replicas: 3`, live state has `replicas: 9`, `selfHeal: true` could fight autoscaling, and the live object has autoscaling metadata. If the autoscaler owns replicas, ignore only `/spec/replicas` for `payments/checkout`; keep image, labels, resources, probes, and security settings Git-owned.
+A good handoff says: `argocd-app-report.txt` reports `OutOfSync` on `/spec/replicas`; Git declares `replicas: 3`, live state has `replicas: 9`, `selfHeal: true` could fight autoscaling, and the live object has autoscaling metadata. The drift analyzer confirms the Git-owned image and resource requests still match Git. If the autoscaler owns replicas, ignore only `/spec/replicas` for `payments/checkout`; keep image, labels, resources, probes, and security settings Git-owned.
 
 ## Remediation Target
 

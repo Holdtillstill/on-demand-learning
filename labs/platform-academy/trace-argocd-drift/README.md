@@ -15,11 +15,21 @@ No ArgoCD server or cluster access is required. Use the captured manifests only,
 ## Starting State
 
 ```bash
+bash labs/platform-academy/trace-argocd-drift/setup.sh --evidence /tmp/argocd-drift-evidence.md
 sed -n '1,220p' labs/platform-academy/trace-argocd-drift/argocd-app-report.txt
 sed -n '1,220p' labs/platform-academy/trace-argocd-drift/desired.yaml
 sed -n '1,220p' labs/platform-academy/trace-argocd-drift/live.yaml
 diff -u labs/platform-academy/trace-argocd-drift/desired.yaml labs/platform-academy/trace-argocd-drift/live.yaml || true
-cp labs/platform-academy/trace-argocd-drift/evidence-template.md /tmp/argocd-drift-evidence.md
+```
+
+Run the local drift analyzer:
+
+```bash
+python3 labs/platform-academy/trace-argocd-drift/drift_analyzer.py \
+  --desired labs/platform-academy/trace-argocd-drift/desired.yaml \
+  --live labs/platform-academy/trace-argocd-drift/live.yaml \
+  --ignore-rule labs/platform-academy/trace-argocd-drift/ignore-differences.yaml \
+  --report labs/platform-academy/trace-argocd-drift/argocd-app-report.txt
 ```
 
 ## Investigation
@@ -32,6 +42,7 @@ Find:
 - Which fields should remain Git-owned.
 - Whether `selfHeal` would fight an autoscaler.
 - How narrow the ignore rule should be if autoscaling owns replicas.
+- Whether the local analyzer proves image and resource fields remain Git-owned.
 
 ## Remediation Target
 
@@ -54,4 +65,5 @@ bash labs/platform-academy/trace-argocd-drift/validate.sh --evidence /tmp/argocd
 - You do not ignore the whole Deployment.
 - You keep image, labels, resources, and security settings owned by Git.
 - You write a field-owner decision instead of blindly forcing sync.
+- You use the analyzer output as evidence that only `/spec/replicas` is ignored.
 - Your evidence note names desired/live replica values, controller ownership signal, narrow ignore rule, Git-owned fields, owner, and validation evidence.

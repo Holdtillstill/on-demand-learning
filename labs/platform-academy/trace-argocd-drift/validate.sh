@@ -9,6 +9,7 @@ REPORT="$LAB_DIR/argocd-app-report.txt"
 DECISION="$LAB_DIR/ownership-decision.md"
 IGNORE="$LAB_DIR/ignore-differences.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/drift_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -65,6 +66,14 @@ grep -q -- "- /spec/replicas" "$IGNORE" || fail "ignore-differences.yaml should 
 grep -q "## Drift Field Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for drift field evidence"
 grep -q "## Ownership Decision" "$TEMPLATE" || fail "evidence-template.md should prompt for ownership decision"
 grep -q "## Ignore Rule Review" "$TEMPLATE" || fail "evidence-template.md should prompt for ignore rule review"
+grep -q "ArgoCD drift analysis passed" "$ANALYZER" || fail "drift_analyzer.py should report a successful local drift analysis"
+
+python3 "$ANALYZER" \
+  --desired "$DESIRED" \
+  --live "$LIVE" \
+  --ignore-rule "$IGNORE" \
+  --report "$REPORT" \
+  --quiet
 
 run_structural_check
 echo "File checks passed for trace-argocd-drift."
@@ -78,6 +87,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "autoscaler ownership signal" "autoscaling|last-scale|autoscaler|HPA"
   require_evidence_match "$evidence_file" "narrow ignore rule scope" "ignoreDifferences|checkout|payments|/spec/replicas"
   require_evidence_match "$evidence_file" "Git-owned fields protected" "Git-owned|image|labels|resources|probes|security"
+  require_evidence_match "$evidence_file" "local drift analyzer evidence" "drift analyzer|drift analysis|ArgoCD drift analysis passed|Git-owned image"
   require_evidence_match "$evidence_file" "broad ignore rejected" "full-object ignore|broad ignore|unsafe|not ignore"
   require_evidence_match "$evidence_file" "validation or handoff evidence" "validation|validate|handoff|owner|cleanup"
   echo "Evidence checks passed for trace-argocd-drift."
