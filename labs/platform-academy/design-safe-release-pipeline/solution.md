@@ -16,6 +16,18 @@ Block the unsafe pipeline.
 
 `safe-pipeline.yaml` builds and records `image-digest.txt`, scans the exact image digest, emits SBOM evidence, renders manifests, runs `kubeconform` and `conftest`, deploys to staging first, then requires production approval with canary, smoke, and rollback checks.
 
+The local release pipeline analyzer verifies the block decision and safe gate chain without running CI:
+
+```bash
+python3 labs/platform-academy/design-safe-release-pipeline/release_pipeline_analyzer.py \
+  --unsafe labs/platform-academy/design-safe-release-pipeline/pipeline.yaml \
+  --safe labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml \
+  --checklist labs/platform-academy/design-safe-release-pipeline/release-checklist.md \
+  --decision labs/platform-academy/design-safe-release-pipeline/decision-record.md
+```
+
+Expected result: `Safe release pipeline analysis passed`, with unsafe direct production evidence, the digest-promotion gap, required gates, artifact chain, rollout chain, and block decision.
+
 ## Evidence to Save
 
 Save:
@@ -23,6 +35,7 @@ Save:
 - The unsafe pipeline excerpt showing direct production deployment.
 - The safe pipeline excerpt showing digest promotion and gates.
 - The decision record explaining the block decision and required contract.
+- The local release pipeline analyzer output showing the artifact chain and rollout chain.
 - The completed `evidence-template.md` with approval, canary, smoke, SLO rollback, and saved-artifact evidence.
 
 ## Cleanup

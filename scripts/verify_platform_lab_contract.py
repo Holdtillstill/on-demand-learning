@@ -132,13 +132,14 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "design-safe-release-pipeline": {
-        "files": {"evidence-template.md"},
+        "files": {"evidence-template.md", "release_pipeline_analyzer.py", "setup.sh"},
         "terms": {
             "deploy-prod",
             "github.ref == 'refs/heads/main'",
             "image-digest.txt",
             "environment: production",
             "rollback-if-slo-breach",
+            "Safe release pipeline analysis passed",
         },
     },
     "create-platform-golden-path": {

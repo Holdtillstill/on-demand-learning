@@ -18,6 +18,7 @@
 
 ## Release Decision And Rollback Evidence
 
+- Local release pipeline analyzer result:
 - Approval decision:
 - Production approval boundary:
 - Canary/progressive rollout evidence:

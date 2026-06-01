@@ -8,6 +8,7 @@ SAFE="$LAB_DIR/safe-pipeline.yaml"
 CHECKLIST="$LAB_DIR/release-checklist.md"
 DECISION="$LAB_DIR/decision-record.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/release_pipeline_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -78,10 +79,18 @@ grep -q "rollback-if-slo-breach" "$SAFE" || fail "safe-pipeline.yaml should incl
 
 grep -q "Block the current pipeline" "$DECISION" || fail "decision-record.md should document the block decision"
 grep -q "Run smoke tests after staging and production rollout" "$DECISION" || fail "decision-record.md should document smoke-test evidence"
+grep -q "Safe release pipeline analysis passed" "$ANALYZER" || fail "release_pipeline_analyzer.py should report a successful local analysis"
 
 grep -q "## Unsafe Production Path Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for unsafe production evidence"
 grep -q "## Gate And Artifact Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for gate and artifact evidence"
 grep -q "## Release Decision And Rollback Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for release decision evidence"
+
+python3 "$ANALYZER" \
+  --unsafe "$UNSAFE" \
+  --safe "$SAFE" \
+  --checklist "$CHECKLIST" \
+  --decision "$DECISION" \
+  --quiet
 
 run_structural_check
 echo "File checks passed for design-safe-release-pipeline."
@@ -94,6 +103,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "rendered manifest and policy gates" "helm template|kubeconform|conftest|policy"
   require_evidence_match "$evidence_file" "staging and production approval boundary" "deploy-staging|environment: staging|environment: production|approval"
   require_evidence_match "$evidence_file" "canary, smoke, and SLO rollback" "canary|smoke|rollback-if-slo-breach|SLO"
+  require_evidence_match "$evidence_file" "local release pipeline analyzer evidence" "Safe release pipeline analysis passed|release pipeline analyzer|Artifact chain|Rollout chain"
   require_evidence_match "$evidence_file" "block pipeline decision" "Block the current pipeline|block|do not approve"
   require_evidence_match "$evidence_file" "validation or saved artifact evidence" "validation|validate|artifact|rollback|cleanup"
   echo "Evidence checks passed for design-safe-release-pipeline."

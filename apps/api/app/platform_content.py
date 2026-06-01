@@ -3792,28 +3792,45 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/design-safe-release-pipeline/setup.sh --evidence /tmp/release-pipeline-evidence.md",
             "sed -n '1,180p' labs/platform-academy/design-safe-release-pipeline/pipeline.yaml",
             "sed -n '1,180p' labs/platform-academy/design-safe-release-pipeline/release-checklist.md",
         ],
         "commands": [
             "grep -n \"main\\|deploy-prod\\|helm upgrade\\|missing digest\" labs/platform-academy/design-safe-release-pipeline/pipeline.yaml",
             "grep -n \"digest\\|smoke\\|rollback\\|approval\" labs/platform-academy/design-safe-release-pipeline/release-checklist.md",
+            (
+                "python3 labs/platform-academy/design-safe-release-pipeline/release_pipeline_analyzer.py "
+                "--unsafe labs/platform-academy/design-safe-release-pipeline/pipeline.yaml "
+                "--safe labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml "
+                "--checklist labs/platform-academy/design-safe-release-pipeline/release-checklist.md "
+                "--decision labs/platform-academy/design-safe-release-pipeline/decision-record.md"
+            ),
             "diff -u labs/platform-academy/design-safe-release-pipeline/pipeline.yaml labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml || true",
         ],
         "practice_steps": [
             "Identify missing quality gates before production.",
             "Add immutable digest promotion and smoke-test expectations.",
+            "Use the local analyzer to prove the unsafe path and safe gate chain.",
             "Name rollback criteria and permission boundaries.",
         ],
         "expected_evidence": [
             "The sample pipeline deploys from main directly to production.",
             "The build step does not promote by digest.",
             "The checklist requires scan, smoke, rollback, and approval gates.",
+            "The local analyzer reports Safe release pipeline analysis passed.",
             "The safe pipeline adds staging, manifest validation, policy checks, canary, and rollback criteria.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/design-safe-release-pipeline/validate.sh",
             "bash labs/platform-academy/design-safe-release-pipeline/validate.sh --evidence /tmp/release-pipeline-evidence.md",
+            (
+                "python3 labs/platform-academy/design-safe-release-pipeline/release_pipeline_analyzer.py "
+                "--unsafe labs/platform-academy/design-safe-release-pipeline/pipeline.yaml "
+                "--safe labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml "
+                "--checklist labs/platform-academy/design-safe-release-pipeline/release-checklist.md "
+                "--decision labs/platform-academy/design-safe-release-pipeline/decision-record.md"
+            ),
             "grep -n \"environment: production\" labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml",
         ],
         "cleanup_commands": ["bash labs/platform-academy/design-safe-release-pipeline/cleanup.sh"],
@@ -4632,6 +4649,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-live-CI safety boundary recorded",
+            "Safe release pipeline analysis passed output captured",
             "Direct main-to-production deploy evidence captured",
             "Digest-promotion gap captured",
             "Scan/SBOM/render/schema/policy gates captured",
@@ -4641,7 +4659,13 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["pipeline.yaml", "release-checklist.md", "no real CI", "registry", "cluster"],
-            ["deploy-prod", "github.ref == 'refs/heads/main'", "helm upgrade --install", "missing digest promotion"],
+            [
+                "deploy-prod",
+                "github.ref == 'refs/heads/main'",
+                "helm upgrade --install",
+                "missing digest promotion",
+                "Safe release pipeline analysis passed",
+            ],
             ["image-digest.txt", "trivy image", "syft", "helm template", "kubeconform", "conftest test"],
             ["deploy-staging", "smoke.sh", "environment: production", "rollout.strategy=canary", "approval"],
             ["rollback-if-slo-breach", "rollback", "owner", "SLO", "production"],
@@ -5042,6 +5066,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml",
         "labs/platform-academy/design-safe-release-pipeline/release-checklist.md",
         "labs/platform-academy/design-safe-release-pipeline/decision-record.md",
+        "labs/platform-academy/design-safe-release-pipeline/release_pipeline_analyzer.py",
+        "labs/platform-academy/design-safe-release-pipeline/setup.sh",
         "labs/platform-academy/design-safe-release-pipeline/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
         "labs/platform-academy/design-safe-release-pipeline/validate.sh",
