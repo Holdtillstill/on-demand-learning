@@ -49,7 +49,7 @@ const SKIP_ALL_INTERVIEW_PACKS = process.env.SMOKE_SKIP_ALL_INTERVIEW_PACKS === 
 const EXPECTED_COURSES = readPositiveInteger("SMOKE_EXPECTED_COURSES", "EXPECTED_COURSES", 21);
 const EXPECTED_LESSONS = readPositiveInteger("SMOKE_EXPECTED_LESSONS", "EXPECTED_LESSONS", 84);
 const EXPECTED_LABS = readPositiveInteger("SMOKE_EXPECTED_LABS", "EXPECTED_LABS", 21);
-const EXPECTED_PORTFOLIO_LABS = readPositiveInteger("SMOKE_EXPECTED_PORTFOLIO_LABS", "EXPECTED_PORTFOLIO_LABS", 9);
+const EXPECTED_PORTFOLIO_LABS = readPositiveInteger("SMOKE_EXPECTED_PORTFOLIO_LABS", "EXPECTED_PORTFOLIO_LABS", 10);
 const EXPECTED_RESOURCES = readPositiveInteger("SMOKE_EXPECTED_RESOURCES", "EXPECTED_RESOURCES", 320);
 const EXPECTED_INTERVIEW_PACKS = readPositiveInteger("SMOKE_EXPECTED_INTERVIEW_PACKS", "EXPECTED_INTERVIEW_PACKS", 22);
 const EXPECTED_INTERVIEW_QUESTIONS = readPositiveInteger("SMOKE_EXPECTED_INTERVIEW_QUESTIONS", "EXPECTED_INTERVIEW_QUESTIONS", 219);
@@ -57,6 +57,7 @@ const PORTFOLIO_LAB_SLUGS = [
   "trace-service-to-pod",
   "debug-crashloop-imagepull",
   "review-yaml-before-apply",
+  "diagnose-eks-ip-exhaustion",
   "trace-network-path",
   "review-terraform-eks-plan",
   "debug-irsa-access-denied",
@@ -638,7 +639,7 @@ async function assertPortfolioLabUi(page, portfolioLabs) {
   for (const lab of portfolioLabs) {
     await expect(queueRows.filter({ hasText: lab.title })).toHaveCount(1, { timeout: TIMEOUT_MS });
   }
-  await expect(page.getByRole("heading", { name: "Diagnose EKS Pod IP exhaustion", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Validate a Helm release artifact", exact: true })).toHaveCount(0);
   await expect(page.getByText("Structurally verified lab")).toBeVisible({ timeout: TIMEOUT_MS });
 
   await page.goto(`${WEB_BASE}/labs/${encodeURIComponent(firstPortfolioLab.slug)}`, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });

@@ -23,6 +23,7 @@ PORTFOLIO_LABS = [
     "trace-service-to-pod",
     "debug-crashloop-imagepull",
     "review-yaml-before-apply",
+    "diagnose-eks-ip-exhaustion",
     "trace-network-path",
     "review-terraform-eks-plan",
     "debug-irsa-access-denied",
@@ -328,6 +329,47 @@ def verify_review_yaml_before_apply() -> None:
     require(not safe_pod_spec.get("volumes"), "safe Deployment should remove the hostPath volume")
 
 
+def verify_diagnose_eks_ip_exhaustion() -> None:
+    slug = "diagnose-eks-ip-exhaustion"
+    snapshot = text_doc(slug, "cluster-snapshot.txt")
+    plan = text_doc(slug, "remediation-plan.md")
+    decision = text_doc(slug, "decision-record.md")
+
+    require(
+        "FailedScheduling 0/3 nodes are available: 3 Insufficient pods" in snapshot,
+        "snapshot should show pod-density scheduling pressure",
+    )
+    require(
+        "FailedCreatePodSandBox failed to assign an IP address" in snapshot,
+        "snapshot should show sandbox IP assignment failure",
+    )
+    subnets = {
+        subnet: int(count)
+        for subnet, count in re.findall(r"(subnet-[a-z0-9]+) [a-z0-9-]+ AvailableIPv4AddressCount=([0-9]+)", snapshot)
+    }
+    require(
+        subnets == {"subnet-aaa111": 18, "subnet-bbb222": 7, "subnet-ccc333": 41},
+        "snapshot should preserve subnet IP inventory",
+    )
+    node_matches = re.findall(r"maxPods=([0-9]+)\s+runningPods=([0-9]+)", snapshot)
+    require(len(node_matches) == 3, "snapshot should include three node pod-density rows")
+    near_max = [
+        (int(max_pods), int(running_pods))
+        for max_pods, running_pods in node_matches
+        if int(running_pods) >= int(max_pods) - 1
+    ]
+    require(len(near_max) == 3, "snapshot should show all nodes at or near maxPods")
+    require("subnet subnet-bbb222 has insufficient free IPv4 addresses" in snapshot, "snapshot should include aws-node subnet failure")
+    require("prefix delegation disabled on nodegroup payments-ng" in snapshot, "snapshot should include prefix delegation state")
+
+    for term in ["Pause the checkout scale-up", "Do not randomly recycle Pods", "Enable VPC CNI prefix delegation", "Rollback"]:
+        require(term in plan, f"remediation plan should include {term}")
+    for owner in ["App owner", "Platform owner", "Network owner", "Release owner"]:
+        require(owner in plan, f"remediation plan should assign {owner}")
+    for term in ["not an application restart problem", "Blind node scaling: rejected", "capacity alerts"]:
+        require(term in decision, f"decision record should include {term}")
+
+
 def verify_trace_network_path() -> None:
     slug = "trace-network-path"
     broken = yaml_docs(slug, "ingress-service.yaml")
@@ -531,6 +573,7 @@ VERIFY_BY_LAB = {
     "trace-service-to-pod": verify_trace_service_to_pod,
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
     "review-yaml-before-apply": verify_review_yaml_before_apply,
+    "diagnose-eks-ip-exhaustion": verify_diagnose_eks_ip_exhaustion,
     "trace-network-path": verify_trace_network_path,
     "review-terraform-eks-plan": verify_review_terraform_eks_plan,
     "debug-irsa-access-denied": verify_debug_irsa_access_denied,
