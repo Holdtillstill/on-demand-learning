@@ -34,4 +34,5 @@
 - Telemetry/platform owner:
 - SRE alert owner:
 - Data/privacy owner:
+- Local analyzer output:
 - Evidence to save:

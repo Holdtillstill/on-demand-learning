@@ -203,8 +203,15 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "design-opentelemetry-signal-path": {
-        "files": {"evidence-template.md"},
-        "terms": {"http.request.header.authorization", "trace_id=missing", "customer_email", "sum by (le, route)", "Owner Map"},
+        "files": {"evidence-template.md", "setup.sh", "signal_path_analyzer.py"},
+        "terms": {
+            "http.request.header.authorization",
+            "trace_id=missing",
+            "customer_email",
+            "sum by (le, route)",
+            "Owner Map",
+            "OpenTelemetry signal path analysis passed",
+        },
     },
     "run-incident-commander-tabletop": {
         "files": {"evidence-template.md"},

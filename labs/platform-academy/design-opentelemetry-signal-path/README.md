@@ -15,11 +15,11 @@ No collector or telemetry backend is required. Use local manifests, logs, rules,
 ## Starting State
 
 ```bash
+bash labs/platform-academy/design-opentelemetry-signal-path/setup.sh --evidence /tmp/otel-signal-path-evidence.md
 sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/collector.yaml
 sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt
 sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml
 python3 labs/platform-academy/simulator.py --scenario checkout-latency --format both --events 3
-cp labs/platform-academy/design-opentelemetry-signal-path/evidence-template.md /tmp/otel-signal-path-evidence.md
 ```
 
 ## Investigation
@@ -31,6 +31,17 @@ Find:
 - Which metric label causes cardinality risk.
 - Whether owners exist for instrumentation, collector, storage, dashboard, and alerts.
 
+Run the local signal-path analyzer after collecting the artifacts:
+
+```bash
+python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py \
+  --collector labs/platform-academy/design-opentelemetry-signal-path/collector.yaml \
+  --logs labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt \
+  --rule labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml \
+  --safe-rule labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml \
+  --decision labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md
+```
+
 ## Remediation Target
 
 Use `signal-path-decision.md` and `safe-prometheus-rule.yaml` as the target answer.
@@ -40,6 +51,12 @@ Use `signal-path-decision.md` and `safe-prometheus-rule.yaml` as the target answ
 ```bash
 bash labs/platform-academy/design-opentelemetry-signal-path/validate.sh
 bash labs/platform-academy/design-opentelemetry-signal-path/validate.sh --evidence /tmp/otel-signal-path-evidence.md
+python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py \
+  --collector labs/platform-academy/design-opentelemetry-signal-path/collector.yaml \
+  --logs labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt \
+  --rule labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml \
+  --safe-rule labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml \
+  --decision labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md
 ```
 
 ## Success Criteria
@@ -48,4 +65,5 @@ bash labs/platform-academy/design-opentelemetry-signal-path/validate.sh --eviden
 - You identify missing trace ID evidence.
 - You remove `customer_email` from alert grouping.
 - You name owners for instrumentation, collector, storage, dashboard, and alert policy.
+- Your evidence includes `OpenTelemetry signal path analysis passed`.
 - Your evidence note names sensitive-header deletion, missing trace context, cardinality risk, safer aggregation, owner map, validation, and saved evidence.

@@ -17,6 +17,8 @@ Fix trace-context propagation and alert cardinality before treating telemetry as
 
 `signal-path-decision.md` records the owner map and validation criteria.
 
+The local signal-path analyzer reports `OpenTelemetry signal path analysis passed`.
+
 ## Handoff Note
 
 A good handoff says: keep deleting `http.request.header.authorization`, fix the checkout log with `trace_id=missing`, and remove `customer_email` from the latency alert aggregation. The owner map should split app instrumentation, collector policy, SRE alert quality, dashboard links, and data/privacy decisions.

@@ -9,6 +9,7 @@ RULE="$LAB_DIR/prometheus-rule.yaml"
 SAFE="$LAB_DIR/safe-prometheus-rule.yaml"
 DECISION="$LAB_DIR/signal-path-decision.md"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/signal_path_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -42,7 +43,9 @@ grep -q "App owner: propagate trace context" "$DECISION" || fail "signal-path-de
 grep -q "## Sensitive Attribute Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for sensitive attribute evidence"
 grep -q "## Trace Context Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for trace context evidence"
 grep -q "## Metric Cardinality Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for metric cardinality evidence"
+grep -q "OpenTelemetry signal path analysis passed" "$ANALYZER" || fail "signal_path_analyzer.py should report successful analysis"
 python3 "$ROOT/labs/platform-academy/simulator.py" --scenario checkout-latency --format metrics --events 2 >/dev/null
+python3 "$ANALYZER" --collector "$COLLECTOR" --logs "$LOGS" --rule "$RULE" --safe-rule "$SAFE" --decision "$DECISION" --quiet
 
 echo "File checks passed for design-opentelemetry-signal-path."
 
@@ -54,6 +57,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "safer route-only aggregation" "sum by \\(le, route\\)|route only|safe-prometheus-rule"
   require_evidence_match "$evidence_file" "app instrumentation owner" "App owner|app instrumentation|propagate trace context"
   require_evidence_match "$evidence_file" "telemetry and privacy owner split" "collector|telemetry/platform|SRE alert|privacy|owner map"
+  require_evidence_match "$evidence_file" "local signal path analyzer evidence" "OpenTelemetry signal path analysis passed|signal-path analyzer|signal path analysis"
   require_evidence_match "$evidence_file" "simulator or validation evidence" "simulator|validation|validate|metrics|cleanup|no live"
   echo "Evidence checks passed for design-opentelemetry-signal-path."
 fi

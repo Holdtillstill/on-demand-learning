@@ -3359,12 +3359,13 @@ PLATFORM_LABS.extend(
                 "kubectl get servicemonitor,podmonitor,prometheusrule -A",
                 "kubectl get otelcol -A",
                 "kubectl logs deploy/otel-collector -n observability --since=15m",
+                "python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py --collector labs/platform-academy/design-opentelemetry-signal-path/collector.yaml --logs labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt --rule labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml --safe-rule labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml --decision labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
             ],
             "checklist": [
                 "Map the user symptom to metric, log, trace, and Kubernetes event evidence.",
                 "Check service names, route labels, trace IDs in logs, and sampling policy.",
                 "Flag high-cardinality labels and sensitive attributes.",
-                "Write owners for instrumentation, collector, storage, dashboard, and alert policy.",
+                "Use the local analyzer to verify the signal path, safer alert, and owner map.",
             ],
         },
         {
@@ -4134,6 +4135,7 @@ RUNNABLE_LAB_UPDATES = {
             "Run commands from the repository root.",
         ],
         "setup_commands": [
+            "bash labs/platform-academy/design-opentelemetry-signal-path/setup.sh --evidence /tmp/otel-signal-path-evidence.md",
             "sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/collector.yaml",
             "sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt",
             "python3 labs/platform-academy/simulator.py --scenario checkout-latency --format both --events 5",
@@ -4141,21 +4143,24 @@ RUNNABLE_LAB_UPDATES = {
         "commands": [
             "grep -n \"authorization\\|trace_id\\|customer_email\" labs/platform-academy/design-opentelemetry-signal-path/collector.yaml labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml",
             "grep -n \"pipelines:\\|traces:\\|histogram_quantile\" labs/platform-academy/design-opentelemetry-signal-path/collector.yaml labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml",
+            "python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py --collector labs/platform-academy/design-opentelemetry-signal-path/collector.yaml --logs labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt --rule labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml --safe-rule labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml --decision labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
         ],
         "practice_steps": [
             "Map the symptom to metrics, logs, traces, and collector ownership.",
             "Find missing trace IDs and sensitive or high-cardinality labels.",
-            "Write owners for instrumentation, collector, storage, dashboard, and alert policy.",
+            "Use the local analyzer to verify the signal path, safer alert, and owner map.",
         ],
         "expected_evidence": [
             "Collector drops authorization headers.",
             "One log line has trace_id=missing.",
             "The latency alert groups by customer_email, creating high cardinality risk.",
             "The safe rule removes customer_email and the decision record assigns signal owners.",
+            "The local analyzer reports OpenTelemetry signal path analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/design-opentelemetry-signal-path/validate.sh",
             "bash labs/platform-academy/design-opentelemetry-signal-path/validate.sh --evidence /tmp/otel-signal-path-evidence.md",
+            "python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py --collector labs/platform-academy/design-opentelemetry-signal-path/collector.yaml --logs labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt --rule labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml --safe-rule labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml --decision labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
             "grep -n \"Owner Map\" labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
         ],
         "cleanup_commands": ["bash labs/platform-academy/design-opentelemetry-signal-path/cleanup.sh"],
@@ -4995,7 +5000,7 @@ DEEPENED_LAB_UPDATES = {
             "Paste the log line with a trace ID, the `trace_id=missing` line, app instrumentation owner, and validation signal.",
             "Paste the `customer_email` alert grouping evidence and explain the cardinality/privacy risk.",
             "Write the safer aggregation, owner map, dashboard/runbook handoff, and privacy decision.",
-            "Capture simulator output, validation output, safe rule evidence, and saved artifacts.",
+            "Capture analyzer output, simulator output, validation output, safe rule evidence, and saved artifacts.",
         ],
         "rubric": [
             "Preserves the no-live-telemetry-change safety boundary and names the reviewed artifacts.",
@@ -5011,7 +5016,7 @@ DEEPENED_LAB_UPDATES = {
             "Trace context gap evidence captured",
             "Customer email cardinality evidence captured",
             "Safer aggregation and owner map written",
-            "Simulator and validation output captured",
+            "Signal path analyzer, simulator, and validation output captured",
             "Saved evidence and cleanup/no-runtime note recorded",
         ],
         "rubric_evidence_terms": [
@@ -5020,7 +5025,14 @@ DEEPENED_LAB_UPDATES = {
             ["trace_id=missing", "trace_id=", "App owner", "propagate trace context", "logs"],
             ["customer_email", "cardinality", "privacy", "alert grouping", "histogram_quantile"],
             ["sum by (le, route)", "Owner Map", "SRE owner", "Data/privacy owner", "dashboard"],
-            ["signal-path-decision.md", "safe-prometheus-rule.yaml", "simulator", "validate", "cleanup"],
+            [
+                "signal-path-decision.md",
+                "safe-prometheus-rule.yaml",
+                "simulator",
+                "validate",
+                "cleanup",
+                "OpenTelemetry signal path analysis passed",
+            ],
         ],
     },
     "run-incident-commander-tabletop": {
@@ -5312,6 +5324,8 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
         "labs/platform-academy/design-opentelemetry-signal-path/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py",
+        "labs/platform-academy/design-opentelemetry-signal-path/setup.sh",
         "labs/platform-academy/design-opentelemetry-signal-path/validate.sh",
         "labs/platform-academy/design-opentelemetry-signal-path/cleanup.sh",
         "labs/platform-academy/design-opentelemetry-signal-path/solution.md",
