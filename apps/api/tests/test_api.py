@@ -743,6 +743,20 @@ def test_all_platform_lab_workspace_bundles_withhold_solutions():
             assert "./setup.sh" in manifest
             assert "./validate.sh --files-only" in manifest
             assert "./cleanup.sh" in manifest
+            source_artifacts = LAB_ARTIFACT_PATHS[slug]
+            has_analyzer = any(path.endswith("analyzer.py") for path in source_artifacts)
+            has_simulator = any(path.endswith("simulator.py") for path in source_artifacts)
+            if has_analyzer or has_simulator:
+                assert "## Setup self-checks" in readme
+                assert "Setup self-checks:" in manifest
+                assert "Default setup stages evidence" in readme
+                assert "Default setup stages evidence" in manifest
+            if has_analyzer:
+                assert f"run-lab.sh setup {slug} --run-analyzer" in readme
+                assert "./setup.sh --run-analyzer" in manifest
+            if has_simulator:
+                assert f"run-lab.sh setup {slug} --run-simulator" in readme
+                assert "./setup.sh --run-simulator" in manifest
             if slug in CLUSTER_LAB_SLUGS:
                 assert "Optional cluster workflow" in readme
                 assert "Optional cluster workflow:" in manifest

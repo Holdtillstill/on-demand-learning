@@ -152,6 +152,46 @@ def _workspace_quickstart_commands(lab: dict) -> list[str]:
     ]
 
 
+def _setup_self_check_flags(lab: dict) -> list[str]:
+    artifacts = [str(path).lower() for path in lab.get("artifact_paths", [])]
+    flags: list[str] = []
+    if any(path.endswith("analyzer.py") for path in artifacts):
+        flags.append("--run-analyzer")
+    if any(path.endswith("simulator.py") for path in artifacts):
+        flags.append("--run-simulator")
+    return flags
+
+
+def _setup_self_check_lines(lab: dict, extracted_workspace: bool = False) -> list[str]:
+    flags = _setup_self_check_flags(lab)
+    if not flags:
+        return []
+
+    slug = lab["slug"]
+    lines = [
+        "Default setup stages evidence and intentionally skips analyzer or simulator output.",
+    ]
+    if "--run-analyzer" in flags:
+        analyzer_command = (
+            "./setup.sh --run-analyzer"
+            if extracted_workspace
+            else f"bash labs/platform-academy/run-lab.sh setup {slug} --run-analyzer"
+        )
+        lines.append(f"After inspecting the broken state, run analyzer self-check: `{analyzer_command}`.")
+    if "--run-simulator" in flags:
+        simulator_command = (
+            "./setup.sh --run-simulator"
+            if extracted_workspace
+            else f"bash labs/platform-academy/run-lab.sh setup {slug} --run-simulator"
+        )
+        lines.append(f"After reviewing the static evidence, run simulator output: `{simulator_command}`.")
+    return lines
+
+
+def _setup_self_check_section(lab: dict) -> str:
+    return _markdown_section("Setup self-checks", _setup_self_check_lines(lab))
+
+
 def cluster_workspace_commands(lab: dict) -> list[str]:
     slug = lab["slug"]
     setup_commands = [str(command) for command in lab.get("setup_commands", [])]
@@ -208,6 +248,7 @@ def lab_packet_markdown(lab: dict, include_downloaded_workspace: bool = True) ->
         + _markdown_section("Worksheet prompts", lab.get("worksheet_prompts"), True)
         + _markdown_section("Prerequisites", lab.get("prerequisites"), True)
         + _markdown_section("Setup commands", lab.get("setup_commands"))
+        + _setup_self_check_section(lab)
         + _markdown_section(
             "Local workspace",
             [f"bash labs/platform-academy/run-lab.sh workspace {lab['slug']} --dir /tmp/platform-academy-workspaces"],
@@ -412,6 +453,13 @@ def learner_workspace_manifest(
         "Repo validation:",
         f"- bash labs/platform-academy/run-lab.sh validate {slug} --evidence {evidence_path}",
     ]
+    self_check_lines = _setup_self_check_lines(lab, extracted_workspace=True)
+    if self_check_lines:
+        lines.extend([
+            "",
+            "Setup self-checks:",
+            *[f"- {line}" for line in self_check_lines],
+        ])
     cluster_commands = cluster_workspace_commands(lab)
     if cluster_commands:
         lines.extend([

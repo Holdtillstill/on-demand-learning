@@ -36,9 +36,11 @@ bash labs/platform-academy/run-lab.sh show trace-service-to-pod
 bash labs/platform-academy/run-lab.sh packet trace-service-to-pod > trace-service-to-pod-lab-packet.md
 bash labs/platform-academy/run-lab.sh workspace trace-service-to-pod --dir /tmp/platform-academy-workspaces
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md
+bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --run-analyzer --evidence /tmp/trace-service-evidence.md
 bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight
 bash labs/platform-academy/run-lab.sh setup review-yaml-before-apply --evidence /tmp/yaml-review-evidence.md
+bash labs/platform-academy/run-lab.sh setup debug-irsa-access-denied --run-simulator
 bash labs/platform-academy/run-lab.sh validate trace-service-to-pod
 bash labs/platform-academy/run-lab.sh validate trace-service-to-pod --evidence /tmp/trace-service-evidence.md
 bash labs/platform-academy/run-lab.sh validate trace-network-path --cluster
