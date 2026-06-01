@@ -11,6 +11,16 @@ Main findings:
 - The Deployment mounts the host root filesystem with `hostPath: /`.
 - `stringData.token` is present in a Secret stub and could accidentally become a real committed credential.
 
+The local manifest risk analyzer verifies the review without applying anything:
+
+```bash
+python3 labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py \
+  --vendor labs/platform-academy/review-yaml-before-apply/vendor.yaml \
+  --safe labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml
+```
+
+Expected result: `YAML manifest risk analysis passed`, with inventory, RBAC risk, workload risk, credential risk, safer-baseline, and block-decision evidence.
+
 ## Decision
 
 Approve only a safer, namespaced variant after the vendor removes cluster-scoped secret access, privileged mode, and hostPath access. Any real credential should be provisioned through the platform's secret delivery path, not committed in a manifest.

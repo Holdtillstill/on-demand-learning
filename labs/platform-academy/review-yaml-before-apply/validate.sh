@@ -6,6 +6,7 @@ LAB_DIR="$ROOT/labs/platform-academy/review-yaml-before-apply"
 VENDOR="$LAB_DIR/vendor.yaml"
 SAFE="$LAB_DIR/safe-baseline.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/manifest_risk_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
 fail() {
@@ -41,6 +42,9 @@ grep -q "readOnlyRootFilesystem: true" "$SAFE" || fail "safe-baseline.yaml shoul
 grep -q "## Manifest Inventory Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for manifest inventory evidence"
 grep -q "## Security Blocker Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for security blocker evidence"
 grep -q "## Vendor Decision Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for vendor decision evidence"
+grep -q "YAML manifest risk analysis passed" "$ANALYZER" || fail "manifest_risk_analyzer.py should report a successful local analysis"
+
+python3 "$ANALYZER" --vendor "$VENDOR" --safe "$SAFE" --quiet
 
 echo "File checks passed for review-yaml-before-apply."
 
@@ -51,6 +55,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "privileged container" "privileged[[:space:]]*:[[:space:]]*true|privileged"
   require_evidence_match "$evidence_file" "hostPath mount" "hostPath|host filesystem"
   require_evidence_match "$evidence_file" "credential placeholder" "stringData\\.token|stringData|token"
+  require_evidence_match "$evidence_file" "local manifest risk analyzer evidence" "YAML manifest risk analysis passed|manifest risk analyzer|RBAC risk|Workload risk|Credential risk"
   require_evidence_match "$evidence_file" "block decision" "block|blocked|do not approve|not approve"
   require_evidence_match "$evidence_file" "safer baseline hardening" "safe-baseline|allowPrivilegeEscalation: false|readOnlyRootFilesystem: true|read-only root"
   require_evidence_match "$evidence_file" "vendor questions or validation evidence" "vendor|question|validation|validate|cleanup"

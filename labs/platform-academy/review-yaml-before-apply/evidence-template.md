@@ -18,6 +18,7 @@
 
 ## Vendor Decision Evidence
 
+- Local manifest risk analyzer result:
 - Block or approve decision:
 - Required safer baseline changes:
 - Questions back to vendor:

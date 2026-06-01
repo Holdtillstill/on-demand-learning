@@ -2962,17 +2962,23 @@ PLATFORM_LABS = [
             "Do not apply the vendor manifest to a shared or production cluster.",
         ],
         "setup_commands": [
-            "ls labs/platform-academy/review-yaml-before-apply",
+            "bash labs/platform-academy/review-yaml-before-apply/setup.sh --evidence /tmp/yaml-review-evidence.md",
             "sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/vendor.yaml",
         ],
         "commands": [
             "kubectl apply --dry-run=client --validate=false -f labs/platform-academy/review-yaml-before-apply/vendor.yaml",
             "grep -n \"kind:\\|namespace:\\|ClusterRole\\|privileged\\|hostPath\" labs/platform-academy/review-yaml-before-apply/vendor.yaml",
+            (
+                "python3 labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py "
+                "--vendor labs/platform-academy/review-yaml-before-apply/vendor.yaml "
+                "--safe labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml"
+            ),
             "kubectl explain deployment.spec.template.spec.containers",
         ],
         "practice_steps": [
             "List every resource kind and whether it is namespace-scoped or cluster-scoped.",
             "Find the risky settings before reading the safe baseline.",
+            "Use the local analyzer to prove inventory, RBAC, workload, credential, and safer-baseline evidence.",
             "Compare vendor.yaml with safe-baseline.yaml and write the review questions you would send back.",
             "Decide whether this manifest is blocked, approved with changes, or safe for a sandbox only.",
         ],
@@ -2980,10 +2986,16 @@ PLATFORM_LABS = [
             "The vendor manifest contains a ClusterRole that can list/watch secrets.",
             "The Deployment asks for privileged mode and a hostPath mount.",
             "The Secret contains placeholder stringData that should not be committed with real credentials.",
+            "The local analyzer reports YAML manifest risk analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/review-yaml-before-apply/validate.sh",
             "bash labs/platform-academy/review-yaml-before-apply/validate.sh --evidence /tmp/yaml-review-evidence.md",
+            (
+                "python3 labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py "
+                "--vendor labs/platform-academy/review-yaml-before-apply/vendor.yaml "
+                "--safe labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml"
+            ),
             "grep -n \"ClusterRole\\|privileged\\|hostPath\\|stringData\" labs/platform-academy/review-yaml-before-apply/vendor.yaml",
             "grep -n \"allowPrivilegeEscalation\\|readOnlyRootFilesystem\" labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml",
         ],
@@ -4318,7 +4330,7 @@ DEEPENED_LAB_UPDATES = {
             "Privileged and hostPath evidence captured",
             "Secret stringData credential evidence captured",
             "Vendor block decision and questions recorded",
-            "Validation output and cleanup/no-live-apply evidence recorded",
+            "Manifest risk analysis, validation output, and cleanup/no-live-apply evidence recorded",
         ],
         "rubric_evidence_terms": [
             ["vendor.yaml", "reviewer", "no live apply", "shared cluster"],
@@ -4326,7 +4338,7 @@ DEEPENED_LAB_UPDATES = {
             ["resources: [\"pods\", \"secrets\"]", "privileged: true", "hostPath", "stringData.token"],
             ["RBAC", "workload security", "node filesystem", "credential handling"],
             ["Block", "safe-baseline.yaml", "vendor questions", "allowPrivilegeEscalation: false"],
-            ["diff", "validate", "cleanup", "evidence-template.md", "no-live-apply"],
+            ["diff", "validate", "cleanup", "evidence-template.md", "no-live-apply", "YAML manifest risk analysis passed"],
         ],
     },
     "inspect-linux-failure-evidence": {
@@ -5028,6 +5040,9 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml",
         "labs/platform-academy/review-yaml-before-apply/evidence-template.md",
         "labs/platform-academy/lib/evidence-check.sh",
+        "scripts/yaml_contract.py",
+        "labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py",
+        "labs/platform-academy/review-yaml-before-apply/setup.sh",
         "labs/platform-academy/review-yaml-before-apply/validate.sh",
         "labs/platform-academy/review-yaml-before-apply/cleanup.sh",
         "labs/platform-academy/review-yaml-before-apply/solution.md",

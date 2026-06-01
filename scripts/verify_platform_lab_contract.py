@@ -65,9 +65,10 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "review-yaml-before-apply": {
-        "files": {"evidence-template.md"},
+        "files": {"evidence-template.md", "manifest_risk_analyzer.py", "setup.sh"},
         "terms": {
             "ClusterRole",
+            "YAML manifest risk analysis passed",
             "resources: [\"pods\", \"secrets\"]",
             "privileged: true",
             "hostPath",
