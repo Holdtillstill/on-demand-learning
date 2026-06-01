@@ -1029,18 +1029,25 @@ def print_lab_review_matrix() -> None:
     labs = full_labs_in_catalog_order()
     print("# Platform Academy Lab Review Matrix")
     print()
-    print("| Lab | Portfolio focus | Structural gate | Mode | Track | Time | Learner files | Source files | Evidence self-check |")
-    print("| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |")
+    print(
+        "| Lab | Portfolio focus | Structural gate | Mode | Track | Time | Learner files | "
+        "Source files | Evidence self-check | False-lead artifact |"
+    )
+    print("| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | --- |")
     for lab in labs:
         slug = lab["slug"]
         learner_count = len(learner_artifact_paths(lab))
         source_count = len(lab.get("artifact_paths", []))
         evidence_check = "yes" if any("--evidence" in command for command in lab.get("validation_commands", [])) else "no"
+        false_lead_artifact = next(
+            (Path(path).name for path in lab.get("artifact_paths", []) if Path(path).name in {"triage-notes.md", "hop-trace.md"}),
+            "-",
+        )
         portfolio_focus = lab.get("portfolio_focus") or "-"
         structural_gate = "yes" if lab.get("portfolio_grade") else "-"
         print(
             f"| `{slug}` | {portfolio_focus} | {structural_gate} | {lab_review_mode(lab)} | {lab['track']} | "
-            f"{lab['estimated_minutes']}m | {learner_count} | {source_count} | {evidence_check} |"
+            f"{lab['estimated_minutes']}m | {learner_count} | {source_count} | {evidence_check} | {false_lead_artifact} |"
         )
     print()
     print("All rows are verified by `make platform-lab-contract` before this matrix prints.")
@@ -1052,6 +1059,7 @@ def print_lab_review_matrix() -> None:
         "Learner files exclude source-only `README.md` and `solution.md`; "
         "source files are protected by the instructor/source bundle token outside local/test/development."
     )
+    print("False-lead artifacts are either `triage-notes.md` or the network-specific `hop-trace.md`.")
     print(
         "Mode is derived from advertised setup/validation commands, not merely from the presence of a setup script."
     )

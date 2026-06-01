@@ -179,7 +179,7 @@ This pack is a disposable reviewer/deployment handoff bundle for the Platform Ac
 ## Included Files
 
 - \`release-evidence.md\`: copy-paste release evidence scaffold from \`make platform-release-evidence\`.
-- \`lab-review-matrix.md\`: generated lab-by-lab review matrix from \`make platform-lab-matrix\`, including the portfolio-grade slice and structural artifact gate.
+- \`lab-review-matrix.md\`: generated lab-by-lab review matrix from \`make platform-lab-matrix\`, including the portfolio-grade slice, structural artifact gate, evidence self-check, and false-lead artifact.
 - \`portfolio-artifact-contract.txt\`: output from \`make platform-lab-artifact-contract\` proving the portfolio-grade structural YAML/JSON verifier passed.
 - \`content-count-contract.txt\`: output from \`make platform-content-count-check\` proving smoke defaults and count-bearing docs match API content.
 - \`workflow-contracts.txt\`: output from \`make workflow-contract-check\` proving the release-critical GitHub Actions workflow contracts passed.
