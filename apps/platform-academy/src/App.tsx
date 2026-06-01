@@ -120,6 +120,12 @@ const labScopeLabels = {
   Portfolio: "Portfolio-grade"
 } as const;
 type LabScopeFilter = keyof typeof labScopeLabels;
+const labRuntimeLabels = {
+  All: "All runtimes",
+  Cluster: "Cluster setup",
+  Files: "File-only"
+} as const;
+type LabRuntimeFilter = keyof typeof labRuntimeLabels;
 const rubricStatusLabels: Record<string, string> = {
   missing: "Missing",
   "needs-evidence": "Needs evidence",
@@ -524,6 +530,11 @@ function PortfolioLabBadge({ lab }: { lab: PlatformLab }) {
   return <span className="portfolio-lab-badge">{lab.portfolio_focus ? lab.portfolio_focus : "Portfolio-grade"}</span>;
 }
 
+function LabRuntimeBadge({ lab }: { lab: PlatformLab }) {
+  const isCluster = isClusterRunnableLab(lab);
+  return <span className={`lab-runtime-badge ${isCluster ? "lab-runtime-cluster" : "lab-runtime-files"}`}>{isCluster ? "Cluster setup included" : "File-only lab"}</span>;
+}
+
 function ActivityToggleButton({
   completed,
   saving,
@@ -740,6 +751,10 @@ function labWorkspaceQuickstartCommands(lab: PlatformLab) {
 
 function labClusterWorkspaceCommands(lab: PlatformLab) {
   return lab.cluster_workspace_commands ?? [];
+}
+
+function isClusterRunnableLab(lab: PlatformLab) {
+  return labClusterWorkspaceCommands(lab).length > 0;
 }
 
 function compactLabItems(items: Array<string | undefined>, limit = 4) {
@@ -1911,14 +1926,17 @@ function LabsPage({ data }: { data: AcademyData }) {
   const [selectedTopic, setSelectedTopic] = useState("All");
   const [selectedTier, setSelectedTier] = useState<"All" | PlatformLab["lab_tier"]>("All");
   const [selectedScope, setSelectedScope] = useState<LabScopeFilter>("All");
+  const [selectedRuntime, setSelectedRuntime] = useState<LabRuntimeFilter>("All");
   const completedLabs = completedActivityIds(data.activity, "lab");
   const fullLabCount = data.catalog.labs.filter((lab) => lab.lab_tier === "full").length;
   const portfolioLabCount = data.catalog.labs.filter(isPortfolioLab).length;
+  const clusterLabCount = data.catalog.labs.filter(isClusterRunnableLab).length;
   const activeSubmissionCount = data.labSubmissions.filter((submission) => submission.score > 0 || submission.completed_checks > 0 || submission.answered_prompts > 0).length;
   const tierOptions = labTierFilterOptions(data.catalog.labs);
   const filteredLabs = data.catalog.labs.filter(
     (lab) =>
       (selectedScope === "All" || isPortfolioLab(lab)) &&
+      (selectedRuntime === "All" || (selectedRuntime === "Cluster" ? isClusterRunnableLab(lab) : !isClusterRunnableLab(lab))) &&
       (selectedLevel === "All" || lab.level_group === selectedLevel) &&
       (selectedTopic === "All" || lab.track === selectedTopic) &&
       (selectedTier === "All" || lab.lab_tier === selectedTier)
@@ -1928,7 +1946,13 @@ function LabsPage({ data }: { data: AcademyData }) {
   const activeSubmission = activeLab ? labSubmissionFor(data, activeLab.slug) : undefined;
   const activeSubmissionSummary = labSubmissionSummary(activeSubmission);
   const inventoryDetail = labInventorySummary(activeSubmissionCount, fullLabCount, data.catalog.labs.length);
-  const inventorySummary = portfolioLabCount > 0 ? `${portfolioLabCount} portfolio-grade / ${inventoryDetail}` : inventoryDetail;
+  const inventorySummary = [
+    clusterLabCount > 0 ? `${clusterLabCount} cluster-ready` : "",
+    portfolioLabCount > 0 ? `${portfolioLabCount} portfolio-grade` : "",
+    inventoryDetail
+  ]
+    .filter(Boolean)
+    .join(" / ");
 
   return (
     <section className="page canonical-page labs-page">
@@ -1957,6 +1981,15 @@ function LabsPage({ data }: { data: AcademyData }) {
             {(Object.keys(labScopeLabels) as LabScopeFilter[]).map((scope) => (
               <button key={scope} className={selectedScope === scope ? "selected" : ""} onClick={() => setSelectedScope(scope)}>
                 {labScopeLabels[scope]}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {clusterLabCount > 0 ? (
+          <div className="segmented lab-runtime-filter">
+            {(Object.keys(labRuntimeLabels) as LabRuntimeFilter[]).map((runtime) => (
+              <button key={runtime} className={selectedRuntime === runtime ? "selected" : ""} onClick={() => setSelectedRuntime(runtime)}>
+                {labRuntimeLabels[runtime]}
               </button>
             ))}
           </div>
@@ -2010,6 +2043,7 @@ function LabsPage({ data }: { data: AcademyData }) {
                 <LevelBadge level={activeLab.level_group} />
                 <LabTierBadge tier={activeLab.lab_tier} />
                 <PortfolioLabBadge lab={activeLab} />
+                <LabRuntimeBadge lab={activeLab} />
                 <LabSubmissionBadge submission={activeSubmission} />
                 <span>{activeLab.track}</span>
                 <span>{activeLab.estimated_minutes} min</span>
@@ -2209,6 +2243,7 @@ function LabCard({ lab, completed, submission }: { lab: PlatformLab; completed: 
         <LevelBadge level={lab.level_group} />
         <LabTierBadge tier={lab.lab_tier} />
         <PortfolioLabBadge lab={lab} />
+        <LabRuntimeBadge lab={lab} />
         <LabSubmissionBadge submission={submission} />
         <span>
           <Clock aria-hidden="true" />

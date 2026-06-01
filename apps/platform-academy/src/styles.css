@@ -2411,6 +2411,26 @@ h2 {
   font-weight: 900;
 }
 
+.lab-runtime-badge {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.lab-runtime-cluster {
+  background: #eef7ee;
+  color: #216a38;
+}
+
+.lab-runtime-files {
+  background: #f1f5f3;
+  color: #52625c;
+}
+
 .portfolio-lab-callout {
   display: grid;
   gap: 4px;

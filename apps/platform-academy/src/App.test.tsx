@@ -1066,12 +1066,19 @@ describe("Platform Academy app", () => {
     expect(await screen.findByRole("heading", { name: "Labs for incidents and architecture reviews" })).toBeInTheDocument();
     expect(screen.getAllByText(/In progress · 50%/).length).toBeGreaterThan(0);
     expect(screen.getByText("50% workbook score")).toBeInTheDocument();
-    expect(screen.getByText("1 portfolio-grade / 1 active / 1 full lab")).toBeInTheDocument();
+    expect(screen.getByText("1 cluster-ready / 1 portfolio-grade / 1 active / 1 full lab")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Portfolio-grade" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cluster setup" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "File-only" })).toBeInTheDocument();
+    expect(screen.getAllByText("Cluster setup included").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Kubernetes Service routing").length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "All tiers" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Guided lab" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Evidence pack" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cluster setup" }));
+    expect(screen.getAllByRole("heading", { name: "Trace Service traffic to ready Pods" }).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "File-only" }));
+    expect(screen.getByText("No labs match those filters.")).toBeInTheDocument();
   });
 
   it("renders the saved lab evidence journal", async () => {

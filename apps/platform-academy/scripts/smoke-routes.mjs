@@ -24,7 +24,7 @@ const ROUTES = [
   {
     path: "/labs",
     heading: "Labs for incidents and architecture reviews",
-    visibleText: ["Evidence journal", "Selected lab"],
+    visibleText: ["Evidence journal", "Selected lab", "Cluster setup included"],
   },
   {
     path: "/labs/trace-service-to-pod",
@@ -587,12 +587,19 @@ async function assertPortfolioLabUi(page, portfolioLabs) {
 
   await page.goto(`${WEB_BASE}/labs`, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
   await expect(page.getByRole("heading", { name: "Labs for incidents and architecture reviews" })).toBeVisible({ timeout: TIMEOUT_MS });
+  await expect(page.getByText(`${CLUSTER_LAB_SLUGS.length} cluster-ready`, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
+  await expect(page.getByRole("button", { name: "Cluster setup", exact: true })).toBeVisible({ timeout: TIMEOUT_MS });
+  await page.getByRole("button", { name: "Cluster setup", exact: true }).click();
+  let queueRows = page.locator(".lab-queue .lab-queue-row");
+  await expect(queueRows).toHaveCount(CLUSTER_LAB_SLUGS.length, { timeout: TIMEOUT_MS });
+  await expect(page.getByText("Cluster setup included").first()).toBeVisible({ timeout: TIMEOUT_MS });
+  await page.getByRole("button", { name: "All runtimes", exact: true }).click();
   await expect(page.getByText(`${EXPECTED_PORTFOLIO_LABS} portfolio-grade`, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
   await expect(page.getByRole("button", { name: "Portfolio-grade", exact: true })).toBeVisible({ timeout: TIMEOUT_MS });
   await expect(page.getByText(firstPortfolioLab.portfolio_focus, { exact: true }).first()).toBeVisible({ timeout: TIMEOUT_MS });
 
   await page.getByRole("button", { name: "Portfolio-grade", exact: true }).click();
-  const queueRows = page.locator(".lab-queue .lab-queue-row");
+  queueRows = page.locator(".lab-queue .lab-queue-row");
   await expect(queueRows).toHaveCount(EXPECTED_PORTFOLIO_LABS, { timeout: TIMEOUT_MS });
   for (const lab of portfolioLabs) {
     await expect(queueRows.filter({ hasText: lab.title })).toHaveCount(1, { timeout: TIMEOUT_MS });
