@@ -10,6 +10,7 @@ Run this after every local rebuild, Docker Compose demo, shared-EKS preview, or 
 - `make working-tree-hygiene-check` passes before staging or reviewing broad lab/release branches; it inspects committed branch changes plus local modified, staged, and untracked files.
 - `make script-syntax-check` passes before relying on local or deployed smoke helpers.
 - `make smoke-helper-check` passes before relying on deployed smoke, container smoke, API/lab smoke, review-pack, or API-image dry-run and input validation paths.
+- `make terraform-validate` passes for Terraform scaffold changes; it runs fmt/init/validate only, with no plan or apply.
 - `make platform-container-smoke` passes after image-affecting API, lab, nginx, or Platform Academy frontend changes; it runs the API image in production-like source-bundle protection mode and proves unauthenticated instructor/source bundle requests are blocked.
 - `GET /api/platform-academy/catalog` returns `21` courses and `84` lessons.
 - `make platform-api-smoke API_BASE=https://...` passes and verifies no-store API headers, the OpenAPI backup/workbook/download contract, the source-bundle token header contract, the catalog, resources, interview prep, dashboard, activity history, 21 full labs, learner-safe public artifact paths, all lab packets, instructor/source bundles, learner workspace bundles, submission persistence, submission history, platform achievements, learner state export/import, and Platform Academy product metrics.

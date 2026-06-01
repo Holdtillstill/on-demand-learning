@@ -83,6 +83,7 @@ make env-contract-check
 make working-tree-hygiene-check
 make script-syntax-check
 make smoke-helper-check
+make terraform-validate
 make release-check
 make platform-release-check
 make platform-release-evidence

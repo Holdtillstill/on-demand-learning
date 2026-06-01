@@ -44,6 +44,7 @@ PLATFORM_VALIDATE_COMMANDS = {
     "make platform-content-count-check PYTHON=python3",
     "make working-tree-hygiene-check PYTHON=python3",
     "docker compose config --quiet",
+    "make terraform-validate",
     "make k8s-platform-contract PYTHON=python3",
     "make platform-lab-verify PYTHON=python3",
     "make workflow-lint PYTHON=python3",
@@ -217,6 +218,8 @@ def verify_platform_validate_workflow() -> None:
     runs = {step.get("run") for step in validate_steps if isinstance(step.get("run"), str)}
     missing = sorted(PLATFORM_VALIDATE_COMMANDS - runs)
     require(not missing, f"{name} missing local contract commands: {missing}")
+    setup_terraform = next((step for step in validate_steps if step.get("uses") == "hashicorp/setup-terraform@v3"), None)
+    require(isinstance(setup_terraform, dict), f"{name} must install Terraform before make terraform-validate")
 
 
 def verify_platform_deployed_smoke_workflow() -> None:

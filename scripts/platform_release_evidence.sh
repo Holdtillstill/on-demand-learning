@@ -70,6 +70,7 @@ Working tree changed paths: ${local_changed_count}
 - [ ] \`make release-check\`
 - [ ] \`make platform-release-check\`
 - [ ] \`make working-tree-hygiene-check\`
+- [ ] \`make terraform-validate\`
 - [ ] \`make clean-generated clean-smoke-images\`
 - [ ] \`git diff --check\`
 
@@ -90,6 +91,7 @@ Paste the most recent successful \`make platform-release-check\` tail here:
 - Browser smoke: 21 courses, 84 lessons, 21 lab detail routes, 7 portfolio-grade UI signals, 320 resource detail routes, 22 interview prep packs, desktop and mobile route checks.
 - Lab smoke: all lab packets, protected instructor/source bundles, learner workspace bundles, no-store download headers, safe source/workspace extraction, source helper syntax, and each workspace \`validate.sh --files-only\`.
 - API image migration smoke: \`alembic upgrade head\`, \`alembic current\`, \`alembic check\`, and bundled lab verifier with \`CREATE_SCHEMA_ON_STARTUP=false\`.
+- Terraform scaffold: \`terraform fmt -check\`, \`terraform init -backend=false\`, and \`terraform validate\` through \`make terraform-validate\`.
 - Review scope: branch-aware manifest and review pack compare against the review base and include local modified, staged, or untracked files.
 - Working-tree hygiene: committed branch changes plus local modified, staged, and untracked files are checked for generated artifacts, executable shell helpers, trailing whitespace, CRLF line endings, conflict markers, and missing final newlines.
 - Workflow contract: expected GitHub Actions workflow set, Platform Academy image path filters, migration/scan/container-smoke-before-push ordering, backend API smoke, frontend browser smoke, deployed smoke origin/token/skip wiring, and platform validation gates.

@@ -34,12 +34,14 @@ make env-contract-check
 make platform-content-count-check
 make working-tree-hygiene-check
 make platform-lab-verify
+make terraform-validate
 make k8s-platform-contract
 docker compose config --quiet
 make kubeconform-check
 make workflow-lint
 ```
 
+`make terraform-validate` runs `terraform fmt -check`, `terraform init -backend=false`, and `terraform validate` against the scaffold without planning or applying resources.
 `make workflow-lint` runs actionlint and `scripts/verify_workflow_contracts.py`, so it also proves the release-critical workflow shape: image publishing keeps migration checks, Trivy scans, built-container smoke, and delayed push ordering; the image workflow watches the smoke/image helper scripts it depends on; and the platform validation workflow keeps the local contract gates wired.
 `make working-tree-hygiene-check` inspects committed branch changes plus local modified, staged, and untracked files, so newly added lab artifacts get the same whitespace, conflict-marker, generated-artifact, final-newline, and executable-shell-helper checks as tracked edits. In GitHub Actions it honors `GITHUB_BASE_REF`; set `PLATFORM_REVIEW_BASE=<ref>` locally when the release branch should compare against a target other than the default `origin/main` or `main`.
 
