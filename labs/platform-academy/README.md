@@ -36,6 +36,7 @@ bash labs/platform-academy/run-lab.sh show trace-service-to-pod
 bash labs/platform-academy/run-lab.sh packet trace-service-to-pod > trace-service-to-pod-lab-packet.md
 bash labs/platform-academy/run-lab.sh workspace trace-service-to-pod --dir /tmp/platform-academy-workspaces
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md
+bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight
 bash labs/platform-academy/run-lab.sh setup review-yaml-before-apply --evidence /tmp/yaml-review-evidence.md
 bash labs/platform-academy/run-lab.sh validate trace-service-to-pod
@@ -63,6 +64,7 @@ Learner workspaces copy the lab packet, `evidence.md`, helper scripts, and inspe
 - Cloud, AWS, EKS, ArgoCD, incident, FinOps, and career labs use captured evidence packs so they can run without credentials.
 - Do not run the manifests against a shared production cluster.
 - Use a disposable local or sandbox Kubernetes context, such as kind, minikube, Docker Desktop Kubernetes, or Rancher Desktop.
+- Use `bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod` to create or select a disposable kind context when kind is installed, then run the lab preflight.
 - Cluster mode refuses contexts outside `kind-*`, `minikube`, `docker-desktop`, and `rancher-desktop` unless `PLATFORM_LAB_ALLOW_NONLOCAL_CLUSTER=1` is set for an approved sandbox.
 - Cluster setup supports `--preflight` to check `kubectl`, current context safety, API reachability, namespace permissions, and whether the lab namespace already exists before mutating anything.
 - Cleanup scripts skip Kubernetes deletion when `kubectl` is missing, no context is selected, or the current context is not disposable.
@@ -70,6 +72,7 @@ Learner workspaces copy the lab packet, `evidence.md`, helper scripts, and inspe
 If you have a disposable Kubernetes context and want to run the cluster-backed portions too:
 
 ```bash
+bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --cluster
 bash labs/platform-academy/run-lab.sh validate trace-service-to-pod --cluster

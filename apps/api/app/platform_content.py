@@ -2816,6 +2816,7 @@ PLATFORM_LABS = [
         ],
         "setup_commands": [
             "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md",
+            "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod",
             "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight",
             "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --cluster",
             "kubectl config current-context",
@@ -2891,6 +2892,7 @@ PLATFORM_LABS = [
         ],
         "setup_commands": [
             "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --evidence /tmp/crashloop-imagepull-evidence.md",
+            "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight debug-crashloop-imagepull",
             "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --preflight",
             "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --cluster",
             "kubectl config current-context",
@@ -3632,6 +3634,7 @@ RUNNABLE_LAB_UPDATES = {
             "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --evidence /tmp/tenant-boundaries-evidence.md",
             "kubectl create --dry-run=client --validate=false -f labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
             "sed -n '1,180p' labs/platform-academy/audit-tenant-boundaries/review.md",
+            "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight audit-tenant-boundaries",
             "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --preflight",
             "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --cluster --evidence /tmp/tenant-boundaries-evidence.md",
         ],
@@ -3791,6 +3794,7 @@ RUNNABLE_LAB_UPDATES = {
             "bash labs/platform-academy/trace-network-path/setup.sh --evidence /tmp/network-path-evidence.md",
             "sed -n '1,220p' labs/platform-academy/trace-network-path/incident-handoff.md",
             "sed -n '1,220p' labs/platform-academy/trace-network-path/network-evidence.md",
+            "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-network-path",
             "bash labs/platform-academy/trace-network-path/setup.sh --preflight",
             "bash labs/platform-academy/trace-network-path/setup.sh --cluster --evidence /tmp/network-path-evidence.md",
         ],
@@ -4092,6 +4096,7 @@ RUNNABLE_LAB_UPDATES = {
         "setup_commands": [
             "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --evidence /tmp/alb-health-path-evidence.md",
             "sed -n '1,160p' labs/platform-academy/debug-aws-alb-health-path/target-health.json",
+            "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight debug-aws-alb-health-path",
             "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --preflight",
             "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --cluster --evidence /tmp/alb-health-path-evidence.md",
         ],

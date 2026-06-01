@@ -17,6 +17,7 @@ Use a disposable local cluster such as kind, minikube, Docker Desktop Kubernetes
 Check cluster readiness before mutating anything:
 
 ```bash
+bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight
 ```
 

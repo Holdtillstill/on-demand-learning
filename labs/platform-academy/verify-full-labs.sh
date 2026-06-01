@@ -92,6 +92,10 @@ case "${1:-}" in
       echo "kind-platform-lab"
       exit 0
     fi
+    if [[ "${2:-}" == "use-context" ]]; then
+      echo "Switched to context \"${3:-}\"."
+      exit 0
+    fi
     ;;
   version)
     exit 0
@@ -124,6 +128,33 @@ echo "fake kubectl unsupported command: $*" >&2
 exit 64
 EOF
 chmod +x "$fake_kubectl_bin/kubectl"
+
+cat >"$fake_kubectl_bin/kind" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${PLATFORM_FAKE_KIND_LOG:?}"
+printf "%s\n" "$*" >>"$PLATFORM_FAKE_KIND_LOG"
+
+case "${1:-} ${2:-}" in
+  "get clusters")
+    if [[ "${PLATFORM_FAKE_KIND_HAS_CLUSTER:-false}" == "true" ]]; then
+      echo "platform-lab"
+    fi
+    exit 0
+    ;;
+  "create cluster")
+    if [[ "${3:-}" == "--name" && -n "${4:-}" ]]; then
+      echo "Created fake kind cluster ${4:-}"
+      exit 0
+    fi
+    ;;
+esac
+
+echo "fake kind unsupported command: $*" >&2
+exit 64
+EOF
+chmod +x "$fake_kubectl_bin/kind"
 
 EVIDENCE_VALIDATION_LABS=(
   "trace-service-to-pod"
@@ -212,6 +243,27 @@ for setup_lab in "${PREFLIGHT_SETUP_LABS[@]}"; do
   grep -q "Next: rerun setup with --cluster" "$tmpdir/setup-preflight-$setup_lab.txt" || fail "$setup_lab preflight should print the cluster setup next step"
   ! grep -Eq "^(apply|delete)($| )" "$fake_log" || fail "$setup_lab preflight should not mutate the fake cluster"
 done
+
+bootstrap_script="$LAB_ROOT/bootstrap-local-cluster.sh"
+[[ -x "$bootstrap_script" ]] || fail "bootstrap-local-cluster.sh should be executable"
+bash -n "$bootstrap_script"
+"$bootstrap_script" --help >"$tmpdir/bootstrap-help.txt"
+grep -q -- "--preflight" "$tmpdir/bootstrap-help.txt" || fail "bootstrap helper help should include --preflight"
+grep -q "no app namespace or Pods need to exist" "$tmpdir/bootstrap-help.txt" || fail "bootstrap helper help should explain namespace creation"
+
+bootstrap_kubectl_log="$tmpdir/bootstrap-kubectl.log"
+bootstrap_kind_log="$tmpdir/bootstrap-kind.log"
+: >"$bootstrap_kubectl_log"
+: >"$bootstrap_kind_log"
+PATH="$fake_kubectl_bin:$PATH" \
+  PLATFORM_FAKE_KUBECTL_LOG="$bootstrap_kubectl_log" \
+  PLATFORM_FAKE_KIND_LOG="$bootstrap_kind_log" \
+  "$bootstrap_script" --name platform-lab --preflight trace-service-to-pod >"$tmpdir/bootstrap-preflight.txt"
+grep -q "Creating kind cluster: platform-lab" "$tmpdir/bootstrap-preflight.txt" || fail "bootstrap helper should create the default kind cluster when absent"
+grep -q "Disposable Kubernetes context is ready: kind-platform-lab" "$tmpdir/bootstrap-preflight.txt" || fail "bootstrap helper should confirm the disposable context"
+grep -q "Preflight passed. No app namespace or Pods need to exist before setup." "$tmpdir/bootstrap-preflight.txt" || fail "bootstrap helper should run the requested lab preflight"
+grep -q "create cluster --name platform-lab" "$bootstrap_kind_log" || fail "bootstrap helper should call kind create cluster"
+! grep -Eq "^(apply|delete)($| )" "$bootstrap_kubectl_log" || fail "bootstrap helper preflight should not mutate the fake cluster"
 
 denied_log="$tmpdir/preflight-denied-kubectl.log"
 : >"$denied_log"

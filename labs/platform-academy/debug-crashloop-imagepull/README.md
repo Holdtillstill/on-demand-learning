@@ -20,6 +20,7 @@ Use a disposable local cluster. The lab creates the `payments-debug` namespace a
 Check cluster readiness before mutating anything:
 
 ```bash
+bash labs/platform-academy/bootstrap-local-cluster.sh --preflight debug-crashloop-imagepull
 bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --preflight
 ```
 
