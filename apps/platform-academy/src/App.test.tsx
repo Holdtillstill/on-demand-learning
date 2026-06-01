@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -1439,7 +1439,7 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("Self-check script")).toBeInTheDocument();
     expect(screen.getAllByText("validate.sh").length).toBeGreaterThan(0);
     expect(screen.getByText("Prerequisites")).toBeInTheDocument();
-    expect(screen.getByText("Setup commands")).toBeInTheDocument();
+    expect(screen.getAllByText("Setup commands").length).toBeGreaterThan(0);
     expect(screen.getByText("Opt-in self-check commands")).toBeInTheDocument();
     expect(screen.getByText("bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --run-analyzer")).toBeInTheDocument();
     expect(screen.getByText("Practice steps")).toBeInTheDocument();
@@ -1452,6 +1452,14 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("Setup ready")).toBeInTheDocument();
     expect(screen.getByText("False leads pending")).toBeInTheDocument();
     expect(screen.getByText("0/1 validation checks")).toBeInTheDocument();
+    const commandDeck = screen.getByLabelText("Lab phase command deck");
+    expect(within(commandDeck).getByRole("heading", { name: "Copy by lab phase" })).toBeInTheDocument();
+    expect(within(commandDeck).getByRole("button", { name: /setup: 1 command/i })).toHaveAttribute("aria-pressed", "true");
+    expect(within(commandDeck).getByText("kubectl apply -f labs/platform-academy/trace-service-to-pod/start.yaml")).toBeInTheDocument();
+    fireEvent.click(within(commandDeck).getByRole("button", { name: /validation: 0\/1 checks/i }));
+    expect(within(commandDeck).getByText(/bash labs\/platform-academy\/trace-service-to-pod\/validate\.sh/)).toBeInTheDocument();
+    fireEvent.click(within(commandDeck).getByRole("button", { name: /closeout: listed/i }));
+    expect(within(commandDeck).getByText(/bash labs\/platform-academy\/trace-service-to-pod\/cleanup\.sh/)).toBeInTheDocument();
     expect(screen.getByText("Learner workspace contract")).toBeInTheDocument();
     expect(screen.getByText("Guide, evidence, verification, cleanup")).toBeInTheDocument();
     expect(screen.getByText("4 / 4 present")).toBeInTheDocument();

@@ -1023,9 +1023,7 @@ function labWorkbookPhaseRows(lab: PlatformLab, checkedItems: Record<string, boo
     answerText.includes("hop trace");
   const answeredPrompts = worksheetItems.filter((_, index) => worksheetAnswers[`worksheet-${index}`]?.trim()).length;
   const completedValidation = validationItems.filter((_, index) => checkedItems[`validation-${index}`]).length;
-  const closeoutIndexes = validationItems
-    .map((item, index) => ({ item: item.toLowerCase(), index }))
-    .filter(({ item }) => ["cleanup", "no-cluster", "no-aws", "no-live", "no-runtime", "handoff"].some((term) => item.includes(term)));
+  const closeoutIndexes = labCloseoutIndexes(validationItems);
   const completedCloseout = closeoutIndexes.filter(({ index }) => checkedItems[`validation-${index}`]).length;
   const cleanupSignals = (lab.cleanup_commands?.length ?? 0) + (lab.no_cluster_fallback?.length ?? 0);
 
@@ -1097,6 +1095,106 @@ function LabWorkbookPhaseStatus({ lab, checkedItems, worksheetAnswers }: { lab: 
           );
         })}
       </div>
+    </section>
+  );
+}
+
+type LabCommandStage = {
+  id: "setup" | "evidence" | "validation" | "closeout";
+  title: string;
+  status: string;
+  commands: string[];
+  icon: LucideIcon;
+};
+
+function labCloseoutIndexes(validationItems: string[]) {
+  return validationItems
+    .map((item, index) => ({ item: item.toLowerCase(), index }))
+    .filter(({ item }) => ["cleanup", "no-cluster", "no-aws", "no-live", "no-runtime", "handoff"].some((term) => item.includes(term)));
+}
+
+function labCloseoutCommands(lab: PlatformLab) {
+  return lab.cleanup_commands?.length ? lab.cleanup_commands : lab.no_cluster_fallback ?? [];
+}
+
+function commandCountLabel(count: number) {
+  return `${count} ${count === 1 ? "command" : "commands"}`;
+}
+
+function labCommandStages(lab: PlatformLab, checkedItems: Record<string, boolean>, worksheetAnswers: Record<string, string>): LabCommandStage[] {
+  const worksheetItems = lab.worksheet_prompts ?? [];
+  const validationItems = lab.validation_checks ?? [];
+  const answeredPrompts = worksheetItems.filter((_, index) => worksheetAnswers[`worksheet-${index}`]?.trim()).length;
+  const completedValidation = validationItems.filter((_, index) => checkedItems[`validation-${index}`]).length;
+  const closeoutIndexes = labCloseoutIndexes(validationItems);
+  const completedCloseout = closeoutIndexes.filter(({ index }) => checkedItems[`validation-${index}`]).length;
+
+  return [
+    {
+      id: "setup",
+      title: "Setup",
+      status: commandCountLabel(lab.setup_commands?.length ?? 0),
+      commands: lab.setup_commands ?? [],
+      icon: Terminal
+    },
+    {
+      id: "evidence",
+      title: "Evidence",
+      status: `${answeredPrompts}/${worksheetItems.length} notes`,
+      commands: lab.commands,
+      icon: FileText
+    },
+    {
+      id: "validation",
+      title: "Validation",
+      status: `${completedValidation}/${validationItems.length} checks`,
+      commands: lab.validation_commands ?? [],
+      icon: CheckCircle2
+    },
+    {
+      id: "closeout",
+      title: "Closeout",
+      status: closeoutIndexes.length ? `${completedCloseout}/${closeoutIndexes.length} checks` : labCloseoutCommands(lab).length ? "listed" : "none",
+      commands: labCloseoutCommands(lab),
+      icon: RefreshCcw
+    }
+  ];
+}
+
+function LabPhaseCommandDeck({ lab, checkedItems, worksheetAnswers }: { lab: PlatformLab; checkedItems: Record<string, boolean>; worksheetAnswers: Record<string, string> }) {
+  const stages = labCommandStages(lab, checkedItems, worksheetAnswers);
+  const [activeStageId, setActiveStageId] = useState<LabCommandStage["id"]>("setup");
+  const activeStage = stages.find((stage) => stage.id === activeStageId) ?? stages[0];
+
+  return (
+    <section className="lab-command-deck" aria-label="Lab phase command deck">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Phase commands</p>
+          <h3>Copy by lab phase</h3>
+        </div>
+        <span>{commandCountLabel(activeStage.commands.length)}</span>
+      </div>
+      <div className="lab-command-tabs" aria-label="Lab command phase">
+        {stages.map((stage) => {
+          const StageIcon = stage.icon;
+          return (
+            <button
+              aria-label={`${stage.title}: ${stage.status}`}
+              aria-pressed={stage.id === activeStage.id}
+              className={stage.id === activeStage.id ? "active" : undefined}
+              key={stage.id}
+              onClick={() => setActiveStageId(stage.id)}
+              type="button"
+            >
+              <StageIcon aria-hidden="true" />
+              <strong>{stage.title}</strong>
+              <span>{stage.status}</span>
+            </button>
+          );
+        })}
+      </div>
+      <CommandBlock commands={activeStage.commands} title={`${activeStage.title} commands`} />
     </section>
   );
 }
@@ -1265,6 +1363,7 @@ function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; l
         </small>
       </div>
       <LabWorkbookPhaseStatus lab={lab} checkedItems={checkedItems} worksheetAnswers={worksheetAnswers} />
+      <LabPhaseCommandDeck lab={lab} checkedItems={checkedItems} worksheetAnswers={worksheetAnswers} />
       <div className="lab-workbook-grid">
         <section>
           <h3>Worksheet prompts</h3>
