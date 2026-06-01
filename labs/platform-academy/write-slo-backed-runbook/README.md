@@ -18,6 +18,7 @@ Inspect the SLO signal packet and runbook template:
 
 ```bash
 bash labs/platform-academy/write-slo-backed-runbook/setup.sh --evidence /tmp/slo-runbook-evidence.md
+sed -n '1,220p' labs/platform-academy/write-slo-backed-runbook/triage-notes.md
 sed -n '1,220p' labs/platform-academy/write-slo-backed-runbook/signals.md
 sed -n '1,220p' labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml
 sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/runbook-template.md
@@ -45,6 +46,7 @@ python3 labs/platform-academy/write-slo-backed-runbook/slo_runbook_analyzer.py \
 
 Find:
 
+- The triage False Leads that would roll back, escalate, or declare victory too early.
 - The user-visible symptom and SLO window.
 - The alert threshold and duration.
 - The rollout revision correlated with the alert.
@@ -67,6 +69,7 @@ bash labs/platform-academy/write-slo-backed-runbook/validate.sh --evidence /tmp/
 ## Success Criteria
 
 - You connect the alert to user impact and error-budget burn.
+- You rule out false confidence from alert-only rollback, rollout correlation, single-metric validation, and ownerless follow-up.
 - You choose read-only evidence before mitigation.
 - You define rollback criteria tied to revision 43 and target health.
 - You include follow-up owners, due dates, and alert/dashboard improvements.

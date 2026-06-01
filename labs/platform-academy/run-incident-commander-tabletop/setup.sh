@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/run-incident-commander-tabletop"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/incident_tabletop_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/incident-commander-evidence.md"
 mode="no-cluster"
@@ -72,7 +73,11 @@ else
 fi
 
 echo
+echo "Captured incident commander triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged incident tabletop evidence:"
+echo "  sed -n '1,220p' labs/platform-academy/run-incident-commander-tabletop/triage-notes.md"
 echo "  sed -n '1,180p' labs/platform-academy/run-incident-commander-tabletop/signals.md"
 echo "  sed -n '1,160p' labs/platform-academy/run-incident-commander-tabletop/roles.md"
 echo "  sed -n '1,160p' labs/platform-academy/run-incident-commander-tabletop/timeline.md"

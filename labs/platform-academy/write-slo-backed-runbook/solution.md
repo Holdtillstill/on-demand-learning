@@ -6,6 +6,7 @@ Use the SLO alert as the incident entry point and collect evidence before mitiga
 
 ## Findings
 
+- The triage notes rule out rolling back as the first command, treating revision 43 correlation as proof by itself, using threshold-only evidence without user impact, and skipping follow-up ownership.
 - `CheckoutHighErrorBudgetBurn` has fired for 14 minutes.
 - The alert threshold is 2% 5xx ratio for 10 minutes.
 - Rollout revision 43 completed shortly before readiness and target-health symptoms.

@@ -6,6 +6,7 @@ Fix trace-context propagation and alert cardinality before treating telemetry as
 
 ## Findings
 
+- The triage notes rule out trusting the path because authorization headers are deleted, because one trace ID is valid, because customer-level grouping seems precise, or because simulator output exists without owners.
 - The collector correctly deletes authorization headers.
 - One checkout log has `trace_id=missing`.
 - The Prometheus rule groups by `customer_email`, which is high-cardinality and sensitive.

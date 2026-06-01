@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/write-slo-backed-runbook"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/slo_runbook_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/slo-runbook-evidence.md"
 run_analyzer=false
@@ -57,7 +58,11 @@ else
 fi
 
 echo
+echo "Captured SLO runbook triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged SLO runbook review bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/write-slo-backed-runbook/triage-notes.md"
 echo "  sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/signals.md"
 echo "  sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml"
 echo "  sed -n '1,220p' labs/platform-academy/write-slo-backed-runbook/runbook-template.md"

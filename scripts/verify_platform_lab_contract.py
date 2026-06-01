@@ -235,8 +235,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "write-slo-backed-runbook": {
-        "files": {"evidence-template.md", "setup.sh", "slo_runbook_analyzer.py"},
+        "files": {"evidence-template.md", "setup.sh", "slo_runbook_analyzer.py", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "CheckoutHighErrorBudgetBurn",
             "99.9%",
             "2% 5xx",
@@ -246,8 +247,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "design-opentelemetry-signal-path": {
-        "files": {"evidence-template.md", "setup.sh", "signal_path_analyzer.py"},
+        "files": {"evidence-template.md", "setup.sh", "signal_path_analyzer.py", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "http.request.header.authorization",
             "trace_id=missing",
             "customer_email",
@@ -257,8 +259,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "run-incident-commander-tabletop": {
-        "files": {"evidence-template.md", "incident_tabletop_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "incident_tabletop_analyzer.py", "setup.sh", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "SEV-2",
             "0.2%",
             "9.4%",

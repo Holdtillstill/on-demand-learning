@@ -605,16 +605,16 @@ def test_practical_platform_labs_expose_specific_evidence_guides():
             "terms": {"required inputs", "missing SLO dashboard", "adoption metrics", "readiness gates"},
         },
         "write-slo-backed-runbook": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"CheckoutHighErrorBudgetBurn", "99.9%", "2% 5xx", "revision 43"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "CheckoutHighErrorBudgetBurn", "99.9%", "2% 5xx", "revision 43"},
         },
         "design-opentelemetry-signal-path": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"http.request.header.authorization", "trace_id=missing", "customer_email", "owner map"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "http.request.header.authorization", "trace_id=missing", "customer_email", "owner map"},
         },
         "run-incident-commander-tabletop": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"SEV-2", "0.2% to 9.4%", "revision 42", "Communications lead"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "SEV-2", "0.2% to 9.4%", "revision 42", "Communications lead"},
         },
         "audit-eks-cost-drivers": {
             "artifacts": {"evidence-template.md"},
@@ -1202,8 +1202,8 @@ def test_release_pipeline_lab_feedback_tracks_false_leads_and_gate_chain():
 
 
 def test_sre_lab_feedback_tracks_slo_evidence_and_owner_split():
-    checked_items = {f"worksheet-{index}": True for index in range(6)}
-    checked_items.update({f"validation-{index}": True for index in range(7)})
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
 
     response = client.post(
         "/api/platform-academy/labs/write-slo-backed-runbook/submission",
@@ -1211,13 +1211,17 @@ def test_sre_lab_feedback_tracks_slo_evidence_and_owner_split():
             "user_id": "lab-slo-rubric-user",
             "worksheet_answers": {
                 "worksheet-0": "signals.md reviewed for CheckoutHighErrorBudgetBurn; no live rollback was run.",
-                "worksheet-1": "99.9% SLO, CheckoutHighErrorBudgetBurn, 2% 5xx threshold, 14 minutes, dashboard impact.",
-                "worksheet-2": (
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out rollback first, Revision 43 correlation proof, "
+                    "threshold without user impact, and ownerless follow-up."
+                ),
+                "worksheet-2": "99.9% SLO, CheckoutHighErrorBudgetBurn, 2% 5xx threshold, 14 minutes, dashboard impact.",
+                "worksheet-3": (
                     "revision 43 rollout correlates with readiness flapping and target group unhealthy; check dependency traces."
                 ),
-                "worksheet-3": "Run kubectl rollout history as read-only evidence before rollback, traffic shift, or escalation.",
-                "worksheet-4": "Incident commander, App owner, Platform owner, and SRE owner validate and follow up.",
-                "worksheet-5": "completed-runbook.md, incident-decision.md, validate output, dashboard, and cleanup note saved.",
+                "worksheet-4": "Run kubectl rollout history as read-only evidence before rollback, traffic shift, or escalation.",
+                "worksheet-5": "Incident commander, App owner, Platform owner, and SRE owner validate and follow up.",
+                "worksheet-6": "completed-runbook.md, incident-decision.md, validate output, dashboard, and cleanup note saved.",
             },
             "checked_items": checked_items,
             "status": "submitted",
@@ -1226,14 +1230,109 @@ def test_sre_lab_feedback_tracks_slo_evidence_and_owner_split():
 
     assert response.status_code == 200
     feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "rollback-first" in item["criterion"])
     alert_feedback = next(item for item in feedback if "2% 5xx threshold" in item["criterion"])
     rollout_feedback = next(item for item in feedback if "revision 43" in item["criterion"])
     owner_feedback = next(item for item in feedback if "Incident commander" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
     assert alert_feedback["status"] == "strong"
     assert "checkouthigherrorbudgetburn" in alert_feedback["evidence_terms"]
     assert rollout_feedback["status"] == "strong"
     assert "revision 43" in rollout_feedback["evidence_terms"]
     assert owner_feedback["status"] == "strong"
+
+
+def test_observability_lab_feedback_tracks_signal_path_false_leads():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/design-opentelemetry-signal-path/submission",
+        json={
+            "user_id": "lab-otel-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": (
+                    "Reviewed collector.yaml, checkout-logs.txt, prometheus-rule.yaml, simulator output, "
+                    "and no live backend change."
+                ),
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out header deletion as full proof, one valid trace, "
+                    "customer-level grouping, and missing owner map."
+                ),
+                "worksheet-2": "http.request.header.authorization uses action: delete in the collector privacy control.",
+                "worksheet-3": (
+                    "trace_id=missing compared with trace_id=0123456789abcdef0123456789abcdef; "
+                    "App owner propagates trace context."
+                ),
+                "worksheet-4": "customer_email cardinality privacy alert grouping risk appears in histogram_quantile.",
+                "worksheet-5": "sum by (le, route), Owner Map, SRE owner, Data/privacy owner, and dashboard handoff recorded.",
+                "worksheet-6": (
+                    "signal-path-decision.md, safe-prometheus-rule.yaml, simulator, validate, cleanup, "
+                    "and OpenTelemetry signal path analysis passed output saved."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "header-deletion-only" in item["criterion"])
+    privacy_feedback = next(item for item in feedback if "authorization" in item["criterion"])
+    trace_feedback = next(item for item in feedback if "trace context evidence" in item["criterion"])
+    cardinality_feedback = next(item for item in feedback if "customer_email" in item["criterion"])
+    owner_feedback = next(item for item in feedback if "route-only aggregation" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert privacy_feedback["status"] == "strong"
+    assert trace_feedback["status"] == "strong"
+    assert cardinality_feedback["status"] == "strong"
+    assert owner_feedback["status"] == "strong"
+
+
+def test_incident_tabletop_feedback_tracks_false_leads_roles_and_timeline():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/run-incident-commander-tabletop/submission",
+        json={
+            "user_id": "lab-incident-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "signals.md tabletop packet reviewed; no live mitigation; 15 minutes update clock.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out waiting for root cause, missing stakeholder update, "
+                    "rollback without decision criterion, and timeline later."
+                ),
+                "worksheet-2": "SEV-2 with 0.2% to 9.4% checkout 5xx, payment confirmation impact, and decision pressure.",
+                "worksheet-3": "Incident commander, Operations lead, Communications lead, Planning lead, and escalation owner assigned.",
+                "worksheet-4": "revision 43 can rollback to revision 42; mitigation pending until stakeholder update criterion is met.",
+                "worksheet-5": "timeline entries include evidence, decision, owner, and communications handoff.",
+                "worksheet-6": (
+                    "commander-brief.md, completed-timeline.md, validate output, cleanup/no-runtime note, "
+                    "and Incident commander tabletop analysis passed saved."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "waiting for root cause" in item["criterion"])
+    impact_feedback = next(item for item in feedback if "0.2% to 9.4%" in item["criterion"])
+    roles_feedback = next(item for item in feedback if "Assigns Incident commander" in item["criterion"])
+    rollback_feedback = next(item for item in feedback if "revision 43 rollback" in item["criterion"])
+    timeline_feedback = next(item for item in feedback if "timeline entries" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert impact_feedback["status"] == "strong"
+    assert roles_feedback["status"] == "strong"
+    assert rollback_feedback["status"] == "strong"
+    assert timeline_feedback["status"] == "strong"
 
 
 def test_network_lab_feedback_tracks_hop_and_owner_evidence():

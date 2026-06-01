@@ -8,6 +8,14 @@
 - Simulator command:
 - Confirmation that no live telemetry backend is changed:
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False lead about header deletion proving the whole path:
+- False lead about one valid trace ID:
+- False lead about customer-level grouping:
+- False lead about simulator output replacing owners:
+
 ## Sensitive Attribute Evidence
 
 - Attribute being dropped:

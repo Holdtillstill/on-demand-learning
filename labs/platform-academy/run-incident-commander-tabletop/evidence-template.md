@@ -7,6 +7,14 @@
 - Confirmation that no live mitigation was executed:
 - Next update clock:
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False lead about waiting for root cause before roles:
+- False lead about delaying communications:
+- False lead about immediate rollback without criteria:
+- False lead about writing timeline later:
+
 ## Impact And Severity Evidence
 
 - Current severity:

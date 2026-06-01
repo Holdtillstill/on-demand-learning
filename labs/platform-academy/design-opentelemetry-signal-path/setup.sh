@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/design-opentelemetry-signal-path"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/signal_path_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/otel-signal-path-evidence.md"
 mode="no-cluster"
@@ -72,7 +73,11 @@ else
 fi
 
 echo
+echo "Captured OpenTelemetry signal-path triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged OpenTelemetry signal evidence:"
+echo "  sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/triage-notes.md"
 echo "  sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/collector.yaml"
 echo "  sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt"
 echo "  sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml"

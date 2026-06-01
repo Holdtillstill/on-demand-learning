@@ -16,6 +16,7 @@ No live incident tooling is required. Use the supplied tabletop signal files and
 
 ```bash
 bash labs/platform-academy/run-incident-commander-tabletop/setup.sh --evidence /tmp/incident-commander-evidence.md
+sed -n '1,220p' labs/platform-academy/run-incident-commander-tabletop/triage-notes.md
 sed -n '1,180p' labs/platform-academy/run-incident-commander-tabletop/signals.md
 sed -n '1,160p' labs/platform-academy/run-incident-commander-tabletop/roles.md
 sed -n '1,160p' labs/platform-academy/run-incident-commander-tabletop/timeline.md
@@ -32,6 +33,7 @@ bash labs/platform-academy/run-incident-commander-tabletop/setup.sh --run-analyz
 
 Find:
 
+- The triage False Leads that delay roles, communications, mitigation, or timeline capture.
 - Severity and user impact.
 - Current mitigation status and next stakeholder update.
 - Role assignments.
@@ -69,6 +71,7 @@ python3 labs/platform-academy/run-incident-commander-tabletop/incident_tabletop_
 ## Success Criteria
 
 - You declare or confirm SEV-2.
+- You rule out waiting for root cause, delaying stakeholder updates, rolling back without criteria, and writing timeline entries later.
 - You assign commander, operations, communications, and planning roles.
 - You choose mitigation criteria and next update timing.
 - You write timeline entries with evidence, decision, and owner.

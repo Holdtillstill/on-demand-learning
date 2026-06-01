@@ -16,6 +16,7 @@ No collector or telemetry backend is required. Use local manifests, logs, rules,
 
 ```bash
 bash labs/platform-academy/design-opentelemetry-signal-path/setup.sh --evidence /tmp/otel-signal-path-evidence.md
+sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/triage-notes.md
 sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/collector.yaml
 sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt
 sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml
@@ -32,6 +33,7 @@ bash labs/platform-academy/design-opentelemetry-signal-path/setup.sh --run-analy
 
 Find:
 
+- The triage False Leads that make noisy telemetry look trustworthy.
 - Which sensitive attribute is dropped.
 - Where trace context is missing.
 - Which metric label causes cardinality risk.
@@ -68,6 +70,7 @@ python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analy
 ## Success Criteria
 
 - You preserve sensitive-header deletion.
+- You rule out false confidence from one valid trace, header deletion alone, customer-level grouping, and simulator-only proof.
 - You identify missing trace ID evidence.
 - You remove `customer_email` from alert grouping.
 - You name owners for instrumentation, collector, storage, dashboard, and alert policy.

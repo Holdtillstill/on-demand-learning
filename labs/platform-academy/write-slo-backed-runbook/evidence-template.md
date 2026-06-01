@@ -7,6 +7,14 @@
 - Confirmation that no live rollback command was run:
 - Reviewer:
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False lead about rollback as the first command:
+- False lead about revision correlation as proof:
+- False lead about threshold without user impact:
+- False lead about ownerless follow-up:
+
 ## SLO And Alert Evidence
 
 - SLO target:

@@ -6,6 +6,7 @@ Confirm SEV-2, assign incident roles, and prepare rollback unless impact drops w
 
 ## Findings
 
+- The triage notes rule out waiting for root cause before assigning roles, delaying communications until a fix is confirmed, rolling back without a decision criterion, and writing timeline entries after the incident.
 - Checkout 5xx rose from 0.2% to 9.4%.
 - Payment confirmation intermittently fails.
 - Revision 43 was promoted to 100%.

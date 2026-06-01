@@ -3717,10 +3717,12 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/write-slo-backed-runbook/setup.sh --evidence /tmp/slo-runbook-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/write-slo-backed-runbook/triage-notes.md",
             "sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/signals.md",
             "sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/runbook-template.md",
         ],
         "commands": [
+            "grep -n \"False Leads\\|Rollback is not\\|Revision 43 correlation\" labs/platform-academy/write-slo-backed-runbook/triage-notes.md",
             "grep -n \"CheckoutHighErrorBudgetBurn\\|0.02\\|severity: page\" labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml",
             "grep -n \"revision 43\\|readiness flapping\\|Mitigation\" labs/platform-academy/write-slo-backed-runbook/signals.md",
             (
@@ -3733,12 +3735,14 @@ RUNNABLE_LAB_UPDATES = {
             "diff -u labs/platform-academy/write-slo-backed-runbook/runbook-template.md labs/platform-academy/write-slo-backed-runbook/completed-runbook.md || true",
         ],
         "practice_steps": [
+            "Read the triage notes and rule out rollback-first and correlation-only responses.",
             "Name the user-visible SLO and burn signal.",
             "Tie the alert to rollout and Kubernetes event evidence.",
             "Use the local analyzer to prove the alert, rollout correlation, safe commands, and mitigation boundary.",
             "Fill the runbook with safe commands, mitigation choices, and follow-up owners.",
         ],
         "expected_evidence": [
+            "The triage notes rule out rollback-first response, revision-correlation proof, threshold-only evidence, and ownerless follow-up.",
             "The alert pages on a checkout 5xx ratio over 2%.",
             "The signals connect rollout revision 43 with readiness flapping.",
             "The runbook template separates evidence, mitigation, and follow-up.",
@@ -3759,7 +3763,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/write-slo-backed-runbook/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use signals.md as the incident transcript.",
+            "Use triage-notes.md and signals.md as the incident transcript.",
             "Fill runbook-template.md without connecting to Prometheus or Kubernetes.",
         ],
     },
@@ -4203,21 +4207,25 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/design-opentelemetry-signal-path/setup.sh --evidence /tmp/otel-signal-path-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/triage-notes.md",
             "sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/collector.yaml",
             "sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt",
             "python3 labs/platform-academy/simulator.py --scenario checkout-latency --format both --events 5",
         ],
         "commands": [
+            "grep -n \"False Leads\\|authorization headers\\|one valid trace\\|customer-level\" labs/platform-academy/design-opentelemetry-signal-path/triage-notes.md",
             "grep -n \"authorization\\|trace_id\\|customer_email\" labs/platform-academy/design-opentelemetry-signal-path/collector.yaml labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml",
             "grep -n \"pipelines:\\|traces:\\|histogram_quantile\" labs/platform-academy/design-opentelemetry-signal-path/collector.yaml labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml",
             "python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py --collector labs/platform-academy/design-opentelemetry-signal-path/collector.yaml --logs labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt --rule labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml --safe-rule labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml --decision labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
         ],
         "practice_steps": [
+            "Read the triage notes and rule out false confidence in noisy telemetry.",
             "Map the symptom to metrics, logs, traces, and collector ownership.",
             "Find missing trace IDs and sensitive or high-cardinality labels.",
             "Use the local analyzer to verify the signal path, safer alert, and owner map.",
         ],
         "expected_evidence": [
+            "The triage notes rule out header-deletion-only confidence, one-good-trace confidence, customer-level grouping, and simulator-only proof.",
             "Collector drops authorization headers.",
             "One log line has trace_id=missing.",
             "The latency alert groups by customer_email, creating high cardinality risk.",
@@ -4232,7 +4240,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/design-opentelemetry-signal-path/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use the supplied collector, log, and rule files as the telemetry path packet.",
+            "Use triage-notes.md plus the supplied collector, log, and rule files as the telemetry path packet.",
             "Write the ownership map without connecting to a telemetry backend.",
         ],
     },
@@ -4243,22 +4251,26 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/run-incident-commander-tabletop/setup.sh --evidence /tmp/incident-commander-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/run-incident-commander-tabletop/triage-notes.md",
             "sed -n '1,180p' labs/platform-academy/run-incident-commander-tabletop/signals.md",
             "sed -n '1,160p' labs/platform-academy/run-incident-commander-tabletop/roles.md",
             "python3 labs/platform-academy/simulator.py --scenario checkout-incident --format logs --events 5",
         ],
         "commands": [
+            "grep -n \"False Leads\\|root cause\\|Silence\\|Timeline\" labs/platform-academy/run-incident-commander-tabletop/triage-notes.md",
             "grep -n \"SEV-2\\|rollback\\|next stakeholder update\" labs/platform-academy/run-incident-commander-tabletop/signals.md",
             "grep -n \"Incident commander\\|Operations lead\\|Communications lead\\|Planning lead\" labs/platform-academy/run-incident-commander-tabletop/roles.md",
             "python3 labs/platform-academy/run-incident-commander-tabletop/incident_tabletop_analyzer.py --signals labs/platform-academy/run-incident-commander-tabletop/signals.md --roles labs/platform-academy/run-incident-commander-tabletop/roles.md --timeline labs/platform-academy/run-incident-commander-tabletop/timeline.md --brief labs/platform-academy/run-incident-commander-tabletop/commander-brief.md --completed-timeline labs/platform-academy/run-incident-commander-tabletop/completed-timeline.md",
         ],
         "practice_steps": [
+            "Read the triage notes and rule out delays in roles, communications, mitigation criteria, and timeline capture.",
             "Assign incident roles and severity.",
             "Write current impact, mitigation, and next update time.",
             "Record timeline entries for facts, decisions, and owners.",
             "Run the local incident tabletop analyzer to prove severity, roles, mitigation criteria, communications clock, and handoff evidence.",
         ],
         "expected_evidence": [
+            "The triage notes rule out waiting for root cause, delaying communications, rollback without criteria, and late timeline writing.",
             "The incident is SEV-2 with checkout 5xx impact.",
             "Rollback to revision 42 is identified as an option.",
             "The tabletop requires commander, operations, communications, and planning roles.",
@@ -4273,7 +4285,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/run-incident-commander-tabletop/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use the signal, role, and timeline files as the complete tabletop packet.",
+            "Use triage-notes.md plus the signal, role, and timeline files as the complete tabletop packet.",
             "Fill the timeline without live incident tooling.",
         ],
     },
@@ -5100,6 +5112,7 @@ DEEPENED_LAB_UPDATES = {
     "write-slo-backed-runbook": {
         "worksheet_prompts": [
             "Record the alert/signal packet, service, reviewer, and confirmation that no live rollback command was run.",
+            "Read triage-notes.md and list the False Leads ruled out before mitigation.",
             "Paste the 99.9% SLO target, CheckoutHighErrorBudgetBurn alert, 2% threshold, 14-minute duration, dashboard, and user impact.",
             "Paste revision 43 rollout timing, readiness flapping, target-health symptoms, and dependency evidence still needed.",
             "Write safe first commands plus rollback, traffic-shift, and escalation criteria.",
@@ -5108,6 +5121,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the no-live-rollback safety boundary and names the SLO signal packet.",
+            "Uses triage notes to rule out rollback-first response, correlation-only proof, threshold-only evidence, and ownerless follow-up False Leads.",
             "Captures 99.9% availability, CheckoutHighErrorBudgetBurn, 2% 5xx threshold, and 14-minute burn evidence.",
             "Connects revision 43, readiness flapping, and target-health symptoms without skipping dependency checks.",
             "Defines read-only first commands and rollback/traffic-shift/escalation criteria before mitigation.",
@@ -5116,6 +5130,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-live-rollback safety boundary recorded",
+            "Triage False Leads ruled out",
             "SLO target, burn alert, and SLO runbook analysis output captured",
             "Revision 43 and symptom evidence captured",
             "Safe first commands and mitigation criteria written",
@@ -5125,6 +5140,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["no live rollback", "signals.md", "CheckoutHighErrorBudgetBurn", "reviewer"],
+            ["triage-notes.md", "False Leads", "rollback first", "Revision 43 correlation", "user impact", "ownerless follow-up"],
             ["99.9%", "CheckoutHighErrorBudgetBurn", "2% 5xx", "14 minutes", "dashboard", "SLO runbook analysis passed"],
             ["revision 43", "readiness flapping", "target group unhealthy", "dependency", "rollout"],
             ["kubectl rollout history", "read-only", "rollback", "traffic", "escalation"],
@@ -5135,6 +5151,7 @@ DEEPENED_LAB_UPDATES = {
     "design-opentelemetry-signal-path": {
         "worksheet_prompts": [
             "Record the collector manifest, log packet, Prometheus rule, simulator command, and confirmation that no live backend is changed.",
+            "Read triage-notes.md and list the False Leads ruled out before trusting the telemetry path.",
             "Paste the `http.request.header.authorization` deletion evidence and why it must remain.",
             "Paste the log line with a trace ID, the `trace_id=missing` line, app instrumentation owner, and validation signal.",
             "Paste the `customer_email` alert grouping evidence and explain the cardinality/privacy risk.",
@@ -5143,6 +5160,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the no-live-telemetry-change safety boundary and names the reviewed artifacts.",
+            "Uses triage notes to rule out header-deletion-only confidence, one-good-trace confidence, customer-level grouping, and simulator-only False Leads.",
             "Keeps `http.request.header.authorization` deletion as a required collector privacy control.",
             "Captures trace context evidence, including a valid trace ID and `trace_id=missing` gap.",
             "Identifies `customer_email` as high-cardinality and sensitive alert-grouping evidence.",
@@ -5151,6 +5169,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-live-telemetry-change safety boundary recorded",
+            "Triage False Leads ruled out",
             "Sensitive header deletion evidence captured",
             "Trace context gap evidence captured",
             "Customer email cardinality evidence captured",
@@ -5160,6 +5179,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["collector.yaml", "checkout-logs.txt", "prometheus-rule.yaml", "simulator", "no live backend"],
+            ["triage-notes.md", "False Leads", "header deletion", "one valid trace", "customer-level", "owner map"],
             ["http.request.header.authorization", "action: delete", "collector", "privacy"],
             ["trace_id=missing", "trace_id=", "App owner", "propagate trace context", "logs"],
             ["customer_email", "cardinality", "privacy", "alert grouping", "histogram_quantile"],
@@ -5177,6 +5197,7 @@ DEEPENED_LAB_UPDATES = {
     "run-incident-commander-tabletop": {
         "worksheet_prompts": [
             "Record the signal packet, facilitator, next update clock, and confirmation that no live mitigation was executed.",
+            "Read triage-notes.md and list the False Leads ruled out before coordinating mitigation.",
             "Paste SEV-2, checkout 5xx rate change, user impact, affected capability, and decision pressure.",
             "Assign Incident commander, Operations lead, Communications lead, Planning lead, and escalation owner.",
             "Write the suspect rollout, rollback option, current mitigation status, decision criterion, and stakeholder update time.",
@@ -5185,6 +5206,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the tabletop/no-live-mitigation safety boundary and names the update clock.",
+            "Uses triage notes to rule out waiting for root cause, delaying communications, rollback-without-criteria, and late-timeline False Leads.",
             "Captures SEV-2, 0.2% to 9.4% 5xx increase, payment-confirmation impact, and decision pressure.",
             "Assigns Incident commander, Operations lead, Communications lead, Planning lead, and escalation roles before mitigation.",
             "Defines revision 43 rollback criteria, revision 42 option, mitigation status, and stakeholder update timing.",
@@ -5193,6 +5215,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-live-mitigation safety boundary recorded",
+            "Triage False Leads ruled out",
             "Severity and user impact evidence captured",
             "Incident roles assigned",
             "Rollback criteria and update clock written",
@@ -5202,6 +5225,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["signals.md", "tabletop", "no live mitigation", "15 minutes", "update clock"],
+            ["triage-notes.md", "False Leads", "root cause", "stakeholder update", "decision criterion", "timeline later"],
             ["SEV-2", "0.2%", "9.4%", "payment confirmation", "decision pressure"],
             ["Incident commander", "Operations lead", "Communications lead", "Planning lead", "escalation"],
             ["revision 43", "revision 42", "rollback", "mitigation pending", "stakeholder update"],
@@ -5337,6 +5361,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "write-slo-backed-runbook": [
         "labs/platform-academy/write-slo-backed-runbook/README.md",
+        "labs/platform-academy/write-slo-backed-runbook/triage-notes.md",
         "labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml",
         "labs/platform-academy/write-slo-backed-runbook/signals.md",
         "labs/platform-academy/write-slo-backed-runbook/runbook-template.md",
@@ -5474,6 +5499,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "design-opentelemetry-signal-path": [
         "labs/platform-academy/design-opentelemetry-signal-path/README.md",
+        "labs/platform-academy/design-opentelemetry-signal-path/triage-notes.md",
         "labs/platform-academy/simulator.py",
         "labs/platform-academy/design-opentelemetry-signal-path/collector.yaml",
         "labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt",
@@ -5490,6 +5516,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "run-incident-commander-tabletop": [
         "labs/platform-academy/run-incident-commander-tabletop/README.md",
+        "labs/platform-academy/run-incident-commander-tabletop/triage-notes.md",
         "labs/platform-academy/simulator.py",
         "labs/platform-academy/run-incident-commander-tabletop/signals.md",
         "labs/platform-academy/run-incident-commander-tabletop/roles.md",
