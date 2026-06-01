@@ -38,9 +38,11 @@ python3 labs/platform-academy/trace-argocd-drift/drift_analyzer.py \
 
 ArgoCD should still detect drift in image, resource requests, labels, probes, security context, and other production-owned fields. A broad ignore rule would hide real incidents.
 
+The triage notes rule out force-sync, global self-heal changes, whole-Deployment ignore rules, and treating every OutOfSync report as human hotfix drift.
+
 ## Handoff Note
 
-A good handoff says: `argocd-app-report.txt` reports `OutOfSync` on `/spec/replicas`; Git declares `replicas: 3`, live state has `replicas: 9`, `selfHeal: true` could fight autoscaling, and the live object has autoscaling metadata. The drift analyzer confirms the Git-owned image and resource requests still match Git. If the autoscaler owns replicas, ignore only `/spec/replicas` for `payments/checkout`; keep image, labels, resources, probes, and security settings Git-owned.
+A good handoff says: `triage-notes.md` rules out force-sync, global self-heal changes, whole-Deployment ignore rules, and treating every OutOfSync report as human hotfix drift. `argocd-app-report.txt` reports `OutOfSync` on `/spec/replicas`; Git declares `replicas: 3`, live state has `replicas: 9`, `selfHeal: true` could fight autoscaling, and the live object has autoscaling metadata. The drift analyzer confirms the Git-owned image and resource requests still match Git. If the autoscaler owns replicas, ignore only `/spec/replicas` for `payments/checkout`; keep image, labels, resources, probes, and security settings Git-owned.
 
 ## Remediation Target
 

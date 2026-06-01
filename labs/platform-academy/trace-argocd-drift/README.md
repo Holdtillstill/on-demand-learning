@@ -16,6 +16,7 @@ No ArgoCD server or cluster access is required. Use the captured manifests only,
 
 ```bash
 bash labs/platform-academy/trace-argocd-drift/setup.sh --evidence /tmp/argocd-drift-evidence.md
+sed -n '1,220p' labs/platform-academy/trace-argocd-drift/triage-notes.md
 sed -n '1,220p' labs/platform-academy/trace-argocd-drift/argocd-app-report.txt
 sed -n '1,220p' labs/platform-academy/trace-argocd-drift/desired.yaml
 sed -n '1,220p' labs/platform-academy/trace-argocd-drift/live.yaml
@@ -42,6 +43,7 @@ Find:
 - Which fields should remain Git-owned.
 - Whether `selfHeal` would fight an autoscaler.
 - How narrow the ignore rule should be if autoscaling owns replicas.
+- Which false leads the triage notes rule out before force-sync or ignore-rule changes.
 - Whether the local analyzer proves image and resource fields remain Git-owned.
 
 ## Remediation Target
@@ -66,4 +68,4 @@ bash labs/platform-academy/trace-argocd-drift/validate.sh --evidence /tmp/argocd
 - You keep image, labels, resources, and security settings owned by Git.
 - You write a field-owner decision instead of blindly forcing sync.
 - You use the analyzer output as evidence that only `/spec/replicas` is ignored.
-- Your evidence note names desired/live replica values, controller ownership signal, narrow ignore rule, Git-owned fields, owner, and validation evidence.
+- Your evidence note names triage false leads, desired/live replica values, controller ownership signal, narrow ignore rule, Git-owned fields, owner, and validation evidence.

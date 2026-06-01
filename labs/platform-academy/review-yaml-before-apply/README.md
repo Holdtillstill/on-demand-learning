@@ -16,6 +16,7 @@ Do not apply `vendor.yaml` to a shared cluster. It intentionally contains risky 
 
 ```bash
 bash labs/platform-academy/review-yaml-before-apply/setup.sh --evidence /tmp/yaml-review-evidence.md
+sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/triage-notes.md
 sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/vendor.yaml
 sed -n '1,160p' labs/platform-academy/review-yaml-before-apply/evidence-template.md
 ```
@@ -45,6 +46,7 @@ Find and record:
 - Any privileged container setting.
 - Any hostPath mount.
 - Any committed credential placeholder that could become a real secret later.
+- Which false leads the triage notes rule out before approving or applying anything.
 - Whether the local analyzer confirms the blocker categories and safer baseline.
 - The vendor questions, safer baseline changes, and validation output you would save before approval.
 
@@ -69,4 +71,4 @@ bash labs/platform-academy/review-yaml-before-apply/validate.sh --evidence /tmp/
 - You explain whether each blocker is RBAC, workload security, node filesystem exposure, or credential handling.
 - You capture the local manifest risk analyzer result.
 - You write precise questions back to the vendor.
-- You keep a no-live-apply evidence note with the safer baseline comparison.
+- You keep a no-live-apply evidence note with triage false leads and the safer baseline comparison.

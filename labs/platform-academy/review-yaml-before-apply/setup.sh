@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/review-yaml-before-apply"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/manifest_risk_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/yaml-review-evidence.md"
 run_analyzer=false
@@ -60,7 +61,11 @@ else
 fi
 
 echo
+echo "Captured pre-apply triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged pre-apply manifest review bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/triage-notes.md"
 echo "  sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/vendor.yaml"
 echo "  sed -n '1,180p' labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml"
 echo "  diff -u labs/platform-academy/review-yaml-before-apply/vendor.yaml labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml || true"

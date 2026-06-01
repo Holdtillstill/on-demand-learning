@@ -116,7 +116,7 @@ These labs have extra captured evidence, worksheet templates, and lab-specific r
 
 - [`trace-service-to-pod`](trace-service-to-pod/README.md): triage notes, false leads, Service selector, Pod label, EndpointSlice, source-manifest fix, and cleanup evidence.
 - [`debug-crashloop-imagepull`](debug-crashloop-imagepull/README.md): triage notes, false leads, CrashLoopBackOff vs ImagePullBackOff classification, previous-log evidence, event evidence, owner split, and rollout validation.
-- [`review-yaml-before-apply`](review-yaml-before-apply/README.md): manifest inventory, ClusterRole secret access, privileged mode, hostPath, credential placeholder, vendor questions, and no-live-apply evidence.
+- [`review-yaml-before-apply`](review-yaml-before-apply/README.md): triage notes, false leads, manifest inventory, ClusterRole secret access, privileged mode, hostPath, credential placeholder, vendor questions, and no-live-apply evidence.
 - [`inspect-linux-failure-evidence`](inspect-linux-failure-evidence/README.md): CrashLoopBackOff, exit code 126, permission denied, runtime UID/GID, rejected memory/root workarounds, and image-permission remediation evidence.
 - [`trace-network-path`](trace-network-path/README.md): hop trace, false leads, client 503, DNS, ALB target-health reason, Ingress backend, Service targetPort, Pod port, owner handoff, and source-manifest fix evidence.
 - [`debug-aws-alb-health-path`](debug-aws-alb-health-path/README.md): triage notes, false leads, ALB target health, health path contract, Service-to-Pod port mismatch, controller event, owner decision, and source-manifest handoff.
@@ -125,8 +125,8 @@ These labs have extra captured evidence, worksheet templates, and lab-specific r
 - [`review-terraform-eks-plan`](review-terraform-eks-plan/README.md): EKS node group replacement, subnet and capacity regression, public ingress, broad IAM scope, rollback, and approval decision.
 - [`debug-irsa-access-denied`](debug-irsa-access-denied/README.md): triage notes, false leads, Kubernetes identity, IAM trust subject mismatch, CloudTrail permission evidence, least-privilege scope, owner split, and rollout handoff.
 - [`audit-tenant-boundaries`](audit-tenant-boundaries/README.md): cluster-admin and secret access, Pod Security posture, NetworkPolicy false boundary, onboarding decision, owners, expiry, and cleanup evidence.
-- [`validate-helm-release-artifact`](validate-helm-release-artifact/README.md): immutable selector risk, mutable image tag, privileged runtime, LoadBalancer exposure, safer render, and release decision.
-- [`trace-argocd-drift`](trace-argocd-drift/README.md): desired/live replica drift, autoscaler ownership, Git-owned fields, narrow ignore rule, and field-owner decision.
+- [`validate-helm-release-artifact`](validate-helm-release-artifact/README.md): triage notes, false leads, immutable selector risk, mutable image tag, privileged runtime, LoadBalancer exposure, safer render, and release decision.
+- [`trace-argocd-drift`](trace-argocd-drift/README.md): triage notes, false leads, desired/live replica drift, autoscaler ownership, Git-owned fields, narrow ignore rule, and field-owner decision.
 - [`review-docker-image-supply-chain`](review-docker-image-supply-chain/README.md): tag/digest proof, secret leakage, root runtime, oversized image, SBOM/scan, rollback digest, and promotion decision.
 - [`design-safe-release-pipeline`](design-safe-release-pipeline/README.md): direct main-to-production deploy, digest promotion, scan/SBOM/render/policy gates, staging proof, approval, canary, and SLO rollback evidence.
 - [`create-platform-golden-path`](create-platform-golden-path/README.md): required inputs, generated artifacts, secure defaults, missing pager/SLO metadata, launch gates, adoption metrics, and product-decision evidence.

@@ -21,6 +21,8 @@ python3 labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py
 
 Expected result: `YAML manifest risk analysis passed`, with inventory, RBAC risk, workload risk, credential risk, safer-baseline, and block-decision evidence.
 
+The triage notes rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and treating `stringData.token` as harmless placeholder practice.
+
 ## Decision
 
 Approve only a safer, namespaced variant after the vendor removes cluster-scoped secret access, privileged mode, and hostPath access. Any real credential should be provisioned through the platform's secret delivery path, not committed in a manifest.
@@ -42,7 +44,7 @@ Approve only a safer, namespaced variant after the vendor removes cluster-scoped
 
 ## Evidence to Save
 
-Save the manifest inventory, ClusterRole secret access, privileged container, hostPath mount, Secret `stringData.token`, safer baseline diff, vendor questions, validation output, and no-live-apply note in `evidence-template.md`.
+Save the triage false leads, manifest inventory, ClusterRole secret access, privileged container, hostPath mount, Secret `stringData.token`, safer baseline diff, vendor questions, validation output, and no-live-apply note in `evidence-template.md`.
 
 ## Cleanup
 

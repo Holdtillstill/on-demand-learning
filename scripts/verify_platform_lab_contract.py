@@ -70,9 +70,10 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "review-yaml-before-apply": {
-        "files": {"evidence-template.md", "manifest_risk_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "manifest_risk_analyzer.py", "setup.sh", "triage-notes.md"},
         "terms": {
             "ClusterRole",
+            "False Leads",
             "YAML manifest risk analysis passed",
             "resources: [\"pods\", \"secrets\"]",
             "privileged: true",
@@ -174,8 +175,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "validate-helm-release-artifact": {
-        "files": {"evidence-template.md", "helm_release_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "helm_release_analyzer.py", "setup.sh", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "immutable selector",
             "checkout:latest",
             "privileged: true",
@@ -185,8 +187,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "trace-argocd-drift": {
-        "files": {"drift_analyzer.py", "evidence-template.md", "setup.sh"},
+        "files": {"drift_analyzer.py", "evidence-template.md", "setup.sh", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "replicas: 3",
             "replicas: 9",
             "autoscaling",

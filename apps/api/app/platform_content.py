@@ -2979,10 +2979,12 @@ PLATFORM_LABS = [
         ],
         "setup_commands": [
             "bash labs/platform-academy/review-yaml-before-apply/setup.sh --evidence /tmp/yaml-review-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/triage-notes.md",
             "sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/vendor.yaml",
         ],
         "commands": [
             "kubectl apply --dry-run=client --validate=false -f labs/platform-academy/review-yaml-before-apply/vendor.yaml",
+            "grep -n \"False Leads\\|dry-run is not approval\\|stringData.token\" labs/platform-academy/review-yaml-before-apply/triage-notes.md",
             "grep -n \"kind:\\|namespace:\\|ClusterRole\\|privileged\\|hostPath\" labs/platform-academy/review-yaml-before-apply/vendor.yaml",
             (
                 "python3 labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py "
@@ -2992,6 +2994,7 @@ PLATFORM_LABS = [
             "kubectl explain deployment.spec.template.spec.containers",
         ],
         "practice_steps": [
+            "Read triage-notes.md and rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and placeholder-token false leads.",
             "List every resource kind and whether it is namespace-scoped or cluster-scoped.",
             "Find the risky settings before reading the safe baseline.",
             "Use the local analyzer to prove inventory, RBAC, workload, credential, and safer-baseline evidence.",
@@ -2999,6 +3002,7 @@ PLATFORM_LABS = [
             "Decide whether this manifest is blocked, approved with changes, or safe for a sandbox only.",
         ],
         "expected_evidence": [
+            "The triage notes rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and harmless-placeholder assumptions.",
             "The vendor manifest contains a ClusterRole that can list/watch secrets.",
             "The Deployment asks for privileged mode and a hostPath mount.",
             "The Secret contains placeholder stringData that should not be committed with real credentials.",
@@ -3017,7 +3021,7 @@ PLATFORM_LABS = [
         ],
         "cleanup_commands": ["bash labs/platform-academy/review-yaml-before-apply/cleanup.sh"],
         "no_cluster_fallback": [
-            "Run the grep commands and manually review the YAML without kubectl.",
+            "Read triage-notes.md, then run the grep commands and manually review the YAML without kubectl.",
             "Create a review note with resource kinds, namespaces, risky fields, and questions for the vendor.",
         ],
         "checklist": [
@@ -3511,10 +3515,12 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/validate-helm-release-artifact/setup.sh --evidence /tmp/helm-release-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/validate-helm-release-artifact/triage-notes.md",
             "sed -n '1,180p' labs/platform-academy/validate-helm-release-artifact/review-notes.md",
         ],
         "commands": [
             "diff -u labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml || true",
+            "grep -n \"False Leads\\|render is not release approval\\|checkout:latest\" labs/platform-academy/validate-helm-release-artifact/triage-notes.md",
             "grep -n \"selector:\\|latest\\|privileged\\|LoadBalancer\" labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml",
             (
                 "python3 labs/platform-academy/validate-helm-release-artifact/helm_release_analyzer.py "
@@ -3525,12 +3531,14 @@ RUNNABLE_LAB_UPDATES = {
             ),
         ],
         "practice_steps": [
+            "Read triage-notes.md and rule out render-success, diff-only, mutable-tag, apply-then-fix, and unapproved-exposure false leads.",
             "Review rendered YAML instead of trusting chart success.",
             "Find immutable selector changes and risky security changes.",
             "Use the local analyzer to prove selector, image, runtime, exposure, and safer-target evidence.",
             "Write an approval decision with rollback limitations.",
         ],
         "expected_evidence": [
+            "The triage notes rule out render-success approval, diff-only approval, mutable-tag promotion, apply-then-fix rollback, and unapproved LoadBalancer exposure.",
             "The Deployment selector changes between rendered versions.",
             "The image changes from digest-pinned to the mutable latest tag.",
             "The rendered output introduces privileged mode and a LoadBalancer.",
@@ -3551,7 +3559,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/validate-helm-release-artifact/cleanup.sh"],
         "no_cluster_fallback": [
-            "Read the before/after YAML files and complete the review without Helm.",
+            "Read triage-notes.md and the before/after YAML files, then complete the review without Helm.",
             "Block the release in writing if selector, image, security, or exposure risk is unresolved.",
         ],
     },
@@ -3562,16 +3570,19 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/trace-argocd-drift/setup.sh --evidence /tmp/argocd-drift-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/trace-argocd-drift/triage-notes.md",
             "sed -n '1,220p' labs/platform-academy/trace-argocd-drift/argocd-app-report.txt",
             "sed -n '1,160p' labs/platform-academy/trace-argocd-drift/ownership-decision.md",
         ],
         "commands": [
             "diff -u labs/platform-academy/trace-argocd-drift/desired.yaml labs/platform-academy/trace-argocd-drift/live.yaml || true",
+            "grep -n \"False Leads\\|Force-sync\\|whole Deployment\" labs/platform-academy/trace-argocd-drift/triage-notes.md",
             "grep -n \"OutOfSync\\|selfHeal\\|/spec/replicas\" labs/platform-academy/trace-argocd-drift/argocd-app-report.txt",
             "grep -n \"replicas\\|last-scale\\|ignoreDifferences\" labs/platform-academy/trace-argocd-drift/*.yaml labs/platform-academy/trace-argocd-drift/ownership-decision.md",
             "python3 labs/platform-academy/trace-argocd-drift/drift_analyzer.py --desired labs/platform-academy/trace-argocd-drift/desired.yaml --live labs/platform-academy/trace-argocd-drift/live.yaml --ignore-rule labs/platform-academy/trace-argocd-drift/ignore-differences.yaml --report labs/platform-academy/trace-argocd-drift/argocd-app-report.txt",
         ],
         "practice_steps": [
+            "Read triage-notes.md and rule out force-sync, global self-heal change, whole-object ignore, and all-drift-is-human false leads.",
             "Identify the exact field causing drift.",
             "Use the ArgoCD app report to decide whether self-heal would fight a controller-owned field.",
             "Decide whether Git or an autoscaler should own replicas.",
@@ -3579,6 +3590,7 @@ RUNNABLE_LAB_UPDATES = {
             "Run the local analyzer to verify image/resources remain Git-owned while replicas are the only ignored field.",
         ],
         "expected_evidence": [
+            "The triage notes rule out force-sync, global self-heal disablement, whole-Deployment ignore, and assuming all OutOfSync status is human drift.",
             "The ArgoCD app report marks checkout OutOfSync and selfHeal enabled.",
             "Git wants three replicas while live state has nine.",
             "The live object carries autoscaling metadata.",
@@ -3594,7 +3606,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/trace-argocd-drift/cleanup.sh"],
         "no_cluster_fallback": [
-            "Treat argocd-app-report.txt, desired.yaml, and live.yaml as exported ArgoCD evidence.",
+            "Treat triage-notes.md, argocd-app-report.txt, desired.yaml, and live.yaml as exported ArgoCD evidence.",
             "Write the field owner decision without connecting to ArgoCD.",
         ],
     },
@@ -4430,6 +4442,7 @@ DEEPENED_LAB_UPDATES = {
     "review-yaml-before-apply": {
         "worksheet_prompts": [
             "Record the reviewed vendor.yaml file, reviewer, namespace scope, and confirmation that no live apply was run.",
+            "Read triage-notes.md and list the False Leads ruled out before approving or applying anything.",
             "Inventory resource kinds, namespaces, cluster-scoped resources, and optional dry-run or parse-check output.",
             "Paste ClusterRole secret access, privileged container, hostPath `/`, and Secret `stringData.token` evidence.",
             "Classify each blocker as RBAC, workload security, node filesystem exposure, or credential handling.",
@@ -4438,6 +4451,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the no-live-apply safety boundary and names the reviewed vendor manifest.",
+            "Uses triage notes to rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and placeholder-token False Leads.",
             "Inventories resource kinds, namespaces, cluster-scoped resources, and parse-check evidence.",
             "Captures `ClusterRole` secret access, `privileged: true`, `hostPath: /`, and `stringData.token` evidence.",
             "Classifies blockers across RBAC, workload security, node filesystem exposure, and credential handling.",
@@ -4446,6 +4460,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-live-apply safety boundary recorded",
+            "Triage False Leads ruled out",
             "Resource inventory captured",
             "ClusterRole secret access evidence captured",
             "Privileged and hostPath evidence captured",
@@ -4455,6 +4470,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["vendor.yaml", "reviewer", "no live apply", "shared cluster"],
+            ["triage-notes.md", "False Leads", "dry-run-only", "namespace-only", "stringData.token"],
             ["ClusterRole", "Namespace", "Deployment", "Secret", "dry-run"],
             ["resources: [\"pods\", \"secrets\"]", "privileged: true", "hostPath", "stringData.token"],
             ["RBAC", "workload security", "node filesystem", "credential handling"],
@@ -4773,6 +4789,7 @@ DEEPENED_LAB_UPDATES = {
     "validate-helm-release-artifact": {
         "worksheet_prompts": [
             "Record the rendered artifact, target environment, reviewer, and confirmation that the unsafe render was not applied.",
+            "Read triage-notes.md and list the False Leads ruled out before approving the rendered artifact.",
             "Paste the immutable selector change evidence from rendered-before.yaml and rendered-after.yaml.",
             "Paste the image, securityContext, and Service exposure regressions.",
             "Explain rollback risk and which chart/value owners must approve changes.",
@@ -4781,6 +4798,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the no-apply safety boundary and names the rendered artifact under review.",
+            "Uses triage notes to rule out render-success approval, diff-only approval, mutable-tag promotion, apply-then-fix rollback, and unapproved exposure False Leads.",
             "Captures the immutable Deployment selector change with exact before/after labels.",
             "Flags mutable `checkout:latest` image, privileged runtime, and new `LoadBalancer` exposure.",
             "Explains rollback risk, owner questions, and why render-success is not release approval.",
@@ -4789,6 +4807,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-apply safety boundary recorded",
+            "Triage False Leads ruled out",
             "Selector before/after evidence captured",
             "Mutable image evidence captured",
             "Privileged runtime and LoadBalancer evidence captured",
@@ -4798,6 +4817,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["rendered artifact", "rendered-after.yaml", "not applied", "reviewer"],
+            ["triage-notes.md", "False Leads", "render-success", "checkout:latest", "LoadBalancer"],
             ["app.kubernetes.io/name=checkout", "app=checkout", "immutable selector", "Deployment selector"],
             ["checkout:latest", "privileged: true", "LoadBalancer", "securityContext", "mutable"],
             ["rollback", "owner", "chart values", "render-success", "release approval"],
@@ -4808,6 +4828,7 @@ DEEPENED_LAB_UPDATES = {
     "trace-argocd-drift": {
         "worksheet_prompts": [
             "Record the ArgoCD report, desired/live manifest sources, reviewer, and confirmation that no force-sync or broad ignore rule was applied.",
+            "Read triage-notes.md and list the False Leads ruled out before force-sync or ignore-rule changes.",
             "Paste the desired and live replica values plus the exact drift field path.",
             "Paste the sync policy and explain the `selfHeal` risk if ArgoCD fights controller-owned replicas.",
             "Paste the autoscaling/controller ownership signal from the live object.",
@@ -4817,6 +4838,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Uses the ArgoCD app report to preserve the captured-manifest safety boundary and avoid force-sync or broad ignore rules.",
+            "Uses triage notes to rule out force-sync, global self-heal changes, whole-Deployment ignore, and all-drift-is-human False Leads.",
             "Captures desired `replicas: 3`, live `replicas: 9`, and `.spec.replicas` drift evidence.",
             "Explains why `selfHeal: true` can fight autoscaling when field ownership is unclear.",
             "Uses autoscaling metadata as controller-ownership evidence instead of assuming human drift.",
@@ -4826,6 +4848,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "ArgoCD report and no-force-sync safety boundary recorded",
+            "Triage False Leads ruled out",
             "Desired/live replica evidence captured",
             "selfHeal risk captured",
             "Autoscaling ownership evidence captured",
@@ -4836,6 +4859,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["argocd-app-report.txt", "OutOfSync", "desired.yaml", "live.yaml", "force-sync"],
+            ["triage-notes.md", "False Leads", "force-sync", "whole Deployment", "OutOfSync"],
             ["replicas: 3", "replicas: 9", ".spec.replicas", "/spec/replicas"],
             ["selfHeal: true", "force sync", "fight", "sync policy"],
             ["autoscaling.platform.example.com/last-scale", "autoscaling", "controller-owned", "live object"],
@@ -5203,6 +5227,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "review-yaml-before-apply": [
         "labs/platform-academy/review-yaml-before-apply/README.md",
+        "labs/platform-academy/review-yaml-before-apply/triage-notes.md",
         "labs/platform-academy/review-yaml-before-apply/vendor.yaml",
         "labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml",
         "labs/platform-academy/review-yaml-before-apply/evidence-template.md",
@@ -5230,6 +5255,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "validate-helm-release-artifact": [
         "labs/platform-academy/validate-helm-release-artifact/README.md",
+        "labs/platform-academy/validate-helm-release-artifact/triage-notes.md",
         "labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml",
         "labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml",
         "labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml",
@@ -5244,6 +5270,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "trace-argocd-drift": [
         "labs/platform-academy/trace-argocd-drift/README.md",
+        "labs/platform-academy/trace-argocd-drift/triage-notes.md",
         "labs/platform-academy/trace-argocd-drift/argocd-app-report.txt",
         "labs/platform-academy/trace-argocd-drift/desired.yaml",
         "labs/platform-academy/trace-argocd-drift/live.yaml",

@@ -1,5 +1,12 @@
 # YAML Review Evidence Template
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False leads ruled out:
+- Strongest RBAC clue:
+- Strongest workload/credential clue:
+
 ## Manifest Inventory Evidence
 
 - Reviewed manifest:

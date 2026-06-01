@@ -1187,8 +1187,8 @@ def test_network_lab_feedback_tracks_hop_and_owner_evidence():
 
 
 def test_yaml_review_lab_feedback_tracks_security_blockers():
-    checked_items = {f"worksheet-{index}": True for index in range(6)}
-    checked_items.update({f"validation-{index}": True for index in range(7)})
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
 
     response = client.post(
         "/api/platform-academy/labs/review-yaml-before-apply/submission",
@@ -1196,13 +1196,17 @@ def test_yaml_review_lab_feedback_tracks_security_blockers():
             "user_id": "lab-yaml-rubric-user",
             "worksheet_answers": {
                 "worksheet-0": "Reviewed vendor.yaml with no live apply against any shared cluster.",
-                "worksheet-1": "Inventory includes ClusterRole, Namespace, Deployment, Secret, and dry-run parse-check output.",
-                "worksheet-2": (
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out dry-run-only approval, namespace-only isolation, "
+                    "and stringData.token placeholder assumptions."
+                ),
+                "worksheet-2": "Inventory includes ClusterRole, Namespace, Deployment, Secret, and dry-run parse-check output.",
+                "worksheet-3": (
                     'Blockers: resources: ["pods", "secrets"], privileged: true, hostPath, and stringData.token.'
                 ),
-                "worksheet-3": "Classified as RBAC, workload security, node filesystem, and credential handling.",
-                "worksheet-4": "Block until safe-baseline.yaml, vendor questions, and allowPrivilegeEscalation: false are addressed.",
-                "worksheet-5": "diff, validate, cleanup, evidence-template.md, and no-live-apply note saved.",
+                "worksheet-4": "Classified as RBAC, workload security, node filesystem, and credential handling.",
+                "worksheet-5": "Block until safe-baseline.yaml, vendor questions, and allowPrivilegeEscalation: false are addressed.",
+                "worksheet-6": "diff, validate, cleanup, evidence-template.md, and no-live-apply note saved.",
             },
             "checked_items": checked_items,
             "status": "submitted",
@@ -1211,14 +1215,99 @@ def test_yaml_review_lab_feedback_tracks_security_blockers():
 
     assert response.status_code == 200
     feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
     blocker_feedback = next(item for item in feedback if "privileged: true" in item["criterion"])
     category_feedback = next(item for item in feedback if "credential handling" in item["criterion"])
     decision_feedback = next(item for item in feedback if "vendor questions" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
     assert blocker_feedback["status"] == "strong"
     assert "privileged: true" in blocker_feedback["evidence_terms"]
     assert "hostpath" in blocker_feedback["evidence_terms"]
     assert category_feedback["status"] == "strong"
     assert decision_feedback["status"] == "strong"
+
+
+def test_helm_release_lab_feedback_tracks_triage_and_render_risk():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/validate-helm-release-artifact/submission",
+        json={
+            "user_id": "lab-helm-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "rendered-after.yaml reviewed by reviewer; unsafe render was not applied.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out render-success approval; checkout:latest and "
+                    "LoadBalancer exposure need review."
+                ),
+                "worksheet-2": (
+                    "Deployment selector changes from app.kubernetes.io/name=checkout to app=checkout, "
+                    "an immutable selector risk."
+                ),
+                "worksheet-3": "checkout:latest, privileged: true securityContext, and LoadBalancer mutable exposure found.",
+                "worksheet-4": "rollback owner and chart values questions show render-success is not release approval.",
+                "worksheet-5": "Block the release until safe-rendered-after.yaml uses digest-pinned, ClusterIP, non-privileged.",
+                "worksheet-6": "diff, review-notes.md, validate, cleanup/no-runtime, Helm release artifact analysis passed.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
+    selector_feedback = next(item for item in feedback if "immutable Deployment selector" in item["criterion"])
+    exposure_feedback = next(item for item in feedback if "LoadBalancer" in item["criterion"])
+    decision_feedback = next(item for item in feedback if "safer-render" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert selector_feedback["status"] == "strong"
+    assert "immutable selector" in selector_feedback["evidence_terms"]
+    assert exposure_feedback["status"] == "strong"
+    assert "loadbalancer" in exposure_feedback["evidence_terms"]
+    assert decision_feedback["status"] == "strong"
+
+
+def test_argocd_drift_lab_feedback_tracks_triage_and_field_ownership():
+    checked_items = {f"worksheet-{index}": True for index in range(8)}
+    checked_items.update({f"validation-{index}": True for index in range(9)})
+
+    response = client.post(
+        "/api/platform-academy/labs/trace-argocd-drift/submission",
+        json={
+            "user_id": "lab-argocd-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "argocd-app-report.txt OutOfSync reviewed with desired.yaml and live.yaml; no force-sync.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out force-sync and ignoring the whole Deployment for OutOfSync."
+                ),
+                "worksheet-2": "desired replicas: 3, live replicas: 9, field .spec.replicas /spec/replicas.",
+                "worksheet-3": "selfHeal: true sync policy could force sync and fight autoscaling.",
+                "worksheet-4": "autoscaling.platform.example.com/last-scale marks live object controller-owned.",
+                "worksheet-5": "Git-owned image, labels, resources, and security fields must remain enforced.",
+                "worksheet-6": "ignoreDifferences only /spec/replicas for checkout in payments Deployment.",
+                "worksheet-7": "ownership-decision.md, validate output, cleanup/no-runtime, ArgoCD drift analysis passed.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
+    replica_feedback = next(item for item in feedback if "replicas: 3" in item["criterion"])
+    git_owned_feedback = next(item for item in feedback if "Git-owned image" in item["criterion"])
+    ignore_feedback = next(item for item in feedback if "/spec/replicas" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert replica_feedback["status"] == "strong"
+    assert "/spec/replicas" in replica_feedback["evidence_terms"]
+    assert git_owned_feedback["status"] == "strong"
+    assert ignore_feedback["status"] == "strong"
 
 
 def test_platform_lab_submission_ignores_unknown_checked_items_for_scoring():

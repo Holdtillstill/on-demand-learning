@@ -8,6 +8,13 @@
 - Confirmation that no force-sync or broad ignore rule was applied:
 - Reviewer:
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False leads ruled out:
+- Strongest field-owner clue:
+- Git-owned fields protected:
+
 ## Drift Field Evidence
 
 - Desired field/value:

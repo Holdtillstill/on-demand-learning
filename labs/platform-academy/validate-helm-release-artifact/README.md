@@ -16,6 +16,7 @@ This lab is file-first and does not require Helm or a cluster. Do not apply the 
 
 ```bash
 bash labs/platform-academy/validate-helm-release-artifact/setup.sh --evidence /tmp/helm-release-evidence.md
+sed -n '1,220p' labs/platform-academy/validate-helm-release-artifact/triage-notes.md
 sed -n '1,220p' labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml
 sed -n '1,260p' labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml
 ```
@@ -53,6 +54,7 @@ Find:
 - Any new privileged container setting.
 - Any new externally exposed Service.
 - Whether rollback would be simple or risky after this apply.
+- Which false leads the triage notes rule out before approving the rendered artifact.
 - Whether the local analyzer supports a block decision before cluster mutation.
 
 ## Remediation Target
@@ -77,4 +79,4 @@ bash labs/platform-academy/validate-helm-release-artifact/validate.sh --evidence
 - You identify the image, security, and exposure regressions.
 - You can name the safer rendered target.
 - You use analyzer output as evidence for the release decision.
-- Your evidence note names selector, image, security context, Service exposure, rollback risk, decision, owner, and safer render validation.
+- Your evidence note names triage false leads, selector, image, security context, Service exposure, rollback risk, decision, owner, and safer render validation.

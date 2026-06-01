@@ -7,6 +7,13 @@
 - Confirmation that the unsafe render was not applied:
 - Reviewer:
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False leads ruled out:
+- Strongest selector clue:
+- Strongest promotion/exposure clue:
+
 ## Immutable Selector Evidence
 
 - Previous selector:

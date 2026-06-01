@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/validate-helm-release-artifact"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/helm_release_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/helm-release-evidence.md"
 run_analyzer=false
@@ -57,7 +58,11 @@ else
 fi
 
 echo
+echo "Captured Helm release triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged Helm release artifact bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/validate-helm-release-artifact/triage-notes.md"
 echo "  sed -n '1,220p' labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml"
 echo "  sed -n '1,260p' labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml"
 echo "  diff -u labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml || true"
