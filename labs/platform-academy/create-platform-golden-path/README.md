@@ -23,13 +23,15 @@ sed -n '1,160p' labs/platform-academy/create-platform-golden-path/catalog-info.y
 sed -n '1,180p' labs/platform-academy/create-platform-golden-path/evidence-template.md
 ```
 
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default.
+
 Compare the starting metadata with the safer target:
 
 ```bash
 diff -u labs/platform-academy/create-platform-golden-path/catalog-info.yaml labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml || true
 ```
 
-Run the local analyzer:
+Run the local analyzer after you inspect the template packet, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/create-platform-golden-path/golden_path_analyzer.py \

@@ -767,6 +767,13 @@ def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path
         "debug-irsa-access-denied": "Simulator is intentionally not run by default",
         "design-opentelemetry-signal-path": "Analyzer is intentionally not run by default",
         "run-incident-commander-tabletop": "Analyzer is intentionally not run by default",
+        "design-production-eks-review": "Analyzer is intentionally not run by default",
+        "write-slo-backed-runbook": "Analyzer is intentionally not run by default",
+        "design-safe-release-pipeline": "Analyzer is intentionally not run by default",
+        "create-platform-golden-path": "Analyzer is intentionally not run by default",
+        "review-docker-image-supply-chain": "Analyzer is intentionally not run by default",
+        "audit-eks-cost-drivers": "Analyzer is intentionally not run by default",
+        "build-platform-career-proof-pack": "Analyzer is intentionally not run by default",
     }
     setup_smoke_absences = {
         "diagnose-eks-ip-exhaustion": ["EKS IP exhaustion analysis passed"],
@@ -781,6 +788,13 @@ def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path
             "Incident commander tabletop analysis passed",
             "service=checkout route=/checkout/confirm",
         ],
+        "design-production-eks-review": ["Production EKS review analysis passed"],
+        "write-slo-backed-runbook": ["SLO runbook analysis passed"],
+        "design-safe-release-pipeline": ["Safe release pipeline analysis passed"],
+        "create-platform-golden-path": ["Golden path readiness analysis passed"],
+        "review-docker-image-supply-chain": ["Docker supply-chain analysis passed"],
+        "audit-eks-cost-drivers": ["EKS cost driver analysis passed"],
+        "build-platform-career-proof-pack": ["Career proof pack analysis passed"],
     }
 
     for slug in FULL_LAB_SLUGS:

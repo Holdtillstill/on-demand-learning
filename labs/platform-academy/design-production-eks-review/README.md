@@ -21,6 +21,12 @@ sed -n '1,220p' labs/platform-academy/design-production-eks-review/launch-review
 sed -n '1,180p' labs/platform-academy/design-production-eks-review/evidence-template.md
 ```
 
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default. To exercise the analyzer from setup after you inspect the packet:
+
+```bash
+bash labs/platform-academy/design-production-eks-review/setup.sh --run-analyzer --evidence /tmp/production-eks-review-evidence.md
+```
+
 ## Investigation
 
 Find:

@@ -10,16 +10,18 @@ ANALYZER="$LAB_DIR/production_review_analyzer.py"
 
 evidence_file="/tmp/production-eks-review-evidence.md"
 mode="no-cluster"
+run_analyzer=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/design-production-eks-review/setup.sh [--cluster] [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/design-production-eks-review/setup.sh [--cluster] [--no-cluster] [--run-analyzer] [--evidence <file>]
 
 Options:
-  --cluster      Refuse live AWS setup; this lab is an architecture-review Evidence exercise.
-  --no-cluster   Copy the evidence template and run the local production EKS review analyzer. This is the default.
-  --evidence     Evidence note path to create when it does not already exist.
+  --cluster        Refuse live AWS setup; this lab is an architecture-review Evidence exercise.
+  --no-cluster     Copy the evidence template and stage review artifacts. This is the default.
+  --run-analyzer   Run the local production EKS review analyzer after staging evidence.
+  --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
 
@@ -35,6 +37,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-cluster|--transcript)
       mode="no-cluster"
+      ;;
+    --run-analyzer)
+      run_analyzer=true
       ;;
     --evidence)
       shift
@@ -64,7 +69,18 @@ else
 fi
 
 echo
-python3 "$ANALYZER" --review "$REVIEW" --launch "$LAUNCH"
+echo "Staged production EKS review packet:"
+echo "  sed -n '1,220p' labs/platform-academy/design-production-eks-review/cluster-review.md"
+echo "  sed -n '1,220p' labs/platform-academy/design-production-eks-review/launch-review.md"
+echo
+if [[ "$run_analyzer" == true ]]; then
+  python3 "$ANALYZER" --review "$REVIEW" --launch "$LAUNCH"
+else
+  echo "Analyzer is intentionally not run by default; inspect private endpoint, Karpenter, cost, upgrade, and launch evidence first, then run:"
+  echo "  python3 labs/platform-academy/design-production-eks-review/production_review_analyzer.py \\"
+  echo "    --review labs/platform-academy/design-production-eks-review/cluster-review.md \\"
+  echo "    --launch labs/platform-academy/design-production-eks-review/launch-review.md"
+fi
 
 echo
 echo "Captured production EKS proposal excerpt:"

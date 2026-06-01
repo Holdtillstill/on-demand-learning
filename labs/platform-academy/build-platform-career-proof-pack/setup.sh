@@ -8,16 +8,18 @@ ANALYZER="$LAB_DIR/career_proof_analyzer.py"
 
 evidence_file="/tmp/career-proof-evidence.md"
 mode="no-cluster"
+run_analyzer=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/build-platform-career-proof-pack/setup.sh [--cluster] [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/build-platform-career-proof-pack/setup.sh [--cluster] [--no-cluster] [--run-analyzer] [--evidence <file>]
 
 Options:
-  --cluster      Refuse live setup; this lab is a local portfolio Evidence review.
-  --no-cluster   Copy the evidence template and run the local career proof analyzer. This is the default.
-  --evidence     Evidence note path to create when it does not already exist.
+  --cluster        Refuse live setup; this lab is a local portfolio Evidence review.
+  --no-cluster     Copy the evidence template and stage career proof artifacts. This is the default.
+  --run-analyzer   Run the local career proof analyzer after staging evidence.
+  --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
 
@@ -33,6 +35,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-cluster|--transcript)
       mode="no-cluster"
+      ;;
+    --run-analyzer)
+      run_analyzer=true
       ;;
     --evidence)
       shift
@@ -62,12 +67,27 @@ else
 fi
 
 echo
-python3 "$ANALYZER" \
-  --skills "$LAB_DIR/job-skills.txt" \
-  --inventory "$LAB_DIR/evidence-inventory.md" \
-  --proof "$LAB_DIR/completed-proof-readme.md" \
-  --bullets "$LAB_DIR/resume-bullets.md" \
-  --star "$LAB_DIR/star-stories.md"
+echo "Staged career proof review bundle:"
+echo "  sed -n '1,160p' labs/platform-academy/build-platform-career-proof-pack/job-skills.txt"
+echo "  sed -n '1,200p' labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md"
+echo "  sed -n '1,220p' labs/platform-academy/build-platform-career-proof-pack/readme-template.md"
+echo
+if [[ "$run_analyzer" == true ]]; then
+  python3 "$ANALYZER" \
+    --skills "$LAB_DIR/job-skills.txt" \
+    --inventory "$LAB_DIR/evidence-inventory.md" \
+    --proof "$LAB_DIR/completed-proof-readme.md" \
+    --bullets "$LAB_DIR/resume-bullets.md" \
+    --star "$LAB_DIR/star-stories.md"
+else
+  echo "Analyzer is intentionally not run by default; inspect skill demand, inventory, proof, resume, STAR, and redaction evidence first, then run:"
+  echo "  python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py \\"
+  echo "    --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt \\"
+  echo "    --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md \\"
+  echo "    --proof labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md \\"
+  echo "    --bullets labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md \\"
+  echo "    --star labs/platform-academy/build-platform-career-proof-pack/star-stories.md"
+fi
 
 echo
 echo "Proof README delta from template:"

@@ -7,15 +7,17 @@ TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/supply_chain_analyzer.py"
 
 evidence_file="/tmp/docker-supply-chain-evidence.md"
+run_analyzer=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/review-docker-image-supply-chain/setup.sh [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/review-docker-image-supply-chain/setup.sh [--no-cluster] [--run-analyzer] [--evidence <file>]
 
 Options:
-  --no-cluster   Prepare the local Evidence note and run the captured supply-chain analyzer. This is the default.
-  --evidence     Evidence note path to create when it does not already exist.
+  --no-cluster     Prepare the local Evidence note and stage image review artifacts. This is the default.
+  --run-analyzer   Run the captured supply-chain analyzer after staging evidence.
+  --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
 
@@ -27,6 +29,9 @@ fail() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-cluster|--transcript)
+      ;;
+    --run-analyzer)
+      run_analyzer=true
       ;;
     --evidence)
       shift
@@ -52,12 +57,28 @@ else
 fi
 
 echo
-python3 "$ANALYZER" \
-  --dockerfile "$LAB_DIR/Dockerfile" \
-  --inspect "$LAB_DIR/image-inspect.json" \
-  --history "$LAB_DIR/history.txt" \
-  --hardened "$LAB_DIR/hardened.Dockerfile" \
-  --promotion "$LAB_DIR/promotion-note.md"
+echo "Staged Docker image supply-chain review bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/review-docker-image-supply-chain/Dockerfile"
+echo "  sed -n '1,160p' labs/platform-academy/review-docker-image-supply-chain/image-inspect.json"
+echo "  sed -n '1,160p' labs/platform-academy/review-docker-image-supply-chain/history.txt"
+echo "  diff -u labs/platform-academy/review-docker-image-supply-chain/Dockerfile labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile || true"
+echo
+if [[ "$run_analyzer" == true ]]; then
+  python3 "$ANALYZER" \
+    --dockerfile "$LAB_DIR/Dockerfile" \
+    --inspect "$LAB_DIR/image-inspect.json" \
+    --history "$LAB_DIR/history.txt" \
+    --hardened "$LAB_DIR/hardened.Dockerfile" \
+    --promotion "$LAB_DIR/promotion-note.md"
+else
+  echo "Analyzer is intentionally not run by default; inspect user, base image, secret, SBOM, digest, rollback, and promotion evidence first, then run:"
+  echo "  python3 labs/platform-academy/review-docker-image-supply-chain/supply_chain_analyzer.py \\"
+  echo "    --dockerfile labs/platform-academy/review-docker-image-supply-chain/Dockerfile \\"
+  echo "    --inspect labs/platform-academy/review-docker-image-supply-chain/image-inspect.json \\"
+  echo "    --history labs/platform-academy/review-docker-image-supply-chain/history.txt \\"
+  echo "    --hardened labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile \\"
+  echo "    --promotion labs/platform-academy/review-docker-image-supply-chain/promotion-note.md"
+fi
 
 echo
 echo "Next: fill $evidence_file, then run:"

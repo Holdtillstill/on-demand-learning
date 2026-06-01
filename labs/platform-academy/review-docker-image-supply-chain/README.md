@@ -21,13 +21,15 @@ sed -n '1,180p' labs/platform-academy/review-docker-image-supply-chain/image-ins
 sed -n '1,120p' labs/platform-academy/review-docker-image-supply-chain/history.txt
 ```
 
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default.
+
 Compare with the safer runtime target:
 
 ```bash
 diff -u labs/platform-academy/review-docker-image-supply-chain/Dockerfile labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile || true
 ```
 
-Run the local analyzer:
+Run the local analyzer after you inspect the image packet, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/review-docker-image-supply-chain/supply_chain_analyzer.py \

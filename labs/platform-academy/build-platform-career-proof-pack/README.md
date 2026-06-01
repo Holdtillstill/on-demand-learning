@@ -24,6 +24,8 @@ sed -n '1,180p' labs/platform-academy/build-platform-career-proof-pack/readme-te
 sed -n '1,180p' labs/platform-academy/build-platform-career-proof-pack/evidence-template.md
 ```
 
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default.
+
 Compare the empty template with the completed proof section:
 
 ```bash
@@ -41,7 +43,7 @@ Find:
 - Which incidents, tradeoffs, and influence moments can become STAR stories.
 - Which claims still need screenshots, diagrams, validation output, or public-safe redaction.
 
-Run the local career proof analyzer after collecting the pack:
+Run the local career proof analyzer after collecting the pack, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py \

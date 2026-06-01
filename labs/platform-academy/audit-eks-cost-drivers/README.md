@@ -22,7 +22,7 @@ sed -n '1,120p' labs/platform-academy/audit-eks-cost-drivers/storage.txt
 sed -n '1,180p' labs/platform-academy/audit-eks-cost-drivers/evidence-template.md
 ```
 
-Run the local analyzer:
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default. Run the local analyzer after you inspect the cost packet, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py \

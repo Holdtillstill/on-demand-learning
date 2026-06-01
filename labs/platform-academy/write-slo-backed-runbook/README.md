@@ -23,13 +23,15 @@ sed -n '1,220p' labs/platform-academy/write-slo-backed-runbook/prometheus-rule.y
 sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/runbook-template.md
 ```
 
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default.
+
 Compare the template with the completed runbook:
 
 ```bash
 diff -u labs/platform-academy/write-slo-backed-runbook/runbook-template.md labs/platform-academy/write-slo-backed-runbook/completed-runbook.md || true
 ```
 
-Run the local analyzer:
+Run the local analyzer after you inspect the runbook packet, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/write-slo-backed-runbook/slo_runbook_analyzer.py \

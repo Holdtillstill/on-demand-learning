@@ -23,13 +23,15 @@ sed -n '1,220p' labs/platform-academy/design-safe-release-pipeline/release-check
 sed -n '1,180p' labs/platform-academy/design-safe-release-pipeline/evidence-template.md
 ```
 
+Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default.
+
 Compare it with the safer target:
 
 ```bash
 diff -u labs/platform-academy/design-safe-release-pipeline/pipeline.yaml labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml || true
 ```
 
-Run the local analyzer:
+Run the local analyzer after you inspect the pipeline packet, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/design-safe-release-pipeline/release_pipeline_analyzer.py \
