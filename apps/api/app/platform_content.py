@@ -5661,6 +5661,7 @@ PORTFOLIO_LAB_SLUGS = {
     "audit-eks-cost-drivers",
     "run-incident-commander-tabletop",
     "create-platform-golden-path",
+    "inspect-linux-failure-evidence",
 }
 
 PORTFOLIO_LAB_FOCUS = {
@@ -5683,6 +5684,7 @@ PORTFOLIO_LAB_FOCUS = {
     "audit-eks-cost-drivers": "EKS cost-driver review",
     "run-incident-commander-tabletop": "incident command tabletop",
     "create-platform-golden-path": "service golden path contract",
+    "inspect-linux-failure-evidence": "Linux failure evidence diagnosis",
 }
 
 EVIDENCE_PACK_LAB_SLUGS: set[str] = set()

@@ -40,6 +40,7 @@ PORTFOLIO_LABS = [
     "audit-eks-cost-drivers",
     "run-incident-commander-tabletop",
     "create-platform-golden-path",
+    "inspect-linux-failure-evidence",
 ]
 
 
@@ -1459,6 +1460,71 @@ def verify_create_platform_golden_path() -> None:
         require(term in analyzer, f"golden path analyzer should include {term}")
 
 
+def verify_inspect_linux_failure_evidence() -> None:
+    slug = "inspect-linux-failure-evidence"
+    describe = text_doc(slug, "pod-describe.txt")
+    previous_log = text_doc(slug, "previous.log")
+    id_output = text_doc(slug, "id-output.txt")
+    remediation = text_doc(slug, "remediation-note.md")
+    triage = text_doc(slug, "triage-notes.md")
+    template = text_doc(slug, "evidence-template.md")
+    analyzer = text_doc(slug, "linux_failure_analyzer.py")
+
+    for term in [
+        "Reason:       CrashLoopBackOff",
+        "Exit Code:    126",
+        "Restart Count:  8",
+        "registry.example.com/checkout@sha256:3333",
+        "Back-off restarting failed container checkout",
+    ]:
+        require(term in describe, f"Linux pod describe evidence should include {term}")
+    require("OOMKilled" not in describe and "Exit Code:    137" not in describe, "Linux evidence should not indicate OOM")
+    for term in [
+        "/app/bin/checkout: Permission denied",
+        "startup user: uid=10001 gid=10001",
+        "fatal: process exited before listening on :8080",
+    ]:
+        require(term in previous_log, f"Linux previous log should include {term}")
+    require("uid=10001(checkout)" in id_output, "Linux id output should include checkout UID")
+    require("gid=10001(checkout)" in id_output, "Linux id output should include checkout GID")
+
+    for term in [
+        "Exit code `126`",
+        "Permission denied",
+        "not application logic or memory pressure",
+        "Ensure the binary is executable",
+        "ownership permits UID 10001",
+        "Increasing memory: no OOM evidence appears",
+        "Running as root: hides the permission bug",
+        "Run the container as UID 10001",
+    ]:
+        require(term in remediation, f"Linux remediation note should include {term}")
+    for term in [
+        "Exit code 126 is not memory pressure",
+        "Previous logs are stronger than restart count",
+        "Running as root hides the permission bug",
+        "chmod in a live container is not durable",
+        "Application logic debugging is premature",
+    ]:
+        require(term in triage, f"Linux triage notes should include {term}")
+    for heading in [
+        "## Triage Notes And False Leads",
+        "## Container State Evidence",
+        "## Linux Identity And Permission Evidence",
+        "## Remediation Decision Evidence",
+    ]:
+        require(heading in template, f"Linux evidence template should include {heading}")
+    for term in [
+        "Linux failure evidence analysis passed",
+        "CrashLoopBackOff after 8 restarts",
+        "exit code 126",
+        "/app/bin/checkout Permission denied",
+        "uid=10001(checkout)",
+        "do not hide the bug by running the container as root",
+    ]:
+        require(term in analyzer, f"Linux failure analyzer should include {term}")
+
+
 VERIFY_BY_LAB = {
     "trace-service-to-pod": verify_trace_service_to_pod,
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
@@ -1479,6 +1545,7 @@ VERIFY_BY_LAB = {
     "audit-eks-cost-drivers": verify_audit_eks_cost_drivers,
     "run-incident-commander-tabletop": verify_run_incident_commander_tabletop,
     "create-platform-golden-path": verify_create_platform_golden_path,
+    "inspect-linux-failure-evidence": verify_inspect_linux_failure_evidence,
 }
 
 
