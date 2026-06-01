@@ -40,11 +40,20 @@ import {
   UserRound
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, NavLink, Navigate, Route as RouterRoute, Routes, useLocation, useParams } from "react-router-dom";
+import { Link, NavLink, useLocation, useParams } from "react-router-dom";
 
 import { api } from "./api";
+import { academyQueryKeys, useAcademyData } from "./api/queries";
+import { EmptyState } from "./components/EmptyState";
+import { LabTierBadge } from "./components/ui/LabTierBadge";
+import { LevelBadge } from "./components/ui/LevelBadge";
+import { ProgressBar } from "./components/ui/ProgressBar";
 import { getOrCreateLocalLearnerId, resetLocalLearnerId, restoreLocalLearnerId } from "./learnerIdentity";
+import { DeferredContentPage } from "./pages/DeferredContentPage";
+import { AppRouter } from "./Router";
+import type { AcademyCoreData, AcademyData } from "./types/academy";
 import type {
   Course,
   Lesson,
@@ -52,54 +61,31 @@ import type {
   PlatformActivity,
   PlatformActivityInput,
   PlatformInterviewPrep,
-  PlatformInterviewPrepIndex,
-  PlatformAcademyRoadmap,
   PlatformInterviewStudyPlan,
   PlatformLab,
   PlatformLearnerStateExport,
   PlatformLabSubmission,
   PlatformLabSubmissionInput,
   PlatformResource,
-  PlatformResources,
   PlatformRoadmapStage,
   PlatformTrack,
   Progress,
   UserDashboard
 } from "./types";
 
-type AcademyData = {
-  catalog: PlatformAcademyCatalog;
-  roadmap: PlatformAcademyRoadmap;
-  resources: PlatformResources;
-  resourcesLoaded: boolean;
-  interviewPrep: PlatformInterviewPrepIndex;
-  interviewPrepLoaded: boolean;
-  progress: Progress[];
-  activity: PlatformActivity[];
-  labSubmissions: PlatformLabSubmission[];
-  dashboard: UserDashboard;
-};
-
-const EMPTY_RESOURCES: PlatformResources = {
-  domains: [],
-  types: [],
-  resources: []
-};
-
-const EMPTY_INTERVIEW_PREP: PlatformInterviewPrepIndex = {
-  domains: [],
-  levels: [],
-  total_questions: 0,
-  packs: []
-};
-
-type StaticContentCache = {
-  resources?: PlatformResources;
-  interviewPrep?: PlatformInterviewPrepIndex;
-};
-
 type SaveActivity = (activity: PlatformActivityInput) => Promise<PlatformActivity>;
 type SaveLabSubmission = (slug: string, submission: PlatformLabSubmissionInput) => Promise<PlatformLabSubmission>;
+
+function createAppQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        staleTime: 60_000
+      }
+    }
+  });
+}
 
 type ContentBlock =
   | { type: "heading"; content: string }
@@ -419,14 +405,16 @@ function submissionReportMarkdown(data: AcademyData, submissions: PlatformLabSub
       for (const command of lab.validation_commands) lines.push(`- \`${command}\``);
       lines.push("");
     }
+    lines.push("### Rubric Follow-ups");
     if (submission.rubric_feedback.length > 0) {
-      lines.push("### Rubric Follow-ups");
       for (const item of submission.rubric_feedback) {
         const status = rubricStatusLabels[item.status] ?? item.status;
         lines.push(`- ${status}: ${item.criterion} - ${item.feedback}`);
       }
-      lines.push("");
+    } else {
+      lines.push("- No rubric follow-ups generated for this saved workbook yet.");
     }
+    lines.push("");
   }
 
   return lines.join("\n");
@@ -518,32 +506,6 @@ function RichContent({ text }: { text: string }) {
       })}
     </>
   );
-}
-
-function EmptyState({ title, detail }: { title: string; detail?: string }) {
-  return (
-    <section className="state-panel">
-      <Compass aria-hidden="true" />
-      <h1>{title}</h1>
-      {detail && <p>{detail}</p>}
-    </section>
-  );
-}
-
-function ProgressBar({ value }: { value: number }) {
-  return (
-    <div className="progress-track" role="progressbar" aria-label={`${value}% complete`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value}>
-      <div style={{ width: `${value}%` }} />
-    </div>
-  );
-}
-
-function LevelBadge({ level }: { level: string }) {
-  return <span className={`level-badge level-${level.toLowerCase().replace(/[^a-z]+/g, "-")}`}>{level}</span>;
-}
-
-function LabTierBadge({ tier }: { tier: PlatformLab["lab_tier"] }) {
-  return <span className={`lab-tier-badge lab-tier-${tier}`}>{labTierLabels[tier]}</span>;
 }
 
 function PortfolioLabBadge({ lab }: { lab: PlatformLab }) {
@@ -811,64 +773,6 @@ function labFalseLeadArtifact(lab: PlatformLab) {
 function progressPercent(done: number, total: number) {
   if (total <= 0) return 100;
   return Math.min(100, Math.round((done / total) * 100));
-}
-
-const LAB_RICH_ARRAY_FIELDS = [
-  "skills",
-  "prerequisites",
-  "setup_commands",
-  "setup_self_check_commands",
-  "commands",
-  "practice_steps",
-  "expected_evidence",
-  "validation_commands",
-  "cleanup_commands",
-  "no_cluster_fallback",
-  "artifact_paths",
-  "learner_artifact_paths",
-  "workspace_quickstart_commands",
-  "cluster_workspace_commands",
-  "worksheet_prompts",
-  "rubric",
-  "validation_checks",
-  "checklist"
-] as const satisfies readonly (keyof PlatformLab)[];
-
-const LAB_RICH_STRING_FIELDS = ["portfolio_focus", "workspace_archive_name", "workspace_root"] as const satisfies readonly (keyof PlatformLab)[];
-
-function richerStringArray(left: unknown, right: unknown) {
-  const leftItems = Array.isArray(left) ? left.filter((item): item is string => typeof item === "string") : [];
-  const rightItems = Array.isArray(right) ? right.filter((item): item is string => typeof item === "string") : [];
-  return rightItems.length >= leftItems.length ? rightItems : leftItems;
-}
-
-function mergeLabPayload(left: PlatformLab, right: PlatformLab): PlatformLab {
-  const merged: PlatformLab = { ...left, ...right };
-  const arrayFields = merged as Record<(typeof LAB_RICH_ARRAY_FIELDS)[number], string[] | undefined>;
-  const stringFields = merged as Record<(typeof LAB_RICH_STRING_FIELDS)[number], string | undefined>;
-
-  for (const field of LAB_RICH_ARRAY_FIELDS) {
-    arrayFields[field] = richerStringArray(left[field], right[field]);
-  }
-  for (const field of LAB_RICH_STRING_FIELDS) {
-    const rightValue = typeof right[field] === "string" ? right[field] : "";
-    const leftValue = typeof left[field] === "string" ? left[field] : "";
-    stringFields[field] = rightValue.trim() ? rightValue : leftValue;
-  }
-
-  return merged;
-}
-
-function mergeLabPayloads(catalogLabs: PlatformLab[], labEndpointPayloads: PlatformLab[]) {
-  const endpointBySlug = new globalThis.Map(labEndpointPayloads.map((lab) => [lab.slug, lab]));
-  const catalogSlugs = new Set(catalogLabs.map((lab) => lab.slug));
-  return [
-    ...catalogLabs.map((lab) => {
-      const endpointLab = endpointBySlug.get(lab.slug);
-      return endpointLab ? mergeLabPayload(lab, endpointLab) : lab;
-    }),
-    ...labEndpointPayloads.filter((lab) => !catalogSlugs.has(lab.slug))
-  ];
 }
 
 function labRunPhases(lab: PlatformLab) {
@@ -1237,9 +1141,11 @@ function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; l
   const [savedScore, setSavedScore] = useState(0);
   const [rubricFeedback, setRubricFeedback] = useState<PlatformLabSubmission["rubric_feedback"]>([]);
   const [evidenceTerms, setEvidenceTerms] = useState<string[]>([]);
+  const dirtyRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
+    dirtyRef.current = false;
     try {
       const raw = globalThis.localStorage?.getItem(storageKey) ?? globalThis.localStorage?.getItem(legacyStorageKey);
       if (raw) {
@@ -1264,7 +1170,7 @@ function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; l
     api
       .labSubmission(lab.slug, learnerId)
       .then((submission) => {
-        if (cancelled) return;
+        if (cancelled || dirtyRef.current) return;
         setCheckedItems(sanitizeCheckedItems(submission.checked_items, checkedItemIds));
         setWorksheetAnswers(sanitizeWorksheetAnswers(submission.worksheet_answers, worksheetAnswerIds));
         setSavedScore(submission.score);
@@ -1273,7 +1179,7 @@ function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; l
         setSaveState("saved");
       })
       .catch(() => {
-        if (cancelled) return;
+        if (cancelled || dirtyRef.current) return;
         setSaveState("local");
       });
 
@@ -1316,7 +1222,10 @@ function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; l
     count: rubricFeedback.filter((item) => item.status === status).length
   }));
   const rubricNeedsAttention = rubricFeedback.filter((item) => item.status === "missing" || item.status === "needs-evidence").length;
-  const markDirty = () => setSaveState((current) => (current === "loading" || current === "saving" ? current : "dirty"));
+  const markDirty = () => {
+    dirtyRef.current = true;
+    setSaveState((current) => (current === "saving" ? current : "dirty"));
+  };
   const toggleItem = (id: string) => {
     setCheckedItems((current) => ({ ...current, [id]: !current[id] }));
     markDirty();
@@ -1343,6 +1252,7 @@ function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; l
       setSavedScore(saved.score);
       setRubricFeedback(saved.rubric_feedback ?? []);
       setEvidenceTerms(saved.evidence_terms ?? []);
+      dirtyRef.current = false;
       setSaveState("saved");
     } catch {
       setSaveState("local");
@@ -1873,15 +1783,13 @@ function DashboardPage({ data }: { data: AcademyData }) {
           <strong>{data.dashboard.due_reviews}</strong>
           <small>{data.dashboard.daily_goal.earned_xp_today} / {data.dashboard.daily_goal.target_xp} XP today</small>
         </article>
-          {data.interviewPrepLoaded && (
-            <article>
-              <span>Interview bank</span>
-              <strong>{data.interviewPrep.total_questions}</strong>
-              <small>
-                {practicedQuestions} practiced / {data.interviewPrep.packs.length} packs
-              </small>
-            </article>
-          )}
+        <article>
+          <span>Interview bank</span>
+          <strong>{data.interviewPrepLoaded ? data.interviewPrep.total_questions : "..."}</strong>
+          <small>
+            {data.interviewPrepLoaded ? `${practicedQuestions} practiced / ${data.interviewPrep.packs.length} packs` : "Scenario packs loading"}
+          </small>
+        </article>
       </section>
 
       <section className="dashboard-layout">
@@ -2065,20 +1973,20 @@ function DashboardPage({ data }: { data: AcademyData }) {
             )}
           </section>
 
-          {featuredInterviewPack && (
-            <section className="workspace-panel interview-rail-card">
-              <p className="eyebrow">Interview sprint</p>
-              <h2>{featuredInterviewPack.title}</h2>
-              <p>{featuredInterviewPack.focus}</p>
-              <div className="chip-list">
-                <span>{featuredInterviewPack.questions.length} questions</span>
-                <span>{featuredInterviewPack.official_sources.length} source links</span>
-              </div>
+          <section className="workspace-panel interview-rail-card">
+            <p className="eyebrow">Interview sprint</p>
+            <h2>{featuredInterviewPack?.title ?? "Scenario packs loading"}</h2>
+            <p>{featuredInterviewPack?.focus ?? "Interview drills are loading after the core workspace."}</p>
+            <div className="chip-list">
+              <span>{featuredInterviewPack ? `${featuredInterviewPack.questions.length} questions` : "Loading packs"}</span>
+              <span>{featuredInterviewPack ? `${featuredInterviewPack.official_sources.length} source links` : "Cached offline"}</span>
+            </div>
+            {featuredInterviewPack && (
               <Link className="text-link" to={`/interview-prep?pack=${featuredInterviewPack.slug}`}>
                 Open prep <ArrowRight aria-hidden="true" />
               </Link>
-            </section>
-          )}
+            )}
+          </section>
 
           <section className="workspace-panel readiness-panel">
             <p className="eyebrow">Learning checks</p>
@@ -3484,14 +3392,6 @@ function LabDetailPage({
           </section>
         </aside>
       </section>
-    </section>
-  );
-}
-
-function DeferredContentPage({ title, detail }: { title: string; detail: string }) {
-  return (
-    <section className="page canonical-page">
-      <EmptyState title={title} detail={detail} />
     </section>
   );
 }
@@ -5061,117 +4961,51 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
   );
 }
 
-export default function App() {
+function PlatformAcademyApp() {
   const [learnerId, setLearnerId] = useState(getOrCreateLocalLearnerId);
-  const [data, setData] = useState<AcademyData | null>(null);
-  const [error, setError] = useState("");
-  const loadRequestId = useRef(0);
-  const staticContentCache = useRef<StaticContentCache>({});
-
-  const loadDeferredStaticContent = useCallback((requestId: number) => {
-    const cached = staticContentCache.current;
-    if (cached.resources && cached.interviewPrep) return Promise.resolve();
-
-    return Promise.all([cached.resources ? Promise.resolve(cached.resources) : api.resources(), cached.interviewPrep ? Promise.resolve(cached.interviewPrep) : api.interviewPrep()])
-      .then(([resources, interviewPrep]) => {
-        staticContentCache.current = { resources, interviewPrep };
-        if (requestId !== loadRequestId.current) return;
-        setData((current) =>
-          current
-            ? {
-                ...current,
-                resources,
-                resourcesLoaded: true,
-                interviewPrep,
-                interviewPrepLoaded: true
-              }
-            : current
-        );
-      })
-      .catch((err) => {
-        if (requestId !== loadRequestId.current) return;
-        setError(err.message);
-      });
-  }, []);
-
-  const loadData = useCallback(() => {
-    const requestId = loadRequestId.current + 1;
-    loadRequestId.current = requestId;
-    setError("");
-
-    return Promise.all([
-      api.catalog(),
-      api.roadmap(),
-      api.labs(),
-      api.progress(learnerId),
-      api.activity(learnerId),
-      api.labSubmissions(learnerId),
-      api.dashboard(learnerId, "platform")
-    ])
-      .then(([catalog, roadmap, labs, progress, activity, labSubmissions, dashboard]) => {
-        if (requestId !== loadRequestId.current) return;
-        const cached = staticContentCache.current;
-        setData({
-          catalog: { ...catalog, labs: mergeLabPayloads(catalog.labs, labs) },
-          roadmap,
-          resources: cached.resources ?? EMPTY_RESOURCES,
-          resourcesLoaded: Boolean(cached.resources),
-          interviewPrep: cached.interviewPrep ?? EMPTY_INTERVIEW_PREP,
-          interviewPrepLoaded: Boolean(cached.interviewPrep),
-          progress,
-          activity,
-          labSubmissions,
-          dashboard
-        });
-        void loadDeferredStaticContent(requestId);
-      })
-      .catch((err) => {
-        if (requestId !== loadRequestId.current) return;
-        setError(err.message);
-      });
-  }, [learnerId, loadDeferredStaticContent]);
+  const queryClient = useQueryClient();
+  const { data, error, refetchCore } = useAcademyData(learnerId);
+  const errorMessage = error instanceof Error ? error.message : error ? String(error) : "";
 
   const resetLearner = () => {
-    loadRequestId.current += 1;
-    setData(null);
-    setError("");
     setLearnerId(resetLocalLearnerId());
   };
 
   const recoverLearner = (restoredLearnerId: string) => {
-    loadRequestId.current += 1;
-    setData(null);
-    setError("");
     setLearnerId(restoredLearnerId);
     void api.saveActivity({ target_type: "guest_recovery", target_id: "profile-restore" }, restoredLearnerId).catch(() => undefined);
   };
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const refreshAcademyData = useCallback(() => {
+    void refetchCore();
+  }, [refetchCore]);
 
   const saveActivity = useCallback<SaveActivity>(
     async (activity) => {
       const saved = await api.saveActivity(activity, learnerId);
-      setData((current) => (current ? { ...current, activity: upsertActivityRow(current.activity, saved) } : current));
+      queryClient.setQueryData<AcademyCoreData>(academyQueryKeys.core(learnerId), (current) =>
+        current ? { ...current, activity: upsertActivityRow(current.activity, saved) } : current
+      );
       return saved;
     },
-    [learnerId]
+    [learnerId, queryClient]
   );
 
   const saveLabSubmission = useCallback<SaveLabSubmission>(
     async (slug, submission) => {
       const saved = await api.saveLabSubmission(slug, submission, learnerId);
-      setData((current) => (current ? { ...current, labSubmissions: upsertLabSubmissionRow(current.labSubmissions, saved) } : current));
+      queryClient.setQueryData<AcademyCoreData>(academyQueryKeys.core(learnerId), (current) =>
+        current ? { ...current, labSubmissions: upsertLabSubmissionRow(current.labSubmissions, saved) } : current
+      );
       return saved;
     },
-    [learnerId]
+    [learnerId, queryClient]
   );
 
-  if (error) {
+  if (errorMessage) {
     return (
       <AppShell learnerId={learnerId} onRecoverLearner={recoverLearner} onResetLearner={resetLearner}>
-        <EmptyState title="Platform Academy is unavailable." detail={error} />
+        <EmptyState title="Platform Academy is unavailable." detail={errorMessage} />
       </AppShell>
     );
   }
@@ -5186,64 +5020,57 @@ export default function App() {
 
   return (
     <AppShell learnerId={learnerId} onRecoverLearner={recoverLearner} onResetLearner={resetLearner}>
-      <Routes>
-        <RouterRoute path="/" element={<DashboardPage data={data} />} />
-        <RouterRoute path="/dashboard/home" element={<DashboardPage data={data} />} />
-        <RouterRoute path="/roadmap" element={<RoadmapPage data={data} />} />
-        <RouterRoute path="/labs" element={<LabsPage data={data} />} />
-        <RouterRoute path="/labs/history" element={<LabEvidenceJournalPage data={data} />} />
-        <RouterRoute path="/labs/:slug" element={<LabDetailPage data={data} learnerId={learnerId} onSaveActivity={saveActivity} onSaveLabSubmission={saveLabSubmission} />} />
-        <RouterRoute
-          path="/interview-prep"
-          element={
-            data.interviewPrepLoaded ? (
-              <InterviewPrepPage data={data} onSaveActivity={saveActivity} />
-            ) : (
-              <DeferredContentPage title="Loading interview prep..." detail="Scenario packs are loading after the core academy workspace." />
-            )
-          }
-        />
-        <RouterRoute
-          path="/resources"
-          element={
-            data.resourcesLoaded ? (
-              <ResourcesPage data={data} />
-            ) : (
-              <DeferredContentPage title="Loading resource library..." detail="Runbooks and references are loading after the core academy workspace." />
-            )
-          }
-        />
-        <RouterRoute
-          path="/resources/:slug"
-          element={
-            data.resourcesLoaded ? (
-              <ResourceDetailPage data={data} onSaveActivity={saveActivity} />
-            ) : (
-              <DeferredContentPage title="Loading resource..." detail="The resource library is loading after the core academy workspace." />
-            )
-          }
-        />
-        <RouterRoute
-          path="/designs"
-          element={
-            <DesignStylesGate>
-              <DesignsIndexPage data={data} />
-            </DesignStylesGate>
-          }
-        />
-        <RouterRoute
-          path="/designs/:id"
-          element={
-            <DesignStylesGate>
-              <DesignVariantPage data={data} />
-            </DesignStylesGate>
-          }
-        />
-        <RouterRoute path="/courses/:courseRef" element={<CoursePage data={data} />} />
-        <RouterRoute path="/courses/:courseRef/lessons/:sequence" element={<LessonPage data={data} learnerId={learnerId} onProgressSaved={loadData} />} />
-        <RouterRoute path="/lessons/:id" element={<LessonPage data={data} learnerId={learnerId} onProgressSaved={loadData} />} />
-        <RouterRoute path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <AppRouter
+        dashboard={<DashboardPage data={data} />}
+        roadmap={<RoadmapPage data={data} />}
+        labs={<LabsPage data={data} />}
+        labEvidenceJournal={<LabEvidenceJournalPage data={data} />}
+        labDetail={<LabDetailPage data={data} learnerId={learnerId} onSaveActivity={saveActivity} onSaveLabSubmission={saveLabSubmission} />}
+        interviewPrep={
+          data.interviewPrepLoaded ? (
+            <InterviewPrepPage data={data} onSaveActivity={saveActivity} />
+          ) : (
+            <DeferredContentPage title="Loading interview prep..." detail="Scenario packs are loading after the core academy workspace." />
+          )
+        }
+        resources={
+          data.resourcesLoaded ? (
+            <ResourcesPage data={data} />
+          ) : (
+            <DeferredContentPage title="Loading resource library..." detail="Runbooks and references are loading after the core academy workspace." />
+          )
+        }
+        resourceDetail={
+          data.resourcesLoaded ? (
+            <ResourceDetailPage data={data} onSaveActivity={saveActivity} />
+          ) : (
+            <DeferredContentPage title="Loading resource..." detail="The resource library is loading after the core academy workspace." />
+          )
+        }
+        designsIndex={
+          <DesignStylesGate>
+            <DesignsIndexPage data={data} />
+          </DesignStylesGate>
+        }
+        designVariant={
+          <DesignStylesGate>
+            <DesignVariantPage data={data} />
+          </DesignStylesGate>
+        }
+        course={<CoursePage data={data} />}
+        lessonByCourseSequence={<LessonPage data={data} learnerId={learnerId} onProgressSaved={refreshAcademyData} />}
+        lessonById={<LessonPage data={data} learnerId={learnerId} onProgressSaved={refreshAcademyData} />}
+      />
     </AppShell>
+  );
+}
+
+export default function App() {
+  const [client] = useState(createAppQueryClient);
+
+  return (
+    <QueryClientProvider client={client}>
+      <PlatformAcademyApp />
+    </QueryClientProvider>
   );
 }
