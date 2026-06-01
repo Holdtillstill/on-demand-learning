@@ -224,8 +224,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "create-platform-golden-path": {
-        "files": {"evidence-template.md", "golden_path_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "golden_path_analyzer.py", "setup.sh", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "Required Inputs",
             "pagerduty.com/service-id: missing",
             "platform.example.com/slo-dashboard: missing",
@@ -271,8 +272,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "audit-eks-cost-drivers": {
-        "files": {"evidence-template.md", "cost_analyzer.py", "setup.sh"},
+        "files": {"evidence-template.md", "cost_analyzer.py", "setup.sh", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "EKS cost driver analysis passed",
             "Quick-win monthly exposure",
             "payments,checkout,6000,900",
@@ -283,8 +285,9 @@ DEEPENED_LAB_CONTRACT = {
         },
     },
     "build-platform-career-proof-pack": {
-        "files": {"career_proof_analyzer.py", "evidence-template.md", "setup.sh"},
+        "files": {"career_proof_analyzer.py", "evidence-template.md", "setup.sh", "triage-notes.md"},
         "terms": {
+            "False Leads",
             "Kubernetes, Terraform, AWS, CI/CD",
             "Candidate artifacts",
             "completed-proof-readme.md",

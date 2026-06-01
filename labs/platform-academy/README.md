@@ -129,12 +129,12 @@ These labs have extra captured evidence, worksheet templates, and lab-specific r
 - [`trace-argocd-drift`](trace-argocd-drift/README.md): triage notes, false leads, desired/live replica drift, autoscaler ownership, Git-owned fields, narrow ignore rule, and field-owner decision.
 - [`review-docker-image-supply-chain`](review-docker-image-supply-chain/README.md): triage notes, false leads, tag/digest proof, secret leakage, root runtime, oversized image, SBOM/scan, rollback digest, and promotion decision.
 - [`design-safe-release-pipeline`](design-safe-release-pipeline/README.md): triage notes, false leads, direct main-to-production deploy, digest promotion, scan/SBOM/render/policy gates, staging proof, approval, canary, and SLO rollback evidence.
-- [`create-platform-golden-path`](create-platform-golden-path/README.md): required inputs, generated artifacts, secure defaults, missing pager/SLO metadata, launch gates, adoption metrics, and product-decision evidence.
+- [`create-platform-golden-path`](create-platform-golden-path/README.md): triage notes, false leads, required inputs, generated artifacts, secure defaults, missing pager/SLO metadata, launch gates, adoption metrics, and product-decision evidence.
 - [`write-slo-backed-runbook`](write-slo-backed-runbook/README.md): triage notes, false leads, SLO burn alert, rollout correlation, safe first commands, rollback criteria, owner split, validation, and follow-up evidence.
 - [`design-opentelemetry-signal-path`](design-opentelemetry-signal-path/README.md): triage notes, false leads, sensitive-header deletion, missing trace context, metric cardinality risk, safer aggregation, owner map, and simulator evidence.
 - [`run-incident-commander-tabletop`](run-incident-commander-tabletop/README.md): triage notes, false leads, SEV-2 impact, role assignment, rollback decision pressure, stakeholder update clock, timeline discipline, and handoff evidence.
-- [`audit-eks-cost-drivers`](audit-eks-cost-drivers/README.md): over-requested workloads, unknown owners, abandoned LoadBalancer/PVC evidence, expected savings, reliability risk, rollback, and review cadence.
-- [`build-platform-career-proof-pack`](build-platform-career-proof-pack/README.md): repeated skill demand, artifact mapping, public-safe redaction, proof README, resume bullets, STAR stories, and missing-proof evidence.
+- [`audit-eks-cost-drivers`](audit-eks-cost-drivers/README.md): triage notes, false leads, over-requested workloads, unknown owners, abandoned LoadBalancer/PVC evidence, expected savings, reliability risk, rollback, and review cadence.
+- [`build-platform-career-proof-pack`](build-platform-career-proof-pack/README.md): triage notes, false leads, repeated skill demand, artifact mapping, public-safe redaction, proof README, resume bullets, STAR stories, and missing-proof evidence.
 
 ## Lab Catalog
 

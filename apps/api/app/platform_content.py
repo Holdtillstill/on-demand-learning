@@ -4033,9 +4033,11 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/create-platform-golden-path/setup.sh --evidence /tmp/golden-path-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/create-platform-golden-path/triage-notes.md",
             "sed -n '1,220p' labs/platform-academy/create-platform-golden-path/service-template.md",
         ],
         "commands": [
+            "grep -n \"False Leads\\|generates many files\\|catalog presence\\|smooth first run\" labs/platform-academy/create-platform-golden-path/triage-notes.md",
             "grep -n \"Generated artifacts\\|SLO dashboard\\|Runbook\\|Backstage\" labs/platform-academy/create-platform-golden-path/service-template.md",
             "grep -n \"missing\\|owner\\|lifecycle\" labs/platform-academy/create-platform-golden-path/catalog-info.yaml",
             (
@@ -4049,12 +4051,14 @@ RUNNABLE_LAB_UPDATES = {
             "diff -u labs/platform-academy/create-platform-golden-path/catalog-info.yaml labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml || true",
         ],
         "practice_steps": [
+            "Read the triage notes and rule out file-generation-only readiness.",
             "Define required inputs and generated outputs.",
             "Check whether ownership, SLO, and runbook defaults are complete.",
             "Use the local analyzer to prove the starting gap, ready contract, and fixed metadata.",
             "Describe the first-run developer experience and adoption metrics.",
         ],
         "expected_evidence": [
+            "The triage notes rule out generated-files readiness, catalog-only ownership, smooth-first-run confidence, and optional metadata.",
             "The template generates Dockerfile, Helm, CI, ArgoCD, dashboard, runbook, and catalog files.",
             "The catalog file still has missing PagerDuty and SLO annotations.",
             "The first-run flow ends with production readiness review.",
@@ -4076,7 +4080,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/create-platform-golden-path/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use the template files as a product review packet.",
+            "Use triage-notes.md and the template files as a product review packet.",
             "Write missing inputs, generated artifacts, and launch-readiness blockers.",
         ],
     },
@@ -4296,10 +4300,12 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/audit-eks-cost-drivers/setup.sh --evidence /tmp/eks-cost-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/audit-eks-cost-drivers/triage-notes.md",
             "sed -n '1,160p' labs/platform-academy/audit-eks-cost-drivers/usage.csv",
             "sed -n '1,120p' labs/platform-academy/audit-eks-cost-drivers/services.txt",
         ],
         "commands": [
+            "grep -n \"False Leads\\|Low utilization\\|Unknown owner\\|LoadBalancer age\" labs/platform-academy/audit-eks-cost-drivers/triage-notes.md",
             "awk -F, 'NR==1 || $8==\"unknown\" || $3 > ($4 * 4) {print}' labs/platform-academy/audit-eks-cost-drivers/usage.csv",
             "grep -n \"abandoned\\|LoadBalancer\\|unknown\" labs/platform-academy/audit-eks-cost-drivers/services.txt labs/platform-academy/audit-eks-cost-drivers/storage.txt",
             (
@@ -4311,12 +4317,14 @@ RUNNABLE_LAB_UPDATES = {
             ),
         ],
         "practice_steps": [
+            "Read the triage notes and rule out unsafe delete-first cost actions.",
             "Rank compute over-requesting, idle load balancers, and abandoned storage.",
             "Use the local analyzer to separate quick-win monthly exposure from architecture-review items.",
             "Map each finding to an owner, savings estimate, reliability risk, and rollback.",
             "Decide which recommendations are quick wins versus architecture changes.",
         ],
         "expected_evidence": [
+            "The triage notes rule out utilization-only deletion, unknown-owner deletion, age-only cleanup, and savings without rollback.",
             "Checkout and worker CPU requests are far above usage.",
             "Default namespace has abandoned load balancer and storage entries.",
             "Some resources have unknown owner metadata.",
@@ -4337,7 +4345,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/audit-eks-cost-drivers/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use the CSV and text snapshots as cost evidence.",
+            "Use triage-notes.md plus the CSV and text snapshots as cost evidence.",
             "Write a cost recommendation table without live AWS access.",
         ],
     },
@@ -4348,22 +4356,26 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "setup_commands": [
             "bash labs/platform-academy/build-platform-career-proof-pack/setup.sh --evidence /tmp/career-proof-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/build-platform-career-proof-pack/triage-notes.md",
             "sed -n '1,160p' labs/platform-academy/build-platform-career-proof-pack/job-skills.txt",
             "sed -n '1,180p' labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md",
         ],
         "commands": [
+            "grep -n \"False Leads\\|completed labs\\|Resume bullets\\|Redaction\" labs/platform-academy/build-platform-career-proof-pack/triage-notes.md",
             "grep -n \"Kubernetes\\|Terraform\\|incident response\\|SLOs\\|FinOps\" labs/platform-academy/build-platform-career-proof-pack/job-skills.txt",
             "grep -n \"Missing proof\\|rollback\\|STAR\" labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md labs/platform-academy/build-platform-career-proof-pack/readme-template.md",
             "diff -u labs/platform-academy/build-platform-career-proof-pack/readme-template.md labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md || true",
             "python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md --proof labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md --bullets labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md --star labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
         ],
         "practice_steps": [
+            "Read the triage notes and rule out broad career claims without proof.",
             "Extract repeated skills from the sample target roles.",
             "Pick three lab artifacts and map them to proof bullets.",
             "Fill the README template with commands, evidence, validation, rollback, and interview talking points.",
             "Run the local career proof analyzer to prove the README, bullets, STAR stories, missing-proof list, and public-safety boundary.",
         ],
         "expected_evidence": [
+            "The triage notes rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.",
             "Target roles repeatedly mention Kubernetes, AWS, Terraform, CI/CD, observability, SRE, and security.",
             "The evidence inventory names five candidate artifacts and missing proof to collect.",
             "The README template forces problem, commands, validation, rollback, and STAR talking points.",
@@ -4378,7 +4390,7 @@ RUNNABLE_LAB_UPDATES = {
         ],
         "cleanup_commands": ["bash labs/platform-academy/build-platform-career-proof-pack/cleanup.sh"],
         "no_cluster_fallback": [
-            "Use the included job skills and evidence inventory instead of external job postings.",
+            "Use triage-notes.md plus the included job skills and evidence inventory instead of external job postings.",
             "Write one README proof section from any converted lab.",
         ],
     },
@@ -4992,6 +5004,7 @@ DEEPENED_LAB_UPDATES = {
     "create-platform-golden-path": {
         "worksheet_prompts": [
             "Record the service-template, catalog metadata, reviewer, and confirmation that no template engine or cluster is required.",
+            "Read triage-notes.md and list the False Leads ruled out before approving the golden path.",
             "Paste required inputs, generated artifacts, secure runtime defaults, first-run flow, and production readiness gates.",
             "Paste missing `pagerduty.com/service-id`, missing SLO dashboard, runbook, cost center, and concrete owner evidence.",
             "Explain why incomplete ownership metadata blocks production onboarding.",
@@ -5000,6 +5013,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the file-review safety boundary and names the template and catalog artifacts.",
+            "Uses triage notes to rule out generated-files readiness, catalog-only ownership proof, smooth-first-run confidence, and optional metadata False Leads.",
             "Captures required inputs, generated artifacts, secure defaults, first-run flow, and readiness gates.",
             "Identifies missing pager, missing SLO dashboard, runbook, cost center, and concrete owner metadata.",
             "Blocks production onboarding until ownership and observability metadata are complete.",
@@ -5008,6 +5022,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-runtime template review boundary recorded",
+            "Triage False Leads ruled out",
             "Golden path readiness analysis passed output captured",
             "Required inputs and generated artifacts captured",
             "Secure defaults and launch gates captured",
@@ -5018,6 +5033,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["service-template.md", "catalog-info.yaml", "no template engine", "no cluster"],
+            ["triage-notes.md", "False Leads", "generated files", "catalog presence", "smooth first run", "optional metadata"],
             [
                 "Required Inputs",
                 "Generated artifacts",
@@ -5034,6 +5050,7 @@ DEEPENED_LAB_UPDATES = {
     "audit-eks-cost-drivers": {
         "worksheet_prompts": [
             "Record the usage, service, storage, and recommendation files plus confirmation that no AWS or cluster deletion is being made.",
+            "Read triage-notes.md and list the False Leads ruled out before recommending cost changes.",
             "Paste over-requested workload rows, unknown-owner rows, and request-versus-usage evidence.",
             "Paste abandoned LoadBalancer, abandoned PVC, estimated monthly cost, and architecture-review evidence.",
             "Rank quick wins versus architecture changes with reliability risk and ownership confidence.",
@@ -5042,6 +5059,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the no-delete/no-AWS safety boundary and names the local cost evidence files.",
+            "Uses triage notes to rule out utilization-only deletion, unknown-owner deletion, age-only cleanup, and savings-without-rollback False Leads.",
             "Captures over-requested workloads, unknown owners, and usage/request ratio evidence.",
             "Captures abandoned LoadBalancer, abandoned PVC, expected cost, and architecture-review items.",
             "Separates quick wins from architecture changes and avoids deletion without owner confirmation.",
@@ -5050,6 +5068,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "No-delete/no-AWS safety boundary recorded",
+            "Triage False Leads ruled out",
             "EKS cost driver analysis passed output captured",
             "Compute over-request evidence captured",
             "Unknown owner evidence captured",
@@ -5060,6 +5079,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["usage.csv", "services.txt", "storage.txt", "no AWS", "no delete"],
+            ["triage-notes.md", "False Leads", "low utilization", "unknown owner", "LoadBalancer age", "savings without rollback"],
             [
                 "payments,checkout,6000,900",
                 "payments,worker,4000,350",
@@ -5077,6 +5097,7 @@ DEEPENED_LAB_UPDATES = {
     "build-platform-career-proof-pack": {
         "worksheet_prompts": [
             "Record the job-skill packet, evidence inventory, README template, and public-safe redaction boundary.",
+            "Read triage-notes.md and list the False Leads ruled out before publishing career claims.",
             "Paste repeated target skills and the platform domains covered by the selected lab evidence.",
             "Paste selected lab artifacts, command/validator proof, decision evidence, rollback evidence, and missing proof.",
             "Write one portfolio proof section with problem, environment, commands, decision, validation, and talking points.",
@@ -5085,6 +5106,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric": [
             "Preserves the public-safe evidence boundary and avoids secrets, customer data, or private identifiers.",
+            "Uses triage notes to rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.",
             "Maps repeated target skills to concrete Platform Academy lab artifacts and domains.",
             "Cites commands, validators, decisions, rollback notes, and missing proof instead of broad claims.",
             "Completes a portfolio README proof section with problem, environment, command, decision, validation, and rollback.",
@@ -5093,6 +5115,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "validation_checks": [
             "Public-safe redaction boundary recorded",
+            "Triage False Leads ruled out",
             "Repeated target skills captured",
             "Lab artifacts and validators mapped",
             "Portfolio proof README completed",
@@ -5102,6 +5125,7 @@ DEEPENED_LAB_UPDATES = {
         ],
         "rubric_evidence_terms": [
             ["job-skills.txt", "evidence-inventory.md", "public", "redaction"],
+            ["triage-notes.md", "False Leads", "completed labs", "duty-only", "STAR", "redaction"],
             ["Kubernetes, Terraform, AWS, CI/CD", "EKS, Helm, ArgoCD", "Docker, supply chain"],
             ["Candidate artifacts", "Missing proof to collect", "verify-full-labs.sh", "Rollback"],
             ["completed-proof-readme.md", "Problem", "Environment", "Interview Talking Points"],
@@ -5452,6 +5476,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "create-platform-golden-path": [
         "labs/platform-academy/create-platform-golden-path/README.md",
+        "labs/platform-academy/create-platform-golden-path/triage-notes.md",
         "labs/platform-academy/create-platform-golden-path/service-template.md",
         "labs/platform-academy/create-platform-golden-path/ready-service-template.md",
         "labs/platform-academy/create-platform-golden-path/catalog-info.yaml",
@@ -5533,6 +5558,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "audit-eks-cost-drivers": [
         "labs/platform-academy/audit-eks-cost-drivers/README.md",
+        "labs/platform-academy/audit-eks-cost-drivers/triage-notes.md",
         "labs/platform-academy/audit-eks-cost-drivers/usage.csv",
         "labs/platform-academy/audit-eks-cost-drivers/services.txt",
         "labs/platform-academy/audit-eks-cost-drivers/storage.txt",
@@ -5547,6 +5573,7 @@ LAB_ARTIFACT_PATHS = {
     ],
     "build-platform-career-proof-pack": [
         "labs/platform-academy/build-platform-career-proof-pack/README.md",
+        "labs/platform-academy/build-platform-career-proof-pack/triage-notes.md",
         "labs/platform-academy/build-platform-career-proof-pack/job-skills.txt",
         "labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md",
         "labs/platform-academy/build-platform-career-proof-pack/readme-template.md",

@@ -601,8 +601,8 @@ def test_practical_platform_labs_expose_specific_evidence_guides():
             },
         },
         "create-platform-golden-path": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"required inputs", "missing SLO dashboard", "adoption metrics", "readiness gates"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "required inputs", "missing SLO dashboard", "adoption metrics", "readiness gates"},
         },
         "write-slo-backed-runbook": {
             "artifacts": {"evidence-template.md", "triage-notes.md"},
@@ -617,12 +617,12 @@ def test_practical_platform_labs_expose_specific_evidence_guides():
             "terms": {"False Leads", "SEV-2", "0.2% to 9.4%", "revision 42", "Communications lead"},
         },
         "audit-eks-cost-drivers": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"over-requested", "abandoned LoadBalancer", "expected savings", "review cadence"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "over-requested", "abandoned LoadBalancer", "expected savings", "review cadence"},
         },
         "build-platform-career-proof-pack": {
-            "artifacts": {"evidence-template.md"},
-            "terms": {"public-safe", "repeated target skills", "incident response", "release safety"},
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "public-safe", "repeated target skills", "incident response", "release safety"},
         },
     }
 
@@ -1199,6 +1199,129 @@ def test_release_pipeline_lab_feedback_tracks_false_leads_and_gate_chain():
     assert gate_feedback["status"] == "strong"
     assert rollout_feedback["status"] == "strong"
     assert rollback_feedback["status"] == "strong"
+
+
+def test_golden_path_lab_feedback_tracks_product_false_leads():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(9)})
+
+    response = client.post(
+        "/api/platform-academy/labs/create-platform-golden-path/submission",
+        json={
+            "user_id": "lab-golden-path-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed service-template.md and catalog-info.yaml; no template engine and no cluster needed.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out generated files, catalog presence, "
+                    "smooth first run, and optional metadata."
+                ),
+                "worksheet-2": (
+                    "Required Inputs, Generated artifacts, Run as non-root, Production readiness review, "
+                    "and Golden path readiness analysis passed output captured."
+                ),
+                "worksheet-3": (
+                    "pagerduty.com/service-id: missing and platform.example.com/slo-dashboard: missing; "
+                    "runbook and cost_center need concrete owner metadata."
+                ),
+                "worksheet-4": "Block the starting service template for production onboarding until ownership metadata is complete.",
+                "worksheet-5": "Adoption Metrics, reliability metrics, launch gates, and owner validation recorded.",
+                "worksheet-6": "fixed-catalog-info.yaml, decision-record.md, validate output, evidence-template.md, no-runtime saved.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "generated-files" in item["criterion"])
+    inputs_feedback = next(item for item in feedback if "Captures required inputs" in item["criterion"])
+    metadata_feedback = next(item for item in feedback if "missing pager" in item["criterion"])
+    decision_feedback = next(item for item in feedback if "Blocks production onboarding" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert inputs_feedback["status"] == "strong"
+    assert metadata_feedback["status"] == "strong"
+    assert decision_feedback["status"] == "strong"
+
+
+def test_cost_lab_feedback_tracks_delete_first_false_leads():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(9)})
+
+    response = client.post(
+        "/api/platform-academy/labs/audit-eks-cost-drivers/submission",
+        json={
+            "user_id": "lab-cost-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed usage.csv, services.txt, storage.txt; no AWS access and no delete action.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out low utilization, unknown owner, "
+                    "LoadBalancer age, and savings without rollback."
+                ),
+                "worksheet-2": (
+                    "payments,checkout,6000,900; payments,worker,4000,350; default,load-test,3000,0; "
+                    "EKS cost driver analysis passed with Compute right-size candidates and Quick-win monthly exposure."
+                ),
+                "worksheet-3": "abandoned-demo LoadBalancer and abandoned-cache PVC have Expected Savings and architecture review notes.",
+                "worksheet-4": "quick wins need Reliability Risk and owner confirmation before delete actions.",
+                "worksheet-5": "Expected Savings, Restore previous requests rollback, Weekly: unknown owner cadence recorded.",
+                "worksheet-6": "recommendations.md, validate output, cleanup, evidence-template.md, and no-AWS note saved.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "utilization-only" in item["criterion"])
+    compute_feedback = next(item for item in feedback if "over-requested workloads" in item["criterion"])
+    waste_feedback = next(item for item in feedback if "abandoned LoadBalancer" in item["criterion"])
+    cadence_feedback = next(item for item in feedback if "review cadence" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert compute_feedback["status"] == "strong"
+    assert waste_feedback["status"] == "strong"
+    assert cadence_feedback["status"] == "strong"
+
+
+def test_career_proof_lab_feedback_tracks_claim_quality_false_leads():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/build-platform-career-proof-pack/submission",
+        json={
+            "user_id": "lab-career-proof-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed job-skills.txt and evidence-inventory.md with public redaction boundary.",
+                "worksheet-1": "triage-notes.md False Leads rule out completed labs, duty-only bullets, weak STAR, and redaction gaps.",
+                "worksheet-2": "Kubernetes, Terraform, AWS, CI/CD plus EKS, Helm, ArgoCD and Docker, supply chain domains mapped.",
+                "worksheet-3": "Candidate artifacts, Missing proof to collect, verify-full-labs.sh, and Rollback evidence cited.",
+                "worksheet-4": "completed-proof-readme.md includes Problem, Environment, and Interview Talking Points.",
+                "worksheet-5": "resume-bullets.md and star-stories.md cover Incident Response, Security, Cost, and Release Safety.",
+                "worksheet-6": (
+                    "validate output, screenshots, diagrams, evidence-template.md, stronger evidence, "
+                    "and Career proof pack analysis passed saved."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "lab-count proof" in item["criterion"])
+    skill_feedback = next(item for item in feedback if "Maps repeated target skills" in item["criterion"])
+    proof_feedback = next(item for item in feedback if "Completes a portfolio README" in item["criterion"])
+    star_feedback = next(item for item in feedback if "resume bullets and STAR" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert skill_feedback["status"] == "strong"
+    assert proof_feedback["status"] == "strong"
+    assert star_feedback["status"] == "strong"
 
 
 def test_sre_lab_feedback_tracks_slo_evidence_and_owner_split():

@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/create-platform-golden-path"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/golden_path_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/golden-path-evidence.md"
 run_analyzer=false
@@ -57,7 +58,11 @@ else
 fi
 
 echo
+echo "Captured golden-path triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged platform golden-path review bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/create-platform-golden-path/triage-notes.md"
 echo "  sed -n '1,220p' labs/platform-academy/create-platform-golden-path/service-template.md"
 echo "  sed -n '1,220p' labs/platform-academy/create-platform-golden-path/catalog-info.yaml"
 echo "  diff -u labs/platform-academy/create-platform-golden-path/service-template.md labs/platform-academy/create-platform-golden-path/ready-service-template.md || true"

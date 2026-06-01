@@ -6,6 +6,7 @@ Start with owner cleanup and right-sizing proposals. Do not delete shared resour
 
 ## Findings
 
+- The triage notes rule out deleting from low utilization alone, treating unknown owner as approval, relying only on resource age, and making savings claims without reliability risk and rollback.
 - `payments/checkout` and `payments/worker` request far more CPU and memory than they use.
 - `default/load-test` has zero CPU and memory usage with owner `unknown`.
 - `default/abandoned-demo` is a LoadBalancer with estimated monthly cost.

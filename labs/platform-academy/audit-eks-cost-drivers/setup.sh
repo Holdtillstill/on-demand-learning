@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/audit-eks-cost-drivers"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/cost_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/eks-cost-evidence.md"
 run_analyzer=false
@@ -57,7 +58,11 @@ else
 fi
 
 echo
+echo "Captured EKS cost triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged EKS cost evidence bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/audit-eks-cost-drivers/triage-notes.md"
 echo "  sed -n '1,160p' labs/platform-academy/audit-eks-cost-drivers/usage.csv"
 echo "  sed -n '1,160p' labs/platform-academy/audit-eks-cost-drivers/services.txt"
 echo "  sed -n '1,160p' labs/platform-academy/audit-eks-cost-drivers/storage.txt"

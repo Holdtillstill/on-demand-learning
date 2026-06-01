@@ -1,5 +1,13 @@
 # Golden Path Evidence Template
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False lead about generated files:
+- False lead about catalog presence as ownership proof:
+- False lead about smooth first run:
+- False lead about optional metadata:
+
 ## Template Contract Evidence
 
 - Required service inputs:

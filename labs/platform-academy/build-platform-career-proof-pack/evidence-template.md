@@ -1,5 +1,14 @@
 # Career Proof Pack Evidence Template
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False lead about completed-lab count:
+- False lead about duty-only resume bullets:
+- False lead about STAR story without validation:
+- False lead about screenshots or diagrams without claim evidence:
+- Public-safe redaction false lead:
+
 ## Skill Demand Evidence
 
 - Repeated target skills:

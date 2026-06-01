@@ -18,6 +18,7 @@ Inspect the skill demand and evidence inventory:
 
 ```bash
 bash labs/platform-academy/build-platform-career-proof-pack/setup.sh --evidence /tmp/career-proof-evidence.md
+sed -n '1,220p' labs/platform-academy/build-platform-career-proof-pack/triage-notes.md
 sed -n '1,160p' labs/platform-academy/build-platform-career-proof-pack/job-skills.txt
 sed -n '1,200p' labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md
 sed -n '1,180p' labs/platform-academy/build-platform-career-proof-pack/readme-template.md
@@ -36,6 +37,7 @@ diff -u labs/platform-academy/build-platform-career-proof-pack/readme-template.m
 
 Find:
 
+- The triage False Leads that make a portfolio claim sound stronger than its evidence.
 - Which platform skills repeat across target roles.
 - Which labs prove Kubernetes, Terraform, security, SRE, CI/CD, Docker, cost, and ownership judgment.
 - Which proof is missing before a portfolio claim would be credible.
@@ -74,6 +76,7 @@ python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_anal
 ## Success Criteria
 
 - You map repeated job skills to lab artifacts.
+- You rule out false confidence from lab lists, duty-only bullets, weak STAR stories, screenshots without context, and unredacted proof.
 - You complete one proof README with problem, environment, commands, decision, validation, rollback, and talking points.
 - You write resume bullets with action, platform scope, and impact.
 - You write STAR stories for incident response, security, cost, and release safety.

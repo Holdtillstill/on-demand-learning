@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/build-platform-career-proof-pack"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 ANALYZER="$LAB_DIR/career_proof_analyzer.py"
+TRIAGE="$LAB_DIR/triage-notes.md"
 
 evidence_file="/tmp/career-proof-evidence.md"
 mode="no-cluster"
@@ -67,7 +68,11 @@ else
 fi
 
 echo
+echo "Captured career proof triage notes:"
+sed -n '1,220p' "$TRIAGE"
+echo
 echo "Staged career proof review bundle:"
+echo "  sed -n '1,220p' labs/platform-academy/build-platform-career-proof-pack/triage-notes.md"
 echo "  sed -n '1,160p' labs/platform-academy/build-platform-career-proof-pack/job-skills.txt"
 echo "  sed -n '1,200p' labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md"
 echo "  sed -n '1,220p' labs/platform-academy/build-platform-career-proof-pack/readme-template.md"

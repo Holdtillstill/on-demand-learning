@@ -6,6 +6,7 @@ Block the starting template as incomplete for production onboarding.
 
 ## Findings
 
+- The triage notes rule out treating generated files, catalog presence, a smooth first run, or optional ownership metadata as enough for production onboarding.
 - `service-template.md` names the right artifact categories, but it does not define enough readiness gates.
 - `catalog-info.yaml` has `pagerduty.com/service-id: missing`.
 - `catalog-info.yaml` has `platform.example.com/slo-dashboard: missing`.

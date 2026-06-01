@@ -16,6 +16,7 @@ No AWS Cost Explorer access is required. Use the local CSV and text snapshots. D
 
 ```bash
 bash labs/platform-academy/audit-eks-cost-drivers/setup.sh --evidence /tmp/eks-cost-evidence.md
+sed -n '1,220p' labs/platform-academy/audit-eks-cost-drivers/triage-notes.md
 sed -n '1,160p' labs/platform-academy/audit-eks-cost-drivers/usage.csv
 sed -n '1,120p' labs/platform-academy/audit-eks-cost-drivers/services.txt
 sed -n '1,120p' labs/platform-academy/audit-eks-cost-drivers/storage.txt
@@ -36,6 +37,7 @@ python3 labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py \
 
 Find:
 
+- The triage False Leads that turn cost review into unsafe deletion.
 - Workloads whose requests are much higher than usage.
 - Unknown owners.
 - Abandoned LoadBalancer Services.
@@ -58,6 +60,7 @@ bash labs/platform-academy/audit-eks-cost-drivers/validate.sh --evidence /tmp/ek
 ## Success Criteria
 
 - You rank compute, LoadBalancer, and storage waste.
+- You rule out false confidence from low utilization, unknown owner, resource age, and savings without rollback.
 - You use analyzer output to support the ranking and owner split.
 - You attach owner, expected savings, reliability risk, and rollback to each recommendation.
 - You avoid deleting anything without ownership confirmation.

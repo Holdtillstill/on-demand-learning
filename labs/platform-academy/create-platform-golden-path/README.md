@@ -18,6 +18,7 @@ Inspect the starting template and catalog metadata:
 
 ```bash
 bash labs/platform-academy/create-platform-golden-path/setup.sh --evidence /tmp/golden-path-evidence.md
+sed -n '1,220p' labs/platform-academy/create-platform-golden-path/triage-notes.md
 sed -n '1,220p' labs/platform-academy/create-platform-golden-path/service-template.md
 sed -n '1,160p' labs/platform-academy/create-platform-golden-path/catalog-info.yaml
 sed -n '1,180p' labs/platform-academy/create-platform-golden-path/evidence-template.md
@@ -46,6 +47,7 @@ python3 labs/platform-academy/create-platform-golden-path/golden_path_analyzer.p
 
 Find:
 
+- The triage False Leads that make a template look ready before it is a usable platform product.
 - Which service inputs are required before generation.
 - Which generated artifacts are expected.
 - Whether ownership, SLO dashboard, pager rotation, runbook, and cost center are present.
@@ -69,6 +71,7 @@ bash labs/platform-academy/create-platform-golden-path/validate.sh --evidence /t
 ## Success Criteria
 
 - You block the starting catalog metadata until missing ownership and observability fields are filled.
+- You rule out false confidence from generated files, catalog presence, smooth first run, and optional ownership metadata.
 - You define required inputs, generated artifacts, secure defaults, and launch gates.
 - You explain the first-run developer experience from questionnaire to production readiness review.
 - You name the metrics that prove whether the golden path is actually useful.

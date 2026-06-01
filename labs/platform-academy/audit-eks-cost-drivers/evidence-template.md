@@ -1,5 +1,13 @@
 # EKS Cost Driver Evidence Template
 
+## Triage Notes And False Leads
+
+- Triage notes reviewed:
+- False lead about low utilization:
+- False lead about unknown owner:
+- False lead about resource age:
+- False lead about savings without rollback:
+
 ## Compute Waste Evidence
 
 - Over-requested workload rows:
