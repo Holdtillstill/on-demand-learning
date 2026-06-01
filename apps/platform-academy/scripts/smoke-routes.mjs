@@ -24,7 +24,7 @@ const ROUTES = [
   {
     path: "/labs",
     heading: "Labs for incidents and architecture reviews",
-    visibleText: ["Evidence journal", "Selected lab", "Cluster setup included"],
+    visibleText: ["Evidence journal", "Starter incident path", "Selected lab", "Cluster setup included"],
   },
   {
     path: "/labs/trace-service-to-pod",

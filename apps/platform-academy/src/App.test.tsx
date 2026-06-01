@@ -1125,6 +1125,14 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Labs for incidents and architecture reviews" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Starter incident path")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Begin with live-feeling incidents" })).toBeInTheDocument();
+    expect(screen.getByText("1 priority labs")).toBeInTheDocument();
+    expect(screen.getByText("Service routing incident")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open starter lab: trace service traffic to ready pods/i })).toHaveAttribute(
+      "href",
+      "/labs/trace-service-to-pod"
+    );
     expect(screen.getAllByText(/In progress · 50%/).length).toBeGreaterThan(0);
     expect(screen.getByText("50% workbook score")).toBeInTheDocument();
     expect(screen.getByText("1 cluster-ready / 1 portfolio-grade / 1 active / 1 full lab")).toBeInTheDocument();

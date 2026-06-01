@@ -126,6 +126,28 @@ const labRuntimeLabels = {
   Files: "File-only"
 } as const;
 type LabRuntimeFilter = keyof typeof labRuntimeLabels;
+const starterLabPath = [
+  {
+    slug: "trace-service-to-pod",
+    label: "Service routing incident",
+    proof: "Selector, Pod label, EndpointSlice, fix, and cleanup evidence."
+  },
+  {
+    slug: "debug-crashloop-imagepull",
+    label: "First-response triage",
+    proof: "CrashLoopBackOff, ImagePullBackOff, previous logs, events, and owner split."
+  },
+  {
+    slug: "review-yaml-before-apply",
+    label: "Safe manifest review",
+    proof: "Risk inventory, false leads, dry-run boundary, vendor questions, and safer baseline."
+  },
+  {
+    slug: "debug-irsa-access-denied",
+    label: "Cloud access handoff",
+    proof: "ServiceAccount identity, IAM trust subject, CloudTrail denial, and least-privilege fix."
+  }
+] as const;
 const rubricStatusLabels: Record<string, string> = {
   missing: "Missing",
   "needs-evidence": "Needs evidence",
@@ -2239,6 +2261,8 @@ function LabsPage({ data }: { data: AcademyData }) {
         </div>
       </header>
 
+      <LabStarterPath data={data} />
+
       <section className="toolbar compact canonical-toolbar" aria-label="Lab filters">
         {portfolioLabCount > 0 ? (
           <div className="segmented lab-scope-filter">
@@ -2523,6 +2547,44 @@ function LabCard({ lab, completed, submission }: { lab: PlatformLab; completed: 
         ))}
       </div>
     </Link>
+  );
+}
+
+function LabStarterPath({ data }: { data: AcademyData }) {
+  const starterLabs = starterLabPath.flatMap((item) => {
+    const lab = labForSlug(data, item.slug);
+    return lab ? [{ ...item, lab, submission: labSubmissionFor(data, lab.slug) }] : [];
+  });
+
+  if (!starterLabs.length) return null;
+
+  return (
+    <section className="lab-starter-path" aria-label="Starter incident path">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Starter incident path</p>
+          <h2>Begin with live-feeling incidents</h2>
+        </div>
+        <span>{starterLabs.length} priority labs</span>
+      </div>
+      <div className="lab-starter-path-grid">
+        {starterLabs.map((item, index) => (
+          <Link className="lab-starter-step" to={`/labs/${item.lab.slug}`} aria-label={`Open starter lab: ${item.lab.title}`} key={item.lab.slug}>
+            <span className="lab-starter-step-number">{index + 1}</span>
+            <div>
+              <p className="eyebrow">{item.label}</p>
+              <strong>{item.lab.title}</strong>
+              <span>{item.proof}</span>
+              <div className="lab-starter-meta">
+                <LabRuntimeBadge lab={item.lab} />
+                <LabSubmissionBadge submission={item.submission} />
+              </div>
+            </div>
+            <ArrowRight aria-hidden="true" />
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
