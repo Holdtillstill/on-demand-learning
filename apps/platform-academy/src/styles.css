@@ -1567,20 +1567,20 @@ main {
 
 .interview-pack-scroll {
   display: grid;
-  grid-auto-columns: minmax(224px, 272px);
-  grid-auto-flow: column;
-  grid-template-columns: none;
-  gap: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 8px;
-  scroll-snap-type: x proximity;
+  grid-auto-flow: row;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 224px), 1fr));
+  gap: 10px;
+  max-height: 292px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+  scroll-snap-type: none;
   scrollbar-color: rgba(132, 247, 220, 0.46) rgba(255, 255, 255, 0.06);
   scrollbar-width: thin;
 }
 
 .interview-pack-scroll::-webkit-scrollbar {
-  height: 8px;
+  width: 8px;
 }
 
 .interview-pack-scroll::-webkit-scrollbar-track {
@@ -1609,9 +1609,9 @@ main {
 
 .interview-page .canonical-toolbar .topics {
   grid-column: 1 / -1;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  padding-bottom: 2px;
+  flex-wrap: wrap;
+  overflow: visible;
+  padding-bottom: 0;
 }
 
 .interview-page .canonical-toolbar .topics button {
@@ -2221,18 +2221,19 @@ main {
   }
 
   .interview-pack-scroll {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 10px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 8px;
-    scroll-snap-type: x proximity;
+    max-height: 380px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0 4px 0 0;
+    scroll-snap-type: none;
   }
 
   .interview-pack-card {
-    flex: 0 0 min(284px, 82vw);
     min-height: 106px;
-    scroll-snap-align: start;
+    scroll-snap-align: unset;
   }
 
   .product-topline > div:last-child {
@@ -3993,6 +3994,7 @@ pre {
     rgba(6, 18, 16, 0.74);
   color: var(--pa-text);
   padding: 10px 12px;
+  scroll-snap-align: unset;
 }
 
 .interview-pack-card:hover,
@@ -4031,6 +4033,10 @@ pre {
 .interview-focus,
 .practice-task span {
   color: var(--pa-text-soft);
+}
+
+.term-card span {
+  color: #9ffff0;
 }
 
 .question-number {

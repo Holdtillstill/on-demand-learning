@@ -641,10 +641,9 @@ async function assertPortfolioLabUi(page, portfolioLabs) {
   await expect(page.getByText("Cluster setup included").first()).toBeVisible({ timeout: TIMEOUT_MS });
   await page.getByRole("button", { name: "All runtimes", exact: true }).click();
   await expect(page.getByText(`${EXPECTED_PORTFOLIO_LABS} portfolio-grade`, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
-  await expect(page.getByRole("button", { name: "Portfolio-grade", exact: true })).toBeVisible({ timeout: TIMEOUT_MS });
+  await expect(page.getByRole("button", { name: "Portfolio-grade", exact: true })).toHaveCount(0);
   await expect(page.getByText(firstPortfolioLab.portfolio_focus, { exact: true }).first()).toBeVisible({ timeout: TIMEOUT_MS });
 
-  await page.getByRole("button", { name: "Portfolio-grade", exact: true }).click();
   queueRows = page.locator(".lab-queue .lab-queue-row");
   await expect(queueRows).toHaveCount(EXPECTED_PORTFOLIO_LABS, { timeout: TIMEOUT_MS });
   for (const lab of portfolioLabs) {
