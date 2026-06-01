@@ -35,6 +35,15 @@ No-cluster path:
 bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md
 ```
 
+Run the local analyzer:
+
+```bash
+python3 labs/platform-academy/trace-service-to-pod/service_route_analyzer.py \
+  --start labs/platform-academy/trace-service-to-pod/start.yaml \
+  --fixed labs/platform-academy/trace-service-to-pod/fixed.yaml \
+  --transcript labs/platform-academy/trace-service-to-pod/broken-evidence.txt
+```
+
 ## Investigation
 
 Run these commands before opening the solution:
@@ -47,6 +56,7 @@ kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout -o 
 
 Capture the selector, the Pod labels, and the EndpointSlice result in your worksheet.
 If you are using the no-cluster transcript, capture the same fields from `broken-evidence.txt`.
+Use the analyzer output to prove the selector mismatch and source-manifest fix before applying anything.
 
 ## Fix
 
@@ -81,6 +91,7 @@ bash labs/platform-academy/trace-service-to-pod/validate.sh --cluster
 
 - You can name the exact selector mismatch.
 - You captured evidence before changing the manifest.
+- You captured the local Service routing analyzer result.
 - Your evidence note names the Service selector, Pod label, EndpointSlice state, fix, validation, and cleanup.
 - The fixed manifest changes source control intent, not just the live Service.
 - Cleanup removes the disposable namespace.

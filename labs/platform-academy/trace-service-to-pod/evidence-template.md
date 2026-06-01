@@ -24,6 +24,7 @@
 - Command:
 - EndpointSlice result before fix:
 - EndpointSlice result after fix:
+- Local Service routing analyzer result:
 
 ## Fix Decision
 

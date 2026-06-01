@@ -4,8 +4,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 LAB_DIR="$ROOT/labs/platform-academy/trace-service-to-pod"
 START="$LAB_DIR/start.yaml"
+FIXED="$LAB_DIR/fixed.yaml"
 TEMPLATE="$LAB_DIR/evidence-template.md"
 TRANSCRIPT="$LAB_DIR/broken-evidence.txt"
+ANALYZER="$LAB_DIR/service_route_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
 mode="no-cluster"
@@ -67,6 +69,8 @@ if [[ "$mode" == "no-cluster" ]]; then
   echo "Captured broken-state transcript:"
   sed -n '1,220p' "$TRANSCRIPT"
   echo
+  python3 "$ANALYZER" --start "$START" --fixed "$FIXED" --transcript "$TRANSCRIPT"
+  echo
   echo "Next: fill $evidence_file, then run:"
   echo "  bash labs/platform-academy/trace-service-to-pod/validate.sh --evidence $evidence_file"
   exit 0
@@ -77,6 +81,7 @@ kubectl delete namespace payments --ignore-not-found >/dev/null
 kubectl apply -f "$START"
 kubectl rollout status deploy/checkout -n payments --timeout=90s
 prepare_evidence_note
+python3 "$ANALYZER" --start "$START" --fixed "$FIXED" --transcript "$TRANSCRIPT"
 
 echo
 echo "Broken Service lab is ready in namespace payments."

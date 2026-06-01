@@ -26,6 +26,17 @@ Expected evidence from the broken state:
 - `kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout` has no ready backend addresses for the checkout Pods.
 - `broken-evidence.txt` contains the same signals for learners using the no-cluster path.
 
+The local Service routing analyzer verifies the broken and fixed states without a cluster:
+
+```bash
+python3 labs/platform-academy/trace-service-to-pod/service_route_analyzer.py \
+  --start labs/platform-academy/trace-service-to-pod/start.yaml \
+  --fixed labs/platform-academy/trace-service-to-pod/fixed.yaml \
+  --transcript labs/platform-academy/trace-service-to-pod/broken-evidence.txt
+```
+
+Expected result: `Service routing analysis passed`, with selector-risk, Pod-label, EndpointSlice, fixed-target, and cleanup evidence.
+
 ## Fix
 
 Change the Service selector to match the Pod template labels:

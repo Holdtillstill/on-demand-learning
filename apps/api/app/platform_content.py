@@ -2825,21 +2825,35 @@ PLATFORM_LABS = [
             "kubectl describe svc checkout -n payments",
             "kubectl get pods -n payments --show-labels",
             "kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout",
+            (
+                "python3 labs/platform-academy/trace-service-to-pod/service_route_analyzer.py "
+                "--start labs/platform-academy/trace-service-to-pod/start.yaml "
+                "--fixed labs/platform-academy/trace-service-to-pod/fixed.yaml "
+                "--transcript labs/platform-academy/trace-service-to-pod/broken-evidence.txt"
+            ),
         ],
         "practice_steps": [
             "Read the Service selector and write down the label key/value it expects.",
             "Compare that selector with the labels on the checkout Pods.",
             "Confirm whether EndpointSlices have ready backend addresses.",
+            "Use the local analyzer to prove the selector mismatch and source-manifest fix.",
             "Apply the fixed manifest only after you can explain why the starting manifest fails.",
         ],
         "expected_evidence": [
             "The Service selector starts as app=checkout.",
             "The checkout Pods are labeled app=checkout-api.",
             "EndpointSlice output has no ready checkout backend addresses until the selector is fixed.",
+            "The local analyzer reports Service routing analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/trace-service-to-pod/validate.sh",
             "bash labs/platform-academy/trace-service-to-pod/validate.sh --evidence /tmp/trace-service-evidence.md",
+            (
+                "python3 labs/platform-academy/trace-service-to-pod/service_route_analyzer.py "
+                "--start labs/platform-academy/trace-service-to-pod/start.yaml "
+                "--fixed labs/platform-academy/trace-service-to-pod/fixed.yaml "
+                "--transcript labs/platform-academy/trace-service-to-pod/broken-evidence.txt"
+            ),
             "kubectl apply -f labs/platform-academy/trace-service-to-pod/fixed.yaml",
             "kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout -o wide",
             "kubectl get pods -n payments -l app=checkout-api --show-labels",
@@ -4219,7 +4233,7 @@ DEEPENED_LAB_UPDATES = {
             "Pod label evidence captured",
             "EndpointSlice empty-backend evidence captured",
             "Source manifest fix identified",
-            "Post-fix EndpointSlice validation captured",
+            "Post-fix EndpointSlice validation and local analysis captured",
             "Cleanup or fallback note recorded",
         ],
         "rubric_evidence_terms": [
@@ -4228,7 +4242,7 @@ DEEPENED_LAB_UPDATES = {
             ["Pod label", "app=checkout-api", "Pod labels"],
             ["EndpointSlice", "no ready", "empty", "backends"],
             ["source-manifest", "fixed.yaml", "selector", "live patch"],
-            ["post-fix", "EndpointSlice", "cleanup", "fallback", "validate"],
+            ["post-fix", "EndpointSlice", "cleanup", "fallback", "validate", "Service routing analysis passed"],
         ],
     },
     "debug-crashloop-imagepull": {
@@ -4974,6 +4988,7 @@ LAB_ARTIFACT_PATHS = {
         "labs/platform-academy/trace-service-to-pod/evidence-template.md",
         "labs/platform-academy/lib/cluster-safety.sh",
         "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/trace-service-to-pod/service_route_analyzer.py",
         "labs/platform-academy/trace-service-to-pod/setup.sh",
         "labs/platform-academy/trace-service-to-pod/validate.sh",
         "labs/platform-academy/trace-service-to-pod/cleanup.sh",

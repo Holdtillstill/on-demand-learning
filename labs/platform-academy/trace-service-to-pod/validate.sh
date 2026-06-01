@@ -7,6 +7,7 @@ START="$LAB_DIR/start.yaml"
 FIXED="$LAB_DIR/fixed.yaml"
 EVIDENCE="$LAB_DIR/broken-evidence.txt"
 TEMPLATE="$LAB_DIR/evidence-template.md"
+ANALYZER="$LAB_DIR/service_route_analyzer.py"
 source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 source "$ROOT/labs/platform-academy/lib/evidence-check.sh"
 
@@ -61,6 +62,9 @@ grep -q "app=checkout-api,tier=web" "$EVIDENCE" || fail "broken-evidence.txt sho
 grep -q "ENDPOINTS" "$EVIDENCE" || fail "broken-evidence.txt should include EndpointSlice evidence"
 grep -q "## Service Selector Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for Service selector evidence"
 grep -q "## EndpointSlice Evidence" "$TEMPLATE" || fail "evidence-template.md should prompt for EndpointSlice evidence"
+grep -q "Service routing analysis passed" "$ANALYZER" || fail "service_route_analyzer.py should report a successful local analysis"
+
+python3 "$ANALYZER" --start "$START" --fixed "$FIXED" --transcript "$EVIDENCE" --quiet
 
 run_structural_check
 echo "File checks passed for trace-service-to-pod."
@@ -72,6 +76,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "Pod label app=checkout-api" "Pod label|Pod labels|app[=:][[:space:]]*checkout-api|app=checkout-api"
   require_evidence_match "$evidence_file" "EndpointSlice evidence" "EndpointSlice|endpointslice"
   require_evidence_match "$evidence_file" "empty or no-ready backend evidence" "no ready|empty|<none>|no backend|no addresses"
+  require_evidence_match "$evidence_file" "local Service routing analyzer evidence" "Service routing analysis passed|Service routing analyzer|Selector risk|EndpointSlice risk"
   require_evidence_match "$evidence_file" "source manifest fix" "fixed\\.yaml|source-manifest|source manifest|source fix|fixed manifest"
   require_evidence_match "$evidence_file" "validation plus cleanup or fallback" "validate|validation|cleanup|fallback|post-fix"
   echo "Evidence checks passed for trace-service-to-pod."

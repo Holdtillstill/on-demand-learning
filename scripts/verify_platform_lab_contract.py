@@ -43,8 +43,15 @@ REQUIRED_ROOT_README_SNIPPETS = {
 }
 DEEPENED_LAB_CONTRACT = {
     "trace-service-to-pod": {
-        "files": {"broken-evidence.txt", "evidence-template.md"},
-        "terms": {"Service selector", "Pod label", "EndpointSlice", "source-manifest", "cleanup"},
+        "files": {"broken-evidence.txt", "evidence-template.md", "service_route_analyzer.py"},
+        "terms": {
+            "Service selector",
+            "Pod label",
+            "EndpointSlice",
+            "source-manifest",
+            "cleanup",
+            "Service routing analysis passed",
+        },
     },
     "debug-crashloop-imagepull": {
         "files": {"broken-evidence.txt", "evidence-template.md"},
