@@ -37,6 +37,7 @@ python3 labs/platform-academy/trace-network-path/network_path_analyzer.py \
 Optional local broken-state setup:
 
 ```bash
+bash labs/platform-academy/trace-network-path/setup.sh --preflight
 bash labs/platform-academy/trace-network-path/setup.sh --cluster --evidence /tmp/network-path-evidence.md
 ```
 

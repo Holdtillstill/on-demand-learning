@@ -83,7 +83,13 @@ if [[ "$mode" == "no-cluster" ]]; then
   exit 0
 fi
 
-preflight_kube_lab "Trace Service traffic to ready Pods" "payments" "$START"
+preflight_kube_lab \
+  "Trace Service traffic to ready Pods" \
+  "payments" \
+  "$START" \
+  "create|deployments.apps|payments" \
+  "create|services|payments" \
+  "get|endpointslices.discovery.k8s.io|payments"
 if [[ "$preflight_only" == true ]]; then
   exit 0
 fi

@@ -40,6 +40,7 @@ kubectl create --dry-run=client --validate=false -f labs/platform-academy/debug-
 Optional local broken-state setup:
 
 ```bash
+bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --preflight
 bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --cluster --evidence /tmp/alb-health-path-evidence.md
 ```
 

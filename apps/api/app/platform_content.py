@@ -3632,6 +3632,7 @@ RUNNABLE_LAB_UPDATES = {
             "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --evidence /tmp/tenant-boundaries-evidence.md",
             "kubectl create --dry-run=client --validate=false -f labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
             "sed -n '1,180p' labs/platform-academy/audit-tenant-boundaries/review.md",
+            "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --preflight",
             "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --cluster --evidence /tmp/tenant-boundaries-evidence.md",
         ],
         "commands": [
@@ -3790,6 +3791,7 @@ RUNNABLE_LAB_UPDATES = {
             "bash labs/platform-academy/trace-network-path/setup.sh --evidence /tmp/network-path-evidence.md",
             "sed -n '1,220p' labs/platform-academy/trace-network-path/incident-handoff.md",
             "sed -n '1,220p' labs/platform-academy/trace-network-path/network-evidence.md",
+            "bash labs/platform-academy/trace-network-path/setup.sh --preflight",
             "bash labs/platform-academy/trace-network-path/setup.sh --cluster --evidence /tmp/network-path-evidence.md",
         ],
         "commands": [
@@ -4090,6 +4092,7 @@ RUNNABLE_LAB_UPDATES = {
         "setup_commands": [
             "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --evidence /tmp/alb-health-path-evidence.md",
             "sed -n '1,160p' labs/platform-academy/debug-aws-alb-health-path/target-health.json",
+            "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --preflight",
             "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --cluster --evidence /tmp/alb-health-path-evidence.md",
         ],
         "commands": [

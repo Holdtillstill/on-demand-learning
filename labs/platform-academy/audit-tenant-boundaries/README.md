@@ -38,6 +38,7 @@ kubectl create --dry-run=client --validate=false -f labs/platform-academy/audit-
 Optional local broken-state setup:
 
 ```bash
+bash labs/platform-academy/audit-tenant-boundaries/setup.sh --preflight
 bash labs/platform-academy/audit-tenant-boundaries/setup.sh --cluster --evidence /tmp/tenant-boundaries-evidence.md
 ```
 

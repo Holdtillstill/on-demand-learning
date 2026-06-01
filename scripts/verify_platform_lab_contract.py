@@ -780,9 +780,9 @@ def verify_lab_review_mode_contract(full_labs: list[dict]) -> None:
     expected = {
         "trace-service-to-pod": "local cluster with preflight",
         "debug-crashloop-imagepull": "local cluster with preflight",
-        "trace-network-path": "optional local cluster",
-        "debug-aws-alb-health-path": "optional local cluster",
-        "audit-tenant-boundaries": "optional local cluster",
+        "trace-network-path": "local cluster with preflight",
+        "debug-aws-alb-health-path": "local cluster with preflight",
+        "audit-tenant-boundaries": "local cluster with preflight",
         "review-yaml-before-apply": "no-live-apply review",
         "diagnose-eks-ip-exhaustion": "captured evidence",
         "validate-helm-release-artifact": "artifact review",

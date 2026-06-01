@@ -69,6 +69,7 @@ preflight_kube_lab() {
   local lab_name="$1"
   local namespace="$2"
   local manifest="$3"
+  shift 3
 
   echo "Kubernetes lab preflight: $lab_name"
   echo "- Target namespace: $namespace"
@@ -96,10 +97,18 @@ preflight_kube_lab() {
 
   require_kube_permission create namespaces
   require_kube_permission delete namespaces
-  require_kube_permission create deployments.apps "$namespace"
-  require_kube_permission create services "$namespace"
   require_kube_permission get pods "$namespace"
   require_kube_permission get events "$namespace"
+
+  local permission_spec
+  local verb
+  local resource
+  local permission_namespace
+  for permission_spec in "$@"; do
+    IFS='|' read -r verb resource permission_namespace <<<"$permission_spec"
+    [[ -n "$verb" && -n "$resource" ]] || fail_cluster_safety "invalid preflight permission spec: $permission_spec"
+    require_kube_permission "$verb" "$resource" "$permission_namespace"
+  done
 
   if kubectl get namespace "$namespace" >/dev/null 2>&1; then
     echo "- Namespace state: $namespace already exists and setup will recreate it"

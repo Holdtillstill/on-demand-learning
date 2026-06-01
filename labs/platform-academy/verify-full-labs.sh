@@ -69,6 +69,14 @@ CLUSTER_LABS=(
   "debug-crashloop-imagepull"
 )
 
+PREFLIGHT_SETUP_LABS=(
+  "trace-service-to-pod"
+  "debug-crashloop-imagepull"
+  "trace-network-path"
+  "debug-aws-alb-health-path"
+  "audit-tenant-boundaries"
+)
+
 EVIDENCE_VALIDATION_LABS=(
   "trace-service-to-pod"
   "debug-crashloop-imagepull"
@@ -139,13 +147,16 @@ grep -q "already exists and is not empty" "$tmpdir/runner-workspace-existing.txt
 [[ -s "$tmpdir/solution-workspaces/trace-service-to-pod/artifacts/labs/platform-academy/trace-service-to-pod/README.md" ]] || fail "workspace --include-solution should copy source README.md"
 [[ -s "$tmpdir/solution-workspaces/trace-service-to-pod/artifacts/labs/platform-academy/trace-service-to-pod/solution.md" ]] || fail "workspace --include-solution should copy solution.md"
 
-for setup_lab in "${CLUSTER_LABS[@]}"; do
+for setup_lab in "${PREFLIGHT_SETUP_LABS[@]}"; do
   setup_script="$LAB_ROOT/$setup_lab/setup.sh"
   [[ -x "$setup_script" ]] || fail "$setup_lab/setup.sh is missing or not executable"
   bash -n "$setup_script"
   "$setup_script" --help >"$tmpdir/setup-help-$setup_lab.txt"
   grep -q -- "--preflight" "$tmpdir/setup-help-$setup_lab.txt" || fail "$setup_lab setup help should include --preflight"
   grep -q "preflight_kube_lab" "$setup_script" || fail "$setup_lab setup should run the shared Kubernetes preflight before cluster setup"
+done
+
+for setup_lab in "${CLUSTER_LABS[@]}"; do
   "$LAB_ROOT/run-lab.sh" setup "$setup_lab" --evidence "$tmpdir/$setup_lab-evidence.md" >"$tmpdir/runner-setup-$setup_lab.txt"
   [[ -s "$tmpdir/$setup_lab-evidence.md" ]] || fail "lab runner setup did not create evidence note for $setup_lab"
   grep -q "Captured broken-state transcript" "$tmpdir/runner-setup-$setup_lab.txt" || fail "lab runner setup did not print transcript for $setup_lab"

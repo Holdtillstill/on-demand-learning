@@ -13,14 +13,16 @@ source "$ROOT/labs/platform-academy/lib/cluster-safety.sh"
 
 mode="no-cluster"
 evidence_file="/tmp/alb-health-path-evidence.md"
+preflight_only=false
 
 usage() {
   cat <<'EOF'
 Usage:
-  bash labs/platform-academy/debug-aws-alb-health-path/setup.sh [--cluster] [--no-cluster] [--evidence <file>]
+  bash labs/platform-academy/debug-aws-alb-health-path/setup.sh [--cluster] [--preflight] [--no-cluster] [--evidence <file>]
 
 Options:
   --cluster      Apply the broken manifest to a disposable Kubernetes context.
+  --preflight    Check kubectl, context safety, API reachability, permissions, and namespace state, then exit.
   --no-cluster   Copy the evidence template and print the captured ALB/controller evidence. This is the default.
   --evidence     Evidence note path to create when it does not already exist.
 EOF
@@ -36,7 +38,12 @@ while [[ $# -gt 0 ]]; do
     --cluster)
       mode="cluster"
       ;;
+    --preflight)
+      mode="cluster"
+      preflight_only=true
+      ;;
     --no-cluster|--transcript)
+      [[ "$preflight_only" == false ]] || fail "--preflight is only valid for cluster setup"
       mode="no-cluster"
       ;;
     --evidence)
@@ -77,6 +84,19 @@ if [[ "$mode" == "no-cluster" ]]; then
   echo
   echo "Next: fill $evidence_file, then run:"
   echo "  bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --evidence $evidence_file"
+  exit 0
+fi
+
+preflight_kube_lab \
+  "Debug an AWS ALB health path" \
+  "payments" \
+  "$BROKEN" \
+  "create|ingresses.networking.k8s.io|payments" \
+  "create|services|payments" \
+  "create|pods|payments" \
+  "create|pods/exec|payments" \
+  "get|endpointslices.discovery.k8s.io|payments"
+if [[ "$preflight_only" == true ]]; then
   exit 0
 fi
 

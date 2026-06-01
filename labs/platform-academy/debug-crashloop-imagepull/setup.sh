@@ -83,7 +83,12 @@ if [[ "$mode" == "no-cluster" ]]; then
   exit 0
 fi
 
-preflight_kube_lab "Separate CrashLoopBackOff from ImagePullBackOff" "payments-debug" "$START"
+preflight_kube_lab \
+  "Separate CrashLoopBackOff from ImagePullBackOff" \
+  "payments-debug" \
+  "$START" \
+  "create|deployments.apps|payments-debug" \
+  "create|services|payments-debug"
 if [[ "$preflight_only" == true ]]; then
   exit 0
 fi
