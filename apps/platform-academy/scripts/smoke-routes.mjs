@@ -49,7 +49,7 @@ const SKIP_ALL_INTERVIEW_PACKS = process.env.SMOKE_SKIP_ALL_INTERVIEW_PACKS === 
 const EXPECTED_COURSES = readPositiveInteger("SMOKE_EXPECTED_COURSES", "EXPECTED_COURSES", 21);
 const EXPECTED_LESSONS = readPositiveInteger("SMOKE_EXPECTED_LESSONS", "EXPECTED_LESSONS", 84);
 const EXPECTED_LABS = readPositiveInteger("SMOKE_EXPECTED_LABS", "EXPECTED_LABS", 21);
-const EXPECTED_PORTFOLIO_LABS = readPositiveInteger("SMOKE_EXPECTED_PORTFOLIO_LABS", "EXPECTED_PORTFOLIO_LABS", 13);
+const EXPECTED_PORTFOLIO_LABS = readPositiveInteger("SMOKE_EXPECTED_PORTFOLIO_LABS", "EXPECTED_PORTFOLIO_LABS", 14);
 const EXPECTED_RESOURCES = readPositiveInteger("SMOKE_EXPECTED_RESOURCES", "EXPECTED_RESOURCES", 320);
 const EXPECTED_INTERVIEW_PACKS = readPositiveInteger("SMOKE_EXPECTED_INTERVIEW_PACKS", "EXPECTED_INTERVIEW_PACKS", 22);
 const EXPECTED_INTERVIEW_QUESTIONS = readPositiveInteger("SMOKE_EXPECTED_INTERVIEW_QUESTIONS", "EXPECTED_INTERVIEW_QUESTIONS", 219);
@@ -59,6 +59,7 @@ const PORTFOLIO_LAB_SLUGS = [
   "review-yaml-before-apply",
   "validate-helm-release-artifact",
   "diagnose-eks-ip-exhaustion",
+  "design-production-eks-review",
   "trace-network-path",
   "debug-aws-alb-health-path",
   "review-terraform-eks-plan",

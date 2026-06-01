@@ -11,7 +11,7 @@ USER_ID="${USER_ID:-platform-api-smoke-${SMOKE_RUN_ID}}"
 EXPECTED_COURSES="${EXPECTED_COURSES:-21}"
 EXPECTED_LESSONS="${EXPECTED_LESSONS:-84}"
 EXPECTED_LABS="${EXPECTED_LABS:-21}"
-EXPECTED_PORTFOLIO_LABS="${EXPECTED_PORTFOLIO_LABS:-13}"
+EXPECTED_PORTFOLIO_LABS="${EXPECTED_PORTFOLIO_LABS:-14}"
 EXPECTED_RESOURCES="${EXPECTED_RESOURCES:-320}"
 EXPECTED_INTERVIEW_PACKS="${EXPECTED_INTERVIEW_PACKS:-22}"
 EXPECTED_INTERVIEW_QUESTIONS="${EXPECTED_INTERVIEW_QUESTIONS:-219}"
@@ -273,6 +273,7 @@ expected_portfolio_slugs = {
     "review-yaml-before-apply",
     "validate-helm-release-artifact",
     "diagnose-eks-ip-exhaustion",
+    "design-production-eks-review",
     "trace-network-path",
     "debug-aws-alb-health-path",
     "review-terraform-eks-plan",

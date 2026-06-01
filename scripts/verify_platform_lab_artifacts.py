@@ -25,6 +25,7 @@ PORTFOLIO_LABS = [
     "review-yaml-before-apply",
     "validate-helm-release-artifact",
     "diagnose-eks-ip-exhaustion",
+    "design-production-eks-review",
     "trace-network-path",
     "debug-aws-alb-health-path",
     "review-terraform-eks-plan",
@@ -81,6 +82,13 @@ def json_doc(slug: str, filename: str) -> dict[str, Any]:
 
 def text_doc(slug: str, filename: str) -> str:
     return lab_path(slug, filename).read_text(encoding="utf-8")
+
+
+def text_line_matching(text: str, pattern: str, label: str) -> str:
+    for line in text.splitlines():
+        if re.search(pattern, line):
+            return line.strip()
+    fail(f"missing {label}")
 
 
 def mapping(value: Any, label: str) -> dict[str, Any]:
@@ -437,6 +445,115 @@ def verify_diagnose_eks_ip_exhaustion() -> None:
         require(owner in plan, f"remediation plan should assign {owner}")
     for term in ["not an application restart problem", "Blind node scaling: rejected", "capacity alerts"]:
         require(term in decision, f"decision record should include {term}")
+
+
+def verify_design_production_eks_review() -> None:
+    slug = "design-production-eks-review"
+    triage = text_doc(slug, "triage-notes.md")
+    review = text_doc(slug, "cluster-review.md")
+    launch = text_doc(slug, "launch-review.md")
+    template = text_doc(slug, "evidence-template.md")
+    analyzer = text_doc(slug, "production_review_analyzer.py")
+
+    for term in [
+        "public and private endpoint is not launch approval",
+        "One missing PDB is not a follow-up",
+        "snapshot policy is not restore proof",
+        "Cost labels are not optional after launch",
+        "Managed controller add-ons do not remove upgrade risk",
+        "blocked launch decision with owners",
+    ]:
+        require(term in triage, f"production EKS triage notes should include {term}")
+
+    for term in [
+        "Name: academy-prod",
+        "Region: us-west-2",
+        "Endpoint: public and private",
+        "Node groups: system, apps, stateful",
+        "NAT gateway per AZ is planned",
+        "LoadBalancer review is manual",
+        "No idle-request report exists",
+        "Check deprecated APIs before control-plane upgrade",
+        "controller add-ons have no version compatibility matrix",
+        "PDBs block managed node group rotation",
+    ]:
+        require(term in review, f"production EKS cluster review should include {term}")
+
+    system_line = text_line_matching(
+        review,
+        r"system-a\s+zone=us-west-2a\s+taints=CriticalAddonsOnly=true:NoSchedule",
+        "system node group placement",
+    )
+    require("CriticalAddonsOnly" in system_line, "system node group should be tainted for platform add-ons")
+    apps_a = text_line_matching(review, r"apps-a\s+zone=us-west-2a", "apps-a placement")
+    apps_b = text_line_matching(review, r"apps-b\s+zone=us-west-2b", "apps-b placement")
+    apps_c = text_line_matching(review, r"apps-c\s+zone=us-west-2c", "apps-c placement")
+    require("cost-center=platform" in apps_a and "cost-center=platform" in apps_b, "apps-a/apps-b should be labeled for cost ownership")
+    require("cost-center" not in apps_c, "apps-c should preserve the missing cost-center label risk")
+    require(
+        "stateful-a zone=us-west-2a" in review and "labels=workload=stateful" in review,
+        "stateful node group should expose single-AZ stateful placement",
+    )
+
+    checkout = text_line_matching(review, r"payments/checkout", "checkout workload")
+    worker = text_line_matching(review, r"payments/worker", "worker workload")
+    postgres = text_line_matching(review, r"data/postgres", "postgres workload")
+    alb = text_line_matching(review, r"ingress/alb", "ingress workload")
+    require(
+        "replicas=3" in checkout
+        and all(zone in checkout for zone in ["us-west-2a", "us-west-2b", "us-west-2c"])
+        and "pdb=maxUnavailable:1" in checkout,
+        "checkout should show a multi-AZ workload with a PDB",
+    )
+    require(
+        "replicas=1" in worker and "spread=us-west-2a" in worker and "pdb=missing" in worker,
+        "payments/worker should expose single-AZ placement and missing PDB",
+    )
+    require(
+        "replicas=1" in postgres and "volume=gp3-us-west-2a" in postgres and "recovery=restore-from-snapshot" in postgres,
+        "data/postgres should expose zonal storage and snapshot-only recovery evidence",
+    )
+    require(
+        "replicas=2" in alb and "us-west-2a" in alb and "us-west-2b" in alb,
+        "ingress/alb should expose two-AZ placement evidence",
+    )
+    require("Missing cost label on apps-c" in review, "cluster review should preserve the FinOps blocker")
+
+    for term in [
+        "Block production launch",
+        "`payments/worker` has `pdb=missing`",
+        "restore proof is required before launch",
+        "`apps-c` is missing a `cost-center` label",
+        "Controller add-ons have no documented version compatibility matrix",
+        "Deprecated API check is listed as a pause point but has no recorded output",
+        "Decide whether public endpoint access is required or should be narrowed",
+        "Automate idle LoadBalancer review",
+        "Add idle request and over-request reports",
+        "Document NAT gateway cost expectations",
+        "Platform owner",
+        "App owner",
+        "Data owner",
+        "FinOps owner",
+        "PDB exists for every critical workload",
+        "Restore drill proves the stateful recovery path",
+        "Every node group has cost labels",
+        "deprecated API scan and add-on compatibility matrix",
+    ]:
+        require(term in launch, f"production EKS launch review should include {term}")
+    require(
+        re.search(r"## Launch Blockers\b.*## Follow-Up Improvements", launch, re.DOTALL) is not None,
+        "launch review should separate blockers from follow-up improvements",
+    )
+
+    for heading in [
+        "## Triage Notes And False Leads",
+        "## Access And Resilience Evidence",
+        "## Cost And Upgrade Evidence",
+        "## Launch Decision Evidence",
+    ]:
+        require(heading in template, f"production EKS evidence template should include {heading}")
+    for term in ["Production EKS review analysis passed", "payments/worker is single-AZ", "Owner split"]:
+        require(term in analyzer, f"production EKS analyzer should include {term}")
 
 
 def verify_trace_network_path() -> None:
@@ -844,6 +961,7 @@ VERIFY_BY_LAB = {
     "review-yaml-before-apply": verify_review_yaml_before_apply,
     "validate-helm-release-artifact": verify_validate_helm_release_artifact,
     "diagnose-eks-ip-exhaustion": verify_diagnose_eks_ip_exhaustion,
+    "design-production-eks-review": verify_design_production_eks_review,
     "trace-network-path": verify_trace_network_path,
     "debug-aws-alb-health-path": verify_debug_aws_alb_health_path,
     "review-terraform-eks-plan": verify_review_terraform_eks_plan,
