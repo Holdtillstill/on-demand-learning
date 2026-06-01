@@ -34,6 +34,7 @@ PORTFOLIO_LABS = [
     "trace-argocd-drift",
     "design-safe-release-pipeline",
     "write-slo-backed-runbook",
+    "design-opentelemetry-signal-path",
 ]
 
 
@@ -955,6 +956,99 @@ def verify_write_slo_backed_runbook() -> None:
     )
 
 
+def verify_design_opentelemetry_signal_path() -> None:
+    slug = "design-opentelemetry-signal-path"
+    collector = yaml_doc(slug, "collector.yaml")
+    risky_rule = yaml_doc(slug, "prometheus-rule.yaml")
+    safe_rule = yaml_doc(slug, "safe-prometheus-rule.yaml")
+    logs = text_doc(slug, "checkout-logs.txt")
+    triage = text_doc(slug, "triage-notes.md")
+    decision = text_doc(slug, "signal-path-decision.md")
+    analyzer = text_doc(slug, "signal_path_analyzer.py")
+
+    require(collector.get("kind") == "OpenTelemetryCollector", "collector should define an OpenTelemetryCollector")
+    require(metadata(collector, "collector").get("name") == "platform", "collector should be named platform")
+    require(metadata(collector, "collector").get("namespace") == "observability", "collector should live in observability")
+    collector_config = get_map(spec(collector, "collector"), "config", "collector.spec")
+    receiver = get_map(get_map(collector_config, "receivers", "collector.config"), "otlp", "collector.receivers")
+    protocols = get_map(receiver, "protocols", "collector.receivers.otlp")
+    require({"grpc", "http"}.issubset(protocols), "collector should receive OTLP over gRPC and HTTP")
+    processors = get_map(collector_config, "processors", "collector.config")
+    require("batch" in processors, "collector should keep the batch processor")
+    drop_sensitive = get_map(processors, "attributes/drop-sensitive", "collector.processors")
+    actions = get_list(drop_sensitive, "actions", "collector drop-sensitive processor")
+    require(len(actions) == 1, "collector should define one sensitive-attribute action")
+    action = mapping(actions[0], "collector drop-sensitive action")
+    require(
+        action.get("key") == "http.request.header.authorization" and action.get("action") == "delete",
+        "collector should delete http.request.header.authorization before export",
+    )
+    exporter = get_map(get_map(collector_config, "exporters", "collector.config"), "otlphttp", "collector.exporters")
+    require(exporter.get("endpoint") == "https://telemetry.example.com", "collector should use the sample OTLP HTTP endpoint")
+    traces = get_map(
+        get_map(get_map(collector_config, "service", "collector.config"), "pipelines", "collector.service"),
+        "traces",
+        "collector.service.pipelines",
+    )
+    require(traces.get("receivers") == ["otlp"], "traces pipeline should receive OTLP")
+    require(
+        traces.get("processors") == ["batch", "attributes/drop-sensitive"],
+        "traces pipeline should batch then drop sensitive attributes",
+    )
+    require(traces.get("exporters") == ["otlphttp"], "traces pipeline should export through otlphttp")
+
+    risky_group = mapping(get_list(spec(risky_rule, "risky rule"), "groups", "risky rule.spec")[0], "risky group")
+    safe_group = mapping(get_list(spec(safe_rule, "safe rule"), "groups", "safe rule.spec")[0], "safe group")
+    risky_alert = mapping(get_list(risky_group, "rules", "risky group")[0], "risky alert")
+    safe_alert = mapping(get_list(safe_group, "rules", "safe group")[0], "safe alert")
+    require(risky_alert.get("alert") == "CheckoutP95LatencyHigh", "risky rule should alert on checkout p95 latency")
+    require(safe_alert.get("alert") == "CheckoutP95LatencyHigh", "safe rule should preserve the alert name")
+    risky_expr = get_str(risky_alert, "expr", "risky alert")
+    safe_expr = get_str(safe_alert, "expr", "safe alert")
+    require(
+        "histogram_quantile(0.95" in risky_expr and 'service="checkout"' in risky_expr,
+        "risky rule should measure checkout p95 latency",
+    )
+    require("sum by (le, route, customer_email)" in risky_expr, "risky rule should expose customer_email cardinality risk")
+    require(risky_alert.get("for") == "15m", "risky alert should use the captured 15 minute window")
+    require("sum by (le, route)" in safe_expr, "safe rule should aggregate by le and route only")
+    require("customer_email" not in safe_expr, "safe rule should remove customer_email")
+    require(safe_alert.get("for") == "15m", "safe alert should preserve the evaluation window")
+    safe_labels = get_map(safe_alert, "labels", "safe alert")
+    safe_annotations = get_map(safe_alert, "annotations", "safe alert")
+    require(safe_labels.get("severity") == "page", "safe rule should keep paging severity")
+    require(
+        str(safe_annotations.get("dashboard", "")).startswith("https://grafana.example.com/d/checkout-latency"),
+        "safe rule should include the latency dashboard",
+    )
+
+    require(re.search(r"trace_id=[0-9a-f]{32}\b", logs) is not None, "logs should include a valid trace ID")
+    require("service=checkout" in logs and "trace_id=missing" in logs, "logs should expose missing checkout trace context")
+    require("cardinality_label=customer_email" in logs, "logs should preserve customer_email cardinality clue")
+    for term in [
+        "Dropping authorization headers does not prove",
+        "One valid trace ID does not make",
+        "Customer-level alert grouping",
+        "A simulator sample does not replace an owner map",
+        "No live backend change does not remove",
+    ]:
+        require(term in triage, f"OpenTelemetry triage notes should include {term}")
+    for term in [
+        "Keep sensitive-header deletion",
+        "fix missing trace context",
+        "remove user-level labels",
+        "App owner: propagate trace context",
+        "Platform telemetry owner",
+        "SRE owner",
+        "Data/privacy owner",
+        "Alert groups by route, not customer email",
+        "Collector still drops authorization headers",
+    ]:
+        require(term in decision, f"OpenTelemetry decision should include {term}")
+    for term in ["OpenTelemetry signal path analysis passed", "customer_email", "safe_labels"]:
+        require(term in analyzer, f"OpenTelemetry analyzer should include {term}")
+
+
 VERIFY_BY_LAB = {
     "trace-service-to-pod": verify_trace_service_to_pod,
     "debug-crashloop-imagepull": verify_debug_crashloop_imagepull,
@@ -970,6 +1064,7 @@ VERIFY_BY_LAB = {
     "trace-argocd-drift": verify_trace_argocd_drift,
     "design-safe-release-pipeline": verify_design_safe_release_pipeline,
     "write-slo-backed-runbook": verify_write_slo_backed_runbook,
+    "design-opentelemetry-signal-path": verify_design_opentelemetry_signal_path,
 }
 
 

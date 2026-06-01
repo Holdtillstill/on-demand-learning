@@ -23,7 +23,7 @@ Expected catalog response:
 - 21 courses
 - 84 lessons
 - 21 labs
-- 14 portfolio-grade labs
+- 15 portfolio-grade labs
 - 320 resources
 - 219 interview questions
 
@@ -137,7 +137,7 @@ Or run the same deployed API and browser smoke sequence from one command:
 make platform-deployed-smoke API_BASE=https://preview.academy.ybz.dev WEB_BASE=https://preview.academy.ybz.dev
 ```
 
-The browser smoke runs Chromium against `/dashboard/home`, `/resources`, `/interview-prep`, `/labs`, and `/roadmap` at desktop and mobile viewport sizes, verifies the 14 portfolio-grade lab UI signals and all advertised course, lesson, lab detail, resource detail, and interview-pack routes, and exercises interview cram-sheet downloads, custom study-plan save/download, one workbook save, and guest recovery export/import validation.
+The browser smoke runs Chromium against `/dashboard/home`, `/resources`, `/interview-prep`, `/labs`, and `/roadmap` at desktop and mobile viewport sizes, verifies the 15 portfolio-grade lab UI signals and all advertised course, lesson, lab detail, resource detail, and interview-pack routes, and exercises interview cram-sheet downloads, custom study-plan save/download, one workbook save, and guest recovery export/import validation.
 For local release checks, `make platform-container-smoke` also builds temporary API and Platform Academy web images, runs them on an isolated Docker network, runs the full API smoke against the built API image, starts the API with production-like source-bundle protection enabled, verifies instructor/source bundles reject unauthenticated requests, download with the smoke token, extract safely, and contain syntax-valid source helpers, then points the browser smoke at the nginx container.
 The image publish workflow runs that container smoke against the already-built API and web images before pushing them, including all advertised lab packet and bundle checks, token-gated instructor/source bundle checks, and the smoke gate audits API logs for request failures, tracebacks, and unique-constraint races.
 

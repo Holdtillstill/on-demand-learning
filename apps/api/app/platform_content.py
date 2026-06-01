@@ -5656,6 +5656,7 @@ PORTFOLIO_LAB_SLUGS = {
     "trace-argocd-drift",
     "design-safe-release-pipeline",
     "write-slo-backed-runbook",
+    "design-opentelemetry-signal-path",
 }
 
 PORTFOLIO_LAB_FOCUS = {
@@ -5673,6 +5674,7 @@ PORTFOLIO_LAB_FOCUS = {
     "trace-argocd-drift": "GitOps ownership decisions",
     "design-safe-release-pipeline": "production release safety",
     "write-slo-backed-runbook": "SLO-backed incident response",
+    "design-opentelemetry-signal-path": "OpenTelemetry signal path design",
 }
 
 EVIDENCE_PACK_LAB_SLUGS: set[str] = set()
