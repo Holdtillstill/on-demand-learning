@@ -162,7 +162,7 @@ main {
   position: sticky;
   top: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   gap: 24px;
   height: 100vh;
   border-right: 1px solid #d9dfda;
@@ -172,7 +172,6 @@ main {
 
 .product-brand,
 .product-nav a,
-.product-sidebar-footer a,
 .product-topline,
 .product-topline > div,
 .workspace-actions,
@@ -215,7 +214,6 @@ main {
 }
 
 .product-brand small,
-.product-sidebar-footer span,
 .product-topline span {
   color: #66736d;
   font-size: 0.78rem;
@@ -228,8 +226,7 @@ main {
   gap: 4px;
 }
 
-.product-nav a,
-.product-sidebar-footer a {
+.product-nav a {
   gap: 10px;
   min-height: 38px;
   border-radius: 8px;
@@ -239,17 +236,9 @@ main {
 }
 
 .product-nav a.active,
-.product-nav a:hover,
-.product-sidebar-footer a:hover {
+.product-nav a:hover {
   background: #eef3ef;
   color: #111c17;
-}
-
-.product-sidebar-footer {
-  display: grid;
-  gap: 8px;
-  border-top: 1px solid #e1e6e2;
-  padding-top: 14px;
 }
 
 .product-frame {
@@ -2172,10 +2161,6 @@ main {
     gap: 8px;
   }
 
-  .product-sidebar-footer {
-    display: none;
-  }
-
   .product-topline {
     position: static;
     align-items: flex-start;
@@ -3473,7 +3458,6 @@ pre {
 }
 
 .product-brand small,
-.product-sidebar-footer span,
 .product-topline span,
 .canonical-page .lead,
 .canonical-page .eyebrow,
@@ -3496,14 +3480,12 @@ pre {
   color: var(--pa-muted);
 }
 
-.product-nav a,
-.product-sidebar-footer a {
+.product-nav a {
   border: 1px solid transparent;
   color: var(--pa-text-soft);
 }
 
 .product-nav a svg,
-.product-sidebar-footer a svg,
 .product-topline a svg {
   width: 30px;
   height: 30px;
@@ -3515,8 +3497,7 @@ pre {
 }
 
 .product-nav a.active,
-.product-nav a:hover,
-.product-sidebar-footer a:hover {
+.product-nav a:hover {
   border-color: rgba(125, 243, 211, 0.22);
   background: linear-gradient(135deg, rgba(51, 214, 166, 0.16), rgba(34, 211, 238, 0.09));
   color: #ffffff;
@@ -3524,15 +3505,10 @@ pre {
 }
 
 .product-nav a.active svg,
-.product-nav a:hover svg,
-.product-sidebar-footer a:hover svg {
+.product-nav a:hover svg {
   border-color: rgba(125, 243, 211, 0.34);
   background: rgba(51, 214, 166, 0.18);
   color: #abffe5;
-}
-
-.product-sidebar-footer {
-  border-top-color: var(--pa-border);
 }
 
 .product-frame {
@@ -4895,6 +4871,36 @@ pre {
 
 .lab-submission-summary span {
   color: var(--pa-readable-secondary);
+}
+
+.interview-plan-builder input,
+.interview-plan-builder select {
+  border-color: rgba(158, 187, 177, 0.24);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.018)),
+    rgba(2, 14, 12, 0.78);
+  color: #f2fff9;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    inset 0 0 0 1px rgba(2, 20, 17, 0.7);
+}
+
+.interview-plan-builder input::placeholder {
+  color: var(--pa-faint);
+}
+
+.interview-plan-builder input:focus,
+.interview-plan-builder select:focus {
+  border-color: rgba(125, 243, 211, 0.62);
+  outline: 2px solid rgba(34, 211, 238, 0.2);
+  box-shadow:
+    0 0 0 1px rgba(125, 243, 211, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.interview-plan-builder select option {
+  background: #07110f;
+  color: #f2fff9;
 }
 
 .search-box {

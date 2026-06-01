@@ -34,7 +34,6 @@ import {
   Search,
   Server,
   ShieldCheck,
-  Sparkles,
   Target,
   Terminal,
   Trash2,
@@ -1621,13 +1620,6 @@ function AppShell({ children, learnerId, onResetLearner, onRecoverLearner }: App
               );
             })}
           </nav>
-          <div className="product-sidebar-footer">
-            <span>Exploration routes</span>
-            <Link to="/designs">
-              <Sparkles aria-hidden="true" />
-              Designs
-            </Link>
-          </div>
         </aside>
         <div className="product-frame">
           <header className="product-topline">
@@ -1778,10 +1770,6 @@ function AppShell({ children, learnerId, onResetLearner, onRecoverLearner }: App
           <NavLink to="/resources">
             <FileText aria-hidden="true" />
             Resources
-          </NavLink>
-          <NavLink to="/designs">
-            <Sparkles aria-hidden="true" />
-            Designs
           </NavLink>
         </nav>
       </header>
