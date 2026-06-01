@@ -767,6 +767,7 @@ function labArtifactName(path: string) {
 
 function labArtifactRole(path: string) {
   const lower = path.toLowerCase();
+  if (lower.endsWith("triage-notes.md") || lower.endsWith("hop-trace.md")) return "False-lead review";
   if (lower.endsWith("evidence-template.md")) return "Evidence template";
   if (lower.endsWith("validate.sh")) return "Self-check script";
   if (lower.endsWith("cleanup.sh")) return "Cleanup script";
@@ -776,6 +777,77 @@ function labArtifactRole(path: string) {
   if (lower.endsWith(".yaml") || lower.endsWith(".yml") || lower.endsWith(".json")) return "Manifest";
   if (lower.endsWith(".md")) return "Decision note";
   return "Lab artifact";
+}
+
+function labFalseLeadArtifact(lab: PlatformLab) {
+  const paths = [...learnerArtifactPaths(lab), ...(lab.artifact_paths ?? [])];
+  return paths.find((path) => {
+    const name = labArtifactName(path).toLowerCase();
+    return name === "triage-notes.md" || name === "hop-trace.md";
+  });
+}
+
+function progressPercent(done: number, total: number) {
+  if (total <= 0) return 100;
+  return Math.min(100, Math.round((done / total) * 100));
+}
+
+const LAB_RICH_ARRAY_FIELDS = [
+  "skills",
+  "prerequisites",
+  "setup_commands",
+  "setup_self_check_commands",
+  "commands",
+  "practice_steps",
+  "expected_evidence",
+  "validation_commands",
+  "cleanup_commands",
+  "no_cluster_fallback",
+  "artifact_paths",
+  "learner_artifact_paths",
+  "workspace_quickstart_commands",
+  "cluster_workspace_commands",
+  "worksheet_prompts",
+  "rubric",
+  "validation_checks",
+  "checklist"
+] as const satisfies readonly (keyof PlatformLab)[];
+
+const LAB_RICH_STRING_FIELDS = ["portfolio_focus", "workspace_archive_name", "workspace_root"] as const satisfies readonly (keyof PlatformLab)[];
+
+function richerStringArray(left: unknown, right: unknown) {
+  const leftItems = Array.isArray(left) ? left.filter((item): item is string => typeof item === "string") : [];
+  const rightItems = Array.isArray(right) ? right.filter((item): item is string => typeof item === "string") : [];
+  return rightItems.length >= leftItems.length ? rightItems : leftItems;
+}
+
+function mergeLabPayload(left: PlatformLab, right: PlatformLab): PlatformLab {
+  const merged: PlatformLab = { ...left, ...right };
+  const arrayFields = merged as Record<(typeof LAB_RICH_ARRAY_FIELDS)[number], string[] | undefined>;
+  const stringFields = merged as Record<(typeof LAB_RICH_STRING_FIELDS)[number], string | undefined>;
+
+  for (const field of LAB_RICH_ARRAY_FIELDS) {
+    arrayFields[field] = richerStringArray(left[field], right[field]);
+  }
+  for (const field of LAB_RICH_STRING_FIELDS) {
+    const rightValue = typeof right[field] === "string" ? right[field] : "";
+    const leftValue = typeof left[field] === "string" ? left[field] : "";
+    stringFields[field] = rightValue.trim() ? rightValue : leftValue;
+  }
+
+  return merged;
+}
+
+function mergeLabPayloads(catalogLabs: PlatformLab[], labEndpointPayloads: PlatformLab[]) {
+  const endpointBySlug = new globalThis.Map(labEndpointPayloads.map((lab) => [lab.slug, lab]));
+  const catalogSlugs = new Set(catalogLabs.map((lab) => lab.slug));
+  return [
+    ...catalogLabs.map((lab) => {
+      const endpointLab = endpointBySlug.get(lab.slug);
+      return endpointLab ? mergeLabPayload(lab, endpointLab) : lab;
+    }),
+    ...labEndpointPayloads.filter((lab) => !catalogSlugs.has(lab.slug))
+  ];
 }
 
 function labRunPhases(lab: PlatformLab) {
@@ -933,6 +1005,98 @@ function LabWorkspaceQuickstart({ lab }: { lab: PlatformLab }) {
       </div>
       <CommandBlock commands={labWorkspaceQuickstartCommands(lab)} title="Workspace commands" />
       {clusterCommands.length ? <CommandBlock commands={clusterCommands} title="Optional cluster workflow" /> : null}
+    </section>
+  );
+}
+
+function labWorkbookPhaseRows(lab: PlatformLab, checkedItems: Record<string, boolean>, worksheetAnswers: Record<string, string>) {
+  const worksheetItems = lab.worksheet_prompts ?? [];
+  const validationItems = lab.validation_checks ?? [];
+  const setupSignals = (lab.prerequisites?.length ?? 0) + (lab.setup_commands?.length ?? 0) + labWorkspaceQuickstartCommands(lab).length;
+  const answerText = Object.values(worksheetAnswers).join("\n").toLowerCase();
+  const falseLeadArtifact = labFalseLeadArtifact(lab);
+  const falseLeadArtifactName = falseLeadArtifact ? labArtifactName(falseLeadArtifact) : "";
+  const falseLeadCaptured =
+    Boolean(falseLeadArtifactName && answerText.includes(falseLeadArtifactName.toLowerCase())) ||
+    answerText.includes("false lead") ||
+    answerText.includes("triage") ||
+    answerText.includes("hop trace");
+  const answeredPrompts = worksheetItems.filter((_, index) => worksheetAnswers[`worksheet-${index}`]?.trim()).length;
+  const completedValidation = validationItems.filter((_, index) => checkedItems[`validation-${index}`]).length;
+  const closeoutIndexes = validationItems
+    .map((item, index) => ({ item: item.toLowerCase(), index }))
+    .filter(({ item }) => ["cleanup", "no-cluster", "no-aws", "no-live", "no-runtime", "handoff"].some((term) => item.includes(term)));
+  const completedCloseout = closeoutIndexes.filter(({ index }) => checkedItems[`validation-${index}`]).length;
+  const cleanupSignals = (lab.cleanup_commands?.length ?? 0) + (lab.no_cluster_fallback?.length ?? 0);
+
+  return [
+    {
+      title: "Setup",
+      status: setupSignals > 0 ? "Setup ready" : "No setup needed",
+      detail: setupSignals > 0 ? `${setupSignals} setup or workspace signals are listed` : "Open the provided evidence files.",
+      value: setupSignals > 0 ? 100 : 100,
+      icon: Terminal
+    },
+    {
+      title: "False-lead triage",
+      status: falseLeadCaptured ? "False leads captured" : "False leads pending",
+      detail: falseLeadArtifactName ? `${falseLeadArtifactName} should be cited before diagnosis.` : "No false-lead artifact is advertised.",
+      value: falseLeadCaptured ? 100 : 0,
+      icon: Search
+    },
+    {
+      title: "Evidence",
+      status: `${answeredPrompts}/${worksheetItems.length} prompts answered`,
+      detail: worksheetItems.length ? "Worksheet notes drive the rubric feedback." : "No worksheet prompts are advertised.",
+      value: progressPercent(answeredPrompts, worksheetItems.length),
+      icon: FileText
+    },
+    {
+      title: "Validation",
+      status: `${completedValidation}/${validationItems.length} validation checks`,
+      detail: validationItems.length ? "Mark checks after commands and evidence pass." : "No validation checklist is advertised.",
+      value: progressPercent(completedValidation, validationItems.length),
+      icon: CheckCircle2
+    },
+    {
+      title: "Closeout",
+      status: closeoutIndexes.length ? `${completedCloseout}/${closeoutIndexes.length} closeout checks` : cleanupSignals ? "Closeout path listed" : "No cleanup needed",
+      detail: cleanupSignals ? "Cleanup or no-runtime evidence belongs in the final note." : "Default path has no cleanup action.",
+      value: closeoutIndexes.length ? progressPercent(completedCloseout, closeoutIndexes.length) : 100,
+      icon: RefreshCcw
+    }
+  ];
+}
+
+function LabWorkbookPhaseStatus({ lab, checkedItems, worksheetAnswers }: { lab: PlatformLab; checkedItems: Record<string, boolean>; worksheetAnswers: Record<string, string> }) {
+  const phases = labWorkbookPhaseRows(lab, checkedItems, worksheetAnswers);
+  return (
+    <section className="lab-phase-status" aria-label="Lab run progress by phase">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Run progress</p>
+          <h3>Run progress by phase</h3>
+        </div>
+        <span>{phases.filter((phase) => phase.value >= 100).length} / {phases.length} ready</span>
+      </div>
+      <div className="lab-phase-status-grid">
+        {phases.map((phase) => {
+          const PhaseIcon = phase.icon;
+          return (
+            <article className="lab-phase-status-row" key={phase.title}>
+              <PhaseIcon aria-hidden="true" />
+              <div>
+                <div className="lab-phase-status-copy">
+                  <strong>{phase.title}</strong>
+                  <span>{phase.status}</span>
+                </div>
+                <ProgressBar value={phase.value} />
+                <small>{phase.detail}</small>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -1100,6 +1264,7 @@ function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; l
           {saveState === "local" && "Stored in this browser until API save succeeds"}
         </small>
       </div>
+      <LabWorkbookPhaseStatus lab={lab} checkedItems={checkedItems} worksheetAnswers={worksheetAnswers} />
       <div className="lab-workbook-grid">
         <section>
           <h3>Worksheet prompts</h3>
@@ -4785,12 +4950,20 @@ export default function App() {
     loadRequestId.current = requestId;
     setError("");
 
-    return Promise.all([api.catalog(), api.roadmap(), api.progress(learnerId), api.activity(learnerId), api.labSubmissions(learnerId), api.dashboard(learnerId, "platform")])
-      .then(([catalog, roadmap, progress, activity, labSubmissions, dashboard]) => {
+    return Promise.all([
+      api.catalog(),
+      api.roadmap(),
+      api.labs(),
+      api.progress(learnerId),
+      api.activity(learnerId),
+      api.labSubmissions(learnerId),
+      api.dashboard(learnerId, "platform")
+    ])
+      .then(([catalog, roadmap, labs, progress, activity, labSubmissions, dashboard]) => {
         if (requestId !== loadRequestId.current) return;
         const cached = staticContentCache.current;
         setData({
-          catalog,
+          catalog: { ...catalog, labs: mergeLabPayloads(catalog.labs, labs) },
           roadmap,
           resources: cached.resources ?? EMPTY_RESOURCES,
           resourcesLoaded: Boolean(cached.resources),

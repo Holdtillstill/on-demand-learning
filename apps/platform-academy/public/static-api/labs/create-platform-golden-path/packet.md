@@ -17,22 +17,23 @@ Your platform team needs a self-service path for launching a new service with CI
    - bash labs/platform-academy/run-lab.sh setup create-platform-golden-path
    - bash labs/platform-academy/create-platform-golden-path/setup.sh --evidence /tmp/golden-path-evidence.md
 2. Investigate safely
+   - Read the triage notes and rule out file-generation-only readiness.
    - Define required inputs and generated outputs.
    - Check whether ownership, SLO, and runbook defaults are complete.
    - Use the local analyzer to prove the starting gap, ready contract, and fixed metadata.
-   - Describe the first-run developer experience and adoption metrics.
 3. Prove the finding
+   - The triage notes rule out generated-files readiness, catalog-only ownership, smooth-first-run confidence, and optional metadata.
    - The template generates Dockerfile, Helm, CI, ArgoCD, dashboard, runbook, and catalog files.
    - The catalog file still has missing PagerDuty and SLO annotations.
    - The first-run flow ends with production readiness review.
-   - The local analyzer reports Golden path readiness analysis passed.
 4. Reset or hand off
    - bash labs/platform-academy/create-platform-golden-path/cleanup.sh
-   - Use the template files as a product review packet.
+   - Use triage-notes.md and the template files as a product review packet.
    - Write missing inputs, generated artifacts, and launch-readiness blockers.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/create-platform-golden-path/triage-notes.md` - Decision note
 - `labs/platform-academy/create-platform-golden-path/service-template.md` - Decision note
 - `labs/platform-academy/create-platform-golden-path/ready-service-template.md` - Target artifact
 - `labs/platform-academy/create-platform-golden-path/catalog-info.yaml` - Captured evidence
@@ -47,6 +48,7 @@ Your platform team needs a self-service path for launching a new service with CI
 
 ## Learner artifact paths
 
+- labs/platform-academy/create-platform-golden-path/triage-notes.md
 - labs/platform-academy/create-platform-golden-path/service-template.md
 - labs/platform-academy/create-platform-golden-path/ready-service-template.md
 - labs/platform-academy/create-platform-golden-path/catalog-info.yaml
@@ -62,6 +64,7 @@ Your platform team needs a self-service path for launching a new service with CI
 ## Worksheet prompts
 
 - [ ] Record the service-template, catalog metadata, reviewer, and confirmation that no template engine or cluster is required.
+- [ ] Read triage-notes.md and list the False Leads ruled out before approving the golden path.
 - [ ] Paste required inputs, generated artifacts, secure runtime defaults, first-run flow, and production readiness gates.
 - [ ] Paste missing `pagerduty.com/service-id`, missing SLO dashboard, runbook, cost center, and concrete owner evidence.
 - [ ] Explain why incomplete ownership metadata blocks production onboarding.
@@ -77,7 +80,13 @@ Your platform team needs a self-service path for launching a new service with CI
 
 - bash labs/platform-academy/run-lab.sh setup create-platform-golden-path
 - bash labs/platform-academy/create-platform-golden-path/setup.sh --evidence /tmp/golden-path-evidence.md
+- sed -n '1,220p' labs/platform-academy/create-platform-golden-path/triage-notes.md
 - sed -n '1,220p' labs/platform-academy/create-platform-golden-path/service-template.md
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup create-platform-golden-path --run-analyzer`.
 
 ## Local workspace
 
@@ -95,6 +104,7 @@ Your platform team needs a self-service path for launching a new service with CI
 
 ## Practice steps
 
+- [ ] Read the triage notes and rule out file-generation-only readiness.
 - [ ] Define required inputs and generated outputs.
 - [ ] Check whether ownership, SLO, and runbook defaults are complete.
 - [ ] Use the local analyzer to prove the starting gap, ready contract, and fixed metadata.
@@ -102,13 +112,14 @@ Your platform team needs a self-service path for launching a new service with CI
 
 ## Runbook commands
 
+- grep -n "False Leads\|generates many files\|catalog presence\|smooth first run" labs/platform-academy/create-platform-golden-path/triage-notes.md
 - grep -n "Generated artifacts\|SLO dashboard\|Runbook\|Backstage" labs/platform-academy/create-platform-golden-path/service-template.md
 - grep -n "missing\|owner\|lifecycle" labs/platform-academy/create-platform-golden-path/catalog-info.yaml
-- python3 labs/platform-academy/create-platform-golden-path/golden_path_analyzer.py --start-template labs/platform-academy/create-platform-golden-path/service-template.md --ready-template labs/platform-academy/create-platform-golden-path/ready-service-template.md --catalog labs/platform-academy/create-platform-golden-path/catalog-info.yaml --fixed-catalog labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml --decision labs/platform-academy/create-platform-golden-path/decision-record.md
 - diff -u labs/platform-academy/create-platform-golden-path/catalog-info.yaml labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml || true
 
 ## Expected evidence
 
+- [ ] The triage notes rule out generated-files readiness, catalog-only ownership, smooth-first-run confidence, and optional metadata.
 - [ ] The template generates Dockerfile, Helm, CI, ArgoCD, dashboard, runbook, and catalog files.
 - [ ] The catalog file still has missing PagerDuty and SLO annotations.
 - [ ] The first-run flow ends with production readiness review.
@@ -125,6 +136,7 @@ Your platform team needs a self-service path for launching a new service with CI
 ## Validation checks
 
 - [ ] No-runtime template review boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] Golden path readiness analysis passed output captured
 - [ ] Required inputs and generated artifacts captured
 - [ ] Secure defaults and launch gates captured
@@ -136,6 +148,7 @@ Your platform team needs a self-service path for launching a new service with CI
 ## Rubric
 
 - [ ] Preserves the file-review safety boundary and names the template and catalog artifacts.
+- [ ] Uses triage notes to rule out generated-files readiness, catalog-only ownership proof, smooth-first-run confidence, and optional metadata False Leads.
 - [ ] Captures required inputs, generated artifacts, secure defaults, first-run flow, and readiness gates.
 - [ ] Identifies missing pager, missing SLO dashboard, runbook, cost center, and concrete owner metadata.
 - [ ] Blocks production onboarding until ownership and observability metadata are complete.
@@ -148,5 +161,5 @@ Your platform team needs a self-service path for launching a new service with CI
 
 ## No-cluster fallback
 
-- [ ] Use the template files as a product review packet.
+- [ ] Use triage-notes.md and the template files as a product review packet.
 - [ ] Write missing inputs, generated artifacts, and launch-readiness blockers.

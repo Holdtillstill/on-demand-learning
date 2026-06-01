@@ -17,22 +17,23 @@ A shared cluster needs a tenant access review before onboarding another team.
    - Optional cluster mode requires a disposable local Kubernetes context.
    - bash labs/platform-academy/run-lab.sh setup audit-tenant-boundaries
 2. Investigate safely
+   - Read the triage notes and rule out shortcuts that would approve the tenant too quickly.
    - Find broad RBAC and secret access.
    - Check whether NetworkPolicy creates a real boundary.
    - Use the local analyzer to prove the RBAC, Pod Security, NetworkPolicy, and safer-target evidence.
-   - Record exception owners and expiry requirements before onboarding.
 3. Prove the finding
+   - The triage notes rule out temporary admin, secret debugging, policy-object presence, and dry-run approval shortcuts.
    - A temporary ClusterRoleBinding grants cluster-admin.
    - The Role can list and watch secrets.
    - The NetworkPolicy allows all egress.
-   - The local analyzer reports Tenant boundary analysis passed.
 4. Reset or hand off
    - bash labs/platform-academy/audit-tenant-boundaries/cleanup.sh
-   - Review tenant-a.yaml directly and write the onboarding blockers.
+   - Review triage-notes.md and tenant-a.yaml directly and write the onboarding blockers.
    - Use review.md as the expected finding checklist.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/audit-tenant-boundaries/triage-notes.md` - Decision note
 - `labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml` - Manifest
 - `labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml` - Target artifact
 - `labs/platform-academy/audit-tenant-boundaries/review.md` - Decision note
@@ -46,6 +47,7 @@ A shared cluster needs a tenant access review before onboarding another team.
 
 ## Learner artifact paths
 
+- labs/platform-academy/audit-tenant-boundaries/triage-notes.md
 - labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml
 - labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml
 - labs/platform-academy/audit-tenant-boundaries/review.md
@@ -60,6 +62,7 @@ A shared cluster needs a tenant access review before onboarding another team.
 ## Worksheet prompts
 
 - [ ] Record the manifest reviewed, tenant namespace, safety boundary, and cleanup command if a disposable cluster was used.
+- [ ] Read triage-notes.md and list the False Leads ruled out before approving tenant onboarding.
 - [ ] Paste the ClusterRoleBinding, bound subject, cluster-admin role, and secret access evidence.
 - [ ] Paste the Pod Security enforcement level and the required restricted target.
 - [ ] Paste the NetworkPolicy egress rule and explain why it is not a default-deny boundary.
@@ -76,11 +79,17 @@ A shared cluster needs a tenant access review before onboarding another team.
 
 - bash labs/platform-academy/run-lab.sh setup audit-tenant-boundaries
 - bash labs/platform-academy/audit-tenant-boundaries/setup.sh --evidence /tmp/tenant-boundaries-evidence.md
+- sed -n '1,220p' labs/platform-academy/audit-tenant-boundaries/triage-notes.md
 - kubectl create --dry-run=client --validate=false -f labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml
 - sed -n '1,180p' labs/platform-academy/audit-tenant-boundaries/review.md
 - bash labs/platform-academy/bootstrap-local-cluster.sh --preflight audit-tenant-boundaries
 - bash labs/platform-academy/audit-tenant-boundaries/setup.sh --preflight
 - bash labs/platform-academy/audit-tenant-boundaries/setup.sh --cluster --evidence /tmp/tenant-boundaries-evidence.md
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup audit-tenant-boundaries --run-analyzer`.
 
 ## Local workspace
 
@@ -107,6 +116,7 @@ A shared cluster needs a tenant access review before onboarding another team.
 
 ## Practice steps
 
+- [ ] Read the triage notes and rule out shortcuts that would approve the tenant too quickly.
 - [ ] Find broad RBAC and secret access.
 - [ ] Check whether NetworkPolicy creates a real boundary.
 - [ ] Use the local analyzer to prove the RBAC, Pod Security, NetworkPolicy, and safer-target evidence.
@@ -114,12 +124,13 @@ A shared cluster needs a tenant access review before onboarding another team.
 
 ## Runbook commands
 
+- grep -n "False Leads\|temporary cluster-admin\|dry-run" labs/platform-academy/audit-tenant-boundaries/triage-notes.md
 - grep -n "cluster-admin\|secrets\|allow-all-egress\|pod-security" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml
 - grep -n "Block onboarding\|secret access\|egress" labs/platform-academy/audit-tenant-boundaries/review.md
-- python3 labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py --broken labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml --fixed labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml --review labs/platform-academy/audit-tenant-boundaries/review.md
 
 ## Expected evidence
 
+- [ ] The triage notes rule out temporary admin, secret debugging, policy-object presence, and dry-run approval shortcuts.
 - [ ] A temporary ClusterRoleBinding grants cluster-admin.
 - [ ] The Role can list and watch secrets.
 - [ ] The NetworkPolicy allows all egress.
@@ -138,6 +149,7 @@ A shared cluster needs a tenant access review before onboarding another team.
 ## Validation checks
 
 - [ ] No-shared-cluster safety boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] ClusterRoleBinding and cluster-admin evidence captured
 - [ ] Secret access evidence captured
 - [ ] Pod Security baseline/restricted evidence captured
@@ -148,6 +160,7 @@ A shared cluster needs a tenant access review before onboarding another team.
 ## Rubric
 
 - [ ] Preserves the no-shared-cluster safety boundary and names the tenant namespace.
+- [ ] Uses triage notes to rule out temporary admin, secret debugging, policy-object presence, baseline-default, and dry-run approval False Leads.
 - [ ] Captures cluster-admin and secret-read RBAC evidence with exact resources and subjects.
 - [ ] Identifies Pod Security `baseline` as weaker than the required `restricted` target.
 - [ ] Explains why `allow-all-egress` is not tenant isolation and names the default-deny target.
@@ -160,5 +173,5 @@ A shared cluster needs a tenant access review before onboarding another team.
 
 ## No-cluster fallback
 
-- [ ] Review tenant-a.yaml directly and write the onboarding blockers.
+- [ ] Review triage-notes.md and tenant-a.yaml directly and write the onboarding blockers.
 - [ ] Use review.md as the expected finding checklist.

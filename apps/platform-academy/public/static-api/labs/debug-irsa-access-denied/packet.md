@@ -17,22 +17,23 @@ A workload can start but AWS SDK calls fail with AccessDenied after a service-ac
    - bash labs/platform-academy/run-lab.sh setup debug-irsa-access-denied
    - bash labs/platform-academy/debug-irsa-access-denied/setup.sh --evidence /tmp/irsa-access-denied-evidence.md
 2. Investigate safely
+   - Read triage-notes.md and rule out Pod restart, token rotation, bucket-policy-only, wildcard, and live-IAM false leads.
    - Match the Pod service account to the annotated IAM role.
    - Compare the application-side SDK failure with the CloudTrail denial.
    - Compare the trust policy subject with the real namespace and service account.
-   - Use the CloudTrail action and resource to decide whether the trust policy or permissions policy is wrong.
 3. Prove the finding
+   - The triage notes rule out restarts, token rotation, bucket-policy-only changes, wildcard trust, and broad S3 permissions.
    - The ServiceAccount is payments/checkout.
    - The workload log shows AWS_ROLE_ARN for payments-checkout-readonly and an SDK AccessDenied on PutObject.
    - The trust policy subject allows default/checkout instead.
-   - CloudTrail denies s3:PutObject through the readonly role.
 4. Reset or hand off
    - bash labs/platform-academy/debug-irsa-access-denied/cleanup.sh
-   - Review serviceaccount.yaml, workload-error.log, trust-policy.json, and cloudtrail-event.json as exported evidence.
+   - Review triage-notes.md, serviceaccount.yaml, workload-error.log, trust-policy.json, and cloudtrail-event.json as exported evidence.
    - Write whether the immediate blocker is trust subject mismatch, permission scope, or both.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/debug-irsa-access-denied/triage-notes.md` - Decision note
 - `labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml` - Manifest
 - `labs/platform-academy/debug-irsa-access-denied/workload-error.log` - Captured evidence
 - `labs/platform-academy/debug-irsa-access-denied/trust-policy.json` - Manifest
@@ -48,6 +49,7 @@ A workload can start but AWS SDK calls fail with AccessDenied after a service-ac
 
 ## Learner artifact paths
 
+- labs/platform-academy/debug-irsa-access-denied/triage-notes.md
 - labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml
 - labs/platform-academy/debug-irsa-access-denied/workload-error.log
 - labs/platform-academy/debug-irsa-access-denied/trust-policy.json
@@ -64,6 +66,7 @@ A workload can start but AWS SDK calls fail with AccessDenied after a service-ac
 ## Worksheet prompts
 
 - [ ] Record the evidence source, namespace, ServiceAccount, IAM role ARN, and confirmation that no live IAM changes are being made.
+- [ ] Read triage-notes.md and list the False Leads ruled out before editing IAM.
 - [ ] Paste the Kubernetes and runtime identity evidence: ServiceAccount namespace/name, Pod `serviceAccountName`, role annotation, and `AWS_ROLE_ARN`.
 - [ ] Paste the application-side SDK error from workload-error.log and compare it with CloudTrail.
 - [ ] Paste the trust policy subject, expected subject, and namespace mismatch.
@@ -80,9 +83,15 @@ A workload can start but AWS SDK calls fail with AccessDenied after a service-ac
 
 - bash labs/platform-academy/run-lab.sh setup debug-irsa-access-denied
 - bash labs/platform-academy/debug-irsa-access-denied/setup.sh --evidence /tmp/irsa-access-denied-evidence.md
+- sed -n '1,220p' labs/platform-academy/debug-irsa-access-denied/triage-notes.md
 - kubectl create --dry-run=client --validate=false -f labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml
 - sed -n '1,180p' labs/platform-academy/debug-irsa-access-denied/workload-error.log
 - sed -n '1,180p' labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After reviewing the static evidence, run simulator output: `bash labs/platform-academy/run-lab.sh setup debug-irsa-access-denied --run-simulator`.
 
 ## Local workspace
 
@@ -100,6 +109,7 @@ A workload can start but AWS SDK calls fail with AccessDenied after a service-ac
 
 ## Practice steps
 
+- [ ] Read triage-notes.md and rule out Pod restart, token rotation, bucket-policy-only, wildcard, and live-IAM false leads.
 - [ ] Match the Pod service account to the annotated IAM role.
 - [ ] Compare the application-side SDK failure with the CloudTrail denial.
 - [ ] Compare the trust policy subject with the real namespace and service account.
@@ -108,12 +118,13 @@ A workload can start but AWS SDK calls fail with AccessDenied after a service-ac
 
 ## Runbook commands
 
+- grep -n "False Leads\|Wildcard trust\|s3:\*" labs/platform-academy/debug-irsa-access-denied/triage-notes.md
 - grep -n "role-arn\|serviceAccountName\|AWS_ROLE_ARN" labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml labs/platform-academy/debug-irsa-access-denied/workload-error.log
 - grep -n "system:serviceaccount\|AccessDenied\|PutObject" labs/platform-academy/debug-irsa-access-denied/trust-policy.json labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json
-- python3 labs/platform-academy/debug-irsa-access-denied/irsa_simulator.py --serviceaccount labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml --trust-policy labs/platform-academy/debug-irsa-access-denied/trust-policy.json --fixed-trust-policy labs/platform-academy/debug-irsa-access-denied/fixed-trust-policy.json --cloudtrail-event labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json --permission-policy labs/platform-academy/debug-irsa-access-denied/least-privilege-policy.json
 
 ## Expected evidence
 
+- [ ] The triage notes rule out restarts, token rotation, bucket-policy-only changes, wildcard trust, and broad S3 permissions.
 - [ ] The ServiceAccount is payments/checkout.
 - [ ] The workload log shows AWS_ROLE_ARN for payments-checkout-readonly and an SDK AccessDenied on PutObject.
 - [ ] The trust policy subject allows default/checkout instead.
@@ -131,6 +142,7 @@ A workload can start but AWS SDK calls fail with AccessDenied after a service-ac
 ## Validation checks
 
 - [ ] No-live-IAM safety boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] ServiceAccount and runtime role identity evidence captured
 - [ ] Application SDK AccessDenied evidence captured
 - [ ] Trust subject mismatch captured
@@ -142,6 +154,7 @@ A workload can start but AWS SDK calls fail with AccessDenied after a service-ac
 ## Rubric
 
 - [ ] Preserves the captured-evidence safety boundary and avoids live IAM mutation.
+- [ ] Uses triage notes to rule out restarts, token rotation, bucket-policy-only changes, wildcard trust, and broad S3 False Leads.
 - [ ] Captures Kubernetes identity and runtime `AWS_ROLE_ARN` evidence for `payments/checkout`.
 - [ ] Connects the application SDK `AccessDenied` with the CloudTrail `s3:PutObject` denial.
 - [ ] Identifies the trust subject mismatch between `default/checkout` and `payments/checkout`.
@@ -155,5 +168,5 @@ A workload can start but AWS SDK calls fail with AccessDenied after a service-ac
 
 ## No-cluster fallback
 
-- [ ] Review serviceaccount.yaml, workload-error.log, trust-policy.json, and cloudtrail-event.json as exported evidence.
+- [ ] Review triage-notes.md, serviceaccount.yaml, workload-error.log, trust-policy.json, and cloudtrail-event.json as exported evidence.
 - [ ] Write whether the immediate blocker is trust subject mismatch, permission scope, or both.

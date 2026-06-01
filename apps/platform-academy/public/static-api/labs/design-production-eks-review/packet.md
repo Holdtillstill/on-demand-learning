@@ -17,22 +17,23 @@ You need to review whether a proposed EKS platform is resilient and cost-aware b
    - bash labs/platform-academy/run-lab.sh setup design-production-eks-review
    - bash labs/platform-academy/design-production-eks-review/setup.sh --evidence /tmp/production-eks-review-evidence.md
 2. Investigate safely
+   - Read triage-notes.md and rule out launch-approval shortcuts.
    - Check critical workload spread and PDB coverage.
    - Identify zonal storage and recovery expectations.
    - Flag missing cost labels and upgrade pause points.
-   - Run the local production review analyzer and connect its output to the launch decision.
 3. Prove the finding
+   - The triage notes rule out endpoint-only approval, missing-PDB deferral, snapshot-only recovery proof, and deferred cost labels.
    - One worker has a missing PDB.
    - Postgres uses zonal storage with snapshot restore expectations.
    - One apps node lacks a cost label.
-   - The local analyzer reports Production EKS review analysis passed.
 4. Reset or hand off
    - bash labs/platform-academy/design-production-eks-review/cleanup.sh
-   - Use cluster-review.md as the design review packet.
+   - Use triage-notes.md and cluster-review.md as the design review packet.
    - Write launch blockers and follow-up owners without connecting to AWS.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/design-production-eks-review/triage-notes.md` - Decision note
 - `labs/platform-academy/design-production-eks-review/cluster-review.md` - Decision note
 - `labs/platform-academy/design-production-eks-review/launch-review.md` - Decision note
 - `labs/platform-academy/design-production-eks-review/evidence-template.md` - Evidence template
@@ -44,6 +45,7 @@ You need to review whether a proposed EKS platform is resilient and cost-aware b
 
 ## Learner artifact paths
 
+- labs/platform-academy/design-production-eks-review/triage-notes.md
 - labs/platform-academy/design-production-eks-review/cluster-review.md
 - labs/platform-academy/design-production-eks-review/launch-review.md
 - labs/platform-academy/design-production-eks-review/evidence-template.md
@@ -56,6 +58,7 @@ You need to review whether a proposed EKS platform is resilient and cost-aware b
 ## Worksheet prompts
 
 - [ ] Record the cluster-review packet, launch-review packet, reviewer, and confirmation that no AWS changes are being made.
+- [ ] Read triage-notes.md and list the False Leads ruled out before writing the launch decision.
 - [ ] Paste endpoint posture, critical workload spread, missing PDB, and zonal storage evidence.
 - [ ] Paste missing cost label, idle/NAT/LoadBalancer review gap, deprecated API, and add-on compatibility evidence.
 - [ ] Separate immediate launch blockers from follow-up improvements and explain the reliability risk.
@@ -71,7 +74,13 @@ You need to review whether a proposed EKS platform is resilient and cost-aware b
 
 - bash labs/platform-academy/run-lab.sh setup design-production-eks-review
 - bash labs/platform-academy/design-production-eks-review/setup.sh --evidence /tmp/production-eks-review-evidence.md
+- sed -n '1,220p' labs/platform-academy/design-production-eks-review/triage-notes.md
 - sed -n '1,220p' labs/platform-academy/design-production-eks-review/cluster-review.md
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup design-production-eks-review --run-analyzer`.
 
 ## Local workspace
 
@@ -89,6 +98,7 @@ You need to review whether a proposed EKS platform is resilient and cost-aware b
 
 ## Practice steps
 
+- [ ] Read triage-notes.md and rule out launch-approval shortcuts.
 - [ ] Check critical workload spread and PDB coverage.
 - [ ] Identify zonal storage and recovery expectations.
 - [ ] Flag missing cost labels and upgrade pause points.
@@ -96,13 +106,14 @@ You need to review whether a proposed EKS platform is resilient and cost-aware b
 
 ## Runbook commands
 
+- grep -n "False Leads\|missing PDB\|snapshot policy\|cost labels" labs/platform-academy/design-production-eks-review/triage-notes.md
 - grep -n "Missing cost label\|pdb=missing\|public and private\|zonal" labs/platform-academy/design-production-eks-review/cluster-review.md
 - grep -n "Upgrade pause\|deprecated APIs\|PDBs" labs/platform-academy/design-production-eks-review/cluster-review.md
 - sed -n '1,220p' labs/platform-academy/design-production-eks-review/launch-review.md
-- python3 labs/platform-academy/design-production-eks-review/production_review_analyzer.py --review labs/platform-academy/design-production-eks-review/cluster-review.md --launch labs/platform-academy/design-production-eks-review/launch-review.md
 
 ## Expected evidence
 
+- [ ] The triage notes rule out endpoint-only approval, missing-PDB deferral, snapshot-only recovery proof, and deferred cost labels.
 - [ ] One worker has a missing PDB.
 - [ ] Postgres uses zonal storage with snapshot restore expectations.
 - [ ] One apps node lacks a cost label.
@@ -119,6 +130,7 @@ You need to review whether a proposed EKS platform is resilient and cost-aware b
 ## Validation checks
 
 - [ ] No-AWS architecture review boundary recorded
+- [ ] Triage false leads recorded
 - [ ] Endpoint and workload-spread evidence captured
 - [ ] Missing PDB and zonal storage evidence captured
 - [ ] Cost label and cost-review gap evidence captured
@@ -129,6 +141,7 @@ You need to review whether a proposed EKS platform is resilient and cost-aware b
 ## Rubric
 
 - [ ] Preserves the captured architecture-review safety boundary and avoids live AWS mutation.
+- [ ] Uses triage notes to rule out endpoint-only approval, missing-PDB deferral, snapshot-only recovery proof, and deferred cost-label False Leads.
 - [ ] Captures endpoint posture, missing PDB, critical workload spread, and zonal storage evidence.
 - [ ] Captures missing cost label, cost-review gaps, deprecated APIs, and add-on compatibility risk.
 - [ ] Separates launch blockers from follow-up improvements with reliability rationale.
@@ -141,5 +154,5 @@ You need to review whether a proposed EKS platform is resilient and cost-aware b
 
 ## No-cluster fallback
 
-- [ ] Use cluster-review.md as the design review packet.
+- [ ] Use triage-notes.md and cluster-review.md as the design review packet.
 - [ ] Write launch blockers and follow-up owners without connecting to AWS.

@@ -17,22 +17,23 @@ A chart renders successfully but may change immutable selectors or create unsafe
    - bash labs/platform-academy/run-lab.sh setup validate-helm-release-artifact
    - bash labs/platform-academy/validate-helm-release-artifact/setup.sh --evidence /tmp/helm-release-evidence.md
 2. Investigate safely
+   - Read triage-notes.md and rule out render-success, diff-only, mutable-tag, apply-then-fix, and unapproved-exposure false leads.
    - Review rendered YAML instead of trusting chart success.
    - Find immutable selector changes and risky security changes.
    - Use the local analyzer to prove selector, image, runtime, exposure, and safer-target evidence.
-   - Write an approval decision with rollback limitations.
 3. Prove the finding
+   - The triage notes rule out render-success approval, diff-only approval, mutable-tag promotion, apply-then-fix rollback, and unapproved LoadBalancer exposure.
    - The Deployment selector changes between rendered versions.
    - The image changes from digest-pinned to the mutable latest tag.
    - The rendered output introduces privileged mode and a LoadBalancer.
-   - The local analyzer reports Helm release artifact analysis passed.
 4. Reset or hand off
    - bash labs/platform-academy/validate-helm-release-artifact/cleanup.sh
-   - Read the before/after YAML files and complete the review without Helm.
+   - Read triage-notes.md and the before/after YAML files, then complete the review without Helm.
    - Block the release in writing if selector, image, security, or exposure risk is unresolved.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/validate-helm-release-artifact/triage-notes.md` - Decision note
 - `labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml` - Manifest
 - `labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml` - Manifest
 - `labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml` - Target artifact
@@ -46,6 +47,7 @@ A chart renders successfully but may change immutable selectors or create unsafe
 
 ## Learner artifact paths
 
+- labs/platform-academy/validate-helm-release-artifact/triage-notes.md
 - labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml
 - labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml
 - labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml
@@ -60,6 +62,7 @@ A chart renders successfully but may change immutable selectors or create unsafe
 ## Worksheet prompts
 
 - [ ] Record the rendered artifact, target environment, reviewer, and confirmation that the unsafe render was not applied.
+- [ ] Read triage-notes.md and list the False Leads ruled out before approving the rendered artifact.
 - [ ] Paste the immutable selector change evidence from rendered-before.yaml and rendered-after.yaml.
 - [ ] Paste the image, securityContext, and Service exposure regressions.
 - [ ] Explain rollback risk and which chart/value owners must approve changes.
@@ -75,7 +78,13 @@ A chart renders successfully but may change immutable selectors or create unsafe
 
 - bash labs/platform-academy/run-lab.sh setup validate-helm-release-artifact
 - bash labs/platform-academy/validate-helm-release-artifact/setup.sh --evidence /tmp/helm-release-evidence.md
+- sed -n '1,220p' labs/platform-academy/validate-helm-release-artifact/triage-notes.md
 - sed -n '1,180p' labs/platform-academy/validate-helm-release-artifact/review-notes.md
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup validate-helm-release-artifact --run-analyzer`.
 
 ## Local workspace
 
@@ -93,6 +102,7 @@ A chart renders successfully but may change immutable selectors or create unsafe
 
 ## Practice steps
 
+- [ ] Read triage-notes.md and rule out render-success, diff-only, mutable-tag, apply-then-fix, and unapproved-exposure false leads.
 - [ ] Review rendered YAML instead of trusting chart success.
 - [ ] Find immutable selector changes and risky security changes.
 - [ ] Use the local analyzer to prove selector, image, runtime, exposure, and safer-target evidence.
@@ -101,11 +111,12 @@ A chart renders successfully but may change immutable selectors or create unsafe
 ## Runbook commands
 
 - diff -u labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml || true
+- grep -n "False Leads\|render is not release approval\|checkout:latest" labs/platform-academy/validate-helm-release-artifact/triage-notes.md
 - grep -n "selector:\|latest\|privileged\|LoadBalancer" labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml
-- python3 labs/platform-academy/validate-helm-release-artifact/helm_release_analyzer.py --before labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml --after labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml --safe labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml --notes labs/platform-academy/validate-helm-release-artifact/review-notes.md
 
 ## Expected evidence
 
+- [ ] The triage notes rule out render-success approval, diff-only approval, mutable-tag promotion, apply-then-fix rollback, and unapproved LoadBalancer exposure.
 - [ ] The Deployment selector changes between rendered versions.
 - [ ] The image changes from digest-pinned to the mutable latest tag.
 - [ ] The rendered output introduces privileged mode and a LoadBalancer.
@@ -122,6 +133,7 @@ A chart renders successfully but may change immutable selectors or create unsafe
 ## Validation checks
 
 - [ ] No-apply safety boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] Selector before/after evidence captured
 - [ ] Mutable image evidence captured
 - [ ] Privileged runtime and LoadBalancer evidence captured
@@ -132,6 +144,7 @@ A chart renders successfully but may change immutable selectors or create unsafe
 ## Rubric
 
 - [ ] Preserves the no-apply safety boundary and names the rendered artifact under review.
+- [ ] Uses triage notes to rule out render-success approval, diff-only approval, mutable-tag promotion, apply-then-fix rollback, and unapproved exposure False Leads.
 - [ ] Captures the immutable Deployment selector change with exact before/after labels.
 - [ ] Flags mutable `checkout:latest` image, privileged runtime, and new `LoadBalancer` exposure.
 - [ ] Explains rollback risk, owner questions, and why render-success is not release approval.
@@ -144,5 +157,5 @@ A chart renders successfully but may change immutable selectors or create unsafe
 
 ## No-cluster fallback
 
-- [ ] Read the before/after YAML files and complete the review without Helm.
+- [ ] Read triage-notes.md and the before/after YAML files, then complete the review without Helm.
 - [ ] Block the release in writing if selector, image, security, or exposure risk is unresolved.

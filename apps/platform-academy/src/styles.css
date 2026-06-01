@@ -1005,6 +1005,74 @@ main {
   font-weight: 800;
 }
 
+.lab-phase-status {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid rgba(52, 86, 74, 0.24);
+  padding-top: 14px;
+}
+
+.lab-phase-status .section-heading {
+  margin: 0;
+}
+
+.lab-phase-status .section-heading > span {
+  color: #52625c;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.lab-phase-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.lab-phase-status-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  border-top: 1px solid #dce3dd;
+  padding-top: 10px;
+}
+
+.lab-phase-status-row:nth-child(-n + 2) {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.lab-phase-status-row svg {
+  width: 18px;
+  height: 18px;
+  color: #1f6f5a;
+}
+
+.lab-phase-status-copy {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.lab-phase-status-copy strong {
+  color: #14231d;
+  font-size: 0.82rem;
+}
+
+.lab-phase-status-copy span,
+.lab-phase-status-row small {
+  color: #52625c;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.lab-phase-status-row small {
+  display: block;
+  margin-top: 7px;
+  line-height: 1.35;
+}
+
 .lab-workbook-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

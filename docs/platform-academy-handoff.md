@@ -19,10 +19,10 @@ Latest local verification on `codex/runnable-labs`:
 - `make release-check`: passed.
 - `make platform-release-check`: passed, including API-image Alembic execution and built API/web container smoke.
 - `make working-tree-hygiene-check`: passed across branch changes plus local modified, staged, and untracked files.
-- API tests: `59 passed`.
+- API tests: `69 passed`.
 - Worker tests: `1 passed`.
 - Zhongwen frontend tests: `1 passed`.
-- Platform Academy frontend tests: `32 passed`.
+- Platform Academy frontend tests: `34 passed`.
 - Full lab verifier: `Verified 21 full labs`.
 - Lab contract now requires `DEEPENED_LAB_CONTRACT` to cover every full lab, so a future full lab cannot silently fall back to generic worksheet/rubric behavior.
 - Public lab payloads are learner-safe: `artifact_paths` and `learner_artifact_paths` expose only learner inspection artifacts, not source `README.md` or `solution.md`.

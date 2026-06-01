@@ -17,22 +17,23 @@ An ALB target group turns unhealthy after a Kubernetes deployment and users see 
    - Run commands from the repository root.
    - bash labs/platform-academy/run-lab.sh setup debug-aws-alb-health-path
 2. Investigate safely
+   - Read triage-notes.md and rule out DNS, security group, Pod recreation, and console-only false leads.
    - Confirm which target group symptom is failing.
    - Compare ALB health path with Ingress, Service, and Pod port evidence.
    - Use the local analyzer to prove ALB, health-path, Service/Pod, controller-event, and fixed-target evidence.
-   - Name whether the owner is AWS networking, ingress controller, or app manifest.
 3. Prove the finding
+   - The triage notes rule out DNS, security group, Pod recreation, and console-only ALB changes as first fixes.
    - One target is unhealthy with Target.ResponseCodeMismatch.
    - Ingress healthcheck path is /healthz.
    - Service targetPort web does not match the Pod port named http.
-   - The local analyzer reports ALB health path analysis passed.
 4. Reset or hand off
    - bash labs/platform-academy/debug-aws-alb-health-path/cleanup.sh
-   - Use target-health.json, ingress-service.yaml, and events.txt as exported evidence.
+   - Use triage-notes.md, target-health.json, ingress-service.yaml, and events.txt as exported evidence.
    - Write the owner and next action without AWS CLI access.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/debug-aws-alb-health-path/triage-notes.md` - Decision note
 - `labs/platform-academy/debug-aws-alb-health-path/target-health.json` - Manifest
 - `labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml` - Manifest
 - `labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml` - Target artifact
@@ -47,6 +48,7 @@ An ALB target group turns unhealthy after a Kubernetes deployment and users see 
 
 ## Learner artifact paths
 
+- labs/platform-academy/debug-aws-alb-health-path/triage-notes.md
 - labs/platform-academy/debug-aws-alb-health-path/target-health.json
 - labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml
 - labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml
@@ -62,6 +64,7 @@ An ALB target group turns unhealthy after a Kubernetes deployment and users see 
 ## Worksheet prompts
 
 - [ ] Record the evidence source, namespace, manifest files, and why no live AWS mutation is required.
+- [ ] Read triage-notes.md and list the False Leads ruled out before changing ALB or Kubernetes objects.
 - [ ] Paste the ALB target health reason, unhealthy target, and observed HTTP status.
 - [ ] Paste the Ingress health check path and explain whether it matches the app contract.
 - [ ] Paste the Service targetPort, Pod port name, and controller event that prove the routing mismatch.
@@ -78,10 +81,16 @@ An ALB target group turns unhealthy after a Kubernetes deployment and users see 
 
 - bash labs/platform-academy/run-lab.sh setup debug-aws-alb-health-path
 - bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --evidence /tmp/alb-health-path-evidence.md
+- sed -n '1,220p' labs/platform-academy/debug-aws-alb-health-path/triage-notes.md
 - sed -n '1,160p' labs/platform-academy/debug-aws-alb-health-path/target-health.json
 - bash labs/platform-academy/bootstrap-local-cluster.sh --preflight debug-aws-alb-health-path
 - bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --preflight
 - bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --cluster --evidence /tmp/alb-health-path-evidence.md
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup debug-aws-alb-health-path --run-analyzer`.
 
 ## Local workspace
 
@@ -108,6 +117,7 @@ An ALB target group turns unhealthy after a Kubernetes deployment and users see 
 
 ## Practice steps
 
+- [ ] Read triage-notes.md and rule out DNS, security group, Pod recreation, and console-only false leads.
 - [ ] Confirm which target group symptom is failing.
 - [ ] Compare ALB health path with Ingress, Service, and Pod port evidence.
 - [ ] Use the local analyzer to prove ALB, health-path, Service/Pod, controller-event, and fixed-target evidence.
@@ -115,12 +125,13 @@ An ALB target group turns unhealthy after a Kubernetes deployment and users see 
 
 ## Runbook commands
 
+- grep -n "False Leads\|console-only\|security groups" labs/platform-academy/debug-aws-alb-health-path/triage-notes.md
 - grep -n "unhealthy\|ResponseCodeMismatch\|targetPort: web" labs/platform-academy/debug-aws-alb-health-path/target-health.json labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml
 - grep -n "healthcheck-path\|targetPort web\|no matching Pod port" labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml labs/platform-academy/debug-aws-alb-health-path/events.txt
-- python3 labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py --target-health labs/platform-academy/debug-aws-alb-health-path/target-health.json --events labs/platform-academy/debug-aws-alb-health-path/events.txt --broken labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml --fixed labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml
 
 ## Expected evidence
 
+- [ ] The triage notes rule out DNS, security group, Pod recreation, and console-only ALB changes as first fixes.
 - [ ] One target is unhealthy with Target.ResponseCodeMismatch.
 - [ ] Ingress healthcheck path is /healthz.
 - [ ] Service targetPort web does not match the Pod port named http.
@@ -139,6 +150,7 @@ An ALB target group turns unhealthy after a Kubernetes deployment and users see 
 ## Validation checks
 
 - [ ] Evidence source and no-live-mutation boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] ALB target health reason captured
 - [ ] Health check path reviewed
 - [ ] Service-to-Pod port mismatch captured
@@ -149,6 +161,7 @@ An ALB target group turns unhealthy after a Kubernetes deployment and users see 
 ## Rubric
 
 - [ ] Uses exported ALB and Kubernetes evidence without requiring AWS credentials.
+- [ ] Uses triage notes to rule out DNS, security group, Pod recreation, and console-only False Leads.
 - [ ] Names `Target.ResponseCodeMismatch` and the 404 health-check symptom.
 - [ ] Connects `/healthz` to the application health endpoint contract instead of assuming AWS is broken.
 - [ ] Explains why `targetPort: web` does not match the Pod port named `http`.
@@ -161,5 +174,5 @@ An ALB target group turns unhealthy after a Kubernetes deployment and users see 
 
 ## No-cluster fallback
 
-- [ ] Use target-health.json, ingress-service.yaml, and events.txt as exported evidence.
+- [ ] Use triage-notes.md, target-health.json, ingress-service.yaml, and events.txt as exported evidence.
 - [ ] Write the owner and next action without AWS CLI access.

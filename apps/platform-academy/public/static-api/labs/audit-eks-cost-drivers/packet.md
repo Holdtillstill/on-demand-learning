@@ -17,22 +17,23 @@ Cloud spend jumped after a platform migration, and you need to separate real gro
    - bash labs/platform-academy/run-lab.sh setup audit-eks-cost-drivers
    - bash labs/platform-academy/audit-eks-cost-drivers/setup.sh --evidence /tmp/eks-cost-evidence.md
 2. Investigate safely
+   - Read the triage notes and rule out unsafe delete-first cost actions.
    - Rank compute over-requesting, idle load balancers, and abandoned storage.
    - Use the local analyzer to separate quick-win monthly exposure from architecture-review items.
    - Map each finding to an owner, savings estimate, reliability risk, and rollback.
-   - Decide which recommendations are quick wins versus architecture changes.
 3. Prove the finding
+   - The triage notes rule out utilization-only deletion, unknown-owner deletion, age-only cleanup, and savings without rollback.
    - Checkout and worker CPU requests are far above usage.
    - Default namespace has abandoned load balancer and storage entries.
    - Some resources have unknown owner metadata.
-   - The local analyzer reports EKS cost driver analysis passed and quick-win monthly exposure.
 4. Reset or hand off
    - bash labs/platform-academy/audit-eks-cost-drivers/cleanup.sh
-   - Use the CSV and text snapshots as cost evidence.
+   - Use triage-notes.md plus the CSV and text snapshots as cost evidence.
    - Write a cost recommendation table without live AWS access.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/audit-eks-cost-drivers/triage-notes.md` - Decision note
 - `labs/platform-academy/audit-eks-cost-drivers/usage.csv` - Lab artifact
 - `labs/platform-academy/audit-eks-cost-drivers/services.txt` - Lab artifact
 - `labs/platform-academy/audit-eks-cost-drivers/storage.txt` - Lab artifact
@@ -46,6 +47,7 @@ Cloud spend jumped after a platform migration, and you need to separate real gro
 
 ## Learner artifact paths
 
+- labs/platform-academy/audit-eks-cost-drivers/triage-notes.md
 - labs/platform-academy/audit-eks-cost-drivers/usage.csv
 - labs/platform-academy/audit-eks-cost-drivers/services.txt
 - labs/platform-academy/audit-eks-cost-drivers/storage.txt
@@ -60,6 +62,7 @@ Cloud spend jumped after a platform migration, and you need to separate real gro
 ## Worksheet prompts
 
 - [ ] Record the usage, service, storage, and recommendation files plus confirmation that no AWS or cluster deletion is being made.
+- [ ] Read triage-notes.md and list the False Leads ruled out before recommending cost changes.
 - [ ] Paste over-requested workload rows, unknown-owner rows, and request-versus-usage evidence.
 - [ ] Paste abandoned LoadBalancer, abandoned PVC, estimated monthly cost, and architecture-review evidence.
 - [ ] Rank quick wins versus architecture changes with reliability risk and ownership confidence.
@@ -75,8 +78,14 @@ Cloud spend jumped after a platform migration, and you need to separate real gro
 
 - bash labs/platform-academy/run-lab.sh setup audit-eks-cost-drivers
 - bash labs/platform-academy/audit-eks-cost-drivers/setup.sh --evidence /tmp/eks-cost-evidence.md
+- sed -n '1,220p' labs/platform-academy/audit-eks-cost-drivers/triage-notes.md
 - sed -n '1,160p' labs/platform-academy/audit-eks-cost-drivers/usage.csv
 - sed -n '1,120p' labs/platform-academy/audit-eks-cost-drivers/services.txt
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup audit-eks-cost-drivers --run-analyzer`.
 
 ## Local workspace
 
@@ -94,6 +103,7 @@ Cloud spend jumped after a platform migration, and you need to separate real gro
 
 ## Practice steps
 
+- [ ] Read the triage notes and rule out unsafe delete-first cost actions.
 - [ ] Rank compute over-requesting, idle load balancers, and abandoned storage.
 - [ ] Use the local analyzer to separate quick-win monthly exposure from architecture-review items.
 - [ ] Map each finding to an owner, savings estimate, reliability risk, and rollback.
@@ -101,12 +111,13 @@ Cloud spend jumped after a platform migration, and you need to separate real gro
 
 ## Runbook commands
 
+- grep -n "False Leads\|Low utilization\|Unknown owner\|LoadBalancer age" labs/platform-academy/audit-eks-cost-drivers/triage-notes.md
 - awk -F, 'NR==1 || $8=="unknown" || $3 > ($4 * 4) {print}' labs/platform-academy/audit-eks-cost-drivers/usage.csv
 - grep -n "abandoned\|LoadBalancer\|unknown" labs/platform-academy/audit-eks-cost-drivers/services.txt labs/platform-academy/audit-eks-cost-drivers/storage.txt
-- python3 labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py --usage labs/platform-academy/audit-eks-cost-drivers/usage.csv --services labs/platform-academy/audit-eks-cost-drivers/services.txt --storage labs/platform-academy/audit-eks-cost-drivers/storage.txt --recommendations labs/platform-academy/audit-eks-cost-drivers/recommendations.md
 
 ## Expected evidence
 
+- [ ] The triage notes rule out utilization-only deletion, unknown-owner deletion, age-only cleanup, and savings without rollback.
 - [ ] Checkout and worker CPU requests are far above usage.
 - [ ] Default namespace has abandoned load balancer and storage entries.
 - [ ] Some resources have unknown owner metadata.
@@ -123,6 +134,7 @@ Cloud spend jumped after a platform migration, and you need to separate real gro
 ## Validation checks
 
 - [ ] No-delete/no-AWS safety boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] EKS cost driver analysis passed output captured
 - [ ] Compute over-request evidence captured
 - [ ] Unknown owner evidence captured
@@ -134,6 +146,7 @@ Cloud spend jumped after a platform migration, and you need to separate real gro
 ## Rubric
 
 - [ ] Preserves the no-delete/no-AWS safety boundary and names the local cost evidence files.
+- [ ] Uses triage notes to rule out utilization-only deletion, unknown-owner deletion, age-only cleanup, and savings-without-rollback False Leads.
 - [ ] Captures over-requested workloads, unknown owners, and usage/request ratio evidence.
 - [ ] Captures abandoned LoadBalancer, abandoned PVC, expected cost, and architecture-review items.
 - [ ] Separates quick wins from architecture changes and avoids deletion without owner confirmation.
@@ -146,5 +159,5 @@ Cloud spend jumped after a platform migration, and you need to separate real gro
 
 ## No-cluster fallback
 
-- [ ] Use the CSV and text snapshots as cost evidence.
+- [ ] Use triage-notes.md plus the CSV and text snapshots as cost evidence.
 - [ ] Write a cost recommendation table without live AWS access.

@@ -17,22 +17,23 @@ A team wants push-to-prod for a Kubernetes service, and you need to add the mini
    - bash labs/platform-academy/run-lab.sh setup design-safe-release-pipeline
    - bash labs/platform-academy/design-safe-release-pipeline/setup.sh --evidence /tmp/release-pipeline-evidence.md
 2. Investigate safely
+   - Read the triage notes and rule out fast-but-unsafe approval paths.
    - Identify missing quality gates before production.
    - Add immutable digest promotion and smoke-test expectations.
    - Use the local analyzer to prove the unsafe path and safe gate chain.
-   - Name rollback criteria and permission boundaries.
 3. Prove the finding
+   - The triage notes rule out green-build-only approval, SHA-tag-only promotion, late scans, approval without artifacts, and rollback without digest.
    - The sample pipeline deploys from main directly to production.
    - The build step does not promote by digest.
    - The checklist requires scan, smoke, rollback, and approval gates.
-   - The local analyzer reports Safe release pipeline analysis passed.
 4. Reset or hand off
    - bash labs/platform-academy/design-safe-release-pipeline/cleanup.sh
-   - Use pipeline.yaml and release-checklist.md as the review packet.
+   - Use triage-notes.md, pipeline.yaml, and release-checklist.md as the review packet.
    - Write the minimum gate set before touching a real CI system.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/design-safe-release-pipeline/triage-notes.md` - Target artifact
 - `labs/platform-academy/design-safe-release-pipeline/pipeline.yaml` - Target artifact
 - `labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml` - Target artifact
 - `labs/platform-academy/design-safe-release-pipeline/release-checklist.md` - Target artifact
@@ -46,6 +47,7 @@ A team wants push-to-prod for a Kubernetes service, and you need to add the mini
 
 ## Learner artifact paths
 
+- labs/platform-academy/design-safe-release-pipeline/triage-notes.md
 - labs/platform-academy/design-safe-release-pipeline/pipeline.yaml
 - labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml
 - labs/platform-academy/design-safe-release-pipeline/release-checklist.md
@@ -60,6 +62,7 @@ A team wants push-to-prod for a Kubernetes service, and you need to add the mini
 ## Worksheet prompts
 
 - [ ] Record the unsafe workflow, checklist, reviewer, and confirmation that no real CI runner, registry, or cluster is being changed.
+- [ ] Read triage-notes.md and list the False Leads ruled out before approving the production pipeline.
 - [ ] Paste `deploy-prod`, `github.ref == 'refs/heads/main'`, direct Helm production deployment, and missing digest-promotion evidence.
 - [ ] Paste the missing gate evidence and the required `image-digest.txt`, `trivy image`, SBOM, render, schema, and policy gates.
 - [ ] Paste `deploy-staging`, smoke test, `environment: production`, canary, and approval boundary evidence.
@@ -75,8 +78,14 @@ A team wants push-to-prod for a Kubernetes service, and you need to add the mini
 
 - bash labs/platform-academy/run-lab.sh setup design-safe-release-pipeline
 - bash labs/platform-academy/design-safe-release-pipeline/setup.sh --evidence /tmp/release-pipeline-evidence.md
+- sed -n '1,220p' labs/platform-academy/design-safe-release-pipeline/triage-notes.md
 - sed -n '1,180p' labs/platform-academy/design-safe-release-pipeline/pipeline.yaml
 - sed -n '1,180p' labs/platform-academy/design-safe-release-pipeline/release-checklist.md
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup design-safe-release-pipeline --run-analyzer`.
 
 ## Local workspace
 
@@ -94,6 +103,7 @@ A team wants push-to-prod for a Kubernetes service, and you need to add the mini
 
 ## Practice steps
 
+- [ ] Read the triage notes and rule out fast-but-unsafe approval paths.
 - [ ] Identify missing quality gates before production.
 - [ ] Add immutable digest promotion and smoke-test expectations.
 - [ ] Use the local analyzer to prove the unsafe path and safe gate chain.
@@ -101,13 +111,14 @@ A team wants push-to-prod for a Kubernetes service, and you need to add the mini
 
 ## Runbook commands
 
+- grep -n "False Leads\|green build\|SHA tag\|rollback digest" labs/platform-academy/design-safe-release-pipeline/triage-notes.md
 - grep -n "main\|deploy-prod\|helm upgrade\|missing digest" labs/platform-academy/design-safe-release-pipeline/pipeline.yaml
 - grep -n "digest\|smoke\|rollback\|approval" labs/platform-academy/design-safe-release-pipeline/release-checklist.md
-- python3 labs/platform-academy/design-safe-release-pipeline/release_pipeline_analyzer.py --unsafe labs/platform-academy/design-safe-release-pipeline/pipeline.yaml --safe labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml --checklist labs/platform-academy/design-safe-release-pipeline/release-checklist.md --decision labs/platform-academy/design-safe-release-pipeline/decision-record.md
 - diff -u labs/platform-academy/design-safe-release-pipeline/pipeline.yaml labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml || true
 
 ## Expected evidence
 
+- [ ] The triage notes rule out green-build-only approval, SHA-tag-only promotion, late scans, approval without artifacts, and rollback without digest.
 - [ ] The sample pipeline deploys from main directly to production.
 - [ ] The build step does not promote by digest.
 - [ ] The checklist requires scan, smoke, rollback, and approval gates.
@@ -124,6 +135,7 @@ A team wants push-to-prod for a Kubernetes service, and you need to add the mini
 ## Validation checks
 
 - [ ] No-live-CI safety boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] Safe release pipeline analysis passed output captured
 - [ ] Direct main-to-production deploy evidence captured
 - [ ] Digest-promotion gap captured
@@ -135,6 +147,7 @@ A team wants push-to-prod for a Kubernetes service, and you need to add the mini
 ## Rubric
 
 - [ ] Preserves the no-live-CI safety boundary and names the reviewed pipeline artifacts.
+- [ ] Uses triage notes to rule out green-build-only approval, SHA-tag-only promotion, post-deploy scans, approval without artifacts, and rollback-without-digest False Leads.
 - [ ] Blocks `deploy-prod` from `main` and explains why tag-only promotion is weaker than digest promotion.
 - [ ] Requires `image-digest.txt`, `trivy image`, SBOM, manifest render, `kubeconform`, and policy evidence before deployment.
 - [ ] Requires `deploy-staging`, smoke tests, `environment: production`, approval, and canary rollout before production.
@@ -147,5 +160,5 @@ A team wants push-to-prod for a Kubernetes service, and you need to add the mini
 
 ## No-cluster fallback
 
-- [ ] Use pipeline.yaml and release-checklist.md as the review packet.
+- [ ] Use triage-notes.md, pipeline.yaml, and release-checklist.md as the review packet.
 - [ ] Write the minimum gate set before touching a real CI system.

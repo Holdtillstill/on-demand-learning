@@ -17,22 +17,23 @@ You need interview-ready proof that your platform skills are practical, current,
    - bash labs/platform-academy/run-lab.sh setup build-platform-career-proof-pack
    - bash labs/platform-academy/build-platform-career-proof-pack/setup.sh --evidence /tmp/career-proof-evidence.md
 2. Investigate safely
+   - Read the triage notes and rule out broad career claims without proof.
    - Extract repeated skills from the sample target roles.
    - Pick three lab artifacts and map them to proof bullets.
    - Fill the README template with commands, evidence, validation, rollback, and interview talking points.
-   - Run the local career proof analyzer to prove the README, bullets, STAR stories, missing-proof list, and public-safety boundary.
 3. Prove the finding
+   - The triage notes rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.
    - Target roles repeatedly mention Kubernetes, AWS, Terraform, CI/CD, observability, SRE, and security.
    - The evidence inventory names five candidate artifacts and missing proof to collect.
    - The README template forces problem, commands, validation, rollback, and STAR talking points.
-   - The completed proof pack includes a README proof section, resume bullets, and STAR stories.
 4. Reset or hand off
    - bash labs/platform-academy/build-platform-career-proof-pack/cleanup.sh
-   - Use the included job skills and evidence inventory instead of external job postings.
+   - Use triage-notes.md plus the included job skills and evidence inventory instead of external job postings.
    - Write one README proof section from any converted lab.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/build-platform-career-proof-pack/triage-notes.md` - Decision note
 - `labs/platform-academy/build-platform-career-proof-pack/job-skills.txt` - Lab artifact
 - `labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md` - Decision note
 - `labs/platform-academy/build-platform-career-proof-pack/readme-template.md` - Decision note
@@ -48,6 +49,7 @@ You need interview-ready proof that your platform skills are practical, current,
 
 ## Learner artifact paths
 
+- labs/platform-academy/build-platform-career-proof-pack/triage-notes.md
 - labs/platform-academy/build-platform-career-proof-pack/job-skills.txt
 - labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md
 - labs/platform-academy/build-platform-career-proof-pack/readme-template.md
@@ -64,6 +66,7 @@ You need interview-ready proof that your platform skills are practical, current,
 ## Worksheet prompts
 
 - [ ] Record the job-skill packet, evidence inventory, README template, and public-safe redaction boundary.
+- [ ] Read triage-notes.md and list the False Leads ruled out before publishing career claims.
 - [ ] Paste repeated target skills and the platform domains covered by the selected lab evidence.
 - [ ] Paste selected lab artifacts, command/validator proof, decision evidence, rollback evidence, and missing proof.
 - [ ] Write one portfolio proof section with problem, environment, commands, decision, validation, and talking points.
@@ -79,8 +82,14 @@ You need interview-ready proof that your platform skills are practical, current,
 
 - bash labs/platform-academy/run-lab.sh setup build-platform-career-proof-pack
 - bash labs/platform-academy/build-platform-career-proof-pack/setup.sh --evidence /tmp/career-proof-evidence.md
+- sed -n '1,220p' labs/platform-academy/build-platform-career-proof-pack/triage-notes.md
 - sed -n '1,160p' labs/platform-academy/build-platform-career-proof-pack/job-skills.txt
 - sed -n '1,180p' labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup build-platform-career-proof-pack --run-analyzer`.
 
 ## Local workspace
 
@@ -98,6 +107,7 @@ You need interview-ready proof that your platform skills are practical, current,
 
 ## Practice steps
 
+- [ ] Read the triage notes and rule out broad career claims without proof.
 - [ ] Extract repeated skills from the sample target roles.
 - [ ] Pick three lab artifacts and map them to proof bullets.
 - [ ] Fill the README template with commands, evidence, validation, rollback, and interview talking points.
@@ -105,13 +115,14 @@ You need interview-ready proof that your platform skills are practical, current,
 
 ## Runbook commands
 
+- grep -n "False Leads\|completed labs\|Resume bullets\|Redaction" labs/platform-academy/build-platform-career-proof-pack/triage-notes.md
 - grep -n "Kubernetes\|Terraform\|incident response\|SLOs\|FinOps" labs/platform-academy/build-platform-career-proof-pack/job-skills.txt
 - grep -n "Missing proof\|rollback\|STAR" labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md labs/platform-academy/build-platform-career-proof-pack/readme-template.md
 - diff -u labs/platform-academy/build-platform-career-proof-pack/readme-template.md labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md || true
-- python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md --proof labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md --bullets labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md --star labs/platform-academy/build-platform-career-proof-pack/star-stories.md
 
 ## Expected evidence
 
+- [ ] The triage notes rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.
 - [ ] Target roles repeatedly mention Kubernetes, AWS, Terraform, CI/CD, observability, SRE, and security.
 - [ ] The evidence inventory names five candidate artifacts and missing proof to collect.
 - [ ] The README template forces problem, commands, validation, rollback, and STAR talking points.
@@ -128,6 +139,7 @@ You need interview-ready proof that your platform skills are practical, current,
 ## Validation checks
 
 - [ ] Public-safe redaction boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] Repeated target skills captured
 - [ ] Lab artifacts and validators mapped
 - [ ] Portfolio proof README completed
@@ -138,6 +150,7 @@ You need interview-ready proof that your platform skills are practical, current,
 ## Rubric
 
 - [ ] Preserves the public-safe evidence boundary and avoids secrets, customer data, or private identifiers.
+- [ ] Uses triage notes to rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.
 - [ ] Maps repeated target skills to concrete Platform Academy lab artifacts and domains.
 - [ ] Cites commands, validators, decisions, rollback notes, and missing proof instead of broad claims.
 - [ ] Completes a portfolio README proof section with problem, environment, command, decision, validation, and rollback.
@@ -150,5 +163,5 @@ You need interview-ready proof that your platform skills are practical, current,
 
 ## No-cluster fallback
 
-- [ ] Use the included job skills and evidence inventory instead of external job postings.
+- [ ] Use triage-notes.md plus the included job skills and evidence inventory instead of external job postings.
 - [ ] Write one README proof section from any converted lab.

@@ -17,22 +17,23 @@ New Pods remain Pending during scale-out and events mention CNI allocation failu
    - bash labs/platform-academy/run-lab.sh setup diagnose-eks-ip-exhaustion
    - bash labs/platform-academy/diagnose-eks-ip-exhaustion/setup.sh --evidence /tmp/eks-ip-exhaustion-evidence.md
 2. Investigate safely
+   - Read triage-notes.md and rule out restart, CPU/memory, blind node scaling, and live capacity-change false leads.
    - Separate scheduler max-pod pressure from VPC CNI IP allocation errors.
    - Find the subnet with the lowest free IPv4 count.
    - Use the local analyzer to confirm the scheduler, CNI, subnet, maxPods, and prefix-delegation signals agree.
-   - Decide whether prefix delegation, node group sizing, or CIDR planning is the correct owner path.
 3. Prove the finding
+   - The triage notes rule out app restarts, CPU/memory tuning, blind node scaling, and unreviewed live CIDR/CNI changes.
    - Events include FailedCreatePodSandBox with failed IP assignment.
    - One subnet has only seven available IPv4 addresses.
    - Nodes are near maxPods and prefix delegation is disabled.
-   - The local analyzer reports EKS IP exhaustion analysis passed.
 4. Reset or hand off
    - bash labs/platform-academy/diagnose-eks-ip-exhaustion/cleanup.sh
-   - Use the evidence pack as a captured incident transcript.
+   - Use triage-notes.md and the evidence pack as a captured incident transcript.
    - Write the decision note without running any cluster or AWS commands.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md` - Decision note
 - `labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt` - Starting evidence
 - `labs/platform-academy/diagnose-eks-ip-exhaustion/remediation-plan.md` - Decision note
 - `labs/platform-academy/diagnose-eks-ip-exhaustion/decision-record.md` - Decision note
@@ -45,6 +46,7 @@ New Pods remain Pending during scale-out and events mention CNI allocation failu
 
 ## Learner artifact paths
 
+- labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md
 - labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt
 - labs/platform-academy/diagnose-eks-ip-exhaustion/remediation-plan.md
 - labs/platform-academy/diagnose-eks-ip-exhaustion/decision-record.md
@@ -58,6 +60,7 @@ New Pods remain Pending during scale-out and events mention CNI allocation failu
 ## Worksheet prompts
 
 - [ ] Record the cluster snapshot, namespace, rollout scale target, and confirmation that no AWS or cluster capacity change is being made.
+- [ ] Read triage-notes.md and list the False Leads ruled out before recommending capacity changes.
 - [ ] Paste the `FailedScheduling` and `Insufficient pods` evidence that shows scheduler pod-density pressure.
 - [ ] Paste the `FailedCreatePodSandBox` and aws-cni IP allocation evidence.
 - [ ] Paste `subnet-bbb222`, `AvailableIPv4AddressCount=7`, node maxPods/runningPods, and `prefix delegation disabled` evidence.
@@ -73,7 +76,13 @@ New Pods remain Pending during scale-out and events mention CNI allocation failu
 
 - bash labs/platform-academy/run-lab.sh setup diagnose-eks-ip-exhaustion
 - bash labs/platform-academy/diagnose-eks-ip-exhaustion/setup.sh --evidence /tmp/eks-ip-exhaustion-evidence.md
+- sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md
 - sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup diagnose-eks-ip-exhaustion --run-analyzer`.
 
 ## Local workspace
 
@@ -91,6 +100,7 @@ New Pods remain Pending during scale-out and events mention CNI allocation failu
 
 ## Practice steps
 
+- [ ] Read triage-notes.md and rule out restart, CPU/memory, blind node scaling, and live capacity-change false leads.
 - [ ] Separate scheduler max-pod pressure from VPC CNI IP allocation errors.
 - [ ] Find the subnet with the lowest free IPv4 count.
 - [ ] Use the local analyzer to confirm the scheduler, CNI, subnet, maxPods, and prefix-delegation signals agree.
@@ -98,13 +108,14 @@ New Pods remain Pending during scale-out and events mention CNI allocation failu
 
 ## Runbook commands
 
+- grep -n "False Leads\|Blind node scaling\|FailedCreatePodSandBox" labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md
 - grep -n "FailedCreatePodSandBox\|failed to assign IP\|AvailableIPv4AddressCount" labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt
 - grep -n "maxPods\|runningPods\|prefix delegation" labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt
-- python3 labs/platform-academy/diagnose-eks-ip-exhaustion/ip_exhaustion_analyzer.py --snapshot labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt
 - sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/remediation-plan.md
 
 ## Expected evidence
 
+- [ ] The triage notes rule out app restarts, CPU/memory tuning, blind node scaling, and unreviewed live CIDR/CNI changes.
 - [ ] Events include FailedCreatePodSandBox with failed IP assignment.
 - [ ] One subnet has only seven available IPv4 addresses.
 - [ ] Nodes are near maxPods and prefix delegation is disabled.
@@ -121,6 +132,7 @@ New Pods remain Pending during scale-out and events mention CNI allocation failu
 ## Validation checks
 
 - [ ] No-live-capacity-change safety boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] EKS IP exhaustion analysis passed output captured
 - [ ] FailedScheduling pod-density evidence captured
 - [ ] FailedCreatePodSandBox CNI evidence captured
@@ -132,6 +144,7 @@ New Pods remain Pending during scale-out and events mention CNI allocation failu
 ## Rubric
 
 - [ ] Preserves the no-live-capacity-change safety boundary and names the reviewed rollout.
+- [ ] Uses triage notes to rule out app restarts, CPU/memory tuning, blind node scaling, and live CNI/CIDR False Leads.
 - [ ] Separates `FailedScheduling` pod-density evidence from application health assumptions.
 - [ ] Connects `FailedCreatePodSandBox` and aws-cni logs to IP allocation failure.
 - [ ] Identifies `subnet-bbb222`, `AvailableIPv4AddressCount=7`, maxPods pressure, and `prefix delegation disabled`.
@@ -144,5 +157,5 @@ New Pods remain Pending during scale-out and events mention CNI allocation failu
 
 ## No-cluster fallback
 
-- [ ] Use the evidence pack as a captured incident transcript.
+- [ ] Use triage-notes.md and the evidence pack as a captured incident transcript.
 - [ ] Write the decision note without running any cluster or AWS commands.

@@ -17,26 +17,27 @@ A Service exists but traffic returns 503 because labels and readiness do not lin
    - Run commands from the repository root so the lab manifest paths resolve.
    - bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md
 2. Investigate safely
+   - Read the triage notes and rule out the plausible false leads before choosing a fix.
    - Read the Service selector and write down the label key/value it expects.
    - Compare that selector with the labels on the checkout Pods.
    - Confirm whether EndpointSlices have ready backend addresses.
-   - Use the local analyzer to prove the selector mismatch and source-manifest fix.
 3. Prove the finding
+   - The triage notes rule out Pod readiness, Service port wiring, node pressure, and a live-only patch.
    - The Service selector starts as app=checkout.
    - The checkout Pods are labeled app=checkout-api.
    - EndpointSlice output has no ready checkout backend addresses until the selector is fixed.
-   - The local analyzer reports Service routing analysis passed.
 4. Reset or hand off
    - bash labs/platform-academy/trace-service-to-pod/cleanup.sh
    - Run bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md to copy the evidence template and print the captured transcript.
+   - Read labs/platform-academy/trace-service-to-pod/triage-notes.md and record which false leads were ruled out.
    - Open labs/platform-academy/trace-service-to-pod/start.yaml and compare the Service selector with the Deployment Pod template labels.
-   - Write the one-line YAML change needed to make the Service select the running Pods.
 
 ## Evidence artifact map
 
 - `labs/platform-academy/trace-service-to-pod/start.yaml` - Starting evidence
 - `labs/platform-academy/trace-service-to-pod/fixed.yaml` - Target artifact
 - `labs/platform-academy/trace-service-to-pod/broken-evidence.txt` - Starting evidence
+- `labs/platform-academy/trace-service-to-pod/triage-notes.md` - Decision note
 - `labs/platform-academy/trace-service-to-pod/evidence-template.md` - Evidence template
 - `labs/platform-academy/lib/cluster-safety.sh` - Target artifact
 - `labs/platform-academy/lib/evidence-check.sh` - Lab artifact
@@ -50,6 +51,7 @@ A Service exists but traffic returns 503 because labels and readiness do not lin
 - labs/platform-academy/trace-service-to-pod/start.yaml
 - labs/platform-academy/trace-service-to-pod/fixed.yaml
 - labs/platform-academy/trace-service-to-pod/broken-evidence.txt
+- labs/platform-academy/trace-service-to-pod/triage-notes.md
 - labs/platform-academy/trace-service-to-pod/evidence-template.md
 - labs/platform-academy/lib/cluster-safety.sh
 - labs/platform-academy/lib/evidence-check.sh
@@ -61,6 +63,7 @@ A Service exists but traffic returns 503 because labels and readiness do not lin
 ## Worksheet prompts
 
 - [ ] Record the current context or no-cluster transcript used, namespace, and cleanup command before changing anything.
+- [ ] Read triage-notes.md and list the False Leads ruled out before choosing the selector fix.
 - [ ] Paste the Service selector evidence and the exact label key/value the Service expects.
 - [ ] Paste the Pod label evidence and the exact label key/value the running Pods expose.
 - [ ] Paste the EndpointSlice evidence before the fix and explain why the Service has no ready backends.
@@ -76,6 +79,7 @@ A Service exists but traffic returns 503 because labels and readiness do not lin
 ## Setup commands
 
 - bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md
+- sed -n '1,220p' labs/platform-academy/trace-service-to-pod/triage-notes.md
 - bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod
 - bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight
 - bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --cluster
@@ -83,6 +87,11 @@ A Service exists but traffic returns 503 because labels and readiness do not lin
 - kubectl apply -f labs/platform-academy/trace-service-to-pod/start.yaml
 - kubectl wait --for=condition=available deploy/checkout -n payments --timeout=90s
 - kubectl get svc,pods,endpointslice -n payments
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --run-analyzer`.
 
 ## Local workspace
 
@@ -109,6 +118,7 @@ A Service exists but traffic returns 503 because labels and readiness do not lin
 
 ## Practice steps
 
+- [ ] Read the triage notes and rule out the plausible false leads before choosing a fix.
 - [ ] Read the Service selector and write down the label key/value it expects.
 - [ ] Compare that selector with the labels on the checkout Pods.
 - [ ] Confirm whether EndpointSlices have ready backend addresses.
@@ -120,10 +130,10 @@ A Service exists but traffic returns 503 because labels and readiness do not lin
 - kubectl describe svc checkout -n payments
 - kubectl get pods -n payments --show-labels
 - kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout
-- python3 labs/platform-academy/trace-service-to-pod/service_route_analyzer.py --start labs/platform-academy/trace-service-to-pod/start.yaml --fixed labs/platform-academy/trace-service-to-pod/fixed.yaml --transcript labs/platform-academy/trace-service-to-pod/broken-evidence.txt
 
 ## Expected evidence
 
+- [ ] The triage notes rule out Pod readiness, Service port wiring, node pressure, and a live-only patch.
 - [ ] The Service selector starts as app=checkout.
 - [ ] The checkout Pods are labeled app=checkout-api.
 - [ ] EndpointSlice output has no ready checkout backend addresses until the selector is fixed.
@@ -142,6 +152,7 @@ A Service exists but traffic returns 503 because labels and readiness do not lin
 ## Validation checks
 
 - [ ] Safety context or no-cluster transcript recorded
+- [ ] Triage False Leads ruled out
 - [ ] Service selector evidence captured
 - [ ] Pod label evidence captured
 - [ ] EndpointSlice empty-backend evidence captured
@@ -152,6 +163,7 @@ A Service exists but traffic returns 503 because labels and readiness do not lin
 ## Rubric
 
 - [ ] Names the namespace, context or transcript source, and cleanup boundary before acting.
+- [ ] Uses triage notes to rule out readiness, port wiring, node pressure, and live-only patch False Leads.
 - [ ] Captures Service selector evidence with the exact `app=checkout` value.
 - [ ] Captures Pod label evidence with the exact `app=checkout-api` value.
 - [ ] Explains why a healthy Deployment can still produce empty EndpointSlices.
@@ -165,5 +177,6 @@ A Service exists but traffic returns 503 because labels and readiness do not lin
 ## No-cluster fallback
 
 - [ ] Run bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md to copy the evidence template and print the captured transcript.
+- [ ] Read labs/platform-academy/trace-service-to-pod/triage-notes.md and record which false leads were ruled out.
 - [ ] Open labs/platform-academy/trace-service-to-pod/start.yaml and compare the Service selector with the Deployment Pod template labels.
 - [ ] Write the one-line YAML change needed to make the Service select the running Pods.

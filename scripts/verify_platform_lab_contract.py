@@ -461,7 +461,7 @@ def verify_platform_lab_docs_contract() -> None:
             "`X-Platform-Source-Bundle-Token`",
         },
         REPO_ROOT / "docs" / "platform-academy-handoff.md": {
-            "API tests: `59 passed`",
+            "API tests: `69 passed`",
             "Public lab payloads are learner-safe",
             "Instructor/source bundles still include the complete source artifact set and a `SOURCE-MANIFEST.txt`",
             "`PLATFORM_SOURCE_BUNDLE_TOKEN`",

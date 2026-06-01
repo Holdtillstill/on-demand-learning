@@ -17,22 +17,23 @@ A container exits repeatedly and you need to decide whether it is an app crash, 
    - bash labs/platform-academy/run-lab.sh setup inspect-linux-failure-evidence
    - bash labs/platform-academy/inspect-linux-failure-evidence/setup.sh --evidence /tmp/linux-failure-evidence.md
 2. Investigate safely
+   - Read triage-notes.md and rule out memory, restart-count, root-runtime, and live chmod shortcuts.
    - Capture Last State, exit code, and restart count.
    - Compare previous logs with runtime user evidence.
    - Use the local analyzer to prove runtime state, exit, permission, identity, and rejected workaround evidence.
-   - Decide whether this is app crash, permission, or resource pressure.
 3. Prove the finding
+   - The triage notes rule out memory pressure, restart-count-only diagnosis, running as root, and live chmod fixes.
    - The previous container exited with code 126.
    - Previous logs show Permission denied.
    - The process runs as uid 10001.
-   - The remediation note rejects memory tuning and root runtime as first fixes.
 4. Reset or hand off
    - bash labs/platform-academy/inspect-linux-failure-evidence/cleanup.sh
-   - The captured files are the fallback path.
+   - The captured triage and evidence files are the fallback path.
    - Write the next safest diagnostic command and the likely owner of the fix.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md` - Decision note
 - `labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt` - Lab artifact
 - `labs/platform-academy/inspect-linux-failure-evidence/previous.log` - Captured evidence
 - `labs/platform-academy/inspect-linux-failure-evidence/id-output.txt` - Lab artifact
@@ -46,6 +47,7 @@ A container exits repeatedly and you need to decide whether it is an app crash, 
 
 ## Learner artifact paths
 
+- labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md
 - labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt
 - labs/platform-academy/inspect-linux-failure-evidence/previous.log
 - labs/platform-academy/inspect-linux-failure-evidence/id-output.txt
@@ -60,6 +62,7 @@ A container exits repeatedly and you need to decide whether it is an app crash, 
 ## Worksheet prompts
 
 - [ ] Record the captured pod describe, previous log, id output, namespace, and confirmation that no cluster access is required.
+- [ ] Read triage-notes.md and list the False Leads ruled out before choosing a fix owner.
 - [ ] Paste `CrashLoopBackOff`, restart count, Last State reason, and exit code 126 evidence.
 - [ ] Paste `/app/bin/checkout: Permission denied`, runtime UID/GID, and file-permission hypothesis evidence.
 - [ ] Explain why the likely fix is image file permission or ownership, not memory tuning or application logic.
@@ -75,8 +78,14 @@ A container exits repeatedly and you need to decide whether it is an app crash, 
 
 - bash labs/platform-academy/run-lab.sh setup inspect-linux-failure-evidence
 - bash labs/platform-academy/inspect-linux-failure-evidence/setup.sh --evidence /tmp/linux-failure-evidence.md
+- sed -n '1,220p' labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md
 - sed -n '1,180p' labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt
 - sed -n '1,120p' labs/platform-academy/inspect-linux-failure-evidence/previous.log
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup inspect-linux-failure-evidence --run-analyzer`.
 
 ## Local workspace
 
@@ -94,6 +103,7 @@ A container exits repeatedly and you need to decide whether it is an app crash, 
 
 ## Practice steps
 
+- [ ] Read triage-notes.md and rule out memory, restart-count, root-runtime, and live chmod shortcuts.
 - [ ] Capture Last State, exit code, and restart count.
 - [ ] Compare previous logs with runtime user evidence.
 - [ ] Use the local analyzer to prove runtime state, exit, permission, identity, and rejected workaround evidence.
@@ -101,12 +111,13 @@ A container exits repeatedly and you need to decide whether it is an app crash, 
 
 ## Runbook commands
 
+- grep -n "False Leads\|Exit code 126\|Running as root\|live container" labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md
 - grep -n "Exit Code\|Reason\|Restart Count" labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt
 - grep -n "Permission denied\|uid=" labs/platform-academy/inspect-linux-failure-evidence/previous.log labs/platform-academy/inspect-linux-failure-evidence/id-output.txt
-- python3 labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analyzer.py --describe labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt --previous-log labs/platform-academy/inspect-linux-failure-evidence/previous.log --id-output labs/platform-academy/inspect-linux-failure-evidence/id-output.txt --remediation labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md
 
 ## Expected evidence
 
+- [ ] The triage notes rule out memory pressure, restart-count-only diagnosis, running as root, and live chmod fixes.
 - [ ] The previous container exited with code 126.
 - [ ] Previous logs show Permission denied.
 - [ ] The process runs as uid 10001.
@@ -123,6 +134,7 @@ A container exits repeatedly and you need to decide whether it is an app crash, 
 ## Validation checks
 
 - [ ] No-cluster evidence boundary recorded
+- [ ] Triage false leads recorded
 - [ ] CrashLoopBackOff and restart evidence captured
 - [ ] Exit code 126 evidence captured
 - [ ] Permission denied log and UID evidence captured
@@ -133,6 +145,7 @@ A container exits repeatedly and you need to decide whether it is an app crash, 
 ## Rubric
 
 - [ ] Preserves the captured-evidence/no-cluster safety boundary and names the evidence files.
+- [ ] Uses triage notes to rule out memory pressure, restart-count-only diagnosis, live chmod, root runtime, and app-logic False Leads.
 - [ ] Captures `CrashLoopBackOff`, restart count, Last State, and exit code 126 evidence.
 - [ ] Connects `/app/bin/checkout: Permission denied` with runtime user `uid=10001(checkout)`.
 - [ ] Rejects memory tuning and app-logic debugging as first fixes because evidence points to permissions.
@@ -145,5 +158,5 @@ A container exits repeatedly and you need to decide whether it is an app crash, 
 
 ## No-cluster fallback
 
-- [ ] The captured files are the fallback path.
+- [ ] The captured triage and evidence files are the fallback path.
 - [ ] Write the next safest diagnostic command and the likely owner of the fix.

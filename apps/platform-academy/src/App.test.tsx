@@ -28,6 +28,10 @@ function htmlResponse() {
   } as Response);
 }
 
+function isLabsIndexUrl(url: string) {
+  return url.endsWith("/api/platform-academy/labs") || url.startsWith("/static-api/platform-academy-labs.json");
+}
+
 const course = {
   id: 101,
   slug: "platform-kubernetes-fundamentals",
@@ -115,6 +119,7 @@ const catalog = {
       cleanup_commands: ["bash labs/platform-academy/trace-service-to-pod/cleanup.sh"],
       no_cluster_fallback: ["Review start.yaml and find the selector mismatch."],
       artifact_paths: [
+        "labs/platform-academy/trace-service-to-pod/triage-notes.md",
         "labs/platform-academy/trace-service-to-pod/start.yaml",
         "labs/platform-academy/trace-service-to-pod/fixed.yaml",
         "labs/platform-academy/trace-service-to-pod/evidence-template.md",
@@ -122,6 +127,7 @@ const catalog = {
         "labs/platform-academy/trace-service-to-pod/cleanup.sh"
       ],
       learner_artifact_paths: [
+        "labs/platform-academy/trace-service-to-pod/triage-notes.md",
         "labs/platform-academy/trace-service-to-pod/start.yaml",
         "labs/platform-academy/trace-service-to-pod/fixed.yaml",
         "labs/platform-academy/trace-service-to-pod/evidence-template.md",
@@ -346,14 +352,17 @@ const dashboard = {
   due_reviews: 0
 };
 
-function stubAcademyFetch(overrides: { interviewPrep?: typeof interviewPrep } = {}) {
+function stubAcademyFetch(overrides: { catalog?: typeof catalog; interviewPrep?: typeof interviewPrep; labs?: typeof catalog.labs } = {}) {
+  const catalogPayload = overrides.catalog ?? catalog;
   const interviewPrepPayload = overrides.interviewPrep ?? interviewPrep;
+  const labsPayload = overrides.labs ?? catalog.labs;
   vi.stubGlobal(
     "fetch",
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
+      if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalogPayload);
       if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+      if (isLabsIndexUrl(url)) return jsonResponse(labsPayload);
       if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
       if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrepPayload);
       if (url.includes("/api/lessons/201")) return jsonResponse(lesson201);
@@ -430,6 +439,7 @@ describe("Platform Academy app", () => {
         const url = String(input);
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
         if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([{ id: 1, user_id: testLearnerId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
@@ -475,6 +485,7 @@ describe("Platform Academy app", () => {
         const url = String(input);
         if (url.startsWith("/static-api/platform-academy-catalog.json")) return jsonResponse(catalog);
         if (url.startsWith("/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
+        if (url.startsWith("/static-api/platform-academy-labs.json")) return jsonResponse(catalog.labs);
         if (url.startsWith("/static-api/platform-academy-resources.json")) return jsonResponse(resources);
         if (url.startsWith("/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrep);
         if (url.includes("/api/")) return htmlResponse();
@@ -492,6 +503,7 @@ describe("Platform Academy app", () => {
     expect(screen.queryByText("Platform Academy is unavailable.")).not.toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/static-api/platform-academy-catalog.json", expect.objectContaining({ cache: "force-cache" }));
     expect(fetch).toHaveBeenCalledWith("/static-api/platform-academy-roadmap.json", expect.objectContaining({ cache: "force-cache" }));
+    expect(fetch).toHaveBeenCalledWith("/static-api/platform-academy-labs.json", expect.objectContaining({ cache: "force-cache" }));
   });
 
   it("renders interview preparation packs with docs links", async () => {
@@ -676,6 +688,7 @@ describe("Platform Academy app", () => {
 
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
         if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (progressMatch) {
@@ -717,6 +730,7 @@ describe("Platform Academy app", () => {
 
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
         if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (progressMatch) {
@@ -817,6 +831,7 @@ describe("Platform Academy app", () => {
         const url = String(input);
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
         if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/platform-academy/lab-submissions/${testLearnerId}`)) return jsonResponse([labSubmissionIndex]);
@@ -917,6 +932,7 @@ describe("Platform Academy app", () => {
         const url = String(input);
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
         if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/platform-academy/lab-submissions/${testLearnerId}`)) return jsonResponse([]);
@@ -978,6 +994,7 @@ describe("Platform Academy app", () => {
         const url = String(input);
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
         if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (url.includes("/api/platform-academy/resources")) {
           return jsonResponse({
@@ -1030,6 +1047,7 @@ describe("Platform Academy app", () => {
         const url = String(input);
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
         if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
@@ -1253,12 +1271,16 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Services, Labels, Selectors, and Namespaces" })).toBeInTheDocument();
-    fireEvent.scroll(window);
+    const fetchMock = vi.mocked(fetch);
 
+    await waitFor(() => {
+      fireEvent.scroll(window);
+      const postCalls = fetchMock.mock.calls.filter(([input, init]) => String(input).endsWith("/api/progress") && (init as RequestInit | undefined)?.method === "POST");
+      expect(postCalls).toHaveLength(1);
+    });
     await waitFor(() => expect(screen.getByRole("button", { name: /progress saved/i })).toBeInTheDocument());
     expect(screen.getByText("Completed automatically after reading.")).toBeInTheDocument();
     fireEvent.scroll(window);
-    const fetchMock = vi.mocked(fetch);
     await waitFor(() => {
       const postCalls = fetchMock.mock.calls.filter(([input, init]) => String(input).endsWith("/api/progress") && (init as RequestInit | undefined)?.method === "POST");
       expect(postCalls).toHaveLength(1);
@@ -1280,6 +1302,7 @@ describe("Platform Academy app", () => {
         const url = String(input);
         if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
         if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
         if (url.includes("/api/platform-academy/resources")) return jsonResponse({ ...resources, resources: manyResources });
         if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
@@ -1321,6 +1344,57 @@ describe("Platform Academy app", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /review saved/i })).toBeInTheDocument());
   });
 
+  it("hydrates lab workbooks from the labs endpoint when the catalog summary is thin", async () => {
+    const catalogWithThinLabSummary = {
+      ...catalog,
+      labs: catalog.labs.map((lab) => ({
+        ...lab,
+        artifact_paths: [],
+        learner_artifact_paths: [],
+        worksheet_prompts: [],
+        validation_checks: [],
+        cleanup_commands: []
+      }))
+    };
+    stubAcademyFetch({ catalog: catalogWithThinLabSummary, labs: catalog.labs });
+
+    render(
+      <MemoryRouter initialEntries={["/labs/trace-service-to-pod"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Trace Service traffic to ready Pods" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Run progress by phase" })).toBeInTheDocument();
+    expect(screen.getByText("triage-notes.md should be cited before diagnosis.")).toBeInTheDocument();
+    expect(screen.getByText("0/1 prompts answered")).toBeInTheDocument();
+    expect(screen.getByText("0/1 validation checks")).toBeInTheDocument();
+  });
+
+  it("keeps catalog lab workbook details when the labs endpoint is thin", async () => {
+    const thinLabEndpointPayload = catalog.labs.map((lab) => ({
+      ...lab,
+      artifact_paths: [],
+      learner_artifact_paths: [],
+      worksheet_prompts: [],
+      validation_checks: [],
+      cleanup_commands: []
+    }));
+    stubAcademyFetch({ labs: thinLabEndpointPayload });
+
+    render(
+      <MemoryRouter initialEntries={["/labs/trace-service-to-pod"]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Trace Service traffic to ready Pods" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Run progress by phase" })).toBeInTheDocument();
+    expect(screen.getByText("triage-notes.md should be cited before diagnosis.")).toBeInTheDocument();
+    expect(screen.getByText("0/1 prompts answered")).toBeInTheDocument();
+    expect(screen.getByText("0/1 validation checks")).toBeInTheDocument();
+  });
+
   it("shows actionable rubric feedback before workbook save", async () => {
     stubAcademyFetch();
 
@@ -1337,6 +1411,10 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("No matched evidence terms yet")).toBeInTheDocument();
     expect(screen.getByText("No matching evidence yet")).toBeInTheDocument();
     expect(screen.getByText("Update worksheet prompt 1")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Run progress by phase" })).toBeInTheDocument();
+    expect(screen.getByText("Setup ready")).toBeInTheDocument();
+    expect(screen.getByText("False leads pending")).toBeInTheDocument();
+    expect(screen.getByText("0/1 prompts answered")).toBeInTheDocument();
   });
 
   it("covers lab and lesson detail routes with linked artifacts", async () => {
@@ -1370,10 +1448,14 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("Cleanup commands")).toBeInTheDocument();
     expect(screen.getByText("No-cluster fallback")).toBeInTheDocument();
     expect(screen.getByText("Worksheet and validation state")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Run progress by phase" })).toBeInTheDocument();
+    expect(screen.getByText("Setup ready")).toBeInTheDocument();
+    expect(screen.getByText("False leads pending")).toBeInTheDocument();
+    expect(screen.getByText("0/1 validation checks")).toBeInTheDocument();
     expect(screen.getByText("Learner workspace contract")).toBeInTheDocument();
     expect(screen.getByText("Guide, evidence, verification, cleanup")).toBeInTheDocument();
     expect(screen.getByText("4 / 4 present")).toBeInTheDocument();
-    expect(screen.getByText("Evidence")).toBeInTheDocument();
+    expect(screen.getAllByText("Evidence").length).toBeGreaterThan(0);
     expect(screen.getByText("Validator")).toBeInTheDocument();
     expect(screen.queryByText("Solution")).not.toBeInTheDocument();
     expect(screen.queryByText("labs/platform-academy/trace-service-to-pod/solution.md")).not.toBeInTheDocument();
@@ -1405,8 +1487,10 @@ describe("Platform Academy app", () => {
     expect(screen.getByLabelText("What evidence proves the Service selector mismatch?")).toBeInTheDocument();
     expect(screen.getByLabelText("Expected evidence captured")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Evidence note: What evidence proves the Service selector mismatch?"), {
-      target: { value: "EndpointSlice has no addresses until the selector is fixed." }
+      target: { value: "triage-notes.md False Leads ruled out first. EndpointSlice has no addresses until the selector is fixed." }
     });
+    expect(screen.getByText("False leads captured")).toBeInTheDocument();
+    expect(screen.getByText("1/1 prompts answered")).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText("What evidence proves the Service selector mismatch?"));
     fireEvent.click(screen.getByRole("button", { name: /save workbook/i }));
     await waitFor(() => expect(screen.getByText("Saved to profile")).toBeInTheDocument());
@@ -1420,7 +1504,7 @@ describe("Platform Academy app", () => {
     expect(saveCall).toBeTruthy();
     expect(JSON.parse(String(saveCall?.[1]?.body))).toMatchObject({
       user_id: testLearnerId,
-      worksheet_answers: { "worksheet-0": "EndpointSlice has no addresses until the selector is fixed." },
+      worksheet_answers: { "worksheet-0": "triage-notes.md False Leads ruled out first. EndpointSlice has no addresses until the selector is fixed." },
       checked_items: { "worksheet-0": true }
     });
     expect(screen.getByText("Rubric feedback")).toBeInTheDocument();

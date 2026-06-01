@@ -17,22 +17,23 @@ A vendor manifest needs review before it reaches any cluster.
    - Do not apply the vendor manifest to a shared or production cluster.
    - bash labs/platform-academy/run-lab.sh setup review-yaml-before-apply
 2. Investigate safely
+   - Read triage-notes.md and rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and placeholder-token false leads.
    - List every resource kind and whether it is namespace-scoped or cluster-scoped.
    - Find the risky settings before reading the safe baseline.
    - Use the local analyzer to prove inventory, RBAC, workload, credential, and safer-baseline evidence.
-   - Compare vendor.yaml with safe-baseline.yaml and write the review questions you would send back.
 3. Prove the finding
+   - The triage notes rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and harmless-placeholder assumptions.
    - The vendor manifest contains a ClusterRole that can list/watch secrets.
    - The Deployment asks for privileged mode and a hostPath mount.
    - The Secret contains placeholder stringData that should not be committed with real credentials.
-   - The local analyzer reports YAML manifest risk analysis passed.
 4. Reset or hand off
    - bash labs/platform-academy/review-yaml-before-apply/cleanup.sh
-   - Run the grep commands and manually review the YAML without kubectl.
+   - Read triage-notes.md, then run the grep commands and manually review the YAML without kubectl.
    - Create a review note with resource kinds, namespaces, risky fields, and questions for the vendor.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/review-yaml-before-apply/triage-notes.md` - Decision note
 - `labs/platform-academy/review-yaml-before-apply/vendor.yaml` - Manifest
 - `labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml` - Target artifact
 - `labs/platform-academy/review-yaml-before-apply/evidence-template.md` - Evidence template
@@ -45,6 +46,7 @@ A vendor manifest needs review before it reaches any cluster.
 
 ## Learner artifact paths
 
+- labs/platform-academy/review-yaml-before-apply/triage-notes.md
 - labs/platform-academy/review-yaml-before-apply/vendor.yaml
 - labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml
 - labs/platform-academy/review-yaml-before-apply/evidence-template.md
@@ -58,6 +60,7 @@ A vendor manifest needs review before it reaches any cluster.
 ## Worksheet prompts
 
 - [ ] Record the reviewed vendor.yaml file, reviewer, namespace scope, and confirmation that no live apply was run.
+- [ ] Read triage-notes.md and list the False Leads ruled out before approving or applying anything.
 - [ ] Inventory resource kinds, namespaces, cluster-scoped resources, and optional dry-run or parse-check output.
 - [ ] Paste ClusterRole secret access, privileged container, hostPath `/`, and Secret `stringData.token` evidence.
 - [ ] Classify each blocker as RBAC, workload security, node filesystem exposure, or credential handling.
@@ -74,7 +77,13 @@ A vendor manifest needs review before it reaches any cluster.
 
 - bash labs/platform-academy/run-lab.sh setup review-yaml-before-apply
 - bash labs/platform-academy/review-yaml-before-apply/setup.sh --evidence /tmp/yaml-review-evidence.md
+- sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/triage-notes.md
 - sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/vendor.yaml
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup review-yaml-before-apply --run-analyzer`.
 
 ## Local workspace
 
@@ -92,6 +101,7 @@ A vendor manifest needs review before it reaches any cluster.
 
 ## Practice steps
 
+- [ ] Read triage-notes.md and rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and placeholder-token false leads.
 - [ ] List every resource kind and whether it is namespace-scoped or cluster-scoped.
 - [ ] Find the risky settings before reading the safe baseline.
 - [ ] Use the local analyzer to prove inventory, RBAC, workload, credential, and safer-baseline evidence.
@@ -101,12 +111,13 @@ A vendor manifest needs review before it reaches any cluster.
 ## Runbook commands
 
 - kubectl apply --dry-run=client --validate=false -f labs/platform-academy/review-yaml-before-apply/vendor.yaml
+- grep -n "False Leads\|dry-run is not approval\|stringData.token" labs/platform-academy/review-yaml-before-apply/triage-notes.md
 - grep -n "kind:\|namespace:\|ClusterRole\|privileged\|hostPath" labs/platform-academy/review-yaml-before-apply/vendor.yaml
-- python3 labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py --vendor labs/platform-academy/review-yaml-before-apply/vendor.yaml --safe labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml
 - kubectl explain deployment.spec.template.spec.containers
 
 ## Expected evidence
 
+- [ ] The triage notes rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and harmless-placeholder assumptions.
 - [ ] The vendor manifest contains a ClusterRole that can list/watch secrets.
 - [ ] The Deployment asks for privileged mode and a hostPath mount.
 - [ ] The Secret contains placeholder stringData that should not be committed with real credentials.
@@ -123,6 +134,7 @@ A vendor manifest needs review before it reaches any cluster.
 ## Validation checks
 
 - [ ] No-live-apply safety boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] Resource inventory captured
 - [ ] ClusterRole secret access evidence captured
 - [ ] Privileged and hostPath evidence captured
@@ -133,6 +145,7 @@ A vendor manifest needs review before it reaches any cluster.
 ## Rubric
 
 - [ ] Preserves the no-live-apply safety boundary and names the reviewed vendor manifest.
+- [ ] Uses triage notes to rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and placeholder-token False Leads.
 - [ ] Inventories resource kinds, namespaces, cluster-scoped resources, and parse-check evidence.
 - [ ] Captures `ClusterRole` secret access, `privileged: true`, `hostPath: /`, and `stringData.token` evidence.
 - [ ] Classifies blockers across RBAC, workload security, node filesystem exposure, and credential handling.
@@ -145,5 +158,5 @@ A vendor manifest needs review before it reaches any cluster.
 
 ## No-cluster fallback
 
-- [ ] Run the grep commands and manually review the YAML without kubectl.
+- [ ] Read triage-notes.md, then run the grep commands and manually review the YAML without kubectl.
 - [ ] Create a review note with resource kinds, namespaces, risky fields, and questions for the vendor.

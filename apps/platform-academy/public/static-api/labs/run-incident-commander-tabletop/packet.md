@@ -17,22 +17,23 @@ A canary release causes elevated checkout errors and the team needs coordinated 
    - bash labs/platform-academy/run-lab.sh setup run-incident-commander-tabletop
    - bash labs/platform-academy/run-incident-commander-tabletop/setup.sh --evidence /tmp/incident-commander-evidence.md
 2. Investigate safely
+   - Read the triage notes and rule out delays in roles, communications, mitigation criteria, and timeline capture.
    - Assign incident roles and severity.
    - Write current impact, mitigation, and next update time.
    - Record timeline entries for facts, decisions, and owners.
-   - Run the local incident tabletop analyzer to prove severity, roles, mitigation criteria, communications clock, and handoff evidence.
 3. Prove the finding
+   - The triage notes rule out waiting for root cause, delaying communications, rollback without criteria, and late timeline writing.
    - The incident is SEV-2 with checkout 5xx impact.
    - Rollback to revision 42 is identified as an option.
    - The tabletop requires commander, operations, communications, and planning roles.
-   - The commander brief sets mitigation criteria and a 15-minute stakeholder update.
 4. Reset or hand off
    - bash labs/platform-academy/run-incident-commander-tabletop/cleanup.sh
-   - Use the signal, role, and timeline files as the complete tabletop packet.
+   - Use triage-notes.md plus the signal, role, and timeline files as the complete tabletop packet.
    - Fill the timeline without live incident tooling.
 
 ## Evidence artifact map
 
+- `labs/platform-academy/run-incident-commander-tabletop/triage-notes.md` - Decision note
 - `labs/platform-academy/simulator.py` - Lab artifact
 - `labs/platform-academy/run-incident-commander-tabletop/signals.md` - Decision note
 - `labs/platform-academy/run-incident-commander-tabletop/roles.md` - Decision note
@@ -48,6 +49,7 @@ A canary release causes elevated checkout errors and the team needs coordinated 
 
 ## Learner artifact paths
 
+- labs/platform-academy/run-incident-commander-tabletop/triage-notes.md
 - labs/platform-academy/simulator.py
 - labs/platform-academy/run-incident-commander-tabletop/signals.md
 - labs/platform-academy/run-incident-commander-tabletop/roles.md
@@ -64,6 +66,7 @@ A canary release causes elevated checkout errors and the team needs coordinated 
 ## Worksheet prompts
 
 - [ ] Record the signal packet, facilitator, next update clock, and confirmation that no live mitigation was executed.
+- [ ] Read triage-notes.md and list the False Leads ruled out before coordinating mitigation.
 - [ ] Paste SEV-2, checkout 5xx rate change, user impact, affected capability, and decision pressure.
 - [ ] Assign Incident commander, Operations lead, Communications lead, Planning lead, and escalation owner.
 - [ ] Write the suspect rollout, rollback option, current mitigation status, decision criterion, and stakeholder update time.
@@ -79,9 +82,15 @@ A canary release causes elevated checkout errors and the team needs coordinated 
 
 - bash labs/platform-academy/run-lab.sh setup run-incident-commander-tabletop
 - bash labs/platform-academy/run-incident-commander-tabletop/setup.sh --evidence /tmp/incident-commander-evidence.md
+- sed -n '1,220p' labs/platform-academy/run-incident-commander-tabletop/triage-notes.md
 - sed -n '1,180p' labs/platform-academy/run-incident-commander-tabletop/signals.md
 - sed -n '1,160p' labs/platform-academy/run-incident-commander-tabletop/roles.md
-- python3 labs/platform-academy/simulator.py --scenario checkout-incident --format logs --events 5
+
+## Setup self-checks
+
+- Default setup stages evidence and intentionally skips analyzer or simulator output.
+- After inspecting the broken state, run analyzer self-check: `bash labs/platform-academy/run-lab.sh setup run-incident-commander-tabletop --run-analyzer`.
+- After reviewing the static evidence, run simulator output: `bash labs/platform-academy/run-lab.sh setup run-incident-commander-tabletop --run-simulator`.
 
 ## Local workspace
 
@@ -99,6 +108,7 @@ A canary release causes elevated checkout errors and the team needs coordinated 
 
 ## Practice steps
 
+- [ ] Read the triage notes and rule out delays in roles, communications, mitigation criteria, and timeline capture.
 - [ ] Assign incident roles and severity.
 - [ ] Write current impact, mitigation, and next update time.
 - [ ] Record timeline entries for facts, decisions, and owners.
@@ -106,12 +116,13 @@ A canary release causes elevated checkout errors and the team needs coordinated 
 
 ## Runbook commands
 
+- grep -n "False Leads\|root cause\|Silence\|Timeline" labs/platform-academy/run-incident-commander-tabletop/triage-notes.md
 - grep -n "SEV-2\|rollback\|next stakeholder update" labs/platform-academy/run-incident-commander-tabletop/signals.md
 - grep -n "Incident commander\|Operations lead\|Communications lead\|Planning lead" labs/platform-academy/run-incident-commander-tabletop/roles.md
-- python3 labs/platform-academy/run-incident-commander-tabletop/incident_tabletop_analyzer.py --signals labs/platform-academy/run-incident-commander-tabletop/signals.md --roles labs/platform-academy/run-incident-commander-tabletop/roles.md --timeline labs/platform-academy/run-incident-commander-tabletop/timeline.md --brief labs/platform-academy/run-incident-commander-tabletop/commander-brief.md --completed-timeline labs/platform-academy/run-incident-commander-tabletop/completed-timeline.md
 
 ## Expected evidence
 
+- [ ] The triage notes rule out waiting for root cause, delaying communications, rollback without criteria, and late timeline writing.
 - [ ] The incident is SEV-2 with checkout 5xx impact.
 - [ ] Rollback to revision 42 is identified as an option.
 - [ ] The tabletop requires commander, operations, communications, and planning roles.
@@ -128,6 +139,7 @@ A canary release causes elevated checkout errors and the team needs coordinated 
 ## Validation checks
 
 - [ ] No-live-mitigation safety boundary recorded
+- [ ] Triage False Leads ruled out
 - [ ] Severity and user impact evidence captured
 - [ ] Incident roles assigned
 - [ ] Rollback criteria and update clock written
@@ -138,6 +150,7 @@ A canary release causes elevated checkout errors and the team needs coordinated 
 ## Rubric
 
 - [ ] Preserves the tabletop/no-live-mitigation safety boundary and names the update clock.
+- [ ] Uses triage notes to rule out waiting for root cause, delaying communications, rollback-without-criteria, and late-timeline False Leads.
 - [ ] Captures SEV-2, 0.2% to 9.4% 5xx increase, payment-confirmation impact, and decision pressure.
 - [ ] Assigns Incident commander, Operations lead, Communications lead, Planning lead, and escalation roles before mitigation.
 - [ ] Defines revision 43 rollback criteria, revision 42 option, mitigation status, and stakeholder update timing.
@@ -150,5 +163,5 @@ A canary release causes elevated checkout errors and the team needs coordinated 
 
 ## No-cluster fallback
 
-- [ ] Use the signal, role, and timeline files as the complete tabletop packet.
+- [ ] Use triage-notes.md plus the signal, role, and timeline files as the complete tabletop packet.
 - [ ] Fill the timeline without live incident tooling.
