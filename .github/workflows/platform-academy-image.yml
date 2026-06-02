@@ -24,9 +24,14 @@ env:
   AWS_REGION: us-west-2
   ECR_REPOSITORY: platform-academy
 
+concurrency:
+  group: platform-academy-image-publish
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: image-publish
     steps:
       - uses: actions/checkout@v6
 
@@ -42,7 +47,7 @@ jobs:
           cache: npm
           cache-dependency-path: apps/platform-academy/package-lock.json
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}

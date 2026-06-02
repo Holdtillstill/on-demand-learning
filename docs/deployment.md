@@ -94,7 +94,7 @@ Expected workflows:
 - `.github/workflows/security.yml`
 - `.github/workflows/deploy-template.yml`
 
-`make workflow-lint` validates these workflows with actionlint and `scripts/verify_workflow_contracts.py`. Keep that contract green when deployment work changes image publishing, smoke scripts, or the Platform Academy validation workflow. Store the ECR publishing role ARN in the `AWS_ROLE_TO_ASSUME` repository secret, not a repository variable, so public workflow configuration does not expose account-specific AWS identifiers.
+`make workflow-lint` validates these workflows with actionlint and `scripts/verify_workflow_contracts.py`. Keep that contract green when deployment work changes image publishing, smoke scripts, or the Platform Academy validation workflow. Store the ECR publishing role ARN in the `AWS_ROLE_TO_ASSUME` repository secret, not a repository variable, so public workflow configuration does not expose account-specific AWS identifiers. The image publish job uses the `image-publish` GitHub environment so reviewer protection can be enabled before ECR images are changed.
 
 The deploy workflow is intentionally a guarded template. Do not turn it into an automatic production deploy until AWS OIDC, image promotion, kubeconfig, environment protection, and rollback procedures are configured. The deployed smoke workflow is safe to enable after `PLATFORM_API_BASE` points at a live preview or stable API; keep the full browser profile for release evidence.
 

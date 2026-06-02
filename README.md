@@ -16,6 +16,15 @@ This project was built with AI-assisted coding support. Product direction,
 architecture, validation, deployment choices, operations, and maintenance remain
 my responsibility.
 
+## Public status
+
+| Surface | Status | Notes |
+| --- | --- | --- |
+| Static Platform Academy | Public static host | `platform-academy.bozhi.dev` serves the browsable learning workspace and static catalog snapshots when configured. |
+| Full API runtime | Local and preview-ready | Progress, activity, recovery keys, and API-backed persistence run locally or in approved short-lived preview windows. |
+| Observability | Local and preview-ready | Metrics, traces, logs, dashboards, and smoke checks are wired for local validation and shared runtime demos. |
+| EKS runtime preview | Request-only | Shared EKS demos are temporary validation windows, not always-on learning infrastructure. |
+
 ## Quickstart
 
 ```bash
@@ -140,7 +149,8 @@ See [docs/platform-academy-handoff.md](docs/platform-academy-handoff.md), [docs/
 
 - Keep Platform Academy full-stack for progress, activity, learner profile recovery, and API-backed catalog data.
 - Use Docker Compose for local demos and a shared EKS preview for Kubernetes runtime validation.
-- Use `platform-academy.bozhi.dev` later as the stable public entry and `preview.platform-academy.bozhi.dev` for on-demand shared-EKS previews.
+- Use `platform-academy.bozhi.dev` as the stable static public entry when configured; API-backed persistence remains preview/runtime-only unless explicitly deployed.
+- Use `preview.platform-academy.bozhi.dev` for approved on-demand shared-EKS previews.
 - Do not deploy as pure static S3 unless the public surface is split into a read-only catalog/marketing/docs site.
 - Avoid an always-on dedicated EKS cluster; use shared infrastructure, TTL previews, and budgets.
 - Run Alembic migrations before production-like persistent API startup.

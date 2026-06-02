@@ -11,6 +11,9 @@ available, and a masked IP address. Public pages must not show visitor events,
 raw IP addresses, request history, private deployment details, or cloud account
 identifiers.
 
+Do Not Track and Global Privacy Control signals are respected by the shared
+first-party tracker.
+
 Platform Academy learner inputs are separate from visitor telemetry. Browser
 guest profiles, lesson progress, workbook answers, activity rows, and learner
 exports are demo/product data, not visitor analytics. Learners should not enter
