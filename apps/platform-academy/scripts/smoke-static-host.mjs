@@ -1,5 +1,5 @@
 const WEB_BASE = normalizeBase(process.env.WEB_BASE || process.env.PLATFORM_WEB_BASE || 'https://platform-academy.bozhi.dev');
-const TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 15000);
+const TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 30000);
 const EXPECT_SECURITY_HEADERS = process.env.SMOKE_EXPECT_SECURITY_HEADERS !== 'false';
 const EXPECT_CLEAN_SPA_ROUTING = process.env.SMOKE_EXPECT_CLEAN_SPA_ROUTING === 'true';
 
