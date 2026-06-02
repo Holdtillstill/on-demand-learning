@@ -10,9 +10,11 @@ Platform Academy is a local-first, production-style portfolio project for Kubern
 
 ![Platform Academy dashboard](docs/assets/platform-academy-dashboard.png)
 
-## AI-Assisted Development Disclosure
+## Development note
 
-This repository was developed with AI coding assistance. The product direction, architecture decisions, validation, deployment, operations, and maintenance are my responsibility.
+This project was built with AI-assisted coding support. Product direction,
+architecture, validation, deployment choices, operations, and maintenance remain
+my responsibility.
 
 ## Quickstart
 
@@ -132,7 +134,7 @@ Open http://localhost:8090 for the Kubernetes/EKS/Helm/ArgoCD/security/SRE learn
 
 See [docs/platform-academy.md](docs/platform-academy.md) for the curriculum outline and local-safe lab story, and [labs/platform-academy/README.md](labs/platform-academy/README.md) for the hands-on lab runner entrypoint.
 See [docs/deployment.md](docs/deployment.md) for local, Docker Compose, shared-EKS preview, production API, and smoke-test deployment planning.
-See [docs/platform-academy-handoff.md](docs/platform-academy-handoff.md), [docs/release-checklist.md](docs/release-checklist.md), and [docs/smoke-test-checklist.md](docs/smoke-test-checklist.md) for handoff and release verification, [docs/cost-notes.md](docs/cost-notes.md) for the low-cost hosting posture, and [docs/backlog.md](docs/backlog.md) for the next improvement queue.
+See [docs/platform-academy-handoff.md](docs/platform-academy-handoff.md), [docs/release-checklist.md](docs/release-checklist.md), [docs/smoke-test-checklist.md](docs/smoke-test-checklist.md), and [docs/privacy.md](docs/privacy.md) for handoff, release verification, and trust notes; [docs/cost-notes.md](docs/cost-notes.md) covers the low-cost hosting posture, and [docs/backlog.md](docs/backlog.md) tracks the next improvement queue.
 
 ## Deployment and Cost Notes
 
