@@ -176,6 +176,25 @@ def verify_contributing(errors: list[str]) -> None:
         errors.append("CONTRIBUTING.md: missing public-readiness validation command")
 
 
+def verify_dependabot(errors: list[str]) -> None:
+    dependabot = read_text(REPO_ROOT / ".github" / "dependabot.yml")
+    if dependabot is None:
+        errors.append(".github/dependabot.yml: missing")
+        return
+    for group in [
+        "actions-dependencies",
+        "academy-npm-dependencies",
+        "api-python-dependencies",
+        "worker-python-dependencies",
+        "api-docker-dependencies",
+        "academy-docker-dependencies",
+        "worker-docker-dependencies",
+        "terraform-dependencies",
+    ]:
+        if group not in dependabot:
+            errors.append(f".github/dependabot.yml: missing grouped update rule {group}")
+
+
 def main() -> int:
     errors: list[str] = []
     for stale_doc in sorted(REMOVED_DOCS):
@@ -194,6 +213,7 @@ def main() -> int:
     verify_public_discovery(errors)
     verify_issue_templates(errors)
     verify_contributing(errors)
+    verify_dependabot(errors)
 
     if errors:
         print("FAIL: public-readiness check failed:", file=sys.stderr)
