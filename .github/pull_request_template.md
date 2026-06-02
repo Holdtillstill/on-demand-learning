@@ -2,7 +2,7 @@
 
 -
 
-## Release Evidence
+## Release Validation
 
 Required for Platform Academy, API, persistence, deployment, lab, or frontend changes:
 
@@ -15,7 +15,7 @@ Required for Platform Academy, API, persistence, deployment, lab, or frontend ch
 - [ ] `make platform-deployed-smoke API_BASE=<origin> WEB_BASE=<origin>` or the `platform-deployed-smoke` workflow with the full profile for deployed preview or stable release evidence
 - [ ] Protected instructor/source bundle smoke ran with `SMOKE_EXPECT_SOURCE_BUNDLE_TOKEN_REQUIRED=true` or workflow `source_bundle_token_required=true` when the target environment protects `/api/platform-academy/labs/{slug}/bundle`
 - [ ] `make clean-generated clean-smoke-images` after local verification
-- [ ] `make platform-release-evidence` output attached for Platform Academy release candidates
+- [ ] `make platform-release-validation` output attached for Platform Academy release candidates
 - [ ] `make platform-review-pack` output generated for broad Platform Academy release candidates
 - [ ] `content-count-contract.txt` and `workflow-contracts.txt` from the review pack are present for broad Platform Academy release candidates
 - [ ] `make platform-lab-matrix` reviewed for portfolio focus, structural gate, and lab reviewer routing
@@ -41,7 +41,7 @@ Required for Platform Academy, API, persistence, deployment, lab, or frontend ch
 - Shared deployment files touched (`infra/k8s`, `docker-compose.yml`, `.env.example`, workflows, `Makefile`, docs):
 - Related branch or PR that may conflict:
 - Runtime contract changes reviewers should preserve:
-- Skipped smoke flags, if any, and why they are not release evidence:
+- Skipped smoke flags, if any, and why they are not release validation:
 
 ## Screenshots Or Smoke Output
 

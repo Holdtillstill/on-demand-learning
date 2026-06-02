@@ -45,7 +45,7 @@ For a quick lab-by-lab review index, run:
 make platform-lab-matrix
 ```
 
-For a disposable reviewer/deployment bundle that includes this handoff, release evidence scaffold, lab matrix, review-scope summary, changed-file manifest, commit plan with pathspec files, content-count contract, workflow contract, PR template, git status, and diff summaries, run:
+For a disposable reviewer/deployment bundle that includes this handoff, release validation scaffold, lab matrix, review-scope summary, changed-file manifest, commit plan with pathspec files, content-count contract, workflow contract, PR template, git status, and diff summaries, run:
 
 ```bash
 make platform-review-pack
@@ -90,7 +90,7 @@ For a deployed preview or stable release, keep the full smoke profile:
 make platform-deployed-smoke API_BASE=https://preview.platform-academy.bozhi.dev WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
-Do not use skip flags as release evidence. Skip flags are for triage after an already-known infrastructure issue.
+Do not use skip flags as release validation. Skip flags are for triage after an already-known infrastructure issue.
 
 ## Deployment Assumptions
 
@@ -122,7 +122,7 @@ For scheduled GitHub checks, set:
 - `PLATFORM_SOURCE_BUNDLE_TOKEN` as a repository secret when the API protects instructor/source bundles
 - `PLATFORM_SOURCE_BUNDLE_TOKEN_REQUIRED=true` as a repository variable when scheduled smoke should prove unauthenticated source-bundle requests return `403`
 
-Then enable the `platform-deployed-smoke` workflow. Manual runs can also set `source_bundle_token_required=true` for one-off protected-bundle verification. Keep the full browser profile for release evidence.
+Then enable the `platform-deployed-smoke` workflow. Manual runs can also set `source_bundle_token_required=true` for one-off protected-bundle verification. Keep the full browser profile for release validation.
 
 ## API Contract To Preserve
 
@@ -147,10 +147,10 @@ Clean local generated output and temporary images:
 make clean-generated clean-smoke-images
 ```
 
-Generate a copy-paste release evidence scaffold:
+Generate a copy-paste release validation scaffold:
 
 ```bash
-make platform-release-evidence
+make platform-release-validation
 ```
 
 Generate a disposable reviewer/deployment handoff bundle:

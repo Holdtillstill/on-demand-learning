@@ -85,7 +85,7 @@ make smoke-helper-check
 make terraform-validate
 make release-check
 make platform-release-check
-make platform-release-evidence
+make platform-release-validation
 make platform-review-pack
 make clean-generated
 make clean-smoke-images
@@ -137,7 +137,7 @@ See [docs/platform-academy-handoff.md](docs/platform-academy-handoff.md), [docs/
 ## Deployment and Cost Notes
 
 - Keep Platform Academy full-stack for progress, activity, learner profile recovery, and API-backed catalog data.
-- Use Docker Compose for local demos and a shared EKS preview for Kubernetes proof.
+- Use Docker Compose for local demos and a shared EKS preview for Kubernetes runtime validation.
 - Use `platform-academy.bozhi.dev` later as the stable public entry and `preview.platform-academy.bozhi.dev` for on-demand shared-EKS previews.
 - Do not deploy as pure static S3 unless the public surface is split into a read-only catalog/marketing/docs site.
 - Avoid an always-on dedicated EKS cluster; use shared infrastructure, TTL previews, and budgets.

@@ -1,4 +1,4 @@
-.PHONY: help up up-logging down logs clean-generated clean-smoke-images test bootstrap backend-test api-migration-check api-image-migration-check doc-link-check env-contract-check platform-content-count-check working-tree-hygiene-check platform-academy-test platform-lab-contract platform-lab-artifact-contract platform-lab-matrix platform-lab-verify platform-review-manifest platform-api-smoke platform-lab-smoke platform-browser-smoke platform-container-smoke platform-deployed-smoke platform-release-evidence platform-review-pack smoke-helper-check worker-test build compose-config terraform-validate k8s-platform-contract kubeconform-check workflow-lint workflow-contract-check script-syntax-check fmt-check release-check platform-release-check
+.PHONY: help up up-logging down logs clean-generated clean-smoke-images test bootstrap backend-test api-migration-check api-image-migration-check doc-link-check env-contract-check platform-content-count-check working-tree-hygiene-check platform-academy-test platform-lab-contract platform-lab-artifact-contract platform-lab-matrix platform-lab-verify platform-review-manifest platform-api-smoke platform-lab-smoke platform-browser-smoke platform-container-smoke platform-deployed-smoke platform-release-validation platform-release-evidence platform-review-pack smoke-helper-check worker-test build compose-config terraform-validate k8s-platform-contract kubeconform-check workflow-lint workflow-contract-check script-syntax-check fmt-check release-check platform-release-check
 
 PYTHON ?= python3.11
 KUBECONFORM_IMAGE ?= ghcr.io/yannh/kubeconform:v0.6.7
@@ -126,8 +126,10 @@ platform-container-smoke: ## Build and smoke test API + Platform Academy web con
 platform-deployed-smoke: ## Smoke test deployed Platform Academy using API_BASE and optional WEB_BASE
 	PYTHON=$(PYTHON) scripts/smoke_platform_academy_deployed.sh
 
-platform-release-evidence: ## Print copy-paste Platform Academy release evidence Markdown
+platform-release-validation: ## Print copy-paste Platform Academy release validation Markdown
 	@scripts/platform_release_evidence.sh
+
+platform-release-evidence: platform-release-validation ## Backward-compatible alias for release validation output
 
 platform-review-pack: ## Write a disposable Platform Academy review/deployment handoff pack
 	@PYTHON=$(PYTHON) scripts/platform_review_pack.sh

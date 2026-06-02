@@ -84,7 +84,7 @@ make clean-generated clean-smoke-images
 Then generate the copy-paste release note scaffold:
 
 ```bash
-make platform-release-evidence
+make platform-release-validation
 ```
 
 For reviewer routing across the full lab set, generate the lab matrix. It includes the portfolio focus and structural gate columns so reviewers can split the 20 high-value labs from the rest of the full-lab catalog:

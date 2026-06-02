@@ -163,7 +163,7 @@ Commit: ${commit:-unknown}
 Review base: ${review_base}
 Review changed paths: ${changed_count}
 
-This pack is a disposable reviewer/deployment handoff bundle for the Platform Academy full-lab branch. It pulls together the evidence scaffold, lab review matrix, branch status, branch-aware diff summary, handoff note, release checklist, and PR template so reviewers do not have to hunt through the repo.
+This pack is a disposable reviewer/deployment handoff bundle for the Platform Academy full-lab branch. It pulls together the validation scaffold, lab review matrix, branch status, branch-aware diff summary, handoff note, release checklist, and PR template so reviewers do not have to hunt through the repo.
 
 ## Start Here
 
@@ -178,7 +178,7 @@ This pack is a disposable reviewer/deployment handoff bundle for the Platform Ac
 
 ## Included Files
 
-- \`release-evidence.md\`: copy-paste release evidence scaffold from \`make platform-release-evidence\`.
+- \`release-evidence.md\`: copy-paste release validation scaffold from \`make platform-release-validation\`.
 - \`lab-review-matrix.md\`: generated lab-by-lab review matrix from \`make platform-lab-matrix\`, including the portfolio-grade slice, structural artifact gate, evidence self-check, and false-lead artifact.
 - \`portfolio-artifact-contract.txt\`: output from \`make platform-lab-artifact-contract\` proving the portfolio-grade structural artifact verifier passed.
 - \`content-count-contract.txt\`: output from \`make platform-content-count-check\` proving smoke defaults and count-bearing docs match API content.
@@ -199,7 +199,7 @@ In GitHub Actions, branch-aware helpers prefer \`GITHUB_BASE_REF\` when it is av
 
 ## Required Gates
 
-For local release-candidate evidence:
+For local release-candidate validation:
 
 \`\`\`bash
 make release-check

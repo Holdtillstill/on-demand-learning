@@ -68,7 +68,7 @@ worker_test_count="$(count_py_tests "$ROOT/apps/worker")"
 generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
 cat <<EOF
-# Platform Academy Release Evidence
+# Platform Academy Release Validation
 
 Generated: ${generated_at}
 Branch: ${branch:-unknown}
@@ -77,7 +77,7 @@ Review base: ${review_base}
 Review changed paths: ${review_changed_count}
 Working tree changed paths: ${local_changed_count}
 
-## Required Local Evidence
+## Required Local Validation
 
 - [ ] \`make release-check\`
 - [ ] \`make platform-release-check\`
@@ -112,7 +112,7 @@ Paste the most recent successful \`make platform-release-check\` tail here:
 - Generated artifacts: ${generated_count} found.
 - Temporary smoke images: ${image_count} found.
 - Temporary smoke containers: ${container_count} found.
-- Docker availability during evidence collection: ${docker_state}.
+- Docker availability during validation collection: ${docker_state}.
 
 EOF
 

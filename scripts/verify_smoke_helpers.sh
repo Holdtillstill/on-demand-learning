@@ -9,7 +9,7 @@ CONTAINER_SMOKE="$ROOT/scripts/smoke_platform_academy_container.sh"
 API_IMAGE_MIGRATION_CHECK="$ROOT/scripts/verify_api_image_migrations.sh"
 FULL_LABS_VERIFY="$ROOT/labs/platform-academy/verify-full-labs.sh"
 WORKING_TREE_HYGIENE_TARGET=(make -C "$ROOT" --no-print-directory working-tree-hygiene-check)
-RELEASE_EVIDENCE_TARGET=(make -C "$ROOT" --no-print-directory platform-release-evidence)
+RELEASE_EVIDENCE_TARGET=(make -C "$ROOT" --no-print-directory platform-release-validation)
 LAB_MATRIX_TARGET=(make -C "$ROOT" --no-print-directory platform-lab-matrix)
 REVIEW_MANIFEST_TARGET=(make -C "$ROOT" --no-print-directory platform-review-manifest)
 REVIEW_PACK_TARGET=(make -C "$ROOT" --no-print-directory platform-review-pack)
@@ -53,9 +53,9 @@ expect_failure() {
   fi
 }
 
-release_evidence_output="$(expect_success "release evidence target" "${RELEASE_EVIDENCE_TARGET[@]}")"
+release_evidence_output="$(expect_success "release validation target" "${RELEASE_EVIDENCE_TARGET[@]}")"
 release_evidence_first_line="$(sed -n '1p' <<<"$release_evidence_output")"
-[[ "$release_evidence_first_line" == "# Platform Academy Release Evidence" ]] || fail "release evidence output should start with Markdown heading"
+[[ "$release_evidence_first_line" == "# Platform Academy Release Validation" ]] || fail "release validation output should start with Markdown heading"
 grep -q "Branch:" <<<"$release_evidence_output" || fail "release evidence output did not include branch"
 grep -q "Commit:" <<<"$release_evidence_output" || fail "release evidence output did not include commit"
 grep -q "Review base:" <<<"$release_evidence_output" || fail "release evidence output did not include review base"
@@ -123,7 +123,7 @@ for pack_file in README.md FILE-MANIFEST.txt release-evidence.md changed-file-re
 done
 grep -q "# Platform Academy Review Pack" "$REVIEW_PACK_DIR/README.md" || fail "review pack README missing heading"
 grep -q "make platform-deployed-smoke" "$REVIEW_PACK_DIR/README.md" || fail "review pack README missing deployed smoke command"
-grep -q "# Platform Academy Release Evidence" "$REVIEW_PACK_DIR/release-evidence.md" || fail "review pack release evidence missing heading"
+grep -q "# Platform Academy Release Validation" "$REVIEW_PACK_DIR/release-evidence.md" || fail "review pack release validation missing heading"
 grep -q "# Platform Academy Changed File Review Manifest" "$REVIEW_PACK_DIR/changed-file-review-manifest.md" || fail "review pack changed-file manifest missing heading"
 grep -q "Lab Source Artifacts" "$REVIEW_PACK_DIR/changed-file-review-manifest.md" || fail "review pack changed-file manifest missing lab section"
 grep -q "# Platform Academy Commit Plan" "$REVIEW_PACK_DIR/commit-plan.md" || fail "review pack commit plan missing heading"
