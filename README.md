@@ -1,6 +1,6 @@
 # On-Demand Learning / Platform Academy
 
-Platform Academy is a local-first, production-style portfolio project for Kubernetes, EKS, Helm, ArgoCD, security, SRE, and platform engineering. The portfolio story is the full stack around the learning product: Docker Compose, FastAPI, React, PostgreSQL, Redis, a worker, metrics, traces, JSON logs, Kubernetes manifests, Terraform AWS scaffolding, CI/CD, SLOs, and runbooks.
+Platform Academy is a local-first, production-style portfolio project for Kubernetes, EKS, Helm, ArgoCD, security, SRE, and platform engineering. The engineering scope is the full stack around the learning product: Docker Compose, FastAPI, React, PostgreSQL, Redis, a worker, metrics, traces, JSON logs, Kubernetes manifests, Terraform AWS scaffolding, CI/CD, SLOs, and runbooks.
 
 Public static workspace: <https://platform-academy.bozhi.dev>
 Runtime preview: request-only through <https://bozhi.dev/#request>
@@ -18,8 +18,8 @@ my responsibility.
 | Surface | Status | Notes |
 | --- | --- | --- |
 | Static Platform Academy | Public static host | `platform-academy.bozhi.dev` serves the browsable learning workspace, static catalog snapshots, and browser-local guest work. |
-| Full API runtime | Local and preview-ready | Progress, activity, recovery keys, and API-backed persistence run locally or in approved short-lived preview windows. |
-| Observability | Local and preview-ready | Metrics, traces, logs, dashboards, and smoke checks are wired for local validation and shared runtime demos. |
+| Full API runtime | Local and approved preview | Progress, activity, recovery keys, and API-backed persistence run locally or in approved short-lived preview windows. |
+| Observability | Local and approved preview | Metrics, traces, logs, dashboards, and smoke checks are wired for local validation and shared runtime demos. |
 | EKS runtime preview | Request-only | Shared EKS demos are temporary validation windows, not always-on learning infrastructure. |
 
 ## Quickstart
