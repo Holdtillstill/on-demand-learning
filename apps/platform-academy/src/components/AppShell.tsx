@@ -246,7 +246,7 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
                 Recovery key
               </button>
               <button
-                aria-label="Start a new local guest workspace"
+                aria-label="New profile: start a new local guest workspace"
                 className="learner-reset-button"
                 onClick={onResetLearner}
                 title="Switch this browser to a fresh local progress profile. Existing backend progress remains stored under the old guest id."
