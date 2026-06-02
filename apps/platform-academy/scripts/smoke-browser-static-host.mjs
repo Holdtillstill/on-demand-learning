@@ -3,6 +3,7 @@ import { chromium } from "@playwright/test";
 const WEB_BASE = normalizeBase(process.env.WEB_BASE || process.env.PLATFORM_WEB_BASE || "https://platform-academy.bozhi.dev");
 const TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 30000);
 const SETTLE_MS = Number(process.env.SMOKE_SETTLE_MS || 1000);
+const VISITOR_ENDPOINT = "https://on-demand-demos.bozhi.dev/api/events";
 
 const viewports = [
   { name: "desktop", width: 1440, height: 900 },
@@ -33,9 +34,22 @@ function shouldIgnoreFailedRequest(request) {
   }
 }
 
+async function installVisitorStub(page, visitorEvents) {
+  await page.route(VISITOR_ENDPOINT, async (eventRoute) => {
+    const request = eventRoute.request();
+    try {
+      visitorEvents.push(JSON.parse(request.postData() || "{}"));
+    } catch {
+      visitorEvents.push({ parseError: true, raw: request.postData() || "" });
+    }
+    await eventRoute.fulfill({ status: 202, contentType: "application/json", body: "{}" });
+  });
+}
+
 async function checkRoute(context, viewport, route) {
   const page = await context.newPage();
   const issues = [];
+  const visitorEvents = [];
 
   page.on("console", (message) => {
     if (message.type() === "error") issues.push(`console: ${message.text().slice(0, 300)}`);
@@ -53,9 +67,7 @@ async function checkRoute(context, viewport, route) {
     if (status >= 400) issues.push(`bad response: ${status} ${response.url()}`);
   });
 
-  await page.route("https://on-demand-demos.bozhi.dev/api/events", (eventRoute) => {
-    eventRoute.fulfill({ status: 202, contentType: "application/json", body: "{}" });
-  });
+  await installVisitorStub(page, visitorEvents);
 
   const response = await page.goto(`${WEB_BASE}${route.path}`, {
     waitUntil: "domcontentloaded",
@@ -74,9 +86,49 @@ async function checkRoute(context, viewport, route) {
     if (bodyText.includes(badText)) issues.push(`unexpected text: ${badText}`);
   }
 
+  const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  if (horizontalOverflow > 2) issues.push(`horizontal overflow: ${horizontalOverflow}px`);
+
+  const pageview = visitorEvents.find((event) => event.project === "platform-academy" && event.eventType === "pageview");
+  if (!pageview) {
+    issues.push("first-party visitor pageview was not sent");
+  } else {
+    if (pageview.path !== route.path) issues.push(`visitor path mismatch: ${pageview.path}`);
+    if (!["initial", "manual"].includes(pageview.navigationType)) {
+      issues.push(`unexpected visitor navigation type: ${pageview.navigationType}`);
+    }
+  }
+
   await page.close();
   if (issues.length) {
     throw new Error(`${viewport.name} ${route.path}\n${issues.join("\n")}`);
+  }
+}
+
+async function verifyPrivacySignals(browser) {
+  const context = await browser.newContext({
+    colorScheme: "dark",
+    userAgent: "platform-academy-static-privacy-smoke/1.0",
+    viewport: { width: 1440, height: 900 },
+  });
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "doNotTrack", { configurable: true, get: () => "1" });
+    Object.defineProperty(navigator, "globalPrivacyControl", { configurable: true, get: () => true });
+    Object.defineProperty(window, "doNotTrack", { configurable: true, get: () => "1" });
+  });
+
+  const page = await context.newPage();
+  const visitorEvents = [];
+  await installVisitorStub(page, visitorEvents);
+  try {
+    await page.goto(`${WEB_BASE}/`, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
+    await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(SETTLE_MS);
+    if (visitorEvents.length) {
+      throw new Error(`privacy signals should suppress visitor telemetry, saw ${visitorEvents.length} event(s)`);
+    }
+  } finally {
+    await context.close();
   }
 }
 
@@ -93,8 +145,10 @@ try {
     }
     await context.close();
   }
+
+  await verifyPrivacySignals(browser);
 } finally {
   await browser.close();
 }
 
-console.log(`Platform Academy static browser smoke passed for ${WEB_BASE} across ${routes.length} route(s) and ${viewports.length} viewport(s).`);
+console.log(`Platform Academy static browser smoke passed for ${WEB_BASE} across ${routes.length} route(s), ${viewports.length} viewport(s), and privacy telemetry checks.`);
