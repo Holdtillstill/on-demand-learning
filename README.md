@@ -79,10 +79,10 @@ Then open OpenSearch Dashboards at http://localhost:5601.
   Kubernetes manifest contracts, Terraform validation, workflow contracts,
   static-host smoke, and release-check hygiene.
 - Security workflows run blocking Gitleaks, Trivy filesystem vulnerability/secret
-  scans, Docker image scans, `pip-audit`, `npm audit`, and Dependency Review for
-  public pull requests. Trivy IaC/Kubernetes misconfiguration scanning remains
-  advisory until production promotion because the repo includes lab fixtures and
-  preview scaffolding.
+  scans, Docker image scans, CodeQL source analysis, `pip-audit`, `npm audit`,
+  and Dependency Review for public pull requests. Trivy IaC/Kubernetes
+  misconfiguration scanning remains advisory until production promotion because
+  the repo includes lab fixtures and preview scaffolding.
 - Dependabot tracks GitHub Actions, npm, pip requirements, Dockerfiles, and
   Terraform so dependency fixes are visible as pull requests.
 

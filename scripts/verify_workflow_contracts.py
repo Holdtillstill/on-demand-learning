@@ -13,6 +13,7 @@ WORKFLOW_DIR = ROOT / ".github" / "workflows"
 
 EXPECTED_WORKFLOWS = {
     "backend.yml",
+    "codeql.yml",
     "dependency-audit.yml",
     "docker-build.yml",
     "platform-academy-frontend.yml",
@@ -409,6 +410,21 @@ def verify_platform_static_deploy_workflow() -> None:
         require(needle in deploy_text, f"{name} deploy path must include {needle}")
 
 
+def verify_codeql_workflow() -> None:
+    name = "codeql.yml"
+    workflow_text = (WORKFLOW_DIR / name).read_text()
+    for needle in [
+        "permissions:\n  contents: read\n  security-events: write",
+        "schedule:",
+        "javascript-typescript",
+        "python",
+        "github/codeql-action/init@v3",
+        "build-mode: none",
+        "github/codeql-action/analyze@v3",
+    ]:
+        require(needle in workflow_text, f"{name} must include {needle}")
+
+
 def main() -> None:
     verify_expected_workflows()
     verify_platform_image_workflow()
@@ -418,6 +434,7 @@ def main() -> None:
     verify_platform_deployed_smoke_workflow()
     verify_platform_static_smoke_workflow()
     verify_platform_static_deploy_workflow()
+    verify_codeql_workflow()
     print("Verified GitHub Actions release workflow contracts.")
 
 

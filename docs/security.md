@@ -8,7 +8,7 @@ Current demo safeguards:
 - API uses request IDs for auditability.
 - Kubernetes includes a secret template, service accounts, network policy, resource limits, and non-public dependency notes.
 - ECR scan-on-push is enabled in Terraform.
-- CI includes dependency review for public pull requests, Gitleaks, blocking Trivy filesystem vulnerability/secret scanning, Docker image scanning, `pip-audit`, and `npm audit`. Trivy IaC/Kubernetes misconfiguration scanning is advisory until production promotion because the repo includes lab fixtures and preview scaffolding.
+- CI includes dependency review for public pull requests, Gitleaks, blocking Trivy filesystem vulnerability/secret scanning, Docker image scanning, CodeQL source analysis, `pip-audit`, and `npm audit`. Trivy IaC/Kubernetes misconfiguration scanning is advisory until production promotion because the repo includes lab fixtures and preview scaffolding.
 - Dependabot tracks GitHub Actions, npm, pip requirements, Dockerfiles, and Terraform.
 - Scheduled/static smoke checks cover the static public host, API guardrails, Platform Academy route behavior, privacy-signal handling, and serious/critical accessibility violations.
 
