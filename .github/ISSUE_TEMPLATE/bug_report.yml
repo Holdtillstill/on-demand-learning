@@ -39,7 +39,7 @@ body:
     id: evidence
     attributes:
       label: Evidence
-      description: Paste relevant logs, screenshots, request IDs, failing test output, or smoke command output.
+      description: Paste sanitized logs, screenshots, local/test correlation IDs, failing test output, or smoke command output. Do not include secrets, learner data, real cloud identifiers, or private deployment details.
       render: shell
   - type: input
     id: commit

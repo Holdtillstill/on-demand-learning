@@ -1,5 +1,8 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
+  - name: Security policy
+    url: https://github.com/Holdtillstill/on-demand-learning/blob/main/SECURITY.md
+    about: Report vulnerabilities privately; do not open public issues with secrets, learner data, or cloud identifiers.
   - name: Release Checklist
     url: https://github.com/Holdtillstill/on-demand-learning/blob/main/docs/release-checklist.md
     about: Use this before opening deployment or release-tracking issues.

@@ -148,6 +148,23 @@ def verify_public_discovery(errors: list[str]) -> None:
         errors.append("apps/platform-academy/public/social-preview.jpg: missing social preview image")
 
 
+def verify_issue_templates(errors: list[str]) -> None:
+    config = read_text(REPO_ROOT / ".github" / "ISSUE_TEMPLATE" / "config.yml")
+    if config is None:
+        errors.append(".github/ISSUE_TEMPLATE/config.yml: missing")
+    else:
+        if "blank_issues_enabled: false" not in config:
+            errors.append(".github/ISSUE_TEMPLATE/config.yml: blank public issues should stay disabled")
+        if "SECURITY.md" not in config:
+            errors.append(".github/ISSUE_TEMPLATE/config.yml: missing security policy contact link")
+
+    bug_template = read_text(REPO_ROOT / ".github" / "ISSUE_TEMPLATE" / "bug_report.yml")
+    if bug_template is None:
+        errors.append(".github/ISSUE_TEMPLATE/bug_report.yml: missing")
+    elif "Paste sanitized logs" not in bug_template:
+        errors.append(".github/ISSUE_TEMPLATE/bug_report.yml: evidence instructions must require sanitized logs")
+
+
 def main() -> int:
     errors: list[str] = []
     for stale_doc in sorted(REMOVED_DOCS):
@@ -164,6 +181,7 @@ def main() -> int:
 
     verify_public_shell(errors)
     verify_public_discovery(errors)
+    verify_issue_templates(errors)
 
     if errors:
         print("FAIL: public-readiness check failed:", file=sys.stderr)
