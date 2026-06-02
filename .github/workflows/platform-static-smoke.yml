@@ -25,9 +25,21 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/platform-academy/package-lock.json
+
+      - name: Install Platform Academy browser dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+        working-directory: apps/platform-academy
 
       - name: Smoke Platform Academy static host
         run: npm run smoke:static-host
+        working-directory: apps/platform-academy
+
+      - name: Smoke Platform Academy static browser rendering
+        run: npm run smoke:browser-static-host
         working-directory: apps/platform-academy
 
       - name: Write smoke summary
@@ -37,7 +49,7 @@ jobs:
             echo "## Platform Academy Static Smoke"
             echo
             echo "- Web base: ${WEB_BASE}"
-            echo "- Checks: app shell routes, visitor tag, static API snapshots, lab packet, security headers"
+            echo "- Checks: app shell routes, visitor tag, static API snapshots, lab packet, security headers, browser rendering"
             echo "- Workflow: ${GITHUB_WORKFLOW}"
             echo "- Commit: ${GITHUB_SHA}"
           } >> "${GITHUB_STEP_SUMMARY}"

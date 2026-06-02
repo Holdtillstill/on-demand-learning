@@ -318,11 +318,19 @@ def verify_platform_static_smoke_workflow() -> None:
     require("https://platform-academy.bozhi.dev" in str(env.get("WEB_BASE", "")), f"{name} should default to the stable static host")
 
     smoke_steps = steps(data, "smoke-static", name)
+    install_step = step_by_name(smoke_steps, "Install Platform Academy browser dependencies", name)
+    require_run_contains(install_step, "npm ci", f"{name} browser install")
+    require_run_contains(install_step, "npx playwright install --with-deps chromium", f"{name} browser install")
+    require(install_step.get("working-directory") == "apps/platform-academy", f"{name} browser install must run from apps/platform-academy")
     smoke_step = step_by_name(smoke_steps, "Smoke Platform Academy static host", name)
     require_run_contains(smoke_step, "npm run smoke:static-host", f"{name} static host smoke")
     require(smoke_step.get("working-directory") == "apps/platform-academy", f"{name} smoke must run from apps/platform-academy")
+    browser_step = step_by_name(smoke_steps, "Smoke Platform Academy static browser rendering", name)
+    require_run_contains(browser_step, "npm run smoke:browser-static-host", f"{name} static browser smoke")
+    require(browser_step.get("working-directory") == "apps/platform-academy", f"{name} browser smoke must run from apps/platform-academy")
     summary_step = step_by_name(smoke_steps, "Write smoke summary", name)
     require_run_contains(summary_step, "static API snapshots", f"{name} summary")
+    require_run_contains(summary_step, "browser rendering", f"{name} summary")
 
 
 def main() -> None:
