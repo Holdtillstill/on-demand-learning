@@ -61,11 +61,11 @@ jobs:
     if: ${{ github.event_name != 'schedule' || vars.PLATFORM_API_BASE != '' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
@@ -156,7 +156,7 @@ jobs:
 
       - name: Upload deployed browser smoke artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: platform-deployed-browser-smoke
           path: smoke-artifacts

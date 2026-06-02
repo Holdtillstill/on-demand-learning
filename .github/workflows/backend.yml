@@ -15,8 +15,8 @@ jobs:
       run:
         working-directory: apps/api
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -75,7 +75,7 @@ jobs:
           OTEL_EXPORTER_OTLP_ENDPOINT: ""
       - name: Upload API smoke artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: platform-academy-api-smoke
           path: smoke-artifacts

@@ -220,8 +220,8 @@ def verify_backend_frontend_smokes() -> None:
 def verify_platform_validate_workflow() -> None:
     name = "platform-validate.yml"
     validate_steps = steps(workflow(name), "local-platform-contracts", name)
-    checkout_step = next((step for step in validate_steps if step.get("uses") == "actions/checkout@v4"), None)
-    require(isinstance(checkout_step, dict), f"{name} must use actions/checkout@v4")
+    checkout_step = next((step for step in validate_steps if step.get("uses") == "actions/checkout@v6"), None)
+    require(isinstance(checkout_step, dict), f"{name} must use actions/checkout@v6")
     checkout_with = checkout_step.get("with", {})
     require(checkout_with.get("fetch-depth") == 0, f"{name} checkout must use fetch-depth: 0 for branch-aware hygiene")
     runs = {step.get("run") for step in validate_steps if isinstance(step.get("run"), str)}

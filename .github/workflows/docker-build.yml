@@ -22,7 +22,7 @@ jobs:
           - name: worker
             dockerfile: apps/worker/Dockerfile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with:
@@ -47,11 +47,11 @@ jobs:
       WEB_IMAGE: on-demand-platform-smoke-web:${{ github.sha }}
       RUN_ID: ci-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
@@ -69,7 +69,7 @@ jobs:
         run: SMOKE_SKIP_BUILD=true SMOKE_ARTIFACT_DIR="${GITHUB_WORKSPACE}/smoke-artifacts" scripts/smoke_platform_academy_container.sh
       - name: Upload container smoke artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: platform-academy-container-smoke
           path: smoke-artifacts
