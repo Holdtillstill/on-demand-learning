@@ -77,7 +77,7 @@ jobs:
           curl --connect-timeout 5 --max-time 30 -fsS http://localhost:5174/dashboard/home >/dev/null
 
           smoke_status=0
-          WEB_BASE=http://localhost:5174 SMOKE_ARTIFACT_DIR="${GITHUB_WORKSPACE}/smoke-artifacts" npm --prefix apps/platform-academy run smoke:routes || smoke_status=$?
+          WEB_BASE=http://localhost:5174 SMOKE_API_BASE=http://127.0.0.1:8000 SMOKE_ARTIFACT_DIR="${GITHUB_WORKSPACE}/smoke-artifacts" npm --prefix apps/platform-academy run smoke:routes || smoke_status=$?
 
           kill "${web_pid}" "${api_pid}" >/dev/null 2>&1 || true
           wait "${web_pid}" "${api_pid}" >/dev/null 2>&1 || true

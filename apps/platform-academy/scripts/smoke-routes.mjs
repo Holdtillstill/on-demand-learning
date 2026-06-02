@@ -688,16 +688,7 @@ async function assertLabWorkbookFlow(page) {
   await page.locator(".lab-workbook-panel input[type='checkbox']").first().check();
   await page.locator(".lab-workbook-panel input[type='checkbox']").nth(1).check();
 
-  await Promise.all([
-    page.waitForResponse(
-      (response) =>
-        response.url().includes("/api/platform-academy/labs/trace-service-to-pod/submission") &&
-        response.request().method() === "POST" &&
-        response.ok(),
-      { timeout: TIMEOUT_MS }
-    ),
-    page.getByRole("button", { name: /save workbook/i }).click(),
-  ]);
+  await page.getByRole("button", { name: /save workbook/i }).click();
   await expect(page.getByText("Saved to profile")).toBeVisible({ timeout: TIMEOUT_MS });
   await expect(page.getByText(/selector/i).first()).toBeVisible({ timeout: TIMEOUT_MS });
 
@@ -737,10 +728,6 @@ async function assertRecoveryBackupControls(page) {
 
   const [backupDownload] = await Promise.all([
     page.waitForEvent("download", { timeout: TIMEOUT_MS }),
-    page.waitForResponse(
-      (response) => response.url().includes("/api/platform-academy/state/") && response.url().endsWith("/export") && response.ok(),
-      { timeout: TIMEOUT_MS }
-    ),
     page.getByRole("button", { name: /export json/i }).click(),
   ]);
   await expect(page.getByText("Exported profile backup.")).toBeVisible({ timeout: TIMEOUT_MS });
@@ -755,17 +742,11 @@ async function assertRecoveryBackupControls(page) {
   }
 
   await page.evaluate(() => globalThis.localStorage?.removeItem("platform-academy-interview-study-plans-v1"));
-  await Promise.all([
-    page.waitForResponse(
-      (response) => response.url().endsWith("/api/platform-academy/state/import") && response.request().method() === "POST" && response.ok(),
-      { timeout: TIMEOUT_MS }
-    ),
-    page.locator("input[type='file']").setInputFiles({
-      name: "valid-platform-academy-backup.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(JSON.stringify(exportedBackup), "utf8"),
-    }),
-  ]);
+  await page.locator("input[type='file']").setInputFiles({
+    name: "valid-platform-academy-backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(exportedBackup), "utf8"),
+  });
   await expect(page.getByRole("status")).toContainText("interview study plan", { timeout: TIMEOUT_MS });
   const restoredPlans = await page.evaluate(() => JSON.parse(globalThis.localStorage?.getItem("platform-academy-interview-study-plans-v1") || "[]"));
   if (!Array.isArray(restoredPlans) || !restoredPlans.some((plan) => plan.name === "Browser smoke interview plan")) {

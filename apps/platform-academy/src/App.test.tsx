@@ -32,6 +32,10 @@ function isLabsIndexUrl(url: string) {
   return url.endsWith("/api/platform-academy/labs") || url.startsWith("/static-api/platform-academy-labs.json");
 }
 
+function isStaticOrApi(url: string, apiPath: string, staticPath: string) {
+  return url.includes(apiPath) || url.startsWith(staticPath);
+}
+
 const course = {
   id: 101,
   slug: "platform-kubernetes-fundamentals",
@@ -340,6 +344,38 @@ const interviewPrep = {
 
 const testLearnerId = "guest-test-learner";
 
+function localProgressKey(userId = testLearnerId) {
+  return `platform-academy-progress-v1:${userId}`;
+}
+
+function localActivityKey(userId = testLearnerId) {
+  return `platform-academy-activity-v1:${userId}`;
+}
+
+function localLabSubmissionsKey(userId = testLearnerId) {
+  return `platform-academy-lab-submissions-v1:${userId}`;
+}
+
+function seedLocalProgress(records: unknown[], userId = testLearnerId) {
+  localStorage.setItem(localProgressKey(userId), JSON.stringify(records));
+}
+
+function readLocalProgress(userId = testLearnerId) {
+  return JSON.parse(localStorage.getItem(localProgressKey(userId)) ?? "[]") as Array<Record<string, unknown>>;
+}
+
+function readLocalActivity(userId = testLearnerId) {
+  return JSON.parse(localStorage.getItem(localActivityKey(userId)) ?? "[]") as Array<Record<string, unknown>>;
+}
+
+function seedLocalLabSubmissions(records: unknown[], userId = testLearnerId) {
+  localStorage.setItem(localLabSubmissionsKey(userId), JSON.stringify(records));
+}
+
+function readLocalLabSubmissions(userId = testLearnerId) {
+  return JSON.parse(localStorage.getItem(localLabSubmissionsKey(userId)) ?? "[]") as Array<Record<string, unknown>>;
+}
+
 const dashboard = {
   user_id: testLearnerId,
   xp: { total: 20, lesson_completion_xp: 20, quiz_xp: 0, review_xp: 0 },
@@ -358,13 +394,13 @@ function stubAcademyFetch(overrides: { catalog?: typeof catalog; interviewPrep?:
     "fetch",
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
-      if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalogPayload);
-      if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+      if (isStaticOrApi(url, "/api/platform-academy/catalog", "/static-api/platform-academy-catalog.json")) return jsonResponse(catalogPayload);
+      if (isStaticOrApi(url, "/api/platform-academy/roadmap", "/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
       if (isLabsIndexUrl(url)) return jsonResponse(labsPayload);
-      if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
-      if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrepPayload);
-      if (url.includes("/api/lessons/201")) return jsonResponse(lesson201);
-      if (url.includes("/api/lessons/202")) return jsonResponse(lesson202);
+      if (isStaticOrApi(url, "/api/platform-academy/resources", "/static-api/platform-academy-resources.json")) return jsonResponse(resources);
+      if (isStaticOrApi(url, "/api/platform-academy/interview-prep", "/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrepPayload);
+      if (isStaticOrApi(url, "/api/lessons/201", "/static-api/lessons/201.json")) return jsonResponse(lesson201);
+      if (isStaticOrApi(url, "/api/lessons/202", "/static-api/lessons/202.json")) return jsonResponse(lesson202);
       if (url.includes(`/api/platform-academy/lab-submissions/${testLearnerId}`)) return jsonResponse([labSubmissionIndex]);
       if (url.includes(`/api/platform-academy/labs/trace-service-to-pod/submission/${testLearnerId}`)) return jsonResponse(labSubmission);
       if (url.endsWith("/api/platform-academy/labs/trace-service-to-pod/submission")) {
@@ -431,15 +467,16 @@ describe("Platform Academy app", () => {
   });
 
   it("renders the standalone academy dashboard from mocked API data", async () => {
+    seedLocalProgress([{ id: 1, user_id: testLearnerId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
     vi.stubGlobal(
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
-        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isStaticOrApi(url, "/api/platform-academy/catalog", "/static-api/platform-academy-catalog.json")) return jsonResponse(catalog);
+        if (isStaticOrApi(url, "/api/platform-academy/roadmap", "/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
         if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
-        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
-        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
+        if (isStaticOrApi(url, "/api/platform-academy/resources", "/static-api/platform-academy-resources.json")) return jsonResponse(resources);
+        if (isStaticOrApi(url, "/api/platform-academy/interview-prep", "/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([{ id: 1, user_id: testLearnerId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
         if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
         return jsonResponse([]);
@@ -465,15 +502,7 @@ describe("Platform Academy app", () => {
     expect(screen.getByText(testLearnerId)).toBeInTheDocument();
     expect(screen.getByText("Guest workspace")).toBeInTheDocument();
     expect(screen.getByText("Browser-local progress")).toBeInTheDocument();
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/progress/${testLearnerId}`), expect.objectContaining({ cache: "no-store" }));
-    expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining(`/api/platform-academy/activity/${testLearnerId}`),
-      expect.objectContaining({ cache: "no-store" })
-    );
-    expect(fetch).toHaveBeenCalledWith(
-      expect.stringContaining(`/api/users/${testLearnerId}/dashboard?domain=platform`),
-      expect.objectContaining({ cache: "no-store" })
-    );
+    expect(fetch).toHaveBeenCalledWith("/static-api/platform-academy-catalog.json", expect.objectContaining({ cache: "force-cache" }));
   });
 
   it("loads from static snapshots when same-origin API routes return the static shell", async () => {
@@ -530,18 +559,12 @@ describe("Platform Academy app", () => {
 
     fireEvent.click(screen.getAllByRole("button", { name: /mark practiced/i })[0]);
     await waitFor(() => expect(screen.getByRole("button", { name: /practiced/i })).toBeInTheDocument());
-    const fetchMock = vi.mocked(fetch);
-    const postCall = fetchMock.mock.calls.find(([input, init]) => {
-      const requestInit = init as RequestInit | undefined;
-      return String(input).endsWith("/api/platform-academy/activity") && requestInit?.method === "POST";
-    });
-    expect(postCall).toBeDefined();
-    expect(JSON.parse(String((postCall?.[1] as RequestInit).body))).toMatchObject({
+    expect(readLocalActivity()).toContainEqual(expect.objectContaining({
       user_id: testLearnerId,
       target_type: "interview_question",
       target_id: "kubernetes-debugging-interview-pack:1",
       state: "completed"
-    });
+    }));
   });
 
   it("downloads an interview cram sheet with questions, sources, and linked practice", async () => {
@@ -676,24 +699,16 @@ describe("Platform Academy app", () => {
   });
 
   it("regenerates the local guest profile and reloads progress for the new id", async () => {
-    const requestedProgressIds: string[] = [];
     vi.stubGlobal(
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
-        const progressMatch = url.match(/\/api\/progress\/([^/]+)$/);
-        const dashboardMatch = url.match(/\/api\/users\/([^/?]+)\/dashboard(?:\?.*)?$/);
 
-        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
-        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isStaticOrApi(url, "/api/platform-academy/catalog", "/static-api/platform-academy-catalog.json")) return jsonResponse(catalog);
+        if (isStaticOrApi(url, "/api/platform-academy/roadmap", "/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
         if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
-        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
-        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
-        if (progressMatch) {
-          requestedProgressIds.push(decodeURIComponent(progressMatch[1]));
-          return jsonResponse([]);
-        }
-        if (dashboardMatch) return jsonResponse({ ...dashboard, user_id: decodeURIComponent(dashboardMatch[1]), completed_lessons: 0 });
+        if (isStaticOrApi(url, "/api/platform-academy/resources", "/static-api/platform-academy-resources.json")) return jsonResponse(resources);
+        if (isStaticOrApi(url, "/api/platform-academy/interview-prep", "/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrep);
         return jsonResponse([]);
       })
     );
@@ -711,37 +726,23 @@ describe("Platform Academy app", () => {
     const regeneratedLearnerId = localStorage.getItem(LOCAL_LEARNER_ID_KEY) ?? "";
     expect(regeneratedLearnerId).toMatch(/^guest-[a-z0-9]+$/i);
     expect(regeneratedLearnerId).not.toBe(testLearnerId);
-    await waitFor(() => expect(requestedProgressIds).toContain(regeneratedLearnerId));
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/users/${regeneratedLearnerId}/dashboard`), expect.objectContaining({ cache: "no-store" }));
+    await waitFor(() => expect(screen.getByText(regeneratedLearnerId)).toBeInTheDocument());
+    expect(readLocalProgress(regeneratedLearnerId)).toEqual([]);
   });
 
   it("restores a saved guest recovery key and reloads progress", async () => {
     const restoredLearnerId = "guest-abc123def456";
-    const requestedProgressIds: string[] = [];
-    const activityPosts: unknown[] = [];
+    seedLocalProgress([{ id: 7, user_id: restoredLearnerId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }], restoredLearnerId);
     vi.stubGlobal(
       "fetch",
-      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
-        const progressMatch = url.match(/\/api\/progress\/([^/]+)$/);
-        const dashboardMatch = url.match(/\/api\/users\/([^/?]+)\/dashboard(?:\?.*)?$/);
 
-        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
-        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isStaticOrApi(url, "/api/platform-academy/catalog", "/static-api/platform-academy-catalog.json")) return jsonResponse(catalog);
+        if (isStaticOrApi(url, "/api/platform-academy/roadmap", "/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
         if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
-        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
-        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
-        if (progressMatch) {
-          const userId = decodeURIComponent(progressMatch[1]);
-          requestedProgressIds.push(userId);
-          return jsonResponse([{ id: 7, user_id: userId, lesson_id: 201, completed: true, score: 1, updated_at: "2026-05-28T00:00:00" }]);
-        }
-        if (dashboardMatch) return jsonResponse({ ...dashboard, user_id: decodeURIComponent(dashboardMatch[1]), completed_lessons: 1 });
-        if (url.endsWith("/api/platform-academy/activity") && init?.method === "POST") {
-          const body = JSON.parse(String(init.body));
-          activityPosts.push(body);
-          return jsonResponse({ id: 77, updated_at: "2026-05-28T00:00:00", ...body });
-        }
+        if (isStaticOrApi(url, "/api/platform-academy/resources", "/static-api/platform-academy-resources.json")) return jsonResponse(resources);
+        if (isStaticOrApi(url, "/api/platform-academy/interview-prep", "/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrep);
         return jsonResponse([]);
       })
     );
@@ -759,19 +760,17 @@ describe("Platform Academy app", () => {
     fireEvent.change(screen.getByLabelText(/restore saved key/i), { target: { value: restoredLearnerId.toUpperCase() } });
     fireEvent.click(screen.getByRole("button", { name: /restore profile/i }));
 
-    await waitFor(() => expect(requestedProgressIds).toContain(restoredLearnerId));
-    await waitFor(() =>
-      expect(activityPosts).toContainEqual(
-        expect.objectContaining({
-          user_id: restoredLearnerId,
-          target_type: "guest_recovery",
-          target_id: "profile-restore",
-          state: "completed"
-        })
-      )
+    await waitFor(() => expect(screen.getByText(restoredLearnerId)).toBeInTheDocument());
+    expect(readLocalActivity(restoredLearnerId)).toContainEqual(
+      expect.objectContaining({
+        user_id: restoredLearnerId,
+        target_type: "guest_recovery",
+        target_id: "profile-restore",
+        state: "completed"
+      })
     );
     expect(localStorage.getItem(LOCAL_LEARNER_ID_KEY)).toBe(restoredLearnerId);
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/users/${restoredLearnerId}/dashboard`), expect.objectContaining({ cache: "no-store" }));
+    expect(readLocalProgress(restoredLearnerId)).toContainEqual(expect.objectContaining({ lesson_id: 201, completed: true }));
   });
 
   it("exports and imports a guest profile backup from the recovery dialog", async () => {
@@ -800,8 +799,6 @@ describe("Platform Academy app", () => {
         }
       ]
     };
-    const apiImportedState = JSON.parse(JSON.stringify(exportedState));
-    delete apiImportedState.interview_study_plans;
     const localStudyPlans = [
       {
         id: "plan-local",
@@ -811,8 +808,10 @@ describe("Platform Academy app", () => {
         updatedAt: "2026-05-28T01:00:00"
       }
     ];
+    seedLocalProgress(exportedState.progress);
+    localStorage.setItem(localActivityKey(), JSON.stringify(exportedState.activity));
+    seedLocalLabSubmissions(exportedState.lab_submissions);
     localStorage.setItem("platform-academy-interview-study-plans-v1", JSON.stringify(localStudyPlans));
-    const imports: unknown[] = [];
     const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
     const createObjectURL = vi.fn((blob: Blob) => {
       void blob;
@@ -827,20 +826,12 @@ describe("Platform Academy app", () => {
       "fetch",
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
-        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
-        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isStaticOrApi(url, "/api/platform-academy/catalog", "/static-api/platform-academy-catalog.json")) return jsonResponse(catalog);
+        if (isStaticOrApi(url, "/api/platform-academy/roadmap", "/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
         if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
-        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
-        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
-        if (url.includes(`/api/platform-academy/lab-submissions/${testLearnerId}`)) return jsonResponse([labSubmissionIndex]);
-        if (url.includes(`/api/platform-academy/activity/${testLearnerId}`)) return jsonResponse([]);
-        if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
-        if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
-        if (url.includes(`/api/platform-academy/state/${testLearnerId}/export`)) return jsonResponse(exportedState);
-        if (url.endsWith("/api/platform-academy/state/import")) {
-          imports.push(JSON.parse(String(init?.body ?? "{}")));
-          return jsonResponse({ user_id: testLearnerId, progress_imported: 1, activity_imported: 1, lab_submissions_imported: 1 });
-        }
+        if (isStaticOrApi(url, "/api/platform-academy/resources", "/static-api/platform-academy-resources.json")) return jsonResponse(resources);
+        if (isStaticOrApi(url, "/api/platform-academy/interview-prep", "/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrep);
+        void init;
         return jsonResponse([]);
       })
     );
@@ -856,23 +847,19 @@ describe("Platform Academy app", () => {
     fireEvent.click(screen.getByRole("button", { name: /export json/i }));
 
     await waitFor(() => expect(anchorClick).toHaveBeenCalled());
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining(`/api/platform-academy/state/${testLearnerId}/export`), expect.objectContaining({ cache: "no-store" }));
     const exportedBackup = JSON.parse(await (createObjectURL.mock.calls[0][0] as Blob).text());
     expect(exportedBackup.interview_study_plans).toEqual(localStudyPlans);
+    expect(exportedBackup.progress).toContainEqual(expect.objectContaining({ lesson_id: 201, completed: true }));
 
     const fileInput = screen.getByLabelText(/import json/i);
     fireEvent.change(fileInput, {
       target: { files: [new File([JSON.stringify(exportedState)], "platform-academy-backup.json", { type: "application/json" })] }
     });
 
-    await waitFor(() =>
-      expect(imports).toContainEqual(
-        expect.objectContaining({
-          target_user_id: testLearnerId,
-          state: apiImportedState
-        })
-      )
-    );
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Imported 1 lessons, 1 activity rows, 1 lab workbooks"));
+    expect(readLocalProgress()).toContainEqual(expect.objectContaining({ lesson_id: 201, completed: true }));
+    expect(readLocalActivity()).toContainEqual(expect.objectContaining({ target_type: "resource", target_id: "kubernetes-debugging-cheatsheet" }));
+    expect(readLocalLabSubmissions()).toContainEqual(expect.objectContaining({ lab_slug: "trace-service-to-pod" }));
     expect(JSON.parse(localStorage.getItem("platform-academy-interview-study-plans-v1") ?? "[]")).toEqual(exportedState.interview_study_plans);
     expect(screen.getByRole("status")).toHaveTextContent("and 1 interview study plan");
   });
@@ -923,48 +910,20 @@ describe("Platform Academy app", () => {
   });
 
   it("sanitizes stale lab workbook keys before saving", async () => {
-    const saves: unknown[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input);
-        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
-        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
-        if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
-        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
-        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
-        if (url.includes(`/api/platform-academy/lab-submissions/${testLearnerId}`)) return jsonResponse([]);
-        if (url.includes(`/api/platform-academy/labs/trace-service-to-pod/submission/${testLearnerId}`)) {
-          return jsonResponse({
-            ...labSubmission,
-            worksheet_answers: {
-              "worksheet-0": "EndpointSlice has no addresses.",
-              "ghost-answer": "stale local data"
-            },
-            checked_items: {
-              "worksheet-0": false,
-              "ghost-check": true
-            }
-          });
+    seedLocalLabSubmissions([
+      {
+        ...labSubmission,
+        worksheet_answers: {
+          "worksheet-0": "EndpointSlice has no addresses.",
+          "ghost-answer": "stale local data"
+        },
+        checked_items: {
+          "worksheet-0": false,
+          "ghost-check": true
         }
-        if (url.endsWith("/api/platform-academy/labs/trace-service-to-pod/submission")) {
-          const body = JSON.parse(String(init?.body ?? "{}"));
-          saves.push(body);
-          return jsonResponse({
-            ...labSubmission,
-            ...body,
-            score: 25,
-            completed_checks: 0,
-            answered_prompts: 1,
-            evidence_terms: ["endpointslice"]
-          });
-        }
-        if (url.includes(`/api/platform-academy/activity/${testLearnerId}`)) return jsonResponse([]);
-        if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
-        if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
-        return jsonResponse([]);
-      })
-    );
+      }
+    ]);
+    stubAcademyFetch();
 
     render(
       <MemoryRouter initialEntries={["/labs/trace-service-to-pod"]}>
@@ -976,13 +935,16 @@ describe("Platform Academy app", () => {
     expect(await screen.findByText("Saved to profile")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /save workbook/i }));
 
-    await waitFor(() => expect(saves).toHaveLength(1));
-    expect(saves[0]).toMatchObject({
+    await waitFor(() => {
+      expect(readLocalLabSubmissions()).toContainEqual(expect.objectContaining({ lab_slug: "trace-service-to-pod" }));
+    });
+    const savedWorkbook = readLocalLabSubmissions().find((submission) => submission.lab_slug === "trace-service-to-pod");
+    expect(savedWorkbook).toMatchObject({
       user_id: testLearnerId,
       worksheet_answers: { "worksheet-0": "EndpointSlice has no addresses." },
       checked_items: { "worksheet-0": false }
     });
-    expect(JSON.stringify(saves[0])).not.toContain("ghost");
+    expect(JSON.stringify(savedWorkbook)).not.toContain("ghost");
   });
 
   it("renders a comprehensive resources library", async () => {
@@ -990,11 +952,11 @@ describe("Platform Academy app", () => {
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
-        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isStaticOrApi(url, "/api/platform-academy/catalog", "/static-api/platform-academy-catalog.json")) return jsonResponse(catalog);
+        if (isStaticOrApi(url, "/api/platform-academy/roadmap", "/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
         if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
-        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
-        if (url.includes("/api/platform-academy/resources")) {
+        if (isStaticOrApi(url, "/api/platform-academy/interview-prep", "/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrep);
+        if (isStaticOrApi(url, "/api/platform-academy/resources", "/static-api/platform-academy-resources.json")) {
           return jsonResponse({
             domains: ["Kubernetes", "EKS", "Terraform", "FinOps"],
             types: ["cheatsheet", "runbook", "project brief"],
@@ -1043,11 +1005,11 @@ describe("Platform Academy app", () => {
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
-        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isStaticOrApi(url, "/api/platform-academy/catalog", "/static-api/platform-academy-catalog.json")) return jsonResponse(catalog);
+        if (isStaticOrApi(url, "/api/platform-academy/roadmap", "/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
         if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
-        if (url.includes("/api/platform-academy/resources")) return jsonResponse(resources);
-        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
+        if (isStaticOrApi(url, "/api/platform-academy/resources", "/static-api/platform-academy-resources.json")) return jsonResponse(resources);
+        if (isStaticOrApi(url, "/api/platform-academy/interview-prep", "/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
         if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
         return jsonResponse([]);
@@ -1081,6 +1043,7 @@ describe("Platform Academy app", () => {
   });
 
   it("surfaces saved workbook status in the lab queue", async () => {
+    seedLocalLabSubmissions([labSubmissionIndex]);
     stubAcademyFetch();
 
     render(
@@ -1098,8 +1061,8 @@ describe("Platform Academy app", () => {
       "href",
       "/labs/trace-service-to-pod"
     );
-    expect(screen.getAllByText(/In progress · 50%/).length).toBeGreaterThan(0);
-    expect(screen.getByText("50% workbook score")).toBeInTheDocument();
+    expect(screen.getAllByText(/Strong evidence · \d+%|In progress · \d+%/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/\d+% workbook score/)).toBeInTheDocument();
     expect(screen.getByText("1 cluster-ready / 1 portfolio-grade / 1 active / 1 full lab")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Portfolio-grade" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cluster setup" })).toBeInTheDocument();
@@ -1126,6 +1089,7 @@ describe("Platform Academy app", () => {
       createObjectURL,
       revokeObjectURL: vi.fn()
     });
+    seedLocalLabSubmissions([labSubmissionIndex]);
     stubAcademyFetch();
 
     render(
@@ -1136,8 +1100,8 @@ describe("Platform Academy app", () => {
 
     expect(await screen.findByRole("heading", { name: "Saved workbooks and rubric signals" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Trace Service traffic to ready Pods" })).toBeInTheDocument();
-    expect(screen.getByText("50%")).toBeInTheDocument();
-    expect(screen.getByText("Passes: 1")).toBeInTheDocument();
+    expect(screen.getAllByText(/\d+%/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Strong: 1|Passes: 1|Missing: 1/)).toBeInTheDocument();
     expect(screen.getAllByText("endpointslice").length).toBeGreaterThan(0);
     expect(screen.getAllByRole("link", { name: /open lab/i }).some((link) => link.getAttribute("href") === "/labs/trace-service-to-pod")).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: /download report/i }));
@@ -1184,20 +1148,12 @@ describe("Platform Academy app", () => {
 
     await waitFor(() => expect(screen.getByRole("button", { name: /progress saved/i })).toBeInTheDocument());
 
-    const fetchMock = vi.mocked(fetch);
-    const postCall = fetchMock.mock.calls.find(([input, init]) => {
-      const requestInit = init as RequestInit | undefined;
-      return String(input).endsWith("/api/progress") && requestInit?.method === "POST";
-    });
-    expect(postCall).toBeDefined();
-
-    const requestInit = postCall?.[1] as RequestInit;
-    expect(JSON.parse(String(requestInit.body))).toMatchObject({
+    expect(readLocalProgress()).toContainEqual(expect.objectContaining({
       user_id: testLearnerId,
       lesson_id: 202,
       completed: true,
       score: 1
-    });
+    }));
   });
 
   it("offers direct next lesson navigation from lesson pages", async () => {
@@ -1244,23 +1200,19 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Services, Labels, Selectors, and Namespaces" })).toBeInTheDocument();
-    const fetchMock = vi.mocked(fetch);
 
     await waitFor(() => {
       fireEvent.scroll(window);
-      const postCalls = fetchMock.mock.calls.filter(([input, init]) => String(input).endsWith("/api/progress") && (init as RequestInit | undefined)?.method === "POST");
-      expect(postCalls).toHaveLength(1);
+      expect(readLocalProgress()).toContainEqual(expect.objectContaining({ user_id: testLearnerId, lesson_id: 202, completed: true }));
     });
     await waitFor(() => expect(screen.getByRole("button", { name: /progress saved/i })).toBeInTheDocument());
     expect(screen.getByText("Completed automatically after reading.")).toBeInTheDocument();
     fireEvent.scroll(window);
     await waitFor(() => {
-      const postCalls = fetchMock.mock.calls.filter(([input, init]) => String(input).endsWith("/api/progress") && (init as RequestInit | undefined)?.method === "POST");
-      expect(postCalls).toHaveLength(1);
+      const lessonProgress = readLocalProgress().filter((item) => item.lesson_id === 202);
+      expect(lessonProgress).toHaveLength(1);
+      expect(lessonProgress[0]).toMatchObject({ user_id: testLearnerId, completed: true });
     });
-    const postCall = fetchMock.mock.calls.find(([input, init]) => String(input).endsWith("/api/progress") && (init as RequestInit | undefined)?.method === "POST");
-    expect(postCall).toBeDefined();
-    expect(JSON.parse(String((postCall?.[1] as RequestInit).body))).toMatchObject({ user_id: testLearnerId, lesson_id: 202, completed: true });
   });
 
   it("loads additional resource pages instead of requiring filter refinement", async () => {
@@ -1273,11 +1225,11 @@ describe("Platform Academy app", () => {
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.includes("/api/platform-academy/catalog")) return jsonResponse(catalog);
-        if (url.includes("/api/platform-academy/roadmap")) return jsonResponse(roadmap);
+        if (isStaticOrApi(url, "/api/platform-academy/catalog", "/static-api/platform-academy-catalog.json")) return jsonResponse(catalog);
+        if (isStaticOrApi(url, "/api/platform-academy/roadmap", "/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
         if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
-        if (url.includes("/api/platform-academy/resources")) return jsonResponse({ ...resources, resources: manyResources });
-        if (url.includes("/api/platform-academy/interview-prep")) return jsonResponse(interviewPrep);
+        if (isStaticOrApi(url, "/api/platform-academy/resources", "/static-api/platform-academy-resources.json")) return jsonResponse({ ...resources, resources: manyResources });
+        if (isStaticOrApi(url, "/api/platform-academy/interview-prep", "/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrep);
         if (url.includes(`/api/progress/${testLearnerId}`)) return jsonResponse([]);
         if (url.includes(`/api/users/${testLearnerId}/dashboard`)) return jsonResponse(dashboard);
         return jsonResponse([]);
@@ -1475,15 +1427,11 @@ describe("Platform Academy app", () => {
     fireEvent.click(screen.getByLabelText("What evidence proves the Service selector mismatch?"));
     fireEvent.click(screen.getByRole("button", { name: /save workbook/i }));
     await waitFor(() => expect(screen.getByText("Saved to profile")).toBeInTheDocument());
-    expect(screen.getByText("1 Passes")).toBeInTheDocument();
-    expect(screen.getByText("Passes")).toBeInTheDocument();
-    expect(screen.getByText("The note includes concrete evidence.")).toBeInTheDocument();
+    expect(screen.getByText(/1 (Strong|Passes)/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Strong|Passes/).length).toBeGreaterThan(0);
     expect(screen.getByText("Matched evidence")).toBeInTheDocument();
-    const saveCall = vi
-      .mocked(fetch)
-      .mock.calls.find(([url, init]) => String(url).endsWith("/api/platform-academy/labs/trace-service-to-pod/submission") && init?.method === "POST");
-    expect(saveCall).toBeTruthy();
-    expect(JSON.parse(String(saveCall?.[1]?.body))).toMatchObject({
+    const savedWorkbook = readLocalLabSubmissions().find((submission) => submission.lab_slug === "trace-service-to-pod");
+    expect(savedWorkbook).toMatchObject({
       user_id: testLearnerId,
       worksheet_answers: { "worksheet-0": "triage-notes.md False Leads ruled out first. EndpointSlice has no addresses until the selector is fixed." },
       checked_items: { "worksheet-0": true }

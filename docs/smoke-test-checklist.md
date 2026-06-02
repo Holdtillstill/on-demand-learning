@@ -50,7 +50,8 @@ SMOKE_VIEWPORTS=desktop SMOKE_SKIP_WORKBOOK_FLOW=true \
   make platform-browser-smoke WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
-- `API_BASE` points API smoke at the backend origin; `WEB_BASE` points browser smoke at the Platform Academy web origin.
+- `API_BASE` points API smoke at the backend origin; `WEB_BASE` points browser smoke at the Platform Academy web origin. Browser smoke can validate a static/offline portfolio build with only `WEB_BASE`, or a live API-backed build with both `WEB_BASE` and `API_BASE`.
+- Platform Academy uses checked-in static snapshots and browser-local storage when `VITE_API_BASE_URL` is empty. Set `VITE_API_BASE_URL=https://...` for a direct API-backed frontend, or `PLATFORM_ACADEMY_DEV_API_PROXY_TARGET=http://localhost:8000` only when a local Vite dev proxy is intentionally needed.
 - `SMOKE_DRY_RUN=true` lets `platform-api-smoke`, `platform-lab-smoke`, `platform-container-smoke`, and `platform-deployed-smoke` validate origin, smoke ID, browser smoke knobs, image/container naming, and option wiring without touching the remote deployment.
 - `PLATFORM_SOURCE_BUNDLE_TOKEN` adds the instructor/source bundle token header for API and lab smoke when a non-local deployment protects `/api/platform-academy/labs/{slug}/bundle`.
 - `SMOKE_EXPECT_SOURCE_BUNDLE_TOKEN_REQUIRED=true` makes API, lab, and deployed smoke first assert unauthenticated instructor/source bundle requests return `403`, then assert the same bundle downloads with `PLATFORM_SOURCE_BUNDLE_TOKEN`.

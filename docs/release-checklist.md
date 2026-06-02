@@ -50,13 +50,13 @@ With a local API running, also run:
 make platform-api-smoke API_BASE=http://localhost:8000
 ```
 
-With the Platform Academy web app running behind its intended API proxy, run:
+For the static/offline portfolio app, run browser smoke against the web origin:
 
 ```bash
 make platform-browser-smoke WEB_BASE=http://localhost:8090
 ```
 
-If local web and API servers are split, pass the API origin too:
+If the browser should validate a live API-backed deployment, pass the API origin too:
 
 ```bash
 make platform-browser-smoke WEB_BASE=http://localhost:5190 API_BASE=http://localhost:8000

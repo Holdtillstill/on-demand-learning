@@ -151,7 +151,7 @@ Suggested route plan:
 - `preview.platform-academy.bozhi.dev`: on-demand shared-EKS preview
 - `academy.example.com` in `infra/k8s/platform-academy.yaml` is the placeholder for the Platform Academy host.
 
-CloudFront can sit in front of the frontend later. Do not make Platform Academy pure static S3-only unless the product is intentionally split into a read-only public catalog with no progress/activity persistence.
+CloudFront can sit in front of the frontend later. A static frontend is acceptable for the public portfolio version because catalog data, lab packets, learner workspace bundles, progress, activity, and workbook state all have offline/local paths. Use the full API deployment when shared persistence, API metrics, protected instructor/source bundles, or production-like operational proof are part of the release.
 
 ## Production-Like API Requirements
 
