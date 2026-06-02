@@ -18,6 +18,7 @@ EXPECTED_WORKFLOWS = {
     "platform-academy-frontend.yml",
     "platform-academy-image.yml",
     "platform-deployed-smoke.yml",
+    "platform-static-smoke.yml",
     "platform-validate.yml",
     "secret-scan.yml",
     "security.yml",
@@ -76,6 +77,10 @@ DEPLOYED_SMOKE_RESOLVE_ENV = {
     "VAR_PLATFORM_WEB_BASE",
     "VAR_PLATFORM_SOURCE_BUNDLE_TOKEN_REQUIRED",
     "SECRET_PLATFORM_SOURCE_BUNDLE_TOKEN",
+}
+
+STATIC_SMOKE_INPUTS = {
+    "web_base",
 }
 
 
@@ -297,6 +302,43 @@ def verify_platform_deployed_smoke_workflow() -> None:
     require_run_contains(summary_step, "Source bundle token gate expected", f"{name} summary")
 
 
+def verify_platform_static_smoke_workflow() -> None:
+    name = "platform-static-smoke.yml"
+    data = workflow(name)
+    workflow_text = (WORKFLOW_DIR / name).read_text()
+    require("PLATFORM_API_BASE" not in workflow_text, f"{name} must not require a live API base")
+
+    on_config = data.get("on", {})
+    require(isinstance(on_config, dict), f"{name} must define event triggers")
+    dispatch = on_config.get("workflow_dispatch", {})
+    require(isinstance(dispatch, dict), f"{name} must support workflow_dispatch")
+    inputs = dispatch.get("inputs", {})
+    require(isinstance(inputs, dict), f"{name} workflow_dispatch must define inputs")
+    missing_inputs = sorted(STATIC_SMOKE_INPUTS - set(inputs))
+    require(not missing_inputs, f"{name} missing workflow_dispatch inputs: {missing_inputs}")
+    schedule = on_config.get("schedule", [])
+    require(isinstance(schedule, list) and schedule, f"{name} must keep a scheduled smoke trigger")
+
+    permissions = data.get("permissions", {})
+    require(permissions.get("contents") == "read", f"{name} must keep contents: read permission")
+
+    jobs = data.get("jobs", {})
+    require(isinstance(jobs, dict), f"{name} must define jobs")
+    smoke_job = jobs.get("smoke-static", {})
+    require(isinstance(smoke_job, dict), f"{name} must define smoke-static job")
+    env = smoke_job.get("env", {})
+    require(isinstance(env, dict), f"{name} smoke-static job must define env")
+    require("PLATFORM_STATIC_WEB_BASE" in str(env.get("WEB_BASE", "")), f"{name} should support PLATFORM_STATIC_WEB_BASE")
+    require("https://platform-academy.bozhi.dev" in str(env.get("WEB_BASE", "")), f"{name} should default to the stable static host")
+
+    smoke_steps = steps(data, "smoke-static", name)
+    smoke_step = step_by_name(smoke_steps, "Smoke Platform Academy static host", name)
+    require_run_contains(smoke_step, "npm run smoke:static-host", f"{name} static host smoke")
+    require(smoke_step.get("working-directory") == "apps/platform-academy", f"{name} smoke must run from apps/platform-academy")
+    summary_step = step_by_name(smoke_steps, "Write smoke summary", name)
+    require_run_contains(summary_step, "static API snapshots", f"{name} summary")
+
+
 def main() -> None:
     verify_expected_workflows()
     verify_platform_image_workflow()
@@ -304,6 +346,7 @@ def main() -> None:
     verify_backend_frontend_smokes()
     verify_platform_validate_workflow()
     verify_platform_deployed_smoke_workflow()
+    verify_platform_static_smoke_workflow()
     print("Verified GitHub Actions release workflow contracts.")
 
 

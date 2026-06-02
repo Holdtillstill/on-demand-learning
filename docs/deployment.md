@@ -88,6 +88,7 @@ Expected workflows:
 - `.github/workflows/docker-build.yml`
 - `.github/workflows/platform-academy-image.yml`
 - `.github/workflows/platform-deployed-smoke.yml`
+- `.github/workflows/platform-static-smoke.yml`
 - `.github/workflows/platform-validate.yml`
 - `.github/workflows/secret-scan.yml`
 - `.github/workflows/security.yml`
