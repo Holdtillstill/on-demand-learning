@@ -5,6 +5,9 @@
 [![Docker build](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/docker-build.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/docker-build.yml)
 [![Platform validate](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-validate.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-validate.yml)
 [![Security](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/security.yml)
+[![Static smoke](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-static-smoke.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-static-smoke.yml)
+[![Dependency audit](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/dependency-audit.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/dependency-audit.yml)
+[![Secret scan](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/secret-scan.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/secret-scan.yml)
 
 Platform Academy is a local-first, production-style portfolio project for Kubernetes, EKS, Helm, ArgoCD, security, SRE, and platform engineering. The portfolio story is the full stack around the learning product: Docker Compose, FastAPI, React, PostgreSQL, Redis, a worker, metrics, traces, JSON logs, Kubernetes manifests, Terraform AWS scaffolding, CI/CD, SLOs, and runbooks.
 
@@ -66,6 +69,19 @@ Then open OpenSearch Dashboards at http://localhost:5601.
 - Kubernetes deployment scaffolding with probes, HPAs, PDBs, network policy, ingress, configmaps, and secret template.
 - Terraform scaffold for AWS `us-west-2`: VPC, EKS, ECR, S3, RDS, ElastiCache, IAM roles, and Budget alert.
 - GitHub Actions for backend, Platform Academy frontend, Docker build, Platform Academy validation/image smoke, scheduled deployed smoke, dependency/security scans, and manual deploy template.
+
+## CI and Security
+
+- Backend and frontend workflows run API tests, worker tests, browser smoke
+  checks, type checks, unit tests, production builds, and API-log audits.
+- Platform validation covers public readiness, content counts, lab contracts,
+  Kubernetes manifest contracts, Terraform validation, workflow contracts,
+  static-host smoke, and release-check hygiene.
+- Security workflows run Gitleaks, Trivy filesystem/secret scans, Trivy
+  misconfiguration scans, Docker image scans, `pip-audit`, `npm audit`, and
+  Dependency Review for public pull requests.
+- Dependabot tracks GitHub Actions, npm, pip requirements, Dockerfiles, and
+  Terraform so dependency fixes are visible as pull requests.
 
 ## Common Commands
 
