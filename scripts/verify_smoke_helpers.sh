@@ -93,9 +93,20 @@ grep -q "# Platform Academy Changed File Review Manifest" <<<"$review_manifest_o
 grep -q "Lab Source Artifacts" <<<"$review_manifest_output" || fail "review manifest missing lab section"
 grep -q "Release, Deployment, And Smoke Tooling" <<<"$review_manifest_output" || fail "review manifest missing release section"
 
+review_pack_base="${PLATFORM_REVIEW_BASE:-}"
+if [ -z "$review_pack_base" ]; then
+  if [ -n "${GITHUB_BASE_REF:-}" ]; then
+    review_pack_base="origin/${GITHUB_BASE_REF}"
+  elif git -C "$ROOT" rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+    review_pack_base="HEAD~1"
+  else
+    review_pack_base="HEAD"
+  fi
+fi
+
 review_pack_output="$(
   expect_success "review pack target" \
-    env PLATFORM_REVIEW_PACK_DIR="$REVIEW_PACK_DIR" "${REVIEW_PACK_TARGET[@]}"
+    env PLATFORM_REVIEW_BASE="$review_pack_base" PLATFORM_REVIEW_PACK_DIR="$REVIEW_PACK_DIR" "${REVIEW_PACK_TARGET[@]}"
 )"
 grep -q "Platform Academy review pack written to" <<<"$review_pack_output" || fail "review pack output did not report output directory"
 grep -q "release-evidence.md" <<<"$review_pack_output" || fail "review pack output did not list release evidence"
