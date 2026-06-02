@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments-debug
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-crash
+  namespace: payments-debug
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: checkout-crash
+  template:
+    metadata:
+      labels:
+        app: checkout-crash
+    spec:
+      containers:
+        - name: checkout
+          image: busybox:1.36
+          command: ["sh", "-c", "echo missing DB_URL; exit 42"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-pull
+  namespace: payments-debug
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: checkout-pull
+  template:
+    metadata:
+      labels:
+        app: checkout-pull
+    spec:
+      containers:
+        - name: checkout
+          image: registry.invalid.example/checkout:missing
+          imagePullPolicy: Always

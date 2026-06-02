@@ -1,13 +1,43 @@
 import os
+import subprocess
+from concurrent.futures import ThreadPoolExecutor
+from io import BytesIO
+from pathlib import Path
+from zipfile import ZipFile
+
+import pytest
+from pydantic import ValidationError
 
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["REDIS_URL"] = "redis://localhost:6379/0"
 os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"] = ""
 
+from app.config import Settings  # noqa: E402
 from app.database import Base, SessionLocal, engine  # noqa: E402
-from app.main import app  # noqa: E402
+from app.main import app, request_windows, resolved_client_ip_from_headers, settings  # noqa: E402
+from app.models import PlatformActivity, PlatformLabSubmission, Progress, ReviewState, UserAchievement, XpEvent  # noqa: E402
+from app.platform_content import FULL_LAB_SLUGS as PLATFORM_FULL_LAB_SLUGS
+from app.platform_content import (
+    LAB_ARTIFACT_PATHS,  # noqa: E402
+    PORTFOLIO_LAB_SLUGS,  # noqa: E402
+)
+from app.schemas import (  # noqa: E402
+    MAX_PLATFORM_STATE_ACTIVITY_ROWS,
+    MAX_PLATFORM_STATE_CHECKED_FIELDS,
+    MAX_PLATFORM_STATE_LAB_ROWS,
+    MAX_PLATFORM_STATE_PROGRESS_ROWS,
+    MAX_PLATFORM_STATE_WORKSHEET_FIELDS,
+    MAX_PLATFORM_STATE_WORKSHEET_VALUE_LENGTH,
+    MAX_USER_ID_LENGTH,
+    PLATFORM_LAB_STATUS_IN_PROGRESS,
+    PLATFORM_LAB_STATUS_SUBMITTED,
+    PLATFORM_STATE_TOKEN_PATTERN,
+    USER_ID_PATTERN,
+)
 from app.seed import seed_database  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 client = TestClient(app)
 Base.metadata.drop_all(bind=engine)
@@ -16,18 +46,169 @@ with SessionLocal() as db:
     seed_database(db)
 
 
+@pytest.fixture(autouse=True)
+def clear_rate_limit_windows():
+    request_windows.clear()
+    yield
+    request_windows.clear()
+
+
+FULL_LAB_SLUGS = sorted(PLATFORM_FULL_LAB_SLUGS)
+CLUSTER_LAB_SLUGS = {
+    "trace-service-to-pod",
+    "debug-crashloop-imagepull",
+    "trace-network-path",
+    "debug-aws-alb-health-path",
+    "audit-tenant-boundaries",
+}
+
+
+def assert_no_store_headers(response, path: str):
+    assert response.headers["Cache-Control"] == "no-store", path
+    assert response.headers["Pragma"] == "no-cache", path
+
+
+def assert_openapi_download_headers(response: dict, include_content_disposition: bool = True):
+    headers = response.get("headers", {})
+    assert headers["Cache-Control"]["schema"]["example"] == "no-store"
+    assert headers["Pragma"]["schema"]["example"] == "no-cache"
+    if include_content_disposition:
+        assert "Content-Disposition" in headers
+
+
 def test_healthz():
     response = client.get("/healthz")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
 
+def test_client_ip_resolution_uses_forwarded_for_only_from_trusted_proxy():
+    original_trusted_proxies = settings.trusted_proxy_cidrs
+    try:
+        settings.trusted_proxy_cidrs = "10.0.0.0/8"
+
+        assert resolved_client_ip_from_headers("10.1.2.3", "198.51.100.10, 10.1.2.3", None) == "198.51.100.10"
+        assert resolved_client_ip_from_headers("10.1.2.3", "not-an-ip", "198.51.100.12") == "198.51.100.12"
+        assert resolved_client_ip_from_headers("203.0.113.5", "198.51.100.10", None) == "203.0.113.5"
+    finally:
+        settings.trusted_proxy_cidrs = original_trusted_proxies
+
+
+def test_rate_limit_rejects_direct_client_after_threshold():
+    request_windows.clear()
+    original_limit = settings.rate_limit_per_minute
+    try:
+        settings.rate_limit_per_minute = 2
+        assert client.get("/api/platform-academy/roadmap").status_code == 200
+        assert client.get("/api/platform-academy/roadmap").status_code == 200
+
+        limited = client.get("/api/platform-academy/roadmap")
+        assert limited.status_code == 429
+        assert limited.headers["retry-after"] == "60"
+    finally:
+        settings.rate_limit_per_minute = original_limit
+        request_windows.clear()
+
+
+def test_health_and_metrics_paths_are_rate_limit_exempt():
+    request_windows.clear()
+    original_limit = settings.rate_limit_per_minute
+    original_exempt_paths = settings.rate_limit_exempt_paths
+    try:
+        settings.rate_limit_per_minute = 1
+        settings.rate_limit_exempt_paths = "/healthz,/metrics"
+
+        assert client.get("/healthz").status_code == 200
+        assert client.get("/healthz").status_code == 200
+        assert client.get("/metrics").status_code == 200
+        assert client.get("/metrics").status_code == 200
+    finally:
+        settings.rate_limit_per_minute = original_limit
+        settings.rate_limit_exempt_paths = original_exempt_paths
+        request_windows.clear()
+
+
+def test_cors_preflight_allows_configured_origin_and_rejects_unknown_origin():
+    for origin in ["http://localhost:8090", "http://127.0.0.1:5174"]:
+        allowed = client.options(
+            "/api/platform-academy/catalog",
+            headers={
+                "origin": origin,
+                "access-control-request-method": "GET",
+            },
+        )
+        assert allowed.status_code == 200
+        assert allowed.headers["access-control-allow-origin"] == origin
+
+    rejected = client.options(
+        "/api/platform-academy/catalog",
+        headers={
+            "origin": "https://not-configured.example.com",
+            "access-control-request-method": "GET",
+        },
+    )
+    assert rejected.status_code == 400
+    assert "access-control-allow-origin" not in rejected.headers
+
+
+def test_settings_reject_unsafe_public_runtime_config():
+    invalid_settings = [
+        {"cors_origins": "*"},
+        {"cors_origins": "null"},
+        {"cors_origins": "https://academy.example.com\nhttps://evil.example.com"},
+        {"cors_origins": "academy.example.com"},
+        {"cors_origins": "https://academy.example.com/path"},
+        {"cors_origins": "https://academy.example.com?preview=true"},
+        {"trusted_proxy_cidrs": "0.0.0.0/0"},
+        {"trusted_proxy_cidrs": "::/0"},
+        {"trusted_proxy_cidrs": "not-a-cidr"},
+        {"rate_limit_exempt_paths": "healthz,/metrics"},
+        {"rate_limit_exempt_paths": "/"},
+        {"rate_limit_exempt_paths": "/api"},
+        {"rate_limit_exempt_paths": "/api/platform-academy/catalog"},
+        {"rate_limit_per_minute": -1},
+        {"environment": "preview", "platform_source_bundle_public": True},
+    ]
+
+    for overrides in invalid_settings:
+        with pytest.raises(ValidationError):
+            Settings(**overrides)
+
+
+def test_settings_accept_safe_preview_runtime_config():
+    preview_settings = Settings(
+        environment="preview",
+        cors_origins="https://preview.academy.example.com,https://academy.example.com",
+        trusted_proxy_cidrs="10.0.0.0/8,2001:db8::/32",
+        rate_limit_exempt_paths="/healthz,/readyz,/metrics",
+        rate_limit_per_minute=120,
+    )
+
+    assert preview_settings.cors_origin_list == ["https://preview.academy.example.com", "https://academy.example.com"]
+    assert preview_settings.rate_limit_exempt_path_set == {"/healthz", "/readyz", "/metrics"}
+
+
+def test_dynamic_academy_and_learner_api_responses_disable_caching():
+    paths = [
+        "/api/platform-academy/catalog",
+        "/api/platform-academy/resources",
+        "/api/platform-academy/interview-prep",
+        "/api/platform-academy/activity/cache-control-user",
+        "/api/progress/cache-control-user",
+        "/api/users/cache-control-user/dashboard?domain=platform",
+    ]
+    for path in paths:
+        response = client.get(path)
+        assert response.status_code == 200, path
+        assert_no_store_headers(response, path)
+
+
 def test_courses_are_seeded():
     response = client.get("/api/courses")
     assert response.status_code == 200
     courses = response.json()
-    assert len(courses) >= 5
-    assert any(course["era"] == "Tang" for course in courses)
+    assert len(courses) >= 21
+    assert all(course["era"] == "Platform Academy" for course in courses)
 
 
 def test_platform_academy_catalog_roadmap_and_labs():
@@ -95,8 +276,81 @@ def test_platform_academy_catalog_roadmap_and_labs():
 
     labs = client.get("/api/platform-academy/labs")
     assert labs.status_code == 200
-    assert len(labs.json()) >= 21
-    assert {lab["track"] for lab in labs.json()} >= expected_categories
+    lab_payloads = labs.json()
+    assert len(lab_payloads) == len(FULL_LAB_SLUGS)
+    assert {lab["slug"] for lab in lab_payloads} == set(FULL_LAB_SLUGS)
+    assert {lab["lab_tier"] for lab in lab_payloads} == {"full"}
+    assert {lab["track"] for lab in lab_payloads} >= expected_categories
+    portfolio_labs = [lab for lab in lab_payloads if lab["portfolio_grade"]]
+    assert {lab["slug"] for lab in portfolio_labs} == PORTFOLIO_LAB_SLUGS
+    assert all(lab["portfolio_focus"] for lab in portfolio_labs)
+    trace_lab = next(lab for lab in lab_payloads if lab["slug"] == "trace-service-to-pod")
+    assert trace_lab["lab_tier"] == "full"
+    assert trace_lab["portfolio_grade"] is True
+    assert trace_lab["portfolio_focus"] == "Kubernetes Service routing"
+    assert trace_lab["setup_commands"]
+    assert trace_lab["validation_commands"]
+    assert trace_lab["cleanup_commands"] == ["bash labs/platform-academy/trace-service-to-pod/cleanup.sh"]
+    assert trace_lab["workspace_archive_name"] == "trace-service-to-pod-learner-workspace.zip"
+    assert trace_lab["workspace_root"] == "trace-service-to-pod"
+    assert trace_lab["workspace_quickstart_commands"] == [
+        "unzip trace-service-to-pod-learner-workspace.zip",
+        "cd trace-service-to-pod",
+        "./setup.sh",
+        "# Fill evidence.md with your investigation notes",
+        "./validate.sh --files-only",
+        "./validate.sh",
+        "./cleanup.sh",
+    ]
+    assert trace_lab["cluster_workspace_commands"] == [
+        "From the full repo, create/select a disposable context: "
+        "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod",
+        "From this extracted bundle, after a disposable context is selected: ./setup.sh --preflight",
+        "Create the broken lab state: ./setup.sh --cluster",
+        "After filling evidence.md, verify files, evidence, and cluster state: ./validate.sh --cluster",
+        "Clean up the lab namespace/resources: ./cleanup.sh",
+        "No app namespace or Pods need to exist before setup; setup creates or recreates the lab namespace.",
+    ]
+    assert any("run-lab.sh setup trace-service-to-pod" in command for command in trace_lab["setup_commands"])
+    assert any("labs/platform-academy/trace-service-to-pod/start.yaml" in command for command in trace_lab["setup_commands"])
+    for lab in lab_payloads:
+        assert lab["prerequisites"], lab["slug"]
+        assert lab["setup_commands"], lab["slug"]
+        assert any(f"run-lab.sh setup {lab['slug']}" in command for command in lab["setup_commands"]), lab["slug"]
+        assert lab["practice_steps"], lab["slug"]
+        assert lab["expected_evidence"], lab["slug"]
+        assert lab["lab_tier"] in {"full", "guided", "evidence-pack"}
+        assert isinstance(lab["portfolio_grade"], bool), lab["slug"]
+        if lab["portfolio_grade"]:
+            assert lab["portfolio_focus"], lab["slug"]
+        assert lab["validation_commands"], lab["slug"]
+        assert lab["cleanup_commands"], lab["slug"]
+        assert lab["no_cluster_fallback"], lab["slug"]
+        assert lab["artifact_paths"], lab["slug"]
+        assert lab["learner_artifact_paths"], lab["slug"]
+        assert lab["artifact_paths"] == lab["learner_artifact_paths"], lab["slug"]
+        assert lab["workspace_archive_name"] == f"{lab['slug']}-learner-workspace.zip", lab["slug"]
+        assert lab["workspace_root"] == lab["slug"], lab["slug"]
+        assert lab["workspace_quickstart_commands"][0] == f"unzip {lab['slug']}-learner-workspace.zip", lab["slug"]
+        assert lab["workspace_quickstart_commands"][1] == f"cd {lab['slug']}", lab["slug"]
+        assert "./validate.sh --files-only" in lab["workspace_quickstart_commands"], lab["slug"]
+        if lab["slug"] in CLUSTER_LAB_SLUGS:
+            assert f"bootstrap-local-cluster.sh --preflight {lab['slug']}" in "\n".join(lab["cluster_workspace_commands"]), lab["slug"]
+            assert "./setup.sh --preflight" in "\n".join(lab["cluster_workspace_commands"]), lab["slug"]
+            assert "./setup.sh --cluster" in "\n".join(lab["cluster_workspace_commands"]), lab["slug"]
+            assert "./validate.sh --cluster" in "\n".join(lab["cluster_workspace_commands"]), lab["slug"]
+            assert "No app namespace or Pods need to exist before setup" in "\n".join(lab["cluster_workspace_commands"]), lab["slug"]
+        else:
+            assert lab["cluster_workspace_commands"] == [], lab["slug"]
+        assert set(lab["artifact_paths"]).issubset(set(LAB_ARTIFACT_PATHS[lab["slug"]])), lab["slug"]
+        assert not any(path.endswith("/solution.md") for path in lab["learner_artifact_paths"]), lab["slug"]
+        assert not any(path.endswith("/README.md") for path in lab["learner_artifact_paths"]), lab["slug"]
+        assert lab["worksheet_prompts"], lab["slug"]
+        assert lab["rubric"], lab["slug"]
+        assert lab["validation_checks"], lab["slug"]
+        assert (REPO_ROOT / "labs/platform-academy" / lab["slug"]).is_dir(), lab["slug"]
+        for artifact_path in lab["artifact_paths"]:
+            assert (REPO_ROOT / artifact_path).is_file(), artifact_path
 
     resources = client.get("/api/platform-academy/resources")
     assert resources.status_code == 200
@@ -141,17 +395,1871 @@ def test_platform_academy_catalog_roadmap_and_labs():
     assert kubernetes_reference["source_label"] == "Kubernetes Debugging Tasks"
 
 
-def test_course_domain_filters_keep_zhongwen_and_platform_separate():
-    zhongwen = client.get("/api/courses?domain=zhongwen")
-    assert zhongwen.status_code == 200
-    assert zhongwen.json()
-    assert all(course["era"] != "Platform Academy" for course in zhongwen.json())
+def test_platform_lab_bundle_download_contains_packet_and_artifacts():
+    packet_response = client.get("/api/platform-academy/labs/trace-service-to-pod/packet")
+    assert packet_response.status_code == 200
+    assert packet_response.headers["content-type"].startswith("text/markdown")
+    assert "trace-service-to-pod-lab-packet.md" in packet_response.headers["content-disposition"]
+    assert_no_store_headers(packet_response, "lab packet")
+    assert "# Trace Service traffic to ready Pods" in packet_response.text
+    assert "## Guided run sequence" in packet_response.text
+    assert "1. Prepare workspace" in packet_response.text
+    assert "2. Investigate safely" in packet_response.text
+    assert "3. Prove the finding" in packet_response.text
+    assert "4. Reset or hand off" in packet_response.text
+    assert "## Evidence artifact map" in packet_response.text
+    assert "`labs/platform-academy/trace-service-to-pod/validate.sh` - Self-check script" in packet_response.text
+    assert "## Learner artifact paths" in packet_response.text
+    assert "labs/platform-academy/trace-service-to-pod/start.yaml" in packet_response.text
+    assert "labs/platform-academy/trace-service-to-pod/solution.md" not in packet_response.text
+    assert "labs/platform-academy/trace-service-to-pod/README.md" not in packet_response.text
+    assert "## Worksheet prompts" in packet_response.text
+    assert "## Local workspace" in packet_response.text
+    assert "run-lab.sh workspace trace-service-to-pod" in packet_response.text
+    assert "## Downloaded workspace quickstart" in packet_response.text
+    assert "unzip trace-service-to-pod-learner-workspace.zip" in packet_response.text
+    assert "cd trace-service-to-pod" in packet_response.text
+    assert "./validate.sh --files-only" in packet_response.text
+    assert "## Optional cluster workflow" in packet_response.text
+    assert "bootstrap-local-cluster.sh --preflight trace-service-to-pod" in packet_response.text
+    assert "./setup.sh --preflight" in packet_response.text
+    assert "./validate.sh --cluster" in packet_response.text
+    assert "No app namespace or Pods need to exist before setup" in packet_response.text
+    assert "## Validation checks" in packet_response.text
+    assert "## Rubric" in packet_response.text
 
+    response = client.get("/api/platform-academy/labs/trace-service-to-pod/bundle")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/zip"
+    assert "trace-service-to-pod-lab-bundle.zip" in response.headers["content-disposition"]
+    assert_no_store_headers(response, "instructor source bundle")
+
+    with ZipFile(BytesIO(response.content)) as archive:
+        names = set(archive.namelist())
+        assert "trace-service-to-pod/README.md" in names
+        assert "trace-service-to-pod/labs/platform-academy/trace-service-to-pod/start.yaml" in names
+        packet = archive.read("trace-service-to-pod/README.md").decode()
+        assert "Guided run sequence" in packet
+        assert "Evidence artifact map" in packet
+        assert "Worksheet" in packet
+        assert "Rubric" in packet
+        assert packet == packet_response.text
+        assert "trace-service-to-pod/labs/platform-academy/trace-service-to-pod/validate.sh" in names
+        assert "trace-service-to-pod/labs/platform-academy/trace-service-to-pod/solution.md" in names
+
+    workspace_response = client.get("/api/platform-academy/labs/trace-service-to-pod/workspace-bundle")
+    assert workspace_response.status_code == 200
+    assert workspace_response.headers["content-type"] == "application/zip"
+    assert "trace-service-to-pod-learner-workspace.zip" in workspace_response.headers["content-disposition"]
+    assert_no_store_headers(workspace_response, "learner workspace bundle")
+
+    with ZipFile(BytesIO(workspace_response.content)) as archive:
+        names = set(archive.namelist())
+        assert "trace-service-to-pod/README.md" in names
+        assert "trace-service-to-pod/evidence.md" in names
+        assert "trace-service-to-pod/MANIFEST.txt" in names
+        assert "trace-service-to-pod/setup.sh" in names
+        assert "trace-service-to-pod/validate.sh" in names
+        assert "trace-service-to-pod/cleanup.sh" in names
+        assert "trace-service-to-pod/artifacts/labs/platform-academy/trace-service-to-pod/start.yaml" in names
+        assert "trace-service-to-pod/artifacts/labs/platform-academy/trace-service-to-pod/validate.sh" in names
+        assert "trace-service-to-pod/artifacts/labs/platform-academy/trace-service-to-pod/README.md" not in names
+        assert "trace-service-to-pod/artifacts/labs/platform-academy/trace-service-to-pod/solution.md" not in names
+        assert archive.getinfo("trace-service-to-pod/validate.sh").external_attr >> 16 & 0o111
+        manifest = archive.read("trace-service-to-pod/MANIFEST.txt").decode()
+        assert "Withheld source-only artifacts" in manifest
+        assert "- labs/platform-academy/trace-service-to-pod/README.md" in manifest
+        assert "- labs/platform-academy/trace-service-to-pod/solution.md" in manifest
+        assert "./validate.sh --files-only" in manifest
+        assert "Optional cluster workflow:" in manifest
+        assert "bootstrap-local-cluster.sh --preflight trace-service-to-pod" in manifest
+        assert "./setup.sh --preflight" in manifest
+        assert "./setup.sh --cluster" in manifest
+        assert "./validate.sh --cluster" in manifest
+        workspace_readme = archive.read("trace-service-to-pod/README.md").decode()
+        assert "## Downloaded workspace quickstart" not in workspace_readme
+        assert "## Optional cluster workflow" in workspace_readme
+        assert "./setup.sh --preflight" in workspace_readme
+
+
+def test_platform_source_bundle_requires_token_outside_local():
+    original_environment = settings.environment
+    original_public = settings.platform_source_bundle_public
+    original_token = settings.platform_source_bundle_token
+    try:
+        settings.environment = "preview"
+        settings.platform_source_bundle_public = False
+        settings.platform_source_bundle_token = None
+
+        blocked = client.get("/api/platform-academy/labs/trace-service-to-pod/bundle")
+        assert blocked.status_code == 403
+        assert blocked.json()["detail"] == "source bundle requires an instructor token"
+        assert_no_store_headers(blocked, "blocked instructor source bundle")
+
+        settings.platform_source_bundle_token = "source-bundle-secret"
+        assert client.get("/api/platform-academy/labs/trace-service-to-pod/bundle").status_code == 403
+        assert (
+            client.get(
+                "/api/platform-academy/labs/trace-service-to-pod/bundle",
+                headers={"X-Platform-Source-Bundle-Token": "wrong"},
+            ).status_code
+            == 403
+        )
+        allowed = client.get(
+            "/api/platform-academy/labs/trace-service-to-pod/bundle",
+            headers={"X-Platform-Source-Bundle-Token": "source-bundle-secret"},
+        )
+        assert allowed.status_code == 200
+        assert allowed.headers["content-type"] == "application/zip"
+        assert_no_store_headers(allowed, "token-authenticated instructor source bundle")
+
+        settings.platform_source_bundle_public = True
+        settings.platform_source_bundle_token = None
+        still_blocked = client.get("/api/platform-academy/labs/trace-service-to-pod/bundle")
+        assert still_blocked.status_code == 403
+        assert_no_store_headers(still_blocked, "non-local public source bundle flag")
+
+        settings.environment = "local"
+        local_public_response = client.get("/api/platform-academy/labs/trace-service-to-pod/bundle")
+        assert local_public_response.status_code == 200
+        assert_no_store_headers(local_public_response, "local public instructor source bundle")
+    finally:
+        settings.environment = original_environment
+        settings.platform_source_bundle_public = original_public
+        settings.platform_source_bundle_token = original_token
+
+
+def test_practical_platform_labs_expose_specific_evidence_guides():
+    response = client.get("/api/platform-academy/labs")
+    assert response.status_code == 200
+    labs = {lab["slug"]: lab for lab in response.json()}
+    deepened_labs = {
+        "trace-service-to-pod": {
+            "artifacts": {"broken-evidence.txt", "evidence-template.md"},
+            "terms": {"Service selector", "Pod label", "EndpointSlice", "source-manifest"},
+        },
+        "debug-crashloop-imagepull": {
+            "artifacts": {"broken-evidence.txt", "evidence-template.md"},
+            "terms": {"CrashLoopBackOff", "ImagePullBackOff", "registry", "previous"},
+        },
+        "review-yaml-before-apply": {
+            "artifacts": {"evidence-template.md"},
+            "terms": {"ClusterRole", "privileged: true", "hostPath", "stringData.token"},
+        },
+        "inspect-linux-failure-evidence": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {
+                "False Leads",
+                "CrashLoopBackOff",
+                "exit code 126",
+                "uid=10001(checkout)",
+                "running as root",
+            },
+        },
+        "trace-network-path": {
+            "artifacts": {"incident-handoff.md", "evidence-template.md"},
+            "terms": {"incident handoff", "HTTP/2 503", "Target.ResponseCodeMismatch", "targetPort web", "targetPort: http"},
+        },
+        "debug-aws-alb-health-path": {
+            "artifacts": {"evidence-template.md"},
+            "terms": {"ALB", "Target.ResponseCodeMismatch", "targetPort", "owner"},
+        },
+        "diagnose-eks-ip-exhaustion": {
+            "artifacts": {"evidence-template.md"},
+            "terms": {"FailedScheduling", "FailedCreatePodSandBox", "subnet-bbb222", "prefix delegation disabled"},
+        },
+        "design-production-eks-review": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "endpoint posture", "missing PDB", "zonal storage", "FinOps"},
+        },
+        "review-terraform-eks-plan": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "terraform apply", "node group replacement", "0.0.0.0/0", "eks:*"},
+        },
+        "debug-irsa-access-denied": {
+            "artifacts": {"workload-error.log", "evidence-template.md"},
+            "terms": {"ServiceAccount", "AWS_ROLE_ARN", "AccessDenied", "s3:PutObject", "least-privilege"},
+        },
+        "audit-tenant-boundaries": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "cluster-admin", "restricted", "allow-all-egress", "Blocks onboarding"},
+        },
+        "validate-helm-release-artifact": {
+            "artifacts": {"evidence-template.md"},
+            "terms": {"immutable", "checkout:latest", "privileged", "LoadBalancer"},
+        },
+        "trace-argocd-drift": {
+            "artifacts": {"argocd-app-report.txt", "evidence-template.md"},
+            "terms": {"ArgoCD report", "selfHeal", "replicas: 3", "replicas: 9", "/spec/replicas", "Git-owned"},
+        },
+        "review-docker-image-supply-chain": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "checkout:latest", "RepoDigests", "API_TOKEN", "SBOM"},
+        },
+        "design-safe-release-pipeline": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {
+                "False Leads",
+                "deploy-prod",
+                "github.ref == 'refs/heads/main'",
+                "image-digest.txt",
+                "rollback-if-slo-breach",
+            },
+        },
+        "create-platform-golden-path": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "required inputs", "missing SLO dashboard", "adoption metrics", "readiness gates"},
+        },
+        "write-slo-backed-runbook": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "CheckoutHighErrorBudgetBurn", "99.9%", "2% 5xx", "revision 43"},
+        },
+        "design-opentelemetry-signal-path": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "http.request.header.authorization", "trace_id=missing", "customer_email", "owner map"},
+        },
+        "run-incident-commander-tabletop": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "SEV-2", "0.2% to 9.4%", "revision 42", "Communications lead"},
+        },
+        "audit-eks-cost-drivers": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "over-requested", "abandoned LoadBalancer", "expected savings", "review cadence"},
+        },
+        "build-platform-career-proof-pack": {
+            "artifacts": {"evidence-template.md", "triage-notes.md"},
+            "terms": {"False Leads", "public-safe", "repeated target skills", "incident response", "release safety"},
+        },
+    }
+
+    for slug, expected in deepened_labs.items():
+        lab = labs[slug]
+        artifact_paths = set(lab["artifact_paths"])
+        for artifact_name in expected["artifacts"]:
+            assert f"labs/platform-academy/{slug}/{artifact_name}" in artifact_paths
+        assert len(lab["worksheet_prompts"]) >= 6
+        assert len(lab["rubric"]) >= 6
+        assert len(lab["validation_checks"]) >= 7
+        searchable = "\n".join(lab["worksheet_prompts"] + lab["rubric"] + lab["validation_checks"])
+        for term in expected["terms"]:
+            assert term in searchable
+
+
+def test_flagship_platform_labs_advertise_evidence_note_self_checks():
+    response = client.get("/api/platform-academy/labs")
+    assert response.status_code == 200
+    labs = {lab["slug"]: lab for lab in response.json()}
+    evidence_self_check_labs = {
+        "trace-service-to-pod": "/tmp/trace-service-evidence.md",
+        "debug-crashloop-imagepull": "/tmp/crashloop-imagepull-evidence.md",
+        "review-yaml-before-apply": "/tmp/yaml-review-evidence.md",
+        "diagnose-eks-ip-exhaustion": "/tmp/eks-ip-exhaustion-evidence.md",
+        "validate-helm-release-artifact": "/tmp/helm-release-evidence.md",
+        "trace-argocd-drift": "/tmp/argocd-drift-evidence.md",
+        "design-production-eks-review": "/tmp/production-eks-review-evidence.md",
+        "audit-tenant-boundaries": "/tmp/tenant-boundaries-evidence.md",
+        "trace-network-path": "/tmp/network-path-evidence.md",
+        "debug-aws-alb-health-path": "/tmp/alb-health-path-evidence.md",
+        "review-terraform-eks-plan": "/tmp/terraform-eks-plan-evidence.md",
+        "design-safe-release-pipeline": "/tmp/release-pipeline-evidence.md",
+        "create-platform-golden-path": "/tmp/golden-path-evidence.md",
+        "review-docker-image-supply-chain": "/tmp/docker-supply-chain-evidence.md",
+        "write-slo-backed-runbook": "/tmp/slo-runbook-evidence.md",
+        "inspect-linux-failure-evidence": "/tmp/linux-failure-evidence.md",
+        "debug-irsa-access-denied": "/tmp/irsa-access-denied-evidence.md",
+        "design-opentelemetry-signal-path": "/tmp/otel-signal-path-evidence.md",
+        "run-incident-commander-tabletop": "/tmp/incident-commander-evidence.md",
+        "audit-eks-cost-drivers": "/tmp/eks-cost-evidence.md",
+        "build-platform-career-proof-pack": "/tmp/career-proof-evidence.md",
+    }
+
+    for slug, evidence_path in evidence_self_check_labs.items():
+        lab = labs[slug]
+        assert "labs/platform-academy/lib/evidence-check.sh" in lab["artifact_paths"]
+        assert any(command.endswith(f"--evidence {evidence_path}") for command in lab["validation_commands"])
+
+
+def test_all_platform_lab_bundles_include_advertised_artifacts(tmp_path):
+    labs_response = client.get("/api/platform-academy/labs")
+    assert labs_response.status_code == 200
+
+    for lab in labs_response.json():
+        slug = lab["slug"]
+        response = client.get(f"/api/platform-academy/labs/{slug}/bundle")
+        assert response.status_code == 200, slug
+        assert response.headers["content-type"] == "application/zip"
+        assert f"{slug}-lab-bundle.zip" in response.headers["content-disposition"]
+
+        with ZipFile(BytesIO(response.content)) as archive:
+            name_list = archive.namelist()
+            names = set(name_list)
+            assert len(name_list) == len(names), f"{slug} bundle has duplicate entries"
+            extract_root = (tmp_path / slug).resolve()
+            extract_root.mkdir(parents=True)
+            for member in archive.infolist():
+                assert member.filename.startswith(f"{slug}/"), member.filename
+                target = (extract_root / member.filename).resolve()
+                assert target.is_relative_to(extract_root), member.filename
+            manifest = archive.read(f"{slug}/SOURCE-MANIFEST.txt").decode()
+            source_artifacts = LAB_ARTIFACT_PATHS[slug]
+            required = {f"{slug}/README.md", f"{slug}/SOURCE-MANIFEST.txt"} | {
+                f"{slug}/{artifact_path}" for artifact_path in source_artifacts
+            }
+            missing = sorted(required - names)
+            assert not missing, f"{slug} missing bundle entries: {missing}"
+            empty = sorted(name for name in required if archive.getinfo(name).file_size == 0)
+            assert not empty, f"{slug} empty bundle entries: {empty}"
+            for artifact_path in source_artifacts:
+                assert f"- {artifact_path}" in manifest
+            assert f"- labs/platform-academy/{slug}/README.md" in manifest
+            assert f"- labs/platform-academy/{slug}/solution.md" in manifest
+
+            for script_name in ["validate.sh", "cleanup.sh"]:
+                member = f"{slug}/labs/platform-academy/{slug}/{script_name}"
+                mode = archive.getinfo(member).external_attr >> 16
+                assert mode & 0o111, f"{member} is not executable"
+
+
+def test_all_platform_lab_workspace_bundles_withhold_solutions():
+    labs_response = client.get("/api/platform-academy/labs")
+    assert labs_response.status_code == 200
+
+    for lab in labs_response.json():
+        slug = lab["slug"]
+        response = client.get(f"/api/platform-academy/labs/{slug}/workspace-bundle")
+        assert response.status_code == 200, slug
+        assert response.headers["content-type"] == "application/zip"
+        assert f"{slug}-learner-workspace.zip" in response.headers["content-disposition"]
+
+        with ZipFile(BytesIO(response.content)) as archive:
+            names = set(archive.namelist())
+            assert f"{slug}/README.md" in names
+            assert f"{slug}/evidence.md" in names
+            assert f"{slug}/MANIFEST.txt" in names
+            for script_name in ["setup.sh", "validate.sh", "cleanup.sh"]:
+                member = f"{slug}/{script_name}"
+                assert member in names
+                assert archive.getinfo(member).external_attr >> 16 & 0o111, f"{member} is not executable"
+            assert f"{slug}/artifacts/labs/platform-academy/{slug}/solution.md" not in names
+            assert all(not name.endswith("/solution.md") for name in names)
+            assert f"{slug}/artifacts/labs/platform-academy/{slug}/README.md" not in names
+            for artifact_path in lab["learner_artifact_paths"]:
+                assert f"{slug}/artifacts/{artifact_path}" in names
+            manifest = archive.read(f"{slug}/MANIFEST.txt").decode()
+            readme = archive.read(f"{slug}/README.md").decode()
+            assert "Withheld source-only artifacts" in manifest
+            assert f"- labs/platform-academy/{slug}/README.md" in manifest
+            assert f"- labs/platform-academy/{slug}/solution.md" in manifest
+            assert "## Run from extracted bundle" in readme
+            assert f"artifacts/labs/platform-academy/{slug}/" in readme
+            assert "./setup.sh" in manifest
+            assert "./validate.sh --files-only" in manifest
+            assert "./cleanup.sh" in manifest
+            source_artifacts = LAB_ARTIFACT_PATHS[slug]
+            has_analyzer = any(path.endswith("analyzer.py") for path in source_artifacts)
+            has_simulator = any(path.endswith("simulator.py") for path in source_artifacts)
+            if has_analyzer or has_simulator:
+                assert "## Setup self-checks" in readme
+                assert "Setup self-checks:" in manifest
+                assert "Default setup stages evidence" in readme
+                assert "Default setup stages evidence" in manifest
+            if has_analyzer:
+                assert f"run-lab.sh setup {slug} --run-analyzer" in readme
+                assert "./setup.sh --run-analyzer" in manifest
+            if has_simulator:
+                assert f"run-lab.sh setup {slug} --run-simulator" in readme
+                assert "./setup.sh --run-simulator" in manifest
+            if slug in CLUSTER_LAB_SLUGS:
+                assert "Optional cluster workflow" in readme
+                assert "Optional cluster workflow:" in manifest
+                assert f"bootstrap-local-cluster.sh --preflight {slug}" in manifest
+                assert "./setup.sh --preflight" in manifest
+                assert "./setup.sh --cluster" in manifest
+                assert "./validate.sh --cluster" in manifest
+                assert "No app namespace or Pods need to exist before setup" in manifest
+            else:
+                assert "Optional cluster workflow" not in readme
+                assert "Optional cluster workflow:" not in manifest
+
+
+def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path):
+    setup_smoke_expectations = {
+        "trace-service-to-pod": "Analyzer is intentionally not run by default",
+        "debug-crashloop-imagepull": "Analyzer is intentionally not run by default",
+        "review-yaml-before-apply": "Analyzer is intentionally not run by default",
+        "diagnose-eks-ip-exhaustion": "Analyzer is intentionally not run by default",
+        "validate-helm-release-artifact": "Analyzer is intentionally not run by default",
+        "review-terraform-eks-plan": "Analyzer is intentionally not run by default",
+        "debug-irsa-access-denied": "Simulator is intentionally not run by default",
+        "design-opentelemetry-signal-path": "Analyzer is intentionally not run by default",
+        "run-incident-commander-tabletop": "Analyzer is intentionally not run by default",
+        "design-production-eks-review": "Analyzer is intentionally not run by default",
+        "write-slo-backed-runbook": "Analyzer is intentionally not run by default",
+        "design-safe-release-pipeline": "Analyzer is intentionally not run by default",
+        "create-platform-golden-path": "Analyzer is intentionally not run by default",
+        "review-docker-image-supply-chain": "Analyzer is intentionally not run by default",
+        "audit-eks-cost-drivers": "Analyzer is intentionally not run by default",
+        "build-platform-career-proof-pack": "Analyzer is intentionally not run by default",
+        "trace-argocd-drift": "Analyzer is intentionally not run by default",
+        "inspect-linux-failure-evidence": "Analyzer is intentionally not run by default",
+        "trace-network-path": "Analyzer is intentionally not run by default",
+        "debug-aws-alb-health-path": "Analyzer is intentionally not run by default",
+        "audit-tenant-boundaries": "Analyzer is intentionally not run by default",
+    }
+    setup_smoke_absences = {
+        "trace-service-to-pod": ["Service routing analysis passed"],
+        "debug-crashloop-imagepull": ["CrashLoop/ImagePull analysis passed"],
+        "review-yaml-before-apply": ["YAML manifest risk analysis passed"],
+        "diagnose-eks-ip-exhaustion": ["EKS IP exhaustion analysis passed"],
+        "validate-helm-release-artifact": ["Helm release artifact analysis passed"],
+        "review-terraform-eks-plan": ["Terraform plan risk analysis passed"],
+        "debug-irsa-access-denied": ["IRSA simulation passed"],
+        "design-opentelemetry-signal-path": [
+            "OpenTelemetry signal path analysis passed",
+            'http_requests_total{service="checkout"',
+        ],
+        "run-incident-commander-tabletop": [
+            "Incident commander tabletop analysis passed",
+            "service=checkout route=/checkout/confirm",
+        ],
+        "design-production-eks-review": ["Production EKS review analysis passed"],
+        "write-slo-backed-runbook": ["SLO runbook analysis passed"],
+        "design-safe-release-pipeline": ["Safe release pipeline analysis passed"],
+        "create-platform-golden-path": ["Golden path readiness analysis passed"],
+        "review-docker-image-supply-chain": ["Docker supply-chain analysis passed"],
+        "audit-eks-cost-drivers": ["EKS cost driver analysis passed"],
+        "build-platform-career-proof-pack": ["Career proof pack analysis passed"],
+        "trace-argocd-drift": ["ArgoCD drift analysis passed"],
+        "inspect-linux-failure-evidence": ["Linux failure evidence analysis passed"],
+        "trace-network-path": ["Network path analysis passed"],
+        "debug-aws-alb-health-path": ["ALB health path analysis passed"],
+        "audit-tenant-boundaries": ["Tenant boundary analysis passed"],
+    }
+
+    for slug in FULL_LAB_SLUGS:
+        response = client.get(f"/api/platform-academy/labs/{slug}/workspace-bundle")
+        assert response.status_code == 200
+
+        extract_root = tmp_path / slug
+        with ZipFile(BytesIO(response.content)) as archive:
+            archive.extractall(extract_root)
+
+        workspace = extract_root / slug
+        subprocess.run(["bash", "-n", str(workspace / "setup.sh")], check=True)
+        subprocess.run(["bash", "-n", str(workspace / "validate.sh")], check=True)
+        subprocess.run(["bash", "-n", str(workspace / "cleanup.sh")], check=True)
+        if slug in setup_smoke_expectations:
+            setup_result = subprocess.run(
+                ["bash", str(workspace / "setup.sh")],
+                cwd=workspace,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            assert setup_smoke_expectations[slug] in setup_result.stdout
+            assert str(workspace / "evidence.md") in setup_result.stdout
+            if slug in setup_smoke_absences:
+                for unexpected_output in setup_smoke_absences[slug]:
+                    assert unexpected_output not in setup_result.stdout
+        result = subprocess.run(
+            ["bash", str(workspace / "validate.sh"), "--files-only"],
+            cwd=workspace,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        assert f"File checks passed for {slug}" in result.stdout
+
+
+def test_full_platform_labs_include_guides_solutions_and_validators():
+    response = client.get("/api/platform-academy/labs")
+    assert response.status_code == 200
+    labs = {lab["slug"]: lab for lab in response.json()}
+    assert set(labs) == set(FULL_LAB_SLUGS)
+
+    for slug in FULL_LAB_SLUGS:
+        lab = labs[slug]
+        assert lab["lab_tier"] == "full"
+        artifact_paths = set(LAB_ARTIFACT_PATHS[slug])
+        lab_dir = REPO_ROOT / "labs/platform-academy" / slug
+        for filename in ["README.md", "solution.md", "validate.sh", "cleanup.sh"]:
+            path = lab_dir / filename
+            assert path.is_file(), path
+            assert str(path.relative_to(REPO_ROOT)) in artifact_paths
+        assert any("validate.sh" in command for command in lab["validation_commands"])
+        assert any("cleanup.sh" in command for command in lab["cleanup_commands"])
+        for field in ["setup_commands", "commands"]:
+            assert all("analyzer.py" not in command and "simulator.py" not in command for command in lab[field])
+        if any("analyzer.py" in path or "simulator.py" in path for path in artifact_paths):
+            assert lab["setup_self_check_commands"]
+            assert all(f"run-lab.sh setup {slug}" in command and "--run-" in command for command in lab["setup_self_check_commands"])
+            assert any(
+                "analyzer.py" in command or "simulator.py" in command
+                for command in lab["validation_commands"]
+            )
+        subprocess.run(["bash", str(lab_dir / "validate.sh")], check=True, capture_output=True, text=True)
+
+
+def test_full_platform_lab_verification_harness_runs():
+    subprocess.run(
+        ["bash", str(REPO_ROOT / "labs/platform-academy/verify-full-labs.sh")],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_platform_lab_submission_persists_workbook_state():
+    user_id = "lab-submission-user"
+    lab_slug = "trace-service-to-pod"
+
+    initial = client.get(f"/api/platform-academy/labs/{lab_slug}/submission/{user_id}")
+    assert initial.status_code == 200
+    initial_payload = initial.json()
+    assert initial_payload["score"] == 0
+    assert initial_payload["completed_checks"] == 0
+    assert initial_payload["total_prompts"] >= 1
+    assert initial_payload["total_checks"] >= initial_payload["total_prompts"]
+
+    response = client.post(
+        f"/api/platform-academy/labs/{lab_slug}/submission",
+        json={
+            "user_id": user_id,
+            "worksheet_answers": {"worksheet-0": "Service selector is app=checkout but Pods use app=checkout-api."},
+            "checked_items": {"worksheet-0": True, "validation-0": True},
+            "status": "in_progress",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["lab_slug"] == lab_slug
+    assert payload["answered_prompts"] == 1
+    assert payload["completed_checks"] == 2
+    assert payload["score"] > 0
+    assert payload["evidence_terms"]
+    assert {item["status"] for item in payload["rubric_feedback"]} & {"passes", "strong"}
+    assert any("selector" in item["evidence_terms"] for item in payload["rubric_feedback"])
+    assert "solution.md" not in payload["evidence_terms"]
+    assert "readme.md" not in payload["evidence_terms"]
+
+    answer_key_probe = client.post(
+        f"/api/platform-academy/labs/{lab_slug}/submission",
+        json={
+            "user_id": f"{user_id}-answer-key-probe",
+            "worksheet_answers": {"worksheet-0": "I opened README.md and solution.md."},
+            "checked_items": {"worksheet-0": True},
+            "status": "in_progress",
+        },
+    )
+    assert answer_key_probe.status_code == 200
+    answer_key_payload = answer_key_probe.json()
+    assert "solution.md" not in answer_key_payload["evidence_terms"]
+    assert "readme.md" not in answer_key_payload["evidence_terms"]
+    assert all(
+        "solution.md" not in item["evidence_terms"] and "readme.md" not in item["evidence_terms"]
+        for item in answer_key_payload["rubric_feedback"]
+    )
+
+    fetched = client.get(f"/api/platform-academy/labs/{lab_slug}/submission/{user_id}")
+    assert fetched.status_code == 200
+    assert fetched.json()["worksheet_answers"] == payload["worksheet_answers"]
+    assert fetched.json()["checked_items"] == payload["checked_items"]
+
+    submissions = client.get(f"/api/platform-academy/lab-submissions/{user_id}")
+    assert submissions.status_code == 200
+    assert [submission["lab_slug"] for submission in submissions.json()] == [lab_slug]
+    assert submissions.json()[0]["rubric_feedback"] == payload["rubric_feedback"]
+
+
+def test_deepened_platform_lab_feedback_uses_criterion_specific_evidence():
+    user_id = "lab-rubric-specific-user"
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/debug-crashloop-imagepull/submission",
+        json={
+            "user_id": user_id,
+            "worksheet_answers": {
+                "worksheet-0": "payments-debug no-cluster transcript used, cleanup documented, local context not mutated.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out restart, resource, node pressure, "
+                    "and confirm the owner split."
+                ),
+                "worksheet-2": "checkout-crash is CrashLoopBackOff and started; checkout-pull is ImagePullBackOff and never started.",
+                "worksheet-3": "Last State terminated, exit code 42, logs --previous / previous logs show missing DB_URL.",
+                "worksheet-4": "registry.invalid.example/checkout:missing causes ErrImagePull/ImagePullBackOff events from the registry.",
+                "worksheet-5": "app/config owner fixes DB_URL; image/registry owner fixes the tag or registry; rollback if needed.",
+                "worksheet-6": "rollout validation passed for both Deployments, validate output saved, cleanup or fallback recorded.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    assert len(feedback) == 7
+    triage_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
+    previous_log_feedback = next(item for item in feedback if "logs --previous" in item["criterion"])
+    registry_feedback = next(item for item in feedback if "invalid registry reference" in item["criterion"])
+    validation_feedback = next(item for item in feedback if "Validates both fixed Deployments" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert previous_log_feedback["status"] == "strong"
+    assert "missing db-url" in previous_log_feedback["evidence_terms"]
+    assert registry_feedback["status"] == "strong"
+    assert "registry.invalid.example/checkout:missing" in registry_feedback["evidence_terms"]
+    assert validation_feedback["status"] == "strong"
+
+
+def test_deepened_platform_lab_feedback_flags_missing_specific_evidence():
+    response = client.post(
+        "/api/platform-academy/labs/trace-service-to-pod/submission",
+        json={
+            "user_id": "lab-rubric-missing-specific-user",
+            "worksheet_answers": {
+                "worksheet-1": "The Service seems wrong, but I have not copied the selector yet.",
+            },
+            "checked_items": {"worksheet-1": True},
+            "status": "in_progress",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    selector_feedback = next(item for item in feedback if "app=checkout" in item["criterion"])
+    pod_label_feedback = next(item for item in feedback if "app=checkout-api" in item["criterion"])
+    assert selector_feedback["status"] == "needs-evidence"
+    assert "app=checkout" not in selector_feedback["evidence_terms"]
+    assert "app=checkout" in selector_feedback["feedback"]
+    assert pod_label_feedback["status"] == "missing"
+
+
+def test_remaining_review_labs_feedback_tracks_triage_false_leads():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    linux_response = client.post(
+        "/api/platform-academy/labs/inspect-linux-failure-evidence/submission",
+        json={
+            "user_id": "lab-linux-triage-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed pod-describe.txt, previous.log, id-output.txt with no cluster required.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out that Exit code 126 is not memory pressure, "
+                    "Running as root hides the permission bug, and chmod in a live container is not durable."
+                ),
+                "worksheet-2": "CrashLoopBackOff with Restart Count:  8, Last State, and Exit Code:    126.",
+                "worksheet-3": "/app/bin/checkout: Permission denied with uid=10001(checkout) and gid=10001(checkout).",
+                "worksheet-4": "not application logic or memory pressure; permission ownership and execute bit evidence points to image.",
+                "worksheet-5": "image file permissions owner fixes the artifact; Running as root: hides the permission bug.",
+                "worksheet-6": (
+                    "remediation-note.md, validate output, cleanup, evidence-template.md, no-cluster, "
+                    "Linux failure evidence analysis passed."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert linux_response.status_code == 200
+    linux_feedback = linux_response.json()["rubric_feedback"]
+    linux_triage = next(item for item in linux_feedback if "False Leads" in item["criterion"])
+    linux_identity = next(item for item in linux_feedback if "runtime user" in item["criterion"])
+    assert linux_triage["status"] == "strong"
+    assert "triage-notes.md" in linux_triage["evidence_terms"]
+    assert linux_identity["status"] == "strong"
+    assert "uid=10001(checkout)" in linux_identity["evidence_terms"]
+
+    eks_response = client.post(
+        "/api/platform-academy/labs/design-production-eks-review/submission",
+        json={
+            "user_id": "lab-production-eks-triage-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "cluster-review.md and launch-review.md reviewed with no AWS mutation.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out that public and private endpoint is not launch approval, "
+                    "One missing PDB is not a follow-up, A snapshot policy is not restore proof, and "
+                    "Cost labels are not optional after launch."
+                ),
+                "worksheet-2": "Endpoint: public and private; payments/worker has pdb=missing and volume=gp3-us-west-2a.",
+                "worksheet-3": "Missing cost label on apps-c, deprecated APIs, controller add-ons, and compatibility matrix gaps.",
+                "worksheet-4": "Block production launch with follow-up reliability risk and launch blockers separated.",
+                "worksheet-5": "workload owner, platform owner, data owner, FinOps owner, and validation criteria assigned.",
+                "worksheet-6": (
+                    "launch-review.md, validate output, cleanup, evidence-template.md, no-AWS, "
+                    "Production EKS review analysis passed."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert eks_response.status_code == 200
+    eks_feedback = eks_response.json()["rubric_feedback"]
+    eks_triage = next(item for item in eks_feedback if "endpoint-only approval" in item["criterion"])
+    eks_owner = next(item for item in eks_feedback if "FinOps" in item["criterion"])
+    assert eks_triage["status"] == "strong"
+    assert "triage-notes.md" in eks_triage["evidence_terms"]
+    assert eks_owner["status"] == "strong"
+
+    terraform_response = client.post(
+        "/api/platform-academy/labs/review-terraform-eks-plan/submission",
+        json={
+            "user_id": "lab-terraform-triage-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "tfplan.txt plan artifact reviewed; terraform apply is not being run by reviewer.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out that A saved plan is not safe because it is not applied yet, "
+                    "Managed node group replacement is still blast radius, One-subnet coverage is not a temporary detail, "
+                    "and eks:* is not reviewable least privilege."
+                ),
+                "worksheet-2": (
+                    "module.eks.aws_eks_node_group.apps must be replaced; subnet-aaa111 and subnet-bbb222 regress "
+                    "to one subnet, desired_size = 6 -> 3, max_size = 12 -> 6."
+                ),
+                "worksheet-3": "0.0.0.0/0 public ingress and eks:* IAM with Resource = \"*\".",
+                "worksheet-4": "blast radius, rollback, owner, separate plans, and capacity risk documented.",
+                "worksheet-5": "Do not approve; remediation requires least-privilege, validation, and rollback.",
+                "worksheet-6": "decision-record.md, tfplan.txt, review.md, validate, cleanup, Terraform plan risk analysis passed.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert terraform_response.status_code == 200
+    terraform_feedback = terraform_response.json()["rubric_feedback"]
+    terraform_triage = next(item for item in terraform_feedback if "saved-plan approval" in item["criterion"])
+    terraform_replacement = next(item for item in terraform_feedback if "subnet coverage regression" in item["criterion"])
+    assert terraform_triage["status"] == "strong"
+    assert "triage-notes.md" in terraform_triage["evidence_terms"]
+    assert terraform_replacement["status"] == "strong"
+
+
+def test_security_lab_feedback_separates_identity_trust_and_permission():
+    checked_items = {f"worksheet-{index}": True for index in range(8)}
+    checked_items.update({f"validation-{index}": True for index in range(9)})
+
+    response = client.post(
+        "/api/platform-academy/labs/debug-irsa-access-denied/submission",
+        json={
+            "user_id": "lab-irsa-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "captured evidence only, no live IAM changes; ServiceAccount payments checkout uses role ARN.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out token rotation, wildcard trust, and s3:* broad fixes."
+                ),
+                "worksheet-2": "payments/checkout serviceAccountName checkout has role-arn and AWS_ROLE_ARN payments-checkout-readonly.",
+                "worksheet-3": "workload-error.log shows botocore SDK AccessDenied for PutObject.",
+                "worksheet-4": (
+                    "trust policy has system:serviceaccount:default:checkout but expected "
+                    "system:serviceaccount:payments:checkout, a namespace mismatch."
+                ),
+                "worksheet-5": "CloudTrail AccessDenied for PutObject to payments-prod-receipts receipts/2026/05/30/example.json.",
+                "worksheet-6": "trust owner and permission owner are separate; avoid wildcard s3:* fixes.",
+                "worksheet-7": (
+                    "Use s3:PutObject on arn:aws:s3:::payments-prod-receipts/receipts/* "
+                    "with least-privilege validation and handoff."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
+    trust_feedback = next(item for item in feedback if "trust subject mismatch" in item["criterion"])
+    permission_feedback = next(item for item in feedback if "application SDK" in item["criterion"])
+    cloudtrail_feedback = next(item for item in feedback if "bucket and key-prefix" in item["criterion"])
+    fix_feedback = next(item for item in feedback if "least-privilege permission scope" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert trust_feedback["status"] == "strong"
+    assert "system:serviceaccount:payments:checkout" in trust_feedback["evidence_terms"]
+    assert permission_feedback["status"] == "strong"
+    assert "workload-error.log" in permission_feedback["evidence_terms"]
+    assert cloudtrail_feedback["status"] == "strong"
+    assert "payments-prod-receipts" in cloudtrail_feedback["evidence_terms"]
+    assert fix_feedback["status"] == "strong"
+
+
+def test_delivery_lab_feedback_blocks_tag_only_image_promotion():
+    checked_items = {f"worksheet-{index}": True for index in range(6)}
+    checked_items.update({f"validation-{index}": True for index in range(7)})
+
+    response = client.post(
+        "/api/platform-academy/labs/review-docker-image-supply-chain/submission",
+        json={
+            "user_id": "lab-docker-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed Dockerfile, image-inspect.json, and history.txt; secret pattern will not be reused.",
+                "worksheet-1": "RepoTags show checkout:latest, RepoDigests is empty, and rollback digest is missing.",
+                "worksheet-2": "API_TOKEN=do-not-bake-secrets appears in Dockerfile, image config, and history; User is blank.",
+                "worksheet-3": "COPY --from=build /app . copies source tree into runtime on node:22, effectively root runtime risk.",
+                "worksheet-4": "Block promotion until digest, SBOM, scan, non-root runtime, and owner actions are complete.",
+                "worksheet-5": "promotion-note.md plus validate output records rollback digest and cleanup/no-runtime evidence.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    digest_feedback = next(item for item in feedback if "missing RepoDigests" in item["criterion"])
+    secret_feedback = next(item for item in feedback if "secret leakage" in item["criterion"])
+    promotion_feedback = next(item for item in feedback if "Blocks promotion" in item["criterion"])
+    assert digest_feedback["status"] == "strong"
+    assert "repodigests" in digest_feedback["evidence_terms"]
+    assert secret_feedback["status"] == "strong"
+    assert "api-token=do-not-bake-secrets" in secret_feedback["evidence_terms"]
+    assert promotion_feedback["status"] == "strong"
+
+
+def test_security_lab_feedback_tracks_tenant_false_leads_and_boundary_evidence():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/audit-tenant-boundaries/submission",
+        json={
+            "user_id": "lab-tenant-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed tenant-a.yaml for tenant-a with shared cluster safety, dry-run only, cleanup/no-runtime note.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads ruled out temporary cluster-admin, secret debugging, "
+                    "NetworkPolicy object presence, and dry-run approval."
+                ),
+                "worksheet-2": (
+                    "tenant-a-temporary-admin binds deployer to cluster-admin; Role grants secrets and "
+                    "Tenant boundary analysis passed output is saved."
+                ),
+                "worksheet-3": "pod-security.kubernetes.io/enforce: baseline should move to restricted Pod Security with exception review.",
+                "worksheet-4": "allow-all-egress egress rule is not a NetworkPolicy boundary; target is default-deny.",
+                "worksheet-5": "Block onboarding until owner, expiry, required changes, and exception controls are recorded.",
+                "worksheet-6": "fixed-tenant-a.yaml diff, validate output, cleanup, and no-runtime evidence saved.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "temporary admin" in item["criterion"])
+    rbac_feedback = next(item for item in feedback if "cluster-admin and secret-read" in item["criterion"])
+    network_feedback = next(item for item in feedback if "allow-all-egress" in item["criterion"])
+    decision_feedback = next(item for item in feedback if "Blocks onboarding" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert rbac_feedback["status"] == "strong"
+    assert "tenant-a-temporary-admin" in rbac_feedback["evidence_terms"]
+    assert network_feedback["status"] == "strong"
+    assert decision_feedback["status"] == "strong"
+
+
+def test_release_pipeline_lab_feedback_tracks_false_leads_and_gate_chain():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(9)})
+
+    response = client.post(
+        "/api/platform-academy/labs/design-safe-release-pipeline/submission",
+        json={
+            "user_id": "lab-release-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed pipeline.yaml and release-checklist.md; no real CI, registry, or cluster changes.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads ruled out green build approval, SHA tag promotion, "
+                    "post-deploy scans, and rollback digest gaps."
+                ),
+                "worksheet-2": (
+                    "deploy-prod runs on github.ref == 'refs/heads/main' with helm upgrade --install and "
+                    "missing digest promotion; Safe release pipeline analysis passed."
+                ),
+                "worksheet-3": "Required gates include image-digest.txt, trivy image, syft, helm template, kubeconform, and conftest test.",
+                "worksheet-4": "deploy-staging, smoke.sh, environment: production, rollout.strategy=canary, and approval are required.",
+                "worksheet-5": "rollback-if-slo-breach uses rollback owner SLO production criteria and rollback artifact.",
+                "worksheet-6": (
+                    "safe-pipeline.yaml, decision-record.md, validate output, evidence-template.md, "
+                    "and no-runtime evidence saved."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "green-build-only" in item["criterion"])
+    direct_feedback = next(item for item in feedback if "Blocks `deploy-prod`" in item["criterion"])
+    gate_feedback = next(item for item in feedback if "Requires `image-digest.txt`" in item["criterion"])
+    rollout_feedback = next(item for item in feedback if "Requires `deploy-staging`" in item["criterion"])
+    rollback_feedback = next(item for item in feedback if "rollback-if-slo-breach" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert direct_feedback["status"] == "strong"
+    assert "deploy-prod" in direct_feedback["evidence_terms"]
+    assert gate_feedback["status"] == "strong"
+    assert rollout_feedback["status"] == "strong"
+    assert rollback_feedback["status"] == "strong"
+
+
+def test_golden_path_lab_feedback_tracks_product_false_leads():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(9)})
+
+    response = client.post(
+        "/api/platform-academy/labs/create-platform-golden-path/submission",
+        json={
+            "user_id": "lab-golden-path-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed service-template.md and catalog-info.yaml; no template engine and no cluster needed.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out generated files, catalog presence, "
+                    "smooth first run, and optional metadata."
+                ),
+                "worksheet-2": (
+                    "Required Inputs, Generated artifacts, Run as non-root, Production readiness review, "
+                    "and Golden path readiness analysis passed output captured."
+                ),
+                "worksheet-3": (
+                    "pagerduty.com/service-id: missing and platform.example.com/slo-dashboard: missing; "
+                    "runbook and cost_center need concrete owner metadata."
+                ),
+                "worksheet-4": "Block the starting service template for production onboarding until ownership metadata is complete.",
+                "worksheet-5": "Adoption Metrics, reliability metrics, launch gates, and owner validation recorded.",
+                "worksheet-6": "fixed-catalog-info.yaml, decision-record.md, validate output, evidence-template.md, no-runtime saved.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "generated-files" in item["criterion"])
+    inputs_feedback = next(item for item in feedback if "Captures required inputs" in item["criterion"])
+    metadata_feedback = next(item for item in feedback if "missing pager" in item["criterion"])
+    decision_feedback = next(item for item in feedback if "Blocks production onboarding" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert inputs_feedback["status"] == "strong"
+    assert metadata_feedback["status"] == "strong"
+    assert decision_feedback["status"] == "strong"
+
+
+def test_cost_lab_feedback_tracks_delete_first_false_leads():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(9)})
+
+    response = client.post(
+        "/api/platform-academy/labs/audit-eks-cost-drivers/submission",
+        json={
+            "user_id": "lab-cost-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed usage.csv, services.txt, storage.txt; no AWS access and no delete action.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out low utilization, unknown owner, "
+                    "LoadBalancer age, and savings without rollback."
+                ),
+                "worksheet-2": (
+                    "payments,checkout,6000,900; payments,worker,4000,350; default,load-test,3000,0; "
+                    "EKS cost driver analysis passed with Compute right-size candidates and Quick-win monthly exposure."
+                ),
+                "worksheet-3": "abandoned-demo LoadBalancer and abandoned-cache PVC have Expected Savings and architecture review notes.",
+                "worksheet-4": "quick wins need Reliability Risk and owner confirmation before delete actions.",
+                "worksheet-5": "Expected Savings, Restore previous requests rollback, Weekly: unknown owner cadence recorded.",
+                "worksheet-6": "recommendations.md, validate output, cleanup, evidence-template.md, and no-AWS note saved.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "utilization-only" in item["criterion"])
+    compute_feedback = next(item for item in feedback if "over-requested workloads" in item["criterion"])
+    waste_feedback = next(item for item in feedback if "abandoned LoadBalancer" in item["criterion"])
+    cadence_feedback = next(item for item in feedback if "review cadence" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert compute_feedback["status"] == "strong"
+    assert waste_feedback["status"] == "strong"
+    assert cadence_feedback["status"] == "strong"
+
+
+def test_career_proof_lab_feedback_tracks_claim_quality_false_leads():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/build-platform-career-proof-pack/submission",
+        json={
+            "user_id": "lab-career-proof-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed job-skills.txt and evidence-inventory.md with public redaction boundary.",
+                "worksheet-1": "triage-notes.md False Leads rule out completed labs, duty-only bullets, weak STAR, and redaction gaps.",
+                "worksheet-2": "Kubernetes, Terraform, AWS, CI/CD plus EKS, Helm, ArgoCD and Docker, supply chain domains mapped.",
+                "worksheet-3": "Candidate artifacts, Missing proof to collect, verify-full-labs.sh, and Rollback evidence cited.",
+                "worksheet-4": "completed-proof-readme.md includes Problem, Environment, and Interview Talking Points.",
+                "worksheet-5": "resume-bullets.md and star-stories.md cover Incident Response, Security, Cost, and Release Safety.",
+                "worksheet-6": (
+                    "validate output, screenshots, diagrams, evidence-template.md, stronger evidence, "
+                    "and Career proof pack analysis passed saved."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "lab-count proof" in item["criterion"])
+    skill_feedback = next(item for item in feedback if "Maps repeated target skills" in item["criterion"])
+    proof_feedback = next(item for item in feedback if "Completes a portfolio README" in item["criterion"])
+    star_feedback = next(item for item in feedback if "resume bullets and STAR" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert skill_feedback["status"] == "strong"
+    assert proof_feedback["status"] == "strong"
+    assert star_feedback["status"] == "strong"
+
+
+def test_sre_lab_feedback_tracks_slo_evidence_and_owner_split():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/write-slo-backed-runbook/submission",
+        json={
+            "user_id": "lab-slo-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "signals.md reviewed for CheckoutHighErrorBudgetBurn; no live rollback was run.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out rollback first, Revision 43 correlation proof, "
+                    "threshold without user impact, and ownerless follow-up."
+                ),
+                "worksheet-2": "99.9% SLO, CheckoutHighErrorBudgetBurn, 2% 5xx threshold, 14 minutes, dashboard impact.",
+                "worksheet-3": (
+                    "revision 43 rollout correlates with readiness flapping and target group unhealthy; check dependency traces."
+                ),
+                "worksheet-4": "Run kubectl rollout history as read-only evidence before rollback, traffic shift, or escalation.",
+                "worksheet-5": "Incident commander, App owner, Platform owner, and SRE owner validate and follow up.",
+                "worksheet-6": "completed-runbook.md, incident-decision.md, validate output, dashboard, and cleanup note saved.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "rollback-first" in item["criterion"])
+    alert_feedback = next(item for item in feedback if "2% 5xx threshold" in item["criterion"])
+    rollout_feedback = next(item for item in feedback if "revision 43" in item["criterion"])
+    owner_feedback = next(item for item in feedback if "Incident commander" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert alert_feedback["status"] == "strong"
+    assert "checkouthigherrorbudgetburn" in alert_feedback["evidence_terms"]
+    assert rollout_feedback["status"] == "strong"
+    assert "revision 43" in rollout_feedback["evidence_terms"]
+    assert owner_feedback["status"] == "strong"
+
+
+def test_observability_lab_feedback_tracks_signal_path_false_leads():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/design-opentelemetry-signal-path/submission",
+        json={
+            "user_id": "lab-otel-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": (
+                    "Reviewed collector.yaml, checkout-logs.txt, prometheus-rule.yaml, simulator output, "
+                    "and no live backend change."
+                ),
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out header deletion as full proof, one valid trace, "
+                    "customer-level grouping, and missing owner map."
+                ),
+                "worksheet-2": "http.request.header.authorization uses action: delete in the collector privacy control.",
+                "worksheet-3": (
+                    "trace_id=missing compared with trace_id=0123456789abcdef0123456789abcdef; "
+                    "App owner propagates trace context."
+                ),
+                "worksheet-4": "customer_email cardinality privacy alert grouping risk appears in histogram_quantile.",
+                "worksheet-5": "sum by (le, route), Owner Map, SRE owner, Data/privacy owner, and dashboard handoff recorded.",
+                "worksheet-6": (
+                    "signal-path-decision.md, safe-prometheus-rule.yaml, simulator, validate, cleanup, "
+                    "and OpenTelemetry signal path analysis passed output saved."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "header-deletion-only" in item["criterion"])
+    privacy_feedback = next(item for item in feedback if "authorization" in item["criterion"])
+    trace_feedback = next(item for item in feedback if "trace context evidence" in item["criterion"])
+    cardinality_feedback = next(item for item in feedback if "customer_email" in item["criterion"])
+    owner_feedback = next(item for item in feedback if "route-only aggregation" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert privacy_feedback["status"] == "strong"
+    assert trace_feedback["status"] == "strong"
+    assert cardinality_feedback["status"] == "strong"
+    assert owner_feedback["status"] == "strong"
+
+
+def test_incident_tabletop_feedback_tracks_false_leads_roles_and_timeline():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/run-incident-commander-tabletop/submission",
+        json={
+            "user_id": "lab-incident-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "signals.md tabletop packet reviewed; no live mitigation; 15 minutes update clock.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out waiting for root cause, missing stakeholder update, "
+                    "rollback without decision criterion, and timeline later."
+                ),
+                "worksheet-2": "SEV-2 with 0.2% to 9.4% checkout 5xx, payment confirmation impact, and decision pressure.",
+                "worksheet-3": "Incident commander, Operations lead, Communications lead, Planning lead, and escalation owner assigned.",
+                "worksheet-4": "revision 43 can rollback to revision 42; mitigation pending until stakeholder update criterion is met.",
+                "worksheet-5": "timeline entries include evidence, decision, owner, and communications handoff.",
+                "worksheet-6": (
+                    "commander-brief.md, completed-timeline.md, validate output, cleanup/no-runtime note, "
+                    "and Incident commander tabletop analysis passed saved."
+                ),
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "waiting for root cause" in item["criterion"])
+    impact_feedback = next(item for item in feedback if "0.2% to 9.4%" in item["criterion"])
+    roles_feedback = next(item for item in feedback if "Assigns Incident commander" in item["criterion"])
+    rollback_feedback = next(item for item in feedback if "revision 43 rollback" in item["criterion"])
+    timeline_feedback = next(item for item in feedback if "timeline entries" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert impact_feedback["status"] == "strong"
+    assert roles_feedback["status"] == "strong"
+    assert rollback_feedback["status"] == "strong"
+    assert timeline_feedback["status"] == "strong"
+
+
+def test_network_lab_feedback_tracks_hop_and_owner_evidence():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/trace-network-path/submission",
+        json={
+            "user_id": "lab-network-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": (
+                    "incident-handoff.md Pager Snapshot impact and network-evidence.md for checkout.example.com/healthz; "
+                    "no live DNS or ALB change."
+                ),
+                "worksheet-1": (
+                    "hop-trace.md Hop Trace False Leads rule out DNS owner, ALB listener, "
+                    "Pod recreation, and console-only changes."
+                ),
+                "worksheet-2": "HTTP/2 503 from awselb/2.0 with DNS target k8s-payments-checkout-123456.",
+                "worksheet-3": "ALB target health shows Target.ResponseCodeMismatch and unhealthy target.",
+                "worksheet-4": "Ingress Service targetPort web and targetPort: web mismatch Pod port http.",
+                "worksheet-5": (
+                    "DNS owner and ALB owner are ruled out; app/platform owner uses source-manifest "
+                    "fixed-ingress-service.yaml targetPort: http."
+                ),
+                "worksheet-6": "diff, validate, cleanup, no-cluster evidence-template.md saved.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    hop_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
+    alb_feedback = next(item for item in feedback if "Target.ResponseCodeMismatch" in item["criterion"])
+    port_feedback = next(item for item in feedback if "targetPort web" in item["criterion"])
+    fix_feedback = next(item for item in feedback if "targetPort: http" in item["criterion"])
+    assert hop_feedback["status"] == "strong"
+    assert "hop-trace.md" in hop_feedback["evidence_terms"]
+    assert alb_feedback["status"] == "strong"
+    assert "target.responsecodemismatch" in alb_feedback["evidence_terms"]
+    assert port_feedback["status"] == "strong"
+    assert fix_feedback["status"] == "strong"
+
+
+def test_yaml_review_lab_feedback_tracks_security_blockers():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/review-yaml-before-apply/submission",
+        json={
+            "user_id": "lab-yaml-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "Reviewed vendor.yaml with no live apply against any shared cluster.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out dry-run-only approval, namespace-only isolation, "
+                    "and stringData.token placeholder assumptions."
+                ),
+                "worksheet-2": "Inventory includes ClusterRole, Namespace, Deployment, Secret, and dry-run parse-check output.",
+                "worksheet-3": (
+                    'Blockers: resources: ["pods", "secrets"], privileged: true, hostPath, and stringData.token.'
+                ),
+                "worksheet-4": "Classified as RBAC, workload security, node filesystem, and credential handling.",
+                "worksheet-5": "Block until safe-baseline.yaml, vendor questions, and allowPrivilegeEscalation: false are addressed.",
+                "worksheet-6": "diff, validate, cleanup, evidence-template.md, and no-live-apply note saved.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
+    blocker_feedback = next(item for item in feedback if "privileged: true" in item["criterion"])
+    category_feedback = next(item for item in feedback if "credential handling" in item["criterion"])
+    decision_feedback = next(item for item in feedback if "vendor questions" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert blocker_feedback["status"] == "strong"
+    assert "privileged: true" in blocker_feedback["evidence_terms"]
+    assert "hostpath" in blocker_feedback["evidence_terms"]
+    assert category_feedback["status"] == "strong"
+    assert decision_feedback["status"] == "strong"
+
+
+def test_helm_release_lab_feedback_tracks_triage_and_render_risk():
+    checked_items = {f"worksheet-{index}": True for index in range(7)}
+    checked_items.update({f"validation-{index}": True for index in range(8)})
+
+    response = client.post(
+        "/api/platform-academy/labs/validate-helm-release-artifact/submission",
+        json={
+            "user_id": "lab-helm-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "rendered-after.yaml reviewed by reviewer; unsafe render was not applied.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out render-success approval; checkout:latest and "
+                    "LoadBalancer exposure need review."
+                ),
+                "worksheet-2": (
+                    "Deployment selector changes from app.kubernetes.io/name=checkout to app=checkout, "
+                    "an immutable selector risk."
+                ),
+                "worksheet-3": "checkout:latest, privileged: true securityContext, and LoadBalancer mutable exposure found.",
+                "worksheet-4": "rollback owner and chart values questions show render-success is not release approval.",
+                "worksheet-5": "Block the release until safe-rendered-after.yaml uses digest-pinned, ClusterIP, non-privileged.",
+                "worksheet-6": "diff, review-notes.md, validate, cleanup/no-runtime, Helm release artifact analysis passed.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
+    selector_feedback = next(item for item in feedback if "immutable Deployment selector" in item["criterion"])
+    exposure_feedback = next(item for item in feedback if "LoadBalancer" in item["criterion"])
+    decision_feedback = next(item for item in feedback if "safer-render" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert selector_feedback["status"] == "strong"
+    assert "immutable selector" in selector_feedback["evidence_terms"]
+    assert exposure_feedback["status"] == "strong"
+    assert "loadbalancer" in exposure_feedback["evidence_terms"]
+    assert decision_feedback["status"] == "strong"
+
+
+def test_argocd_drift_lab_feedback_tracks_triage_and_field_ownership():
+    checked_items = {f"worksheet-{index}": True for index in range(8)}
+    checked_items.update({f"validation-{index}": True for index in range(9)})
+
+    response = client.post(
+        "/api/platform-academy/labs/trace-argocd-drift/submission",
+        json={
+            "user_id": "lab-argocd-rubric-user",
+            "worksheet_answers": {
+                "worksheet-0": "argocd-app-report.txt OutOfSync reviewed with desired.yaml and live.yaml; no force-sync.",
+                "worksheet-1": (
+                    "triage-notes.md False Leads rule out force-sync and ignoring the whole Deployment for OutOfSync."
+                ),
+                "worksheet-2": "desired replicas: 3, live replicas: 9, field .spec.replicas /spec/replicas.",
+                "worksheet-3": "selfHeal: true sync policy could force sync and fight autoscaling.",
+                "worksheet-4": "autoscaling.platform.example.com/last-scale marks live object controller-owned.",
+                "worksheet-5": "Git-owned image, labels, resources, and security fields must remain enforced.",
+                "worksheet-6": "ignoreDifferences only /spec/replicas for checkout in payments Deployment.",
+                "worksheet-7": "ownership-decision.md, validate output, cleanup/no-runtime, ArgoCD drift analysis passed.",
+            },
+            "checked_items": checked_items,
+            "status": "submitted",
+        },
+    )
+
+    assert response.status_code == 200
+    feedback = response.json()["rubric_feedback"]
+    triage_feedback = next(item for item in feedback if "False Leads" in item["criterion"])
+    replica_feedback = next(item for item in feedback if "replicas: 3" in item["criterion"])
+    git_owned_feedback = next(item for item in feedback if "Git-owned image" in item["criterion"])
+    ignore_feedback = next(item for item in feedback if "/spec/replicas" in item["criterion"])
+    assert triage_feedback["status"] == "strong"
+    assert "triage-notes.md" in triage_feedback["evidence_terms"]
+    assert replica_feedback["status"] == "strong"
+    assert "/spec/replicas" in replica_feedback["evidence_terms"]
+    assert git_owned_feedback["status"] == "strong"
+    assert ignore_feedback["status"] == "strong"
+
+
+def test_platform_lab_submission_ignores_unknown_checked_items_for_scoring():
+    user_id = "lab-submission-extra-checks-user"
+    lab_slug = "trace-service-to-pod"
+    extra_checked_items = {f"not-a-real-check-{index}": True for index in range(25)}
+
+    response = client.post(
+        f"/api/platform-academy/labs/{lab_slug}/submission",
+        json={
+            "user_id": user_id,
+            "worksheet_answers": {"worksheet-0": "Service selector mismatch evidence."},
+            "checked_items": extra_checked_items,
+            "status": "submitted",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["checked_items"] == extra_checked_items
+    assert payload["completed_checks"] == 0
+    assert payload["answered_prompts"] == 1
+    assert payload["score"] == round(1 / (payload["total_checks"] + payload["total_prompts"]) * 100, 2)
+    assert payload["score"] <= 100
+
+
+def test_platform_lab_submission_initial_get_is_concurrency_safe():
+    user_id = "lab-submission-concurrency-user"
+    lab_slug = "trace-service-to-pod"
+
+    def fetch_submission():
+        return client.get(f"/api/platform-academy/labs/{lab_slug}/submission/{user_id}")
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        responses = list(executor.map(lambda _: fetch_submission(), range(8)))
+
+    assert all(response.status_code == 200 for response in responses)
+    assert {response.json()["id"] for response in responses}
+    assert len({response.json()["id"] for response in responses}) == 1
+
+    submissions = client.get(f"/api/platform-academy/lab-submissions/{user_id}")
+    assert submissions.status_code == 200
+    assert [submission["lab_slug"] for submission in submissions.json()] == [lab_slug]
+
+
+def test_platform_lab_submission_rejects_unknown_lab():
+    response = client.get("/api/platform-academy/labs/not-a-lab/submission/demo-user")
+    assert response.status_code == 404
+
+
+def test_platform_learner_state_export_import_round_trips_guest_progress():
+    source_user_id = "platform-export-source"
+    target_user_id = "platform-export-target"
+    platform_courses = client.get("/api/courses?domain=platform").json()
+    platform_lesson_id = platform_courses[0]["lessons"][0]["id"]
+    custom_course = client.post(
+        "/api/admin/courses",
+        json={
+            "slug": "custom-non-platform-export",
+            "title": "Custom Non-Platform Export Fixture",
+            "era": "Internal",
+            "level": "Advanced",
+            "category": "Fixture",
+            "description": "A non-platform course used to prove Platform Academy backups stay scoped.",
+            "subscription_tier": "mock_active",
+            "lessons": [
+                {
+                    "title": "Non-Platform Lesson",
+                    "summary": "Fixture lesson outside Platform Academy.",
+                    "body": "This lesson should not appear in Platform Academy exports.",
+                    "practice_notes": "fixture",
+                    "audio_url": None,
+                    "video_url": None,
+                    "terms": [],
+                    "flashcards": [{"prompt": "Fixture?", "answer": "Fixture.", "hint": "", "difficulty": "beginner"}],
+                }
+            ],
+        },
+    )
+    assert custom_course.status_code == 201
+    custom_lesson_id = custom_course.json()["lessons"][0]["id"]
+    lab_slug = "trace-service-to-pod"
+
+    assert client.post(
+        "/api/progress",
+        json={"user_id": source_user_id, "lesson_id": platform_lesson_id, "completed": True, "score": 1},
+    ).status_code == 200
+    assert client.post(
+        "/api/progress",
+        json={"user_id": source_user_id, "lesson_id": custom_lesson_id, "completed": True, "score": 1},
+    ).status_code == 200
+    assert (
+        client.post(
+            "/api/platform-academy/activity",
+            json={
+                "user_id": source_user_id,
+                "target_type": "resource",
+                "target_id": "kubernetes-debugging-cheatsheet",
+                "state": "completed",
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            f"/api/platform-academy/labs/{lab_slug}/submission",
+            json={
+                "user_id": source_user_id,
+                "worksheet_answers": {"worksheet-0": "Service selector and Pod labels differ."},
+                "checked_items": {"worksheet-0": True, "validation-0": True},
+                "status": "submitted",
+            },
+        ).status_code
+        == 200
+    )
+
+    exported = client.get(f"/api/platform-academy/state/{source_user_id}/export")
+    assert exported.status_code == 200
+    state = exported.json()
+    assert state["schema_version"] == 1
+    assert state["source_user_id"] == source_user_id
+    assert [row["lesson_id"] for row in state["progress"]] == [platform_lesson_id]
+    assert state["activity"][0]["target_id"] == "kubernetes-debugging-cheatsheet"
+    assert state["lab_submissions"][0]["lab_slug"] == lab_slug
+
+    imported = client.post("/api/platform-academy/state/import", json={"target_user_id": target_user_id, "state": state})
+    assert imported.status_code == 200
+    assert imported.json() == {
+        "user_id": target_user_id,
+        "progress_imported": 1,
+        "activity_imported": 1,
+        "lab_submissions_imported": 1,
+    }
+
+    target_progress = client.get(f"/api/progress/{target_user_id}")
+    assert any(row["lesson_id"] == platform_lesson_id and row["completed"] for row in target_progress.json())
+    assert all(row["lesson_id"] != custom_lesson_id for row in target_progress.json())
+    target_activity = client.get(f"/api/platform-academy/activity/{target_user_id}")
+    assert target_activity.json()[0]["target_id"] == "kubernetes-debugging-cheatsheet"
+    target_submissions = client.get(f"/api/platform-academy/lab-submissions/{target_user_id}")
+    assert target_submissions.json()[0]["lab_slug"] == lab_slug
+    target_dashboard = client.get(f"/api/users/{target_user_id}/dashboard?domain=platform")
+    assert target_dashboard.json()["xp"]["lesson_completion_xp"] == 20
+
+
+def test_platform_learner_state_import_is_concurrency_safe():
+    platform_courses = client.get("/api/courses?domain=platform").json()
+    lesson_id = platform_courses[0]["lessons"][0]["id"]
+    target_user_id = "platform-import-concurrency-target"
+    lab_slug = "trace-service-to-pod"
+    activity_target_id = "kubernetes-debugging-cheatsheet"
+    state = {
+        "schema_version": 1,
+        "exported_at": "2026-05-28T00:00:00",
+        "source_user_id": "platform-import-concurrency-source",
+        "progress": [{"lesson_id": lesson_id, "completed": True, "score": 1}],
+        "activity": [{"target_type": "resource", "target_id": activity_target_id, "state": "completed"}],
+        "lab_submissions": [
+            {
+                "lab_slug": lab_slug,
+                "worksheet_answers": {"worksheet-0": "Service selector and Pod labels differ."},
+                "checked_items": {"worksheet-0": True, "validation-0": True},
+                "status": "submitted",
+            }
+        ],
+    }
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        responses = list(
+            executor.map(
+                lambda _: client.post(
+                    "/api/platform-academy/state/import",
+                    json={"target_user_id": target_user_id, "state": state},
+                ),
+                range(8),
+            )
+        )
+
+    assert all(response.status_code == 200 for response in responses)
+    assert all(
+        response.json() == {
+            "user_id": target_user_id,
+            "progress_imported": 1,
+            "activity_imported": 1,
+            "lab_submissions_imported": 1,
+        }
+        for response in responses
+    )
+
+    with SessionLocal() as db:
+        progress_count = db.query(Progress).filter(Progress.user_id == target_user_id, Progress.lesson_id == lesson_id).count()
+        activity_count = (
+            db.query(PlatformActivity)
+            .filter(
+                PlatformActivity.user_id == target_user_id,
+                PlatformActivity.target_type == "resource",
+                PlatformActivity.target_id == activity_target_id,
+            )
+            .count()
+        )
+        lab_submission_count = (
+            db.query(PlatformLabSubmission)
+            .filter(PlatformLabSubmission.user_id == target_user_id, PlatformLabSubmission.lab_slug == lab_slug)
+            .count()
+        )
+        xp_count = (
+            db.query(XpEvent)
+            .filter(XpEvent.user_id == target_user_id, XpEvent.source == "lesson_completion", XpEvent.source_id == lesson_id)
+            .count()
+        )
+    assert progress_count == 1
+    assert activity_count == 1
+    assert lab_submission_count == 1
+    assert xp_count == 1
+
+
+def test_platform_learner_state_import_rejects_oversized_backup_payloads():
+    base_state = {
+        "schema_version": 1,
+        "exported_at": "2026-05-28T00:00:00",
+        "source_user_id": "platform-export-source",
+        "progress": [],
+        "activity": [],
+        "lab_submissions": [],
+    }
+    too_many_progress_rows = {
+        **base_state,
+        "progress": [
+            {"lesson_id": 100000 + index, "completed": True, "score": 1}
+            for index in range(MAX_PLATFORM_STATE_PROGRESS_ROWS + 1)
+        ],
+    }
+
+    response = client.post(
+        "/api/platform-academy/state/import",
+        json={"target_user_id": "platform-export-target-too-large", "state": too_many_progress_rows},
+    )
+    assert response.status_code == 422
+
+    too_large_worksheet_answer = {
+        **base_state,
+        "lab_submissions": [
+            {
+                "lab_slug": "trace-service-to-pod",
+                "worksheet_answers": {"worksheet-0": "x" * (MAX_PLATFORM_STATE_WORKSHEET_VALUE_LENGTH + 1)},
+                "checked_items": {},
+                "status": "submitted",
+            }
+        ],
+    }
+    response = client.post(
+        "/api/platform-academy/state/import",
+        json={"target_user_id": "platform-export-target-too-large", "state": too_large_worksheet_answer},
+    )
+    assert response.status_code == 422
+
+
+def test_user_id_validation_rejects_unsafe_or_oversized_values():
+    platform_lesson_id = client.get("/api/courses?domain=platform").json()[0]["lessons"][0]["id"]
+    invalid_user_ids = ["bad user", "bad/user", "x" * (MAX_USER_ID_LENGTH + 1)]
+
+    for invalid_user_id in invalid_user_ids:
+        progress = client.post(
+            "/api/progress",
+            json={"user_id": invalid_user_id, "lesson_id": platform_lesson_id, "completed": True, "score": 1},
+        )
+        assert progress.status_code == 422
+
+        activity = client.post(
+            "/api/platform-academy/activity",
+            json={
+                "user_id": invalid_user_id,
+                "target_type": "resource",
+                "target_id": "kubernetes-debugging-cheatsheet",
+                "state": "completed",
+            },
+        )
+        assert activity.status_code == 422
+
+        lab_submission = client.post(
+            "/api/platform-academy/labs/trace-service-to-pod/submission",
+            json={
+                "user_id": invalid_user_id,
+                "worksheet_answers": {"worksheet-0": "selector mismatch"},
+                "checked_items": {},
+                "status": "submitted",
+            },
+        )
+        assert lab_submission.status_code == 422
+
+        imported = client.post(
+            "/api/platform-academy/state/import",
+            json={
+                "target_user_id": invalid_user_id,
+                "state": {
+                    "schema_version": 1,
+                    "exported_at": "2026-05-28T00:00:00",
+                    "source_user_id": "platform-export-source",
+                    "progress": [],
+                    "activity": [],
+                    "lab_submissions": [],
+                },
+            },
+        )
+        assert imported.status_code == 422
+
+    for invalid_user_id in ["bad%20user", "x" * (MAX_USER_ID_LENGTH + 1)]:
+        assert client.get(f"/api/users/{invalid_user_id}/dashboard?domain=platform").status_code == 422
+        assert client.get(f"/api/platform-academy/activity/{invalid_user_id}").status_code == 422
+        assert client.get(f"/api/platform-academy/state/{invalid_user_id}/export").status_code == 422
+
+
+def test_platform_activity_rejects_unsafe_state_tokens():
+    valid_payload = {
+        "user_id": "platform-activity-validation-user",
+        "target_type": "resource",
+        "target_id": "kubernetes-debugging-cheatsheet",
+        "state": "completed",
+    }
+
+    for field_name, invalid_value in {
+        "target_type": "bad type",
+        "target_id": "bad/target",
+        "state": "needs review",
+    }.items():
+        response = client.post("/api/platform-academy/activity", json={**valid_payload, field_name: invalid_value})
+        assert response.status_code == 422
+
+    unsafe_import = client.post(
+        "/api/platform-academy/state/import",
+        json={
+            "target_user_id": "platform-activity-import-validation",
+            "state": {
+                "schema_version": 1,
+                "exported_at": "2026-05-28T00:00:00",
+                "source_user_id": "platform-export-source",
+                "progress": [],
+                "activity": [{"target_type": "resource", "target_id": "bad/target", "state": "completed"}],
+                "lab_submissions": [],
+            },
+        },
+    )
+    assert unsafe_import.status_code == 422
+
+
+def test_platform_lab_submission_rejects_unknown_status_values():
+    response = client.post(
+        "/api/platform-academy/labs/trace-service-to-pod/submission",
+        json={
+            "user_id": "platform-lab-status-validation",
+            "worksheet_answers": {"worksheet-0": "selector mismatch"},
+            "checked_items": {},
+            "status": "needs_review",
+        },
+    )
+    assert response.status_code == 422
+
+    unsafe_import = client.post(
+        "/api/platform-academy/state/import",
+        json={
+            "target_user_id": "platform-lab-status-import-validation",
+            "state": {
+                "schema_version": 1,
+                "exported_at": "2026-05-28T00:00:00",
+                "source_user_id": "platform-export-source",
+                "progress": [],
+                "activity": [],
+                "lab_submissions": [
+                    {
+                        "lab_slug": "trace-service-to-pod",
+                        "worksheet_answers": {"worksheet-0": "selector mismatch"},
+                        "checked_items": {},
+                        "status": "needs_review",
+                    }
+                ],
+            },
+        },
+    )
+    assert unsafe_import.status_code == 422
+
+
+def test_platform_lab_submission_rejects_oversized_workbook_payloads():
+    too_many_answers = {
+        f"worksheet-{index}": "Evidence note"
+        for index in range(MAX_PLATFORM_STATE_WORKSHEET_FIELDS + 1)
+    }
+    response = client.post(
+        "/api/platform-academy/labs/trace-service-to-pod/submission",
+        json={
+            "user_id": "platform-workbook-too-large",
+            "worksheet_answers": too_many_answers,
+            "checked_items": {},
+            "status": "submitted",
+        },
+    )
+    assert response.status_code == 422
+
+    response = client.post(
+        "/api/platform-academy/labs/trace-service-to-pod/submission",
+        json={
+            "user_id": "platform-workbook-answer-too-large",
+            "worksheet_answers": {"worksheet-0": "x" * (MAX_PLATFORM_STATE_WORKSHEET_VALUE_LENGTH + 1)},
+            "checked_items": {},
+            "status": "submitted",
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_platform_learner_state_openapi_documents_backup_contract():
+    spec = client.get("/openapi.json").json()
+    paths = spec["paths"]
+    schemas = spec["components"]["schemas"]
+
+    export_operation = paths["/api/platform-academy/state/{user_id}/export"]["get"]
+    assert export_operation["summary"] == "Export Platform Academy learner state"
+    assert "Platform Academy lesson progress" in export_operation["description"]
+    assert str(MAX_PLATFORM_STATE_PROGRESS_ROWS) in export_operation["description"]
+
+    import_operation = paths["/api/platform-academy/state/import"]["post"]
+    assert import_operation["summary"] == "Import Platform Academy learner state"
+    assert str(MAX_PLATFORM_STATE_WORKSHEET_FIELDS) in import_operation["description"]
+    assert "Payload fails schema version" in import_operation["responses"]["422"]["description"]
+
+    backup_schema = schemas["PlatformLearnerStateExport"]["properties"]
+    assert backup_schema["progress"]["maxItems"] == MAX_PLATFORM_STATE_PROGRESS_ROWS
+    assert backup_schema["activity"]["maxItems"] == MAX_PLATFORM_STATE_ACTIVITY_ROWS
+    assert backup_schema["lab_submissions"]["maxItems"] == MAX_PLATFORM_STATE_LAB_ROWS
+
+    lab_submission_schema = schemas["PlatformLabSubmissionIn"]["properties"]
+    assert lab_submission_schema["user_id"]["maxLength"] == MAX_USER_ID_LENGTH
+    assert lab_submission_schema["user_id"]["pattern"] == USER_ID_PATTERN
+    assert lab_submission_schema["status"]["enum"] == [PLATFORM_LAB_STATUS_IN_PROGRESS, PLATFORM_LAB_STATUS_SUBMITTED]
+    assert lab_submission_schema["worksheet_answers"]["maxProperties"] == MAX_PLATFORM_STATE_WORKSHEET_FIELDS
+    assert lab_submission_schema["checked_items"]["maxProperties"] == MAX_PLATFORM_STATE_CHECKED_FIELDS
+    save_operation = paths["/api/platform-academy/labs/{lab_slug}/submission"]["post"]
+    assert "unknown client keys cannot inflate completion" in save_operation["description"]
+    source_bundle_operation = paths["/api/platform-academy/labs/{lab_slug}/bundle"]["get"]
+    assert source_bundle_operation["summary"] == "Get Platform Academy Instructor Source Bundle"
+    assert source_bundle_operation["responses"]["403"]["description"] == "Non-local deployments require an instructor source-bundle token."
+    source_bundle_token_parameter = next(
+        parameter
+        for parameter in source_bundle_operation["parameters"]
+        if parameter["name"] == "X-Platform-Source-Bundle-Token"
+    )
+    assert "Instructor/source bundle token" in source_bundle_token_parameter["description"]
+    assert_openapi_download_headers(source_bundle_operation["responses"]["200"])
+    assert_openapi_download_headers(source_bundle_operation["responses"]["403"], include_content_disposition=False)
+    packet_operation = paths["/api/platform-academy/labs/{lab_slug}/packet"]["get"]
+    assert_openapi_download_headers(packet_operation["responses"]["200"])
+    workspace_bundle_operation = paths["/api/platform-academy/labs/{lab_slug}/workspace-bundle"]["get"]
+    assert_openapi_download_headers(workspace_bundle_operation["responses"]["200"])
+
+    activity_schema = schemas["PlatformActivityIn"]["properties"]
+    assert activity_schema["target_type"]["pattern"] == PLATFORM_STATE_TOKEN_PATTERN
+    assert activity_schema["target_id"]["pattern"] == PLATFORM_STATE_TOKEN_PATTERN
+    assert activity_schema["state"]["pattern"] == PLATFORM_STATE_TOKEN_PATTERN
+
+    import_schema = schemas["PlatformLearnerStateImportIn"]["properties"]
+    assert import_schema["target_user_id"]["maxLength"] == MAX_USER_ID_LENGTH
+    assert import_schema["target_user_id"]["pattern"] == USER_ID_PATTERN
+
+
+def test_platform_academy_product_metrics_record_bounded_product_events():
+    user_id = "platform-product-metrics-user"
+    lab_slug = "trace-service-to-pod"
+
+    assert client.get(f"/api/platform-academy/labs/{lab_slug}/packet").status_code == 200
+    assert client.get(f"/api/platform-academy/labs/{lab_slug}/bundle").status_code == 200
+    assert (
+        client.post(
+            "/api/platform-academy/activity",
+            json={
+                "user_id": user_id,
+                "target_type": "interview_question",
+                "target_id": "kubernetes-debugging-interview-pack:1",
+                "state": "completed",
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            "/api/platform-academy/activity",
+            json={"user_id": user_id, "target_type": "custom-client-value", "target_id": "one-off", "state": "surprise"},
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            f"/api/platform-academy/labs/{lab_slug}/submission",
+            json={
+                "user_id": user_id,
+                "worksheet_answers": {"worksheet-0": "selector mismatch between Service and Pod labels"},
+                "checked_items": {"worksheet-0": True, "validation-0": True},
+                "status": "submitted",
+            },
+        ).status_code
+        == 200
+    )
+    assert client.get(f"/api/users/{user_id}/dashboard?domain=platform").status_code == 200
+
+    metrics = client.get("/metrics").text
+    assert "platform_academy_activity_saves_total" in metrics
+    assert 'target_type="interview_question"' in metrics
+    assert 'state="completed"' in metrics
+    assert 'target_type="other"' in metrics
+    assert 'state="other"' in metrics
+    assert "platform_academy_lab_packet_downloads_total" in metrics
+    assert "platform_academy_lab_bundle_downloads_total" in metrics
+    assert "platform_academy_lab_submissions_total" in metrics
+    assert f'lab_slug="{lab_slug}"' in metrics
+    assert 'status="submitted"' in metrics
+    assert "platform_academy_dashboard_reads_total" in metrics
+    assert 'domain="platform"' in metrics
+
+
+def test_course_domain_filters_keep_platform_scope_explicit():
     platform = client.get("/api/courses?domain=platform")
     assert platform.status_code == 200
     platform_courses = platform.json()
     assert len(platform_courses) >= 15
     assert all(course["era"] == "Platform Academy" for course in platform_courses)
+
+    retired_domain = client.get("/api/courses?domain=legacy")
+    assert retired_domain.status_code == 400
 
     invalid = client.get("/api/courses?domain=bad")
     assert invalid.status_code == 400
@@ -162,7 +2270,7 @@ def test_lesson_and_flashcards():
     lesson_id = courses[0]["lessons"][0]["id"]
     lesson = client.get(f"/api/lessons/{lesson_id}")
     assert lesson.status_code == 200
-    assert lesson.json()["vocabulary"]
+    assert lesson.json()["terms"]
     cards = client.get(f"/api/flashcards?lesson_id={lesson_id}")
     assert cards.status_code == 200
     assert cards.json()
@@ -175,9 +2283,9 @@ def test_platform_lesson_contains_teaching_terms_and_review_prompts():
     assert lesson.status_code == 200
     payload = lesson.json()
     assert payload["course_era"] == "Platform Academy"
-    assert "IRSA" in payload["body_simplified"]
-    assert "service account" in payload["body_simplified"]
-    assert payload["vocabulary"]
+    assert "IRSA" in payload["body"]
+    assert "service account" in payload["body"]
+    assert payload["terms"]
     assert payload["flashcards"]
 
     search = client.get("/api/search?q=CrashLoopBackOff")
@@ -185,13 +2293,37 @@ def test_platform_lesson_contains_teaching_terms_and_review_prompts():
     assert search.json()["lessons"]
 
 
+def test_lesson_contract_uses_platform_neutral_fields():
+    lesson_id = client.get("/api/courses?domain=platform").json()[0]["lessons"][0]["id"]
+    payload = client.get(f"/api/lessons/{lesson_id}").json()
+    removed_sound_field = "".join(("pin", "yin"))
+    removed_lesson_fields = {
+        "body_" + "".join(("simpl", "ified")),
+        "body_" + "".join(("trad", "itional")),
+        removed_sound_field,
+        "".join(("vocab", "ulary")),
+    }
+    removed_term_fields = {"".join(("simpl", "ified")), "".join(("trad", "itional")), removed_sound_field}
+
+    assert {"body", "practice_notes", "terms", "flashcards"}.issubset(payload)
+    assert removed_lesson_fields.isdisjoint(payload)
+    assert {"term", "context", "definition"}.issubset(payload["terms"][0])
+    assert removed_term_fields.isdisjoint(payload["terms"][0])
+    assert "hint" in payload["flashcards"][0]
+    assert removed_sound_field not in payload["flashcards"][0]
+
+
 def test_progress_and_quiz_attempt():
-    payload = {"user_id": "demo-user", "lesson_id": 1, "completed": True, "score": 0.9}
+    lesson_id = client.get("/api/courses?domain=platform").json()[0]["lessons"][0]["id"]
+    payload = {"user_id": "demo-user", "lesson_id": lesson_id, "completed": True, "score": 0.9}
     progress = client.post("/api/progress", json=payload)
     assert progress.status_code == 200
     assert progress.json()["completed"] is True
 
-    attempt = client.post("/api/quiz/attempts", json={"user_id": "demo-user", "lesson_id": 1, "score": 0.8, "answers": {"1": "hello"}})
+    attempt = client.post(
+        "/api/quiz/attempts",
+        json={"user_id": "demo-user", "lesson_id": lesson_id, "score": 0.8, "answers": {"1": "labels"}},
+    )
     assert attempt.status_code == 200
     assert attempt.json()["score"] == 0.8
 
@@ -214,6 +2346,29 @@ def test_progress_creates_guest_user_before_progress_rows():
     assert dashboard.status_code == 200
     assert dashboard.json()["completed_lessons"] >= 1
     assert dashboard.json()["xp"]["lesson_completion_xp"] >= 20
+
+
+def test_progress_completion_is_concurrency_safe():
+    courses = client.get("/api/courses?domain=platform").json()
+    lesson_id = courses[0]["lessons"][0]["id"]
+    user_id = "guest-progress-concurrency"
+    payload = {"user_id": user_id, "lesson_id": lesson_id, "completed": True, "score": 1}
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        responses = list(executor.map(lambda _: client.post("/api/progress", json=payload), range(8)))
+
+    assert all(response.status_code == 200 for response in responses)
+    assert len({response.json()["id"] for response in responses}) == 1
+
+    with SessionLocal() as db:
+        progress_count = db.query(Progress).filter(Progress.user_id == user_id, Progress.lesson_id == lesson_id).count()
+        xp_count = (
+            db.query(XpEvent)
+            .filter(XpEvent.user_id == user_id, XpEvent.source == "lesson_completion", XpEvent.source_id == lesson_id)
+            .count()
+        )
+    assert progress_count == 1
+    assert xp_count == 1
 
 
 def test_platform_activity_tracks_guest_prep_state():
@@ -240,19 +2395,71 @@ def test_platform_activity_tracks_guest_prep_state():
     assert rows.json() == [updated.json()]
 
 
-def test_platform_dashboard_scope_excludes_legacy_learning_content():
-    all_courses = client.get("/api/courses").json()
+def test_platform_activity_upsert_is_concurrency_safe():
+    user_id = "guest-activity-concurrency"
+    payload = {
+        "user_id": user_id,
+        "target_type": "resource",
+        "target_id": "kubernetes-debugging-cheatsheet",
+        "state": "completed",
+    }
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        responses = list(executor.map(lambda _: client.post("/api/platform-academy/activity", json=payload), range(8)))
+
+    assert all(response.status_code == 200 for response in responses)
+    assert len({response.json()["id"] for response in responses}) == 1
+
+    with SessionLocal() as db:
+        activity_count = (
+            db.query(PlatformActivity)
+            .filter(
+                PlatformActivity.user_id == user_id,
+                PlatformActivity.target_type == payload["target_type"],
+                PlatformActivity.target_id == payload["target_id"],
+            )
+            .count()
+        )
+    assert activity_count == 1
+
+
+def test_platform_dashboard_scope_excludes_non_platform_content():
     platform_courses = client.get("/api/courses?domain=platform").json()
-    legacy_lesson_id = next(course for course in all_courses if course["era"] != "Platform Academy")["lessons"][0]["id"]
+    custom_course = client.post(
+        "/api/admin/courses",
+        json={
+            "slug": "custom-non-platform-dashboard",
+            "title": "Custom Non-Platform Dashboard Fixture",
+            "era": "Internal",
+            "level": "Advanced",
+            "category": "Fixture",
+            "description": "A non-platform course used to prove Platform Academy dashboards stay scoped.",
+            "subscription_tier": "mock_active",
+            "lessons": [
+                {
+                    "title": "Dashboard Fixture Lesson",
+                    "summary": "Fixture lesson outside Platform Academy.",
+                    "body": "This lesson should not count in a Platform Academy dashboard.",
+                    "practice_notes": "fixture",
+                    "audio_url": None,
+                    "video_url": None,
+                    "terms": [],
+                    "flashcards": [{"prompt": "Fixture?", "answer": "Fixture.", "hint": "", "difficulty": "beginner"}],
+                }
+            ],
+        },
+    )
+    assert custom_course.status_code == 201
+    custom_lesson_id = custom_course.json()["lessons"][0]["id"]
     platform_lesson_id = platform_courses[0]["lessons"][0]["id"]
     user_id = "guest-platform-scope-regression"
 
-    legacy_progress = client.post("/api/progress", json={"user_id": user_id, "lesson_id": legacy_lesson_id, "completed": True, "score": 1})
+    custom_progress = client.post("/api/progress", json={"user_id": user_id, "lesson_id": custom_lesson_id, "completed": True, "score": 1})
     platform_progress = client.post(
         "/api/progress",
         json={"user_id": user_id, "lesson_id": platform_lesson_id, "completed": True, "score": 1},
     )
-    assert legacy_progress.status_code == 200
+    assert custom_progress.status_code == 200
     assert platform_progress.status_code == 200
 
     global_dashboard = client.get(f"/api/users/{user_id}/dashboard")
@@ -268,6 +2475,88 @@ def test_platform_dashboard_scope_excludes_legacy_learning_content():
     assert platform_payload["completed_lessons"] == 1
     assert platform_payload["xp"]["lesson_completion_xp"] == 20
     assert platform_payload["due_reviews"] > 0
+
+
+def test_platform_dashboard_awards_platform_specific_achievements():
+    user_id = "guest-platform-achievement-regression"
+    platform_courses = client.get("/api/courses?domain=platform").json()
+    lesson_id = platform_courses[0]["lessons"][0]["id"]
+    lab_slug = "trace-service-to-pod"
+
+    assert client.post("/api/progress", json={"user_id": user_id, "lesson_id": lesson_id, "completed": True, "score": 1}).status_code == 200
+    assert (
+        client.post(
+            "/api/platform-academy/activity",
+            json={"user_id": user_id, "target_type": "resource", "target_id": "kubernetes-debugging-cheatsheet", "state": "completed"},
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            "/api/platform-academy/activity",
+            json={
+                "user_id": user_id,
+                "target_type": "interview_question",
+                "target_id": "kubernetes-debugging-interview-pack:1",
+                "state": "completed",
+            },
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            f"/api/platform-academy/labs/{lab_slug}/submission",
+            json={
+                "user_id": user_id,
+                "worksheet_answers": {"worksheet-0": "Service selector and Pod labels differ."},
+                "checked_items": {"worksheet-0": True, "validation-0": True},
+                "status": "submitted",
+            },
+        ).status_code
+        == 200
+    )
+
+    response = client.get(f"/api/users/{user_id}/dashboard?domain=platform")
+    assert response.status_code == 200
+    achievements = response.json()["achievements"]
+    earned = {achievement["code"] for achievement in achievements if achievement["earned"]}
+    assert {"platform_pathfinder", "resource_curator", "interview_operator", "cluster_debugger"}.issubset(earned)
+
+
+def test_platform_dashboard_achievement_awards_are_concurrency_safe():
+    user_id = "guest-platform-achievement-concurrency"
+    lab_slug = "trace-service-to-pod"
+    assert (
+        client.post(
+            f"/api/platform-academy/labs/{lab_slug}/submission",
+            json={
+                "user_id": user_id,
+                "worksheet_answers": {"worksheet-0": "Service selector and Pod labels differ."},
+                "checked_items": {"worksheet-0": True, "validation-0": True},
+                "status": "submitted",
+            },
+        ).status_code
+        == 200
+    )
+
+    def fetch_dashboard():
+        return client.get(f"/api/users/{user_id}/dashboard?domain=platform")
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        responses = list(executor.map(lambda _: fetch_dashboard(), range(8)))
+
+    assert all(response.status_code == 200 for response in responses)
+    for response in responses:
+        earned = {achievement["code"] for achievement in response.json()["achievements"] if achievement["earned"]}
+        assert "cluster_debugger" in earned
+
+    with SessionLocal() as db:
+        count = (
+            db.query(UserAchievement)
+            .filter(UserAchievement.user_id == user_id, UserAchievement.code == "cluster_debugger")
+            .count()
+        )
+    assert count == 1
 
 
 def test_platform_interview_prep_catalog_is_content_rich():
@@ -294,12 +2583,12 @@ def test_platform_interview_prep_catalog_is_content_rich():
 
 
 def test_search_and_metrics():
-    search = client.get("/api/search?q=Tang")
+    search = client.get("/api/search?q=Kubernetes")
     assert search.status_code == 200
     assert search.json()["courses"]
     metrics = client.get("/metrics")
     assert metrics.status_code == 200
-    assert "zhongwen_api_requests_total" in metrics.text
+    assert "platform_academy_api_requests_total" in metrics.text
 
 
 def test_seed_database_is_repeatable_after_reset():
@@ -318,28 +2607,32 @@ def test_seed_database_is_repeatable_after_reset():
 
 def test_admin_upload_course_flow():
     payload = {
-        "slug": "calligraphy-orchid-preface",
-        "title": "Calligraphy: Wang Xizhi and the Orchid Pavilion Preface",
-        "era": "Eastern Jin",
+        "slug": "platform-incident-brief-upload",
+        "title": "Platform Incident Brief Upload",
+        "era": "Internal",
         "level": "Advanced",
-        "category": "Art",
-        "description": "Upload flow smoke test for a course about 行书 rhythm, gathering, and cultural memory.",
+        "category": "Platform Engineering",
+        "description": "Upload flow smoke test for a platform incident brief course.",
         "subscription_tier": "mock_active",
         "lessons": [
             {
-                "title": "Reading 行书 as Movement",
-                "summary": "A short authoring-flow lesson with vocabulary and flashcards.",
-                "body_simplified": "《兰亭集序》表现了书法的节奏、聚会的雅趣和时间的感叹。",
-                "body_traditional": "《蘭亭集序》表現了書法的節奏、聚會的雅趣和時間的感嘆。",
-                "pinyin": "Lántíng jí xù biǎoxiàn le shūfǎ de jiézòu.",
+                "title": "Writing an Incident Brief",
+                "summary": "A short authoring-flow lesson with glossary terms and flashcards.",
+                "body": "An incident brief records user impact, timeline, evidence, decision owners, and follow-up actions.",
+                "practice_notes": "platform",
                 "audio_url": None,
-                "video_url": "https://example.com/media/orchid-preface.mp4",
-                "vocabulary": [
-                    {"simplified": "书法", "traditional": "書法", "pinyin": "shūfǎ", "definition": "calligraphy"},
-                    {"simplified": "节奏", "traditional": "節奏", "pinyin": "jiézòu", "definition": "rhythm"},
+                "video_url": "https://example.com/media/platform-incident-brief.mp4",
+                "terms": [
+                    {"term": "Incident brief", "context": "platform", "definition": "A concise incident record."},
+                    {"term": "Evidence", "context": "platform", "definition": "Observed facts from logs, events, traces, or metrics."},
                 ],
                 "flashcards": [
-                    {"prompt": "What does 书法 mean?", "answer": "calligraphy", "pinyin": "shūfǎ", "difficulty": "intermediate"}
+                    {
+                        "prompt": "What belongs in an incident brief?",
+                        "answer": "Impact, timeline, evidence, owners, and follow-up.",
+                        "hint": "",
+                        "difficulty": "intermediate",
+                    }
                 ],
             }
         ],
@@ -348,13 +2641,13 @@ def test_admin_upload_course_flow():
     created = client.post("/api/admin/courses", json=payload)
     assert created.status_code == 201
     course = created.json()
-    assert course["slug"] == "calligraphy-orchid-preface"
-    assert course["lessons"][0]["title"] == "Reading 行书 as Movement"
+    assert course["slug"] == "platform-incident-brief-upload"
+    assert course["lessons"][0]["title"] == "Writing an Incident Brief"
 
     duplicate = client.post("/api/admin/courses", json=payload)
     assert duplicate.status_code == 409
 
-    search = client.get("/api/search?q=兰亭")
+    search = client.get("/api/search?q=incident brief")
     assert search.status_code == 200
     assert search.json()["lessons"]
 
@@ -377,32 +2670,25 @@ def test_learning_path_marks_completion_and_recommendation():
 
 
 def test_user_dashboard_reports_xp_streak_goal_and_achievements():
-    courses = client.get("/api/courses").json()
+    courses = client.get("/api/courses?domain=platform").json()
     first_lesson_id = courses[0]["lessons"][0]["id"]
-    poetry_lesson_id = next(
-        lesson["id"]
-        for course in courses
-        if course["category"] == "Literature"
-        for lesson in course["lessons"]
-    )
     client.post("/api/progress", json={"user_id": "demo-user", "lesson_id": first_lesson_id, "completed": True, "score": 1})
-    client.post("/api/progress", json={"user_id": "demo-user", "lesson_id": poetry_lesson_id, "completed": True, "score": 1})
     client.post(
         "/api/quiz/attempts",
-        json={"user_id": "demo-user", "lesson_id": first_lesson_id, "score": 0.8, "answers": {"tone": "声调"}},
+        json={"user_id": "demo-user", "lesson_id": first_lesson_id, "score": 0.8, "answers": {"evidence": "logs"}},
     )
 
     response = client.get("/api/users/demo-user/dashboard")
     assert response.status_code == 200
     dashboard = response.json()
 
-    assert dashboard["xp"]["total"] >= 48
+    assert dashboard["xp"]["total"] >= 28
     assert dashboard["xp"]["total"] == dashboard["xp"]["lesson_completion_xp"] + dashboard["xp"]["quiz_xp"] + dashboard["xp"]["review_xp"]
     assert dashboard["daily_goal"]["target_xp"] == 50
-    assert dashboard["daily_goal"]["earned_xp_today"] >= 48
+    assert dashboard["daily_goal"]["earned_xp_today"] >= 28
     assert dashboard["streak"]["current_days"] >= 1
     earned = {achievement["code"] for achievement in dashboard["achievements"] if achievement["earned"]}
-    assert {"first_lesson", "poetry_explorer"}.issubset(earned)
+    assert {"first_lesson", "platform_pathfinder"}.issubset(earned)
 
 
 def test_due_reviews_and_answer_update_schedule():
@@ -421,17 +2707,25 @@ def test_due_reviews_and_answer_update_schedule():
     assert updated["due_at"] > updated["last_reviewed_at"]
 
 
-def test_character_practice_metadata():
-    response = client.get("/api/characters")
-    assert response.status_code == 200
-    characters = response.json()
-    moon = next(item for item in characters if item["simplified"] == "月")
-    assert moon["traditional"] == "月"
-    assert moon["pinyin"] == "yuè"
-    assert moon["radical"]
-    assert moon["strokes"] > 0
-    assert moon["example_words"]
+def test_review_answer_initial_state_is_concurrency_safe():
+    card = client.get("/api/flashcards").json()[0]
+    user_id = "review-answer-concurrency"
+    payload = {"user_id": user_id, "quality": 5, "correct": True}
 
-    detail = client.get(f"/api/characters/{moon['id']}")
-    assert detail.status_code == 200
-    assert detail.json()["mnemonic"]
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        responses = list(executor.map(lambda _: client.post(f"/api/reviews/{card['id']}/answer", json=payload), range(8)))
+
+    assert all(response.status_code == 200 for response in responses)
+    assert all(response.json()["flashcard_id"] == card["id"] for response in responses)
+
+    with SessionLocal() as db:
+        review_state_count = (
+            db.query(ReviewState).filter(ReviewState.user_id == user_id, ReviewState.flashcard_id == card["id"]).count()
+        )
+        xp_count = (
+            db.query(XpEvent)
+            .filter(XpEvent.user_id == user_id, XpEvent.source == "srs_review", XpEvent.source_id == card["id"])
+            .count()
+        )
+    assert review_state_count == 1
+    assert xp_count == 1

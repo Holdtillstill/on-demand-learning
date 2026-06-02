@@ -14,13 +14,12 @@ def platform_lesson(
     return {
         "title": title,
         "summary": summary,
-        "body_simplified": body.strip(),
-        "body_traditional": body.strip(),
-        "pinyin": lab.strip(),
+        "body": body.strip(),
+        "practice_notes": lab.strip(),
         "audio_url": None,
         "video_url": None,
-        "vocabulary": terms,
-        "flashcards": flashcards,
+        "terms": [{"term": term, "context": context, "definition": definition} for term, _alternate, context, definition in terms],
+        "flashcards": [{"prompt": prompt, "answer": answer, "hint": hint, "difficulty": "beginner"} for prompt, answer, hint in flashcards],
     }
 
 
@@ -43,7 +42,7 @@ def platform_foundation_course(slug: str, title: str, level: str, category: str,
 ## What to practice
 {practice}
 
-## Zero-to-hero checkpoint
+## Practice checkpoint
 {capstone}
 
 ## Operator habit
@@ -72,7 +71,7 @@ $ kubectl logs deploy/APP -n NAMESPACE --since=15m
                 [
                     (f"What is the main goal of {lesson_title}?", summary, "platform"),
                     ("Why collect evidence before changing live systems?", "It reduces guessing, protects users, and makes the fix reviewable.", "platform"),
-                    ("What should a zero-to-hero learner produce after each lab?", "A clear diagnosis, a safe action plan, and a reusable note for future incidents.", "platform"),
+                    ("What should a learner produce after each lab?", "A clear diagnosis, a safe action plan, and a reusable note for future incidents.", "platform"),
                 ],
             )
         )
@@ -1886,7 +1885,7 @@ PLATFORM_COURSES.extend(
             "Platform Engineering Operating Model",
             ADVANCED_LEVEL,
             "Platform Engineering",
-            "Learn how senior platform teams define golden paths, service ownership, paved-road APIs, SLOs, cost guardrails, and internal developer experience.",
+            "Learn how platform teams define golden paths, service ownership, paved-road APIs, SLOs, cost guardrails, and internal developer experience.",
             [
                 ("Golden Paths and Developer Experience", "Turn platform complexity into supported self-service workflows.", "A platform is a product for internal teams. Golden paths should make the safe way the easy way while still allowing explicit exceptions.", "Practice designing a service template with CI, Helm, observability, security defaults, and docs.", "Describe the first-run developer experience for launching a new service without opening a ticket."),
                 ("Service Ownership and Production Readiness", "Define what teams own before incidents happen.", "Production readiness connects ownership, runbooks, dashboards, alerts, dependencies, data handling, and support expectations. Ambiguous ownership becomes incident drag.", "Practice building a readiness checklist and ownership metadata model.", "Review a service and decide whether it is ready for shared-cluster production."),
@@ -2809,10 +2808,68 @@ PLATFORM_LABS = [
         "lesson_title": "Services, Labels, Selectors, and Namespaces",
         "scenario": "A Service exists but traffic returns 503 because labels and readiness do not line up.",
         "skills": ["service selectors", "EndpointSlices", "labels", "readiness", "namespace scope"],
+        "prerequisites": [
+            "A local Kubernetes cluster such as kind, minikube, Docker Desktop Kubernetes, or an approved sandbox cluster.",
+            "kubectl configured to the local/sandbox context.",
+            "Run commands from the repository root so the lab manifest paths resolve.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/trace-service-to-pod/triage-notes.md",
+            "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-service-to-pod",
+            "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --preflight",
+            "bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --cluster",
+            "kubectl config current-context",
+            "kubectl apply -f labs/platform-academy/trace-service-to-pod/start.yaml",
+            "kubectl wait --for=condition=available deploy/checkout -n payments --timeout=90s",
+            "kubectl get svc,pods,endpointslice -n payments",
+        ],
         "commands": [
             "kubectl describe svc checkout -n payments",
-            "kubectl get pods -n payments -l app=checkout --show-labels",
+            "kubectl get pods -n payments --show-labels",
             "kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout",
+            (
+                "python3 labs/platform-academy/trace-service-to-pod/service_route_analyzer.py "
+                "--start labs/platform-academy/trace-service-to-pod/start.yaml "
+                "--fixed labs/platform-academy/trace-service-to-pod/fixed.yaml "
+                "--transcript labs/platform-academy/trace-service-to-pod/broken-evidence.txt"
+            ),
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out the plausible false leads before choosing a fix.",
+            "Read the Service selector and write down the label key/value it expects.",
+            "Compare that selector with the labels on the checkout Pods.",
+            "Confirm whether EndpointSlices have ready backend addresses.",
+            "Use the local analyzer to prove the selector mismatch and source-manifest fix.",
+            "Apply the fixed manifest only after you can explain why the starting manifest fails.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out Pod readiness, Service port wiring, node pressure, and a live-only patch.",
+            "The Service selector starts as app=checkout.",
+            "The checkout Pods are labeled app=checkout-api.",
+            "EndpointSlice output has no ready checkout backend addresses until the selector is fixed.",
+            "The local analyzer reports Service routing analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/trace-service-to-pod/validate.sh",
+            "bash labs/platform-academy/trace-service-to-pod/validate.sh --evidence /tmp/trace-service-evidence.md",
+            "bash labs/platform-academy/run-lab.sh validate trace-service-to-pod --cluster",
+            (
+                "python3 labs/platform-academy/trace-service-to-pod/service_route_analyzer.py "
+                "--start labs/platform-academy/trace-service-to-pod/start.yaml "
+                "--fixed labs/platform-academy/trace-service-to-pod/fixed.yaml "
+                "--transcript labs/platform-academy/trace-service-to-pod/broken-evidence.txt"
+            ),
+            "kubectl apply -f labs/platform-academy/trace-service-to-pod/fixed.yaml",
+            "kubectl get endpointslice -n payments -l kubernetes.io/service-name=checkout -o wide",
+            "kubectl get pods -n payments -l app=checkout-api --show-labels",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/trace-service-to-pod/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Run bash labs/platform-academy/run-lab.sh setup trace-service-to-pod --evidence /tmp/trace-service-evidence.md to copy the evidence template and print the captured transcript.",
+            "Read labs/platform-academy/trace-service-to-pod/triage-notes.md and record which false leads were ruled out.",
+            "Open labs/platform-academy/trace-service-to-pod/start.yaml and compare the Service selector with the Deployment Pod template labels.",
+            "Write the one-line YAML change needed to make the Service select the running Pods.",
         ],
         "checklist": [
             "Read the Service selector.",
@@ -2832,10 +2889,69 @@ PLATFORM_LABS = [
         "lesson_title": "CrashLoopBackOff and ImagePullBackOff",
         "scenario": "A rollout produced failing Pods, and you need to determine whether the image cannot pull or the app crashes after start.",
         "skills": ["describe", "previous logs", "events", "image pull secrets", "exit codes"],
+        "prerequisites": [
+            "A local Kubernetes cluster such as kind, minikube, Docker Desktop Kubernetes, or an approved sandbox cluster.",
+            "kubectl configured to the local/sandbox context.",
+            "Network access for pulling busybox and nginx images, or preloaded images in the cluster.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --evidence /tmp/crashloop-imagepull-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/debug-crashloop-imagepull/triage-notes.md",
+            "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight debug-crashloop-imagepull",
+            "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --preflight",
+            "bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --cluster",
+            "kubectl config current-context",
+            "kubectl apply -f labs/platform-academy/debug-crashloop-imagepull/start.yaml",
+            "kubectl get pods -n payments-debug",
+        ],
         "commands": [
-            "kubectl describe pod checkout-abc123 -n payments",
-            "kubectl logs checkout-abc123 -n payments --previous",
-            "kubectl get events -n payments --sort-by=.lastTimestamp",
+            "kubectl describe pods -n payments-debug -l app=checkout-crash",
+            "kubectl logs -n payments-debug -l app=checkout-crash --previous",
+            "kubectl describe pods -n payments-debug -l app=checkout-pull",
+            "kubectl get events -n payments-debug --sort-by=.lastTimestamp",
+            (
+                "python3 labs/platform-academy/debug-crashloop-imagepull/failure_mode_analyzer.py "
+                "--start labs/platform-academy/debug-crashloop-imagepull/start.yaml "
+                "--fixed labs/platform-academy/debug-crashloop-imagepull/fixed.yaml "
+                "--transcript labs/platform-academy/debug-crashloop-imagepull/broken-evidence.txt"
+            ),
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out restart, resource, and node-pressure false leads.",
+            "Use describe output to identify which Pod started and then exited.",
+            "Use previous logs only for the container that actually started.",
+            "Use events to identify the Pod that never started because the image could not be pulled.",
+            "Use the local analyzer to prove the CrashLoop/ImagePull split and ownership boundary.",
+            "State which fix belongs to app/config and which fix belongs to image registry or manifest ownership.",
+        ],
+        "expected_evidence": [
+            "The triage notes show restarting Pods and increasing resources are not supported by the evidence.",
+            "The checkout-crash Pod reaches CrashLoopBackOff and has previous logs that say missing DB_URL.",
+            "The checkout-pull Pod reaches ErrImagePull or ImagePullBackOff and has image pull events.",
+            "Previous logs are useful for CrashLoopBackOff but not for a container that never pulled.",
+            "The local analyzer reports CrashLoop/ImagePull analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/debug-crashloop-imagepull/validate.sh",
+            "bash labs/platform-academy/debug-crashloop-imagepull/validate.sh --evidence /tmp/crashloop-imagepull-evidence.md",
+            "bash labs/platform-academy/run-lab.sh validate debug-crashloop-imagepull --cluster",
+            (
+                "python3 labs/platform-academy/debug-crashloop-imagepull/failure_mode_analyzer.py "
+                "--start labs/platform-academy/debug-crashloop-imagepull/start.yaml "
+                "--fixed labs/platform-academy/debug-crashloop-imagepull/fixed.yaml "
+                "--transcript labs/platform-academy/debug-crashloop-imagepull/broken-evidence.txt"
+            ),
+            "kubectl apply -f labs/platform-academy/debug-crashloop-imagepull/fixed.yaml",
+            "kubectl rollout status deploy/checkout-crash -n payments-debug --timeout=90s",
+            "kubectl rollout status deploy/checkout-pull -n payments-debug --timeout=90s",
+            "kubectl get pods -n payments-debug",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/debug-crashloop-imagepull/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Run bash labs/platform-academy/run-lab.sh setup debug-crashloop-imagepull --evidence /tmp/crashloop-imagepull-evidence.md to copy the evidence template and print the captured transcript.",
+            "Read labs/platform-academy/debug-crashloop-imagepull/triage-notes.md and record which false leads were ruled out.",
+            "Open labs/platform-academy/debug-crashloop-imagepull/start.yaml and identify which Deployment can start and which one cannot pull an image.",
+            "Write the first command you would run for each symptom and what signal you expect from it.",
         ],
         "checklist": [
             "Identify the exact Pod phase and event reason.",
@@ -2855,10 +2971,57 @@ PLATFORM_LABS = [
         "lesson_title": "YAML, Manifests, and kubectl Dry Runs",
         "scenario": "A vendor manifest needs review before it reaches any cluster.",
         "skills": ["manifest reading", "dry-run", "resource scope", "security search", "namespace review"],
+        "prerequisites": [
+            "kubectl installed locally for client-side dry-run, or the ability to inspect YAML with grep.",
+            "Run commands from the repository root so lab file paths resolve.",
+            "Do not apply the vendor manifest to a shared or production cluster.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/review-yaml-before-apply/setup.sh --evidence /tmp/yaml-review-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/triage-notes.md",
+            "sed -n '1,220p' labs/platform-academy/review-yaml-before-apply/vendor.yaml",
+        ],
         "commands": [
-            "kubectl apply --dry-run=client -f vendor.yaml",
-            "grep -n \"kind:\\|namespace:\\|ClusterRole\\|privileged\\|hostPath\" vendor.yaml",
+            "kubectl apply --dry-run=client --validate=false -f labs/platform-academy/review-yaml-before-apply/vendor.yaml",
+            "grep -n \"False Leads\\|dry-run is not approval\\|stringData.token\" labs/platform-academy/review-yaml-before-apply/triage-notes.md",
+            "grep -n \"kind:\\|namespace:\\|ClusterRole\\|privileged\\|hostPath\" labs/platform-academy/review-yaml-before-apply/vendor.yaml",
+            (
+                "python3 labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py "
+                "--vendor labs/platform-academy/review-yaml-before-apply/vendor.yaml "
+                "--safe labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml"
+            ),
             "kubectl explain deployment.spec.template.spec.containers",
+        ],
+        "practice_steps": [
+            "Read triage-notes.md and rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and placeholder-token false leads.",
+            "List every resource kind and whether it is namespace-scoped or cluster-scoped.",
+            "Find the risky settings before reading the safe baseline.",
+            "Use the local analyzer to prove inventory, RBAC, workload, credential, and safer-baseline evidence.",
+            "Compare vendor.yaml with safe-baseline.yaml and write the review questions you would send back.",
+            "Decide whether this manifest is blocked, approved with changes, or safe for a sandbox only.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and harmless-placeholder assumptions.",
+            "The vendor manifest contains a ClusterRole that can list/watch secrets.",
+            "The Deployment asks for privileged mode and a hostPath mount.",
+            "The Secret contains placeholder stringData that should not be committed with real credentials.",
+            "The local analyzer reports YAML manifest risk analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/review-yaml-before-apply/validate.sh",
+            "bash labs/platform-academy/review-yaml-before-apply/validate.sh --evidence /tmp/yaml-review-evidence.md",
+            (
+                "python3 labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py "
+                "--vendor labs/platform-academy/review-yaml-before-apply/vendor.yaml "
+                "--safe labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml"
+            ),
+            "grep -n \"ClusterRole\\|privileged\\|hostPath\\|stringData\" labs/platform-academy/review-yaml-before-apply/vendor.yaml",
+            "grep -n \"allowPrivilegeEscalation\\|readOnlyRootFilesystem\" labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/review-yaml-before-apply/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Read triage-notes.md, then run the grep commands and manually review the YAML without kubectl.",
+            "Create a review note with resource kinds, namespaces, risky fields, and questions for the vendor.",
         ],
         "checklist": [
             "List every resource kind and namespace.",
@@ -2951,12 +3114,13 @@ PLATFORM_LABS = [
             "kubectl get nodes -L topology.kubernetes.io/zone",
             "kubectl get pods -A -o wide",
             "kubectl get pv,pvc -A",
+            "python3 labs/platform-academy/design-production-eks-review/production_review_analyzer.py --review labs/platform-academy/design-production-eks-review/cluster-review.md --launch labs/platform-academy/design-production-eks-review/launch-review.md",
         ],
         "checklist": [
             "Confirm critical replicas spread across zones.",
             "Identify zonal storage and recovery expectations.",
             "Review cost labels, idle requests, load balancers, and NAT traffic.",
-            "Name upgrade pause points and deprecated API inventory.",
+            "Use the local analyzer to verify launch blockers, owners, and validation criteria.",
         ],
     },
     {
@@ -3214,12 +3378,13 @@ PLATFORM_LABS.extend(
                 "kubectl get servicemonitor,podmonitor,prometheusrule -A",
                 "kubectl get otelcol -A",
                 "kubectl logs deploy/otel-collector -n observability --since=15m",
+                "python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py --collector labs/platform-academy/design-opentelemetry-signal-path/collector.yaml --logs labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt --rule labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml --safe-rule labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml --decision labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
             ],
             "checklist": [
                 "Map the user symptom to metric, log, trace, and Kubernetes event evidence.",
                 "Check service names, route labels, trace IDs in logs, and sampling policy.",
                 "Flag high-cardinality labels and sensitive attributes.",
-                "Write owners for instrumentation, collector, storage, dashboard, and alert policy.",
+                "Use the local analyzer to verify the signal path, safer alert, and owner map.",
             ],
         },
         {
@@ -3234,16 +3399,17 @@ PLATFORM_LABS.extend(
             "scenario": "A canary release causes elevated checkout errors and the team needs coordinated mitigation, communication, and timeline discipline.",
             "skills": ["incident command", "severity", "stakeholder communication", "timeline", "mitigation"],
             "commands": [
-                "kubectl get events -n payments --sort-by=.lastTimestamp",
-                "kubectl rollout history deploy/checkout -n payments",
-                "kubectl get pods,svc,endpointslice -n payments",
-            ],
+            "kubectl get events -n payments --sort-by=.lastTimestamp",
+            "kubectl rollout history deploy/checkout -n payments",
+            "kubectl get pods,svc,endpointslice -n payments",
+            "python3 labs/platform-academy/run-incident-commander-tabletop/incident_tabletop_analyzer.py --signals labs/platform-academy/run-incident-commander-tabletop/signals.md --roles labs/platform-academy/run-incident-commander-tabletop/roles.md --timeline labs/platform-academy/run-incident-commander-tabletop/timeline.md --brief labs/platform-academy/run-incident-commander-tabletop/commander-brief.md --completed-timeline labs/platform-academy/run-incident-commander-tabletop/completed-timeline.md",
+        ],
             "checklist": [
                 "Assign incident commander, operations, communications, and planning roles.",
                 "Write impact, severity, current mitigation, and next update time.",
                 "Record timeline entries for alerts, deploys, commands, decisions, and handoff.",
-                "End with postmortem triggers and corrective-action owners.",
-            ],
+            "Use the local analyzer to verify severity, roles, mitigation, updates, and timeline handoff.",
+        ],
         },
         {
             "slug": "audit-eks-cost-drivers",
@@ -3280,19 +3446,2327 @@ PLATFORM_LABS.extend(
             "scenario": "You need interview-ready proof that your platform skills are practical, current, and credible after a layoff.",
             "skills": ["portfolio", "resume bullets", "STAR stories", "job description analysis", "mock interview prep"],
             "commands": [
-                "git log --oneline --decorate -5",
-                "find . -maxdepth 3 -iname '*README*' -o -iname '*runbook*'",
-                "grep -R \"rollback\\|SLO\\|Terraform\\|Kubernetes\" -n docs apps || true",
-            ],
+            "git log --oneline --decorate -5",
+            "find . -maxdepth 3 -iname '*README*' -o -iname '*runbook*'",
+            "grep -R \"rollback\\|SLO\\|Terraform\\|Kubernetes\" -n docs apps || true",
+            "python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md --proof labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md --bullets labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md --star labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
+        ],
             "checklist": [
                 "Choose five target job descriptions and extract repeated skill demands.",
                 "Turn one lab into a README proof section with commands, evidence, tradeoffs, and rollback.",
                 "Write resume bullets for implementation, operations, and business impact.",
-                "Prepare STAR stories for incident response, automation, cost, security, and influence.",
-            ],
+            "Use the local analyzer to verify that every career claim is backed by artifacts, commands, validation, and public-safe notes.",
+        ],
         },
     ]
 )
+
+
+RUNNABLE_LAB_UPDATES = {
+    "diagnose-eks-ip-exhaustion": {
+        "prerequisites": [
+            "No AWS credentials required; this lab uses a captured EKS evidence pack.",
+            "Run commands from the repository root so local evidence paths resolve.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/diagnose-eks-ip-exhaustion/setup.sh --evidence /tmp/eks-ip-exhaustion-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md",
+            "sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|Blind node scaling\\|FailedCreatePodSandBox\" labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md",
+            "grep -n \"FailedCreatePodSandBox\\|failed to assign IP\\|AvailableIPv4AddressCount\" labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
+            "grep -n \"maxPods\\|runningPods\\|prefix delegation\" labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
+            "python3 labs/platform-academy/diagnose-eks-ip-exhaustion/ip_exhaustion_analyzer.py --snapshot labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
+            "sed -n '1,220p' labs/platform-academy/diagnose-eks-ip-exhaustion/remediation-plan.md",
+        ],
+        "practice_steps": [
+            "Read triage-notes.md and rule out restart, CPU/memory, blind node scaling, and live capacity-change false leads.",
+            "Separate scheduler max-pod pressure from VPC CNI IP allocation errors.",
+            "Find the subnet with the lowest free IPv4 count.",
+            "Use the local analyzer to confirm the scheduler, CNI, subnet, maxPods, and prefix-delegation signals agree.",
+            "Decide whether prefix delegation, node group sizing, or CIDR planning is the correct owner path.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out app restarts, CPU/memory tuning, blind node scaling, and unreviewed live CIDR/CNI changes.",
+            "Events include FailedCreatePodSandBox with failed IP assignment.",
+            "One subnet has only seven available IPv4 addresses.",
+            "Nodes are near maxPods and prefix delegation is disabled.",
+            "The local analyzer reports EKS IP exhaustion analysis passed.",
+            "The remediation plan separates app, platform, network, and release ownership.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/diagnose-eks-ip-exhaustion/validate.sh",
+            "bash labs/platform-academy/diagnose-eks-ip-exhaustion/validate.sh --evidence /tmp/eks-ip-exhaustion-evidence.md",
+            "python3 labs/platform-academy/diagnose-eks-ip-exhaustion/ip_exhaustion_analyzer.py --snapshot labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
+            "grep -n \"not an application restart problem\" labs/platform-academy/diagnose-eks-ip-exhaustion/decision-record.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/diagnose-eks-ip-exhaustion/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md and the evidence pack as a captured incident transcript.",
+            "Write the decision note without running any cluster or AWS commands.",
+        ],
+    },
+    "validate-helm-release-artifact": {
+        "prerequisites": [
+            "No cluster or Helm install required for the baseline review path.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/validate-helm-release-artifact/setup.sh --evidence /tmp/helm-release-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/validate-helm-release-artifact/triage-notes.md",
+            "sed -n '1,180p' labs/platform-academy/validate-helm-release-artifact/review-notes.md",
+        ],
+        "commands": [
+            "diff -u labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml || true",
+            "grep -n \"False Leads\\|render is not release approval\\|checkout:latest\" labs/platform-academy/validate-helm-release-artifact/triage-notes.md",
+            "grep -n \"selector:\\|latest\\|privileged\\|LoadBalancer\" labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml",
+            (
+                "python3 labs/platform-academy/validate-helm-release-artifact/helm_release_analyzer.py "
+                "--before labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml "
+                "--after labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml "
+                "--safe labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml "
+                "--notes labs/platform-academy/validate-helm-release-artifact/review-notes.md"
+            ),
+        ],
+        "practice_steps": [
+            "Read triage-notes.md and rule out render-success, diff-only, mutable-tag, apply-then-fix, and unapproved-exposure false leads.",
+            "Review rendered YAML instead of trusting chart success.",
+            "Find immutable selector changes and risky security changes.",
+            "Use the local analyzer to prove selector, image, runtime, exposure, and safer-target evidence.",
+            "Write an approval decision with rollback limitations.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out render-success approval, diff-only approval, mutable-tag promotion, apply-then-fix rollback, and unapproved LoadBalancer exposure.",
+            "The Deployment selector changes between rendered versions.",
+            "The image changes from digest-pinned to the mutable latest tag.",
+            "The rendered output introduces privileged mode and a LoadBalancer.",
+            "The local analyzer reports Helm release artifact analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/validate-helm-release-artifact/validate.sh",
+            "bash labs/platform-academy/validate-helm-release-artifact/validate.sh --evidence /tmp/helm-release-evidence.md",
+            (
+                "python3 labs/platform-academy/validate-helm-release-artifact/helm_release_analyzer.py "
+                "--before labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml "
+                "--after labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml "
+                "--safe labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml "
+                "--notes labs/platform-academy/validate-helm-release-artifact/review-notes.md"
+            ),
+            "grep -n \"app: checkout\" labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml",
+            "grep -n \"privileged: true\" labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/validate-helm-release-artifact/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Read triage-notes.md and the before/after YAML files, then complete the review without Helm.",
+            "Block the release in writing if selector, image, security, or exposure risk is unresolved.",
+        ],
+    },
+    "trace-argocd-drift": {
+        "prerequisites": [
+            "No ArgoCD server required; this lab compares captured desired and live manifests.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/trace-argocd-drift/setup.sh --evidence /tmp/argocd-drift-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/trace-argocd-drift/triage-notes.md",
+            "sed -n '1,220p' labs/platform-academy/trace-argocd-drift/argocd-app-report.txt",
+            "sed -n '1,160p' labs/platform-academy/trace-argocd-drift/ownership-decision.md",
+        ],
+        "commands": [
+            "diff -u labs/platform-academy/trace-argocd-drift/desired.yaml labs/platform-academy/trace-argocd-drift/live.yaml || true",
+            "grep -n \"False Leads\\|Force-sync\\|whole Deployment\" labs/platform-academy/trace-argocd-drift/triage-notes.md",
+            "grep -n \"OutOfSync\\|selfHeal\\|/spec/replicas\" labs/platform-academy/trace-argocd-drift/argocd-app-report.txt",
+            "grep -n \"replicas\\|last-scale\\|ignoreDifferences\" labs/platform-academy/trace-argocd-drift/*.yaml labs/platform-academy/trace-argocd-drift/ownership-decision.md",
+            "python3 labs/platform-academy/trace-argocd-drift/drift_analyzer.py --desired labs/platform-academy/trace-argocd-drift/desired.yaml --live labs/platform-academy/trace-argocd-drift/live.yaml --ignore-rule labs/platform-academy/trace-argocd-drift/ignore-differences.yaml --report labs/platform-academy/trace-argocd-drift/argocd-app-report.txt",
+        ],
+        "practice_steps": [
+            "Read triage-notes.md and rule out force-sync, global self-heal change, whole-object ignore, and all-drift-is-human false leads.",
+            "Identify the exact field causing drift.",
+            "Use the ArgoCD app report to decide whether self-heal would fight a controller-owned field.",
+            "Decide whether Git or an autoscaler should own replicas.",
+            "Scope any ignore rule narrowly and keep other fields Git-owned.",
+            "Run the local analyzer to verify image/resources remain Git-owned while replicas are the only ignored field.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out force-sync, global self-heal disablement, whole-Deployment ignore, and assuming all OutOfSync status is human drift.",
+            "The ArgoCD app report marks checkout OutOfSync and selfHeal enabled.",
+            "Git wants three replicas while live state has nine.",
+            "The live object carries autoscaling metadata.",
+            "The ownership decision should mention a narrow replicas-only ignore rule.",
+            "The analyzer confirms the ignore rule is scoped to checkout in payments and only /spec/replicas.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/trace-argocd-drift/validate.sh",
+            "bash labs/platform-academy/trace-argocd-drift/validate.sh --evidence /tmp/argocd-drift-evidence.md",
+            "python3 labs/platform-academy/trace-argocd-drift/drift_analyzer.py --desired labs/platform-academy/trace-argocd-drift/desired.yaml --live labs/platform-academy/trace-argocd-drift/live.yaml --ignore-rule labs/platform-academy/trace-argocd-drift/ignore-differences.yaml --report labs/platform-academy/trace-argocd-drift/argocd-app-report.txt",
+            "grep -n \"replicas: 9\" labs/platform-academy/trace-argocd-drift/live.yaml",
+            "grep -n \"spec.replicas\" labs/platform-academy/trace-argocd-drift/ownership-decision.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/trace-argocd-drift/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Treat triage-notes.md, argocd-app-report.txt, desired.yaml, and live.yaml as exported ArgoCD evidence.",
+            "Write the field owner decision without connecting to ArgoCD.",
+        ],
+    },
+    "design-production-eks-review": {
+        "prerequisites": [
+            "No AWS account required; this lab uses a proposal snapshot.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/design-production-eks-review/setup.sh --evidence /tmp/production-eks-review-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/design-production-eks-review/triage-notes.md",
+            "sed -n '1,220p' labs/platform-academy/design-production-eks-review/cluster-review.md",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|missing PDB\\|snapshot policy\\|cost labels\" labs/platform-academy/design-production-eks-review/triage-notes.md",
+            "grep -n \"Missing cost label\\|pdb=missing\\|public and private\\|zonal\" labs/platform-academy/design-production-eks-review/cluster-review.md",
+            "grep -n \"Upgrade pause\\|deprecated APIs\\|PDBs\" labs/platform-academy/design-production-eks-review/cluster-review.md",
+            "sed -n '1,220p' labs/platform-academy/design-production-eks-review/launch-review.md",
+            "python3 labs/platform-academy/design-production-eks-review/production_review_analyzer.py --review labs/platform-academy/design-production-eks-review/cluster-review.md --launch labs/platform-academy/design-production-eks-review/launch-review.md",
+        ],
+        "practice_steps": [
+            "Read triage-notes.md and rule out launch-approval shortcuts.",
+            "Check critical workload spread and PDB coverage.",
+            "Identify zonal storage and recovery expectations.",
+            "Flag missing cost labels and upgrade pause points.",
+            "Run the local production review analyzer and connect its output to the launch decision.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out endpoint-only approval, missing-PDB deferral, snapshot-only recovery proof, and deferred cost labels.",
+            "One worker has a missing PDB.",
+            "Postgres uses zonal storage with snapshot restore expectations.",
+            "One apps node lacks a cost label.",
+            "The local analyzer reports Production EKS review analysis passed.",
+            "The launch review blocks production until reliability, cost, and upgrade gaps are owned.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/design-production-eks-review/validate.sh",
+            "bash labs/platform-academy/design-production-eks-review/validate.sh --evidence /tmp/production-eks-review-evidence.md",
+            "python3 labs/platform-academy/design-production-eks-review/production_review_analyzer.py --review labs/platform-academy/design-production-eks-review/cluster-review.md --launch labs/platform-academy/design-production-eks-review/launch-review.md",
+            "grep -n \"Block production launch\" labs/platform-academy/design-production-eks-review/launch-review.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/design-production-eks-review/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md and cluster-review.md as the design review packet.",
+            "Write launch blockers and follow-up owners without connecting to AWS.",
+        ],
+    },
+    "audit-tenant-boundaries": {
+        "prerequisites": [
+            "kubectl is optional; the default path is local manifest review.",
+            "Do not apply this manifest to a shared cluster because it intentionally contains risky RBAC.",
+            "Optional cluster mode requires a disposable local Kubernetes context.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --evidence /tmp/tenant-boundaries-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/audit-tenant-boundaries/triage-notes.md",
+            "kubectl create --dry-run=client --validate=false -f labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
+            "sed -n '1,180p' labs/platform-academy/audit-tenant-boundaries/review.md",
+            "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight audit-tenant-boundaries",
+            "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --preflight",
+            "bash labs/platform-academy/audit-tenant-boundaries/setup.sh --cluster --evidence /tmp/tenant-boundaries-evidence.md",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|temporary cluster-admin\\|dry-run\" labs/platform-academy/audit-tenant-boundaries/triage-notes.md",
+            "grep -n \"cluster-admin\\|secrets\\|allow-all-egress\\|pod-security\" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
+            "grep -n \"Block onboarding\\|secret access\\|egress\" labs/platform-academy/audit-tenant-boundaries/review.md",
+            (
+                "python3 labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py "
+                "--broken labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml "
+                "--fixed labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml "
+                "--review labs/platform-academy/audit-tenant-boundaries/review.md"
+            ),
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out shortcuts that would approve the tenant too quickly.",
+            "Find broad RBAC and secret access.",
+            "Check whether NetworkPolicy creates a real boundary.",
+            "Use the local analyzer to prove the RBAC, Pod Security, NetworkPolicy, and safer-target evidence.",
+            "Record exception owners and expiry requirements before onboarding.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out temporary admin, secret debugging, policy-object presence, and dry-run approval shortcuts.",
+            "A temporary ClusterRoleBinding grants cluster-admin.",
+            "The Role can list and watch secrets.",
+            "The NetworkPolicy allows all egress.",
+            "The local analyzer reports Tenant boundary analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/audit-tenant-boundaries/validate.sh",
+            "bash labs/platform-academy/audit-tenant-boundaries/validate.sh --evidence /tmp/tenant-boundaries-evidence.md",
+            "bash labs/platform-academy/run-lab.sh validate audit-tenant-boundaries --cluster",
+            "bash labs/platform-academy/audit-tenant-boundaries/validate.sh --cluster",
+            (
+                "python3 labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py "
+                "--broken labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml "
+                "--fixed labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml "
+                "--review labs/platform-academy/audit-tenant-boundaries/review.md"
+            ),
+            "grep -n \"name: cluster-admin\" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
+            "grep -n \"resources: \\[\\\"secrets\\\"\\]\" labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/audit-tenant-boundaries/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Review triage-notes.md and tenant-a.yaml directly and write the onboarding blockers.",
+            "Use review.md as the expected finding checklist.",
+        ],
+    },
+    "write-slo-backed-runbook": {
+        "prerequisites": [
+            "No Prometheus server required; this lab uses local alert and incident files.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/write-slo-backed-runbook/setup.sh --evidence /tmp/slo-runbook-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/write-slo-backed-runbook/triage-notes.md",
+            "sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/signals.md",
+            "sed -n '1,180p' labs/platform-academy/write-slo-backed-runbook/runbook-template.md",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|Rollback is not\\|Revision 43 correlation\" labs/platform-academy/write-slo-backed-runbook/triage-notes.md",
+            "grep -n \"CheckoutHighErrorBudgetBurn\\|0.02\\|severity: page\" labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml",
+            "grep -n \"revision 43\\|readiness flapping\\|Mitigation\" labs/platform-academy/write-slo-backed-runbook/signals.md",
+            (
+                "python3 labs/platform-academy/write-slo-backed-runbook/slo_runbook_analyzer.py "
+                "--signals labs/platform-academy/write-slo-backed-runbook/signals.md "
+                "--rule labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml "
+                "--runbook labs/platform-academy/write-slo-backed-runbook/completed-runbook.md "
+                "--decision labs/platform-academy/write-slo-backed-runbook/incident-decision.md"
+            ),
+            "diff -u labs/platform-academy/write-slo-backed-runbook/runbook-template.md labs/platform-academy/write-slo-backed-runbook/completed-runbook.md || true",
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out rollback-first and correlation-only responses.",
+            "Name the user-visible SLO and burn signal.",
+            "Tie the alert to rollout and Kubernetes event evidence.",
+            "Use the local analyzer to prove the alert, rollout correlation, safe commands, and mitigation boundary.",
+            "Fill the runbook with safe commands, mitigation choices, and follow-up owners.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out rollback-first response, revision-correlation proof, threshold-only evidence, and ownerless follow-up.",
+            "The alert pages on a checkout 5xx ratio over 2%.",
+            "The signals connect rollout revision 43 with readiness flapping.",
+            "The runbook template separates evidence, mitigation, and follow-up.",
+            "The local analyzer reports SLO runbook analysis passed.",
+            "The completed runbook ties rollback criteria to revision 43 and post-mitigation validation.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/write-slo-backed-runbook/validate.sh",
+            "bash labs/platform-academy/write-slo-backed-runbook/validate.sh --evidence /tmp/slo-runbook-evidence.md",
+            (
+                "python3 labs/platform-academy/write-slo-backed-runbook/slo_runbook_analyzer.py "
+                "--signals labs/platform-academy/write-slo-backed-runbook/signals.md "
+                "--rule labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml "
+                "--runbook labs/platform-academy/write-slo-backed-runbook/completed-runbook.md "
+                "--decision labs/platform-academy/write-slo-backed-runbook/incident-decision.md"
+            ),
+            "grep -n \"Collect read-only evidence first\" labs/platform-academy/write-slo-backed-runbook/incident-decision.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/write-slo-backed-runbook/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md and signals.md as the incident transcript.",
+            "Fill runbook-template.md without connecting to Prometheus or Kubernetes.",
+        ],
+    },
+    "inspect-linux-failure-evidence": {
+        "prerequisites": [
+            "No cluster required; this lab uses captured describe, log, and id output.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/inspect-linux-failure-evidence/setup.sh --evidence /tmp/linux-failure-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md",
+            "sed -n '1,180p' labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt",
+            "sed -n '1,120p' labs/platform-academy/inspect-linux-failure-evidence/previous.log",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|Exit code 126\\|Running as root\\|live container\" labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md",
+            "grep -n \"Exit Code\\|Reason\\|Restart Count\" labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt",
+            "grep -n \"Permission denied\\|uid=\" labs/platform-academy/inspect-linux-failure-evidence/previous.log labs/platform-academy/inspect-linux-failure-evidence/id-output.txt",
+            (
+                "python3 labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analyzer.py "
+                "--describe labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt "
+                "--previous-log labs/platform-academy/inspect-linux-failure-evidence/previous.log "
+                "--id-output labs/platform-academy/inspect-linux-failure-evidence/id-output.txt "
+                "--remediation labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md"
+            ),
+        ],
+        "practice_steps": [
+            "Read triage-notes.md and rule out memory, restart-count, root-runtime, and live chmod shortcuts.",
+            "Capture Last State, exit code, and restart count.",
+            "Compare previous logs with runtime user evidence.",
+            "Use the local analyzer to prove runtime state, exit, permission, identity, and rejected workaround evidence.",
+            "Decide whether this is app crash, permission, or resource pressure.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out memory pressure, restart-count-only diagnosis, running as root, and live chmod fixes.",
+            "The previous container exited with code 126.",
+            "Previous logs show Permission denied.",
+            "The process runs as uid 10001.",
+            "The remediation note rejects memory tuning and root runtime as first fixes.",
+            "The local analyzer reports Linux failure evidence analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/inspect-linux-failure-evidence/validate.sh",
+            "bash labs/platform-academy/inspect-linux-failure-evidence/validate.sh --evidence /tmp/linux-failure-evidence.md",
+            (
+                "python3 labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analyzer.py "
+                "--describe labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt "
+                "--previous-log labs/platform-academy/inspect-linux-failure-evidence/previous.log "
+                "--id-output labs/platform-academy/inspect-linux-failure-evidence/id-output.txt "
+                "--remediation labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md"
+            ),
+            "grep -n \"Running as root: hides the permission bug\" labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/inspect-linux-failure-evidence/cleanup.sh"],
+        "no_cluster_fallback": [
+            "The captured triage and evidence files are the fallback path.",
+            "Write the next safest diagnostic command and the likely owner of the fix.",
+        ],
+    },
+    "trace-network-path": {
+        "prerequisites": [
+            "No DNS, ALB, or Kubernetes access required for the default path; this lab uses captured network evidence.",
+            "Optional cluster mode requires a disposable local Kubernetes context.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/trace-network-path/setup.sh --evidence /tmp/network-path-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/trace-network-path/incident-handoff.md",
+            "sed -n '1,220p' labs/platform-academy/trace-network-path/hop-trace.md",
+            "sed -n '1,220p' labs/platform-academy/trace-network-path/network-evidence.md",
+            "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight trace-network-path",
+            "bash labs/platform-academy/trace-network-path/setup.sh --preflight",
+            "bash labs/platform-academy/trace-network-path/setup.sh --cluster --evidence /tmp/network-path-evidence.md",
+        ],
+        "commands": [
+            "grep -n \"DNS is not\\|console-only\\|targetPort: http\" labs/platform-academy/trace-network-path/hop-trace.md",
+            "grep -n \"HTTP/2 503\\|Target.ResponseCodeMismatch\\|targetPort web\" labs/platform-academy/trace-network-path/incident-handoff.md labs/platform-academy/trace-network-path/network-evidence.md labs/platform-academy/trace-network-path/ingress-service.yaml",
+            "grep -n \"name: http\\|targetPort: web\" labs/platform-academy/trace-network-path/ingress-service.yaml",
+            (
+                "python3 labs/platform-academy/trace-network-path/network_path_analyzer.py "
+                "--handoff labs/platform-academy/trace-network-path/incident-handoff.md "
+                "--evidence labs/platform-academy/trace-network-path/network-evidence.md "
+                "--broken labs/platform-academy/trace-network-path/ingress-service.yaml "
+                "--fixed labs/platform-academy/trace-network-path/fixed-ingress-service.yaml"
+            ),
+        ],
+        "practice_steps": [
+            "Start from the pager handoff and preserve the no-live-change boundary.",
+            "Use hop-trace.md to rule out DNS, ALB listener, Pod recreation, and console-only false leads.",
+            "Identify which hop emits the 503.",
+            "Compare ALB target health with Kubernetes Service and Pod port names.",
+            "Use the local analyzer to prove edge, ALB, Ingress, Service/Pod, fixed-target, and owner evidence.",
+            "Decide whether the owner is DNS, ingress, Service, or application readiness.",
+        ],
+        "expected_evidence": [
+            "The incident handoff names the checkout health path impact and safety boundary.",
+            "The hop trace records DNS, ALB, Ingress, Service, and Pod owner notes.",
+            "The client receives a 503 from awselb.",
+            "One target is unhealthy with response code mismatch.",
+            "The Service targetPort is web while the Pod port is named http.",
+            "The local analyzer reports Network path analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/trace-network-path/validate.sh",
+            "bash labs/platform-academy/trace-network-path/validate.sh --evidence /tmp/network-path-evidence.md",
+            (
+                "python3 labs/platform-academy/trace-network-path/network_path_analyzer.py "
+                "--handoff labs/platform-academy/trace-network-path/incident-handoff.md "
+                "--evidence labs/platform-academy/trace-network-path/network-evidence.md "
+                "--broken labs/platform-academy/trace-network-path/ingress-service.yaml "
+                "--fixed labs/platform-academy/trace-network-path/fixed-ingress-service.yaml"
+            ),
+            "bash labs/platform-academy/run-lab.sh validate trace-network-path --cluster",
+            "bash labs/platform-academy/trace-network-path/validate.sh --cluster",
+            "grep -n \"targetPort: web\" labs/platform-academy/trace-network-path/ingress-service.yaml",
+            "grep -n \"name: http\" labs/platform-academy/trace-network-path/ingress-service.yaml",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/trace-network-path/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use incident-handoff.md, hop-trace.md, and network-evidence.md as a captured request trace.",
+            "Write the hop-by-hop owner note without live DNS or ALB access.",
+        ],
+    },
+    "review-terraform-eks-plan": {
+        "prerequisites": [
+            "No Terraform install or AWS credentials required; this lab uses a saved plan excerpt.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/review-terraform-eks-plan/setup.sh --evidence /tmp/terraform-eks-plan-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/triage-notes.md",
+            "sed -n '1,220p' labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|saved plan\\|Managed node group\\|one-subnet\\|eks:\\*\" labs/platform-academy/review-terraform-eks-plan/triage-notes.md",
+            "grep -n \"must be replaced\\|0.0.0.0/0\\|eks:\\*\\|Plan:\" labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
+            "sed -n '1,160p' labs/platform-academy/review-terraform-eks-plan/review.md",
+            "python3 labs/platform-academy/review-terraform-eks-plan/plan_analyzer.py --plan labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
+        ],
+        "practice_steps": [
+            "Read triage-notes.md and rule out generated-plan approval shortcuts.",
+            "Find create, change, replace, and destroy actions.",
+            "Call out subnet, capacity, security group, and IAM blast radius.",
+            "Run the local analyzer to produce a block decision from the saved plan.",
+            "Write the approval decision and rollback questions.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out saved-plan approval, low-risk replacement assumptions, one-subnet coverage, public HTTPS ingress, and broad EKS IAM.",
+            "The node group replacement loses multi-AZ subnet coverage.",
+            "A public 0.0.0.0/0 security group rule is added.",
+            "An IAM policy grants eks:* on all resources.",
+            "The analyzer reports a do-not-approve decision with blocking risk signals.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/review-terraform-eks-plan/validate.sh",
+            "bash labs/platform-academy/review-terraform-eks-plan/validate.sh --evidence /tmp/terraform-eks-plan-evidence.md",
+            "python3 labs/platform-academy/review-terraform-eks-plan/plan_analyzer.py --plan labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
+            "grep -n \"must be replaced\" labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
+            "grep -n \"0.0.0.0/0\\|eks:\\*\" labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/review-terraform-eks-plan/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md and tfplan.txt as the plan artifact.",
+            "Complete review.md without running terraform.",
+        ],
+    },
+    "debug-irsa-access-denied": {
+        "prerequisites": [
+            "No AWS credentials required; this lab uses local Kubernetes and CloudTrail evidence.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/debug-irsa-access-denied/setup.sh --evidence /tmp/irsa-access-denied-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/debug-irsa-access-denied/triage-notes.md",
+            "kubectl create --dry-run=client --validate=false -f labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml",
+            "sed -n '1,180p' labs/platform-academy/debug-irsa-access-denied/workload-error.log",
+            "sed -n '1,180p' labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|Wildcard trust\\|s3:\\*\" labs/platform-academy/debug-irsa-access-denied/triage-notes.md",
+            "grep -n \"role-arn\\|serviceAccountName\\|AWS_ROLE_ARN\" labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml labs/platform-academy/debug-irsa-access-denied/workload-error.log",
+            "grep -n \"system:serviceaccount\\|AccessDenied\\|PutObject\" labs/platform-academy/debug-irsa-access-denied/trust-policy.json labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json",
+            "python3 labs/platform-academy/debug-irsa-access-denied/irsa_simulator.py --serviceaccount labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml --trust-policy labs/platform-academy/debug-irsa-access-denied/trust-policy.json --fixed-trust-policy labs/platform-academy/debug-irsa-access-denied/fixed-trust-policy.json --cloudtrail-event labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json --permission-policy labs/platform-academy/debug-irsa-access-denied/least-privilege-policy.json",
+        ],
+        "practice_steps": [
+            "Read triage-notes.md and rule out Pod restart, token rotation, bucket-policy-only, wildcard, and live-IAM false leads.",
+            "Match the Pod service account to the annotated IAM role.",
+            "Compare the application-side SDK failure with the CloudTrail denial.",
+            "Compare the trust policy subject with the real namespace and service account.",
+            "Use the CloudTrail action and resource to decide whether the trust policy or permissions policy is wrong.",
+            "Run the local simulator to prove the proposed trust subject and S3 object-prefix permission cover the captured request.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out restarts, token rotation, bucket-policy-only changes, wildcard trust, and broad S3 permissions.",
+            "The ServiceAccount is payments/checkout.",
+            "The workload log shows AWS_ROLE_ARN for payments-checkout-readonly and an SDK AccessDenied on PutObject.",
+            "The trust policy subject allows default/checkout instead.",
+            "CloudTrail denies s3:PutObject through the readonly role.",
+            "The simulator proves the fixed trust subject and least-privilege policy allow the captured request without broad S3 scope.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/debug-irsa-access-denied/validate.sh",
+            "bash labs/platform-academy/debug-irsa-access-denied/validate.sh --evidence /tmp/irsa-access-denied-evidence.md",
+            "python3 labs/platform-academy/debug-irsa-access-denied/irsa_simulator.py --serviceaccount labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml --trust-policy labs/platform-academy/debug-irsa-access-denied/trust-policy.json --fixed-trust-policy labs/platform-academy/debug-irsa-access-denied/fixed-trust-policy.json --cloudtrail-event labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json --permission-policy labs/platform-academy/debug-irsa-access-denied/least-privilege-policy.json",
+            "grep -n \"namespace: payments\" labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml",
+            "grep -n \"system:serviceaccount:default:checkout\" labs/platform-academy/debug-irsa-access-denied/trust-policy.json",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/debug-irsa-access-denied/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Review triage-notes.md, serviceaccount.yaml, workload-error.log, trust-policy.json, and cloudtrail-event.json as exported evidence.",
+            "Write whether the immediate blocker is trust subject mismatch, permission scope, or both.",
+        ],
+    },
+    "design-safe-release-pipeline": {
+        "prerequisites": [
+            "No CI runner required; this lab reviews a pipeline definition and checklist.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/design-safe-release-pipeline/setup.sh --evidence /tmp/release-pipeline-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/design-safe-release-pipeline/triage-notes.md",
+            "sed -n '1,180p' labs/platform-academy/design-safe-release-pipeline/pipeline.yaml",
+            "sed -n '1,180p' labs/platform-academy/design-safe-release-pipeline/release-checklist.md",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|green build\\|SHA tag\\|rollback digest\" labs/platform-academy/design-safe-release-pipeline/triage-notes.md",
+            "grep -n \"main\\|deploy-prod\\|helm upgrade\\|missing digest\" labs/platform-academy/design-safe-release-pipeline/pipeline.yaml",
+            "grep -n \"digest\\|smoke\\|rollback\\|approval\" labs/platform-academy/design-safe-release-pipeline/release-checklist.md",
+            (
+                "python3 labs/platform-academy/design-safe-release-pipeline/release_pipeline_analyzer.py "
+                "--unsafe labs/platform-academy/design-safe-release-pipeline/pipeline.yaml "
+                "--safe labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml "
+                "--checklist labs/platform-academy/design-safe-release-pipeline/release-checklist.md "
+                "--decision labs/platform-academy/design-safe-release-pipeline/decision-record.md"
+            ),
+            "diff -u labs/platform-academy/design-safe-release-pipeline/pipeline.yaml labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml || true",
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out fast-but-unsafe approval paths.",
+            "Identify missing quality gates before production.",
+            "Add immutable digest promotion and smoke-test expectations.",
+            "Use the local analyzer to prove the unsafe path and safe gate chain.",
+            "Name rollback criteria and permission boundaries.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out green-build-only approval, SHA-tag-only promotion, late scans, approval without artifacts, and rollback without digest.",
+            "The sample pipeline deploys from main directly to production.",
+            "The build step does not promote by digest.",
+            "The checklist requires scan, smoke, rollback, and approval gates.",
+            "The local analyzer reports Safe release pipeline analysis passed.",
+            "The safe pipeline adds staging, manifest validation, policy checks, canary, and rollback criteria.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/design-safe-release-pipeline/validate.sh",
+            "bash labs/platform-academy/design-safe-release-pipeline/validate.sh --evidence /tmp/release-pipeline-evidence.md",
+            (
+                "python3 labs/platform-academy/design-safe-release-pipeline/release_pipeline_analyzer.py "
+                "--unsafe labs/platform-academy/design-safe-release-pipeline/pipeline.yaml "
+                "--safe labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml "
+                "--checklist labs/platform-academy/design-safe-release-pipeline/release-checklist.md "
+                "--decision labs/platform-academy/design-safe-release-pipeline/decision-record.md"
+            ),
+            "grep -n \"environment: production\" labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/design-safe-release-pipeline/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md, pipeline.yaml, and release-checklist.md as the review packet.",
+            "Write the minimum gate set before touching a real CI system.",
+        ],
+    },
+    "create-platform-golden-path": {
+        "prerequisites": [
+            "No template engine required; this lab reviews the golden path contract.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/create-platform-golden-path/setup.sh --evidence /tmp/golden-path-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/create-platform-golden-path/triage-notes.md",
+            "sed -n '1,220p' labs/platform-academy/create-platform-golden-path/service-template.md",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|generates many files\\|catalog presence\\|smooth first run\" labs/platform-academy/create-platform-golden-path/triage-notes.md",
+            "grep -n \"Generated artifacts\\|SLO dashboard\\|Runbook\\|Backstage\" labs/platform-academy/create-platform-golden-path/service-template.md",
+            "grep -n \"missing\\|owner\\|lifecycle\" labs/platform-academy/create-platform-golden-path/catalog-info.yaml",
+            (
+                "python3 labs/platform-academy/create-platform-golden-path/golden_path_analyzer.py "
+                "--start-template labs/platform-academy/create-platform-golden-path/service-template.md "
+                "--ready-template labs/platform-academy/create-platform-golden-path/ready-service-template.md "
+                "--catalog labs/platform-academy/create-platform-golden-path/catalog-info.yaml "
+                "--fixed-catalog labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml "
+                "--decision labs/platform-academy/create-platform-golden-path/decision-record.md"
+            ),
+            "diff -u labs/platform-academy/create-platform-golden-path/catalog-info.yaml labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml || true",
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out file-generation-only readiness.",
+            "Define required inputs and generated outputs.",
+            "Check whether ownership, SLO, and runbook defaults are complete.",
+            "Use the local analyzer to prove the starting gap, ready contract, and fixed metadata.",
+            "Describe the first-run developer experience and adoption metrics.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out generated-files readiness, catalog-only ownership, smooth-first-run confidence, and optional metadata.",
+            "The template generates Dockerfile, Helm, CI, ArgoCD, dashboard, runbook, and catalog files.",
+            "The catalog file still has missing PagerDuty and SLO annotations.",
+            "The first-run flow ends with production readiness review.",
+            "The local analyzer reports Golden path readiness analysis passed.",
+            "The ready template defines inputs, secure defaults, launch gates, and adoption metrics.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/create-platform-golden-path/validate.sh",
+            "bash labs/platform-academy/create-platform-golden-path/validate.sh --evidence /tmp/golden-path-evidence.md",
+            (
+                "python3 labs/platform-academy/create-platform-golden-path/golden_path_analyzer.py "
+                "--start-template labs/platform-academy/create-platform-golden-path/service-template.md "
+                "--ready-template labs/platform-academy/create-platform-golden-path/ready-service-template.md "
+                "--catalog labs/platform-academy/create-platform-golden-path/catalog-info.yaml "
+                "--fixed-catalog labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml "
+                "--decision labs/platform-academy/create-platform-golden-path/decision-record.md"
+            ),
+            "grep -n \"Adoption Metrics\" labs/platform-academy/create-platform-golden-path/ready-service-template.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/create-platform-golden-path/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md and the template files as a product review packet.",
+            "Write missing inputs, generated artifacts, and launch-readiness blockers.",
+        ],
+    },
+    "review-docker-image-supply-chain": {
+        "prerequisites": [
+            "No Docker daemon required for the baseline path; this lab uses local Dockerfile and captured metadata.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/review-docker-image-supply-chain/setup.sh --evidence /tmp/docker-supply-chain-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/review-docker-image-supply-chain/triage-notes.md",
+            "sed -n '1,160p' labs/platform-academy/review-docker-image-supply-chain/Dockerfile",
+            "sed -n '1,160p' labs/platform-academy/review-docker-image-supply-chain/history.txt",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|latest\\|secret\\|rollback digest\" labs/platform-academy/review-docker-image-supply-chain/triage-notes.md",
+            "grep -n \"FROM\\|COPY\\|API_TOKEN\\|USER\" labs/platform-academy/review-docker-image-supply-chain/Dockerfile labs/platform-academy/review-docker-image-supply-chain/image-inspect.json",
+            "grep -n \"latest\\|RepoDigests\\|secret\\|COPY\" labs/platform-academy/review-docker-image-supply-chain/image-inspect.json labs/platform-academy/review-docker-image-supply-chain/history.txt",
+            (
+                "python3 labs/platform-academy/review-docker-image-supply-chain/supply_chain_analyzer.py "
+                "--dockerfile labs/platform-academy/review-docker-image-supply-chain/Dockerfile "
+                "--inspect labs/platform-academy/review-docker-image-supply-chain/image-inspect.json "
+                "--history labs/platform-academy/review-docker-image-supply-chain/history.txt "
+                "--hardened labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile "
+                "--promotion labs/platform-academy/review-docker-image-supply-chain/promotion-note.md"
+            ),
+            "diff -u labs/platform-academy/review-docker-image-supply-chain/Dockerfile labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile || true",
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out false promotion signals before reviewing the image.",
+            "Identify base image, runtime user, copied files, exposed ports, and entrypoint.",
+            "Compare tag evidence with digest evidence.",
+            "Use the local analyzer to convert supply-chain findings into a block-or-promote decision.",
+            "Flag secret leakage and oversized runtime image risk.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out latest-tag freshness, deleted-secret-layer confidence, runtime-only non-root controls, post-promotion scans, and rollback tags without digest.",
+            "The image uses the mutable latest tag and has no RepoDigests.",
+            "No runtime user is configured.",
+            "API_TOKEN appears in Dockerfile, inspect metadata, and history.",
+            "The local analyzer reports Docker supply-chain analysis passed.",
+            "The promotion note requires digest, SBOM, scan, non-root runtime, and rollback evidence.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/review-docker-image-supply-chain/validate.sh",
+            "bash labs/platform-academy/review-docker-image-supply-chain/validate.sh --evidence /tmp/docker-supply-chain-evidence.md",
+            (
+                "python3 labs/platform-academy/review-docker-image-supply-chain/supply_chain_analyzer.py "
+                "--dockerfile labs/platform-academy/review-docker-image-supply-chain/Dockerfile "
+                "--inspect labs/platform-academy/review-docker-image-supply-chain/image-inspect.json "
+                "--history labs/platform-academy/review-docker-image-supply-chain/history.txt "
+                "--hardened labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile "
+                "--promotion labs/platform-academy/review-docker-image-supply-chain/promotion-note.md"
+            ),
+            "grep -n \"Immutable image digest\" labs/platform-academy/review-docker-image-supply-chain/promotion-note.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/review-docker-image-supply-chain/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md, Dockerfile, inspect JSON, and history text instead of building an image.",
+            "Write a promotion note naming digest, SBOM, scan, runtime user, and rollback requirements.",
+        ],
+    },
+    "debug-aws-alb-health-path": {
+        "prerequisites": [
+            "No AWS credentials required for the default path; this lab uses local ALB and Kubernetes evidence.",
+            "Optional cluster mode requires a disposable local Kubernetes context.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --evidence /tmp/alb-health-path-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/debug-aws-alb-health-path/triage-notes.md",
+            "sed -n '1,160p' labs/platform-academy/debug-aws-alb-health-path/target-health.json",
+            "bash labs/platform-academy/bootstrap-local-cluster.sh --preflight debug-aws-alb-health-path",
+            "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --preflight",
+            "bash labs/platform-academy/debug-aws-alb-health-path/setup.sh --cluster --evidence /tmp/alb-health-path-evidence.md",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|console-only\\|security groups\" labs/platform-academy/debug-aws-alb-health-path/triage-notes.md",
+            "grep -n \"unhealthy\\|ResponseCodeMismatch\\|targetPort: web\" labs/platform-academy/debug-aws-alb-health-path/target-health.json labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",
+            "grep -n \"healthcheck-path\\|targetPort web\\|no matching Pod port\" labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml labs/platform-academy/debug-aws-alb-health-path/events.txt",
+            (
+                "python3 labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py "
+                "--target-health labs/platform-academy/debug-aws-alb-health-path/target-health.json "
+                "--events labs/platform-academy/debug-aws-alb-health-path/events.txt "
+                "--broken labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml "
+                "--fixed labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml"
+            ),
+        ],
+        "practice_steps": [
+            "Read triage-notes.md and rule out DNS, security group, Pod recreation, and console-only false leads.",
+            "Confirm which target group symptom is failing.",
+            "Compare ALB health path with Ingress, Service, and Pod port evidence.",
+            "Use the local analyzer to prove ALB, health-path, Service/Pod, controller-event, and fixed-target evidence.",
+            "Name whether the owner is AWS networking, ingress controller, or app manifest.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out DNS, security group, Pod recreation, and console-only ALB changes as first fixes.",
+            "One target is unhealthy with Target.ResponseCodeMismatch.",
+            "Ingress healthcheck path is /healthz.",
+            "Service targetPort web does not match the Pod port named http.",
+            "The local analyzer reports ALB health path analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/debug-aws-alb-health-path/validate.sh",
+            "bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --evidence /tmp/alb-health-path-evidence.md",
+            (
+                "python3 labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py "
+                "--target-health labs/platform-academy/debug-aws-alb-health-path/target-health.json "
+                "--events labs/platform-academy/debug-aws-alb-health-path/events.txt "
+                "--broken labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml "
+                "--fixed labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml"
+            ),
+            "bash labs/platform-academy/run-lab.sh validate debug-aws-alb-health-path --cluster",
+            "bash labs/platform-academy/debug-aws-alb-health-path/validate.sh --cluster",
+            "grep -n \"Target.ResponseCodeMismatch\" labs/platform-academy/debug-aws-alb-health-path/target-health.json",
+            "grep -n \"targetPort: web\" labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/debug-aws-alb-health-path/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md, target-health.json, ingress-service.yaml, and events.txt as exported evidence.",
+            "Write the owner and next action without AWS CLI access.",
+        ],
+    },
+    "design-opentelemetry-signal-path": {
+        "prerequisites": [
+            "No collector required; this lab reviews local OpenTelemetry and alert artifacts and can emit simulated signals.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/design-opentelemetry-signal-path/setup.sh --evidence /tmp/otel-signal-path-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/triage-notes.md",
+            "sed -n '1,220p' labs/platform-academy/design-opentelemetry-signal-path/collector.yaml",
+            "sed -n '1,160p' labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt",
+            "python3 labs/platform-academy/simulator.py --scenario checkout-latency --format both --events 5",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|authorization headers\\|one valid trace\\|customer-level\" labs/platform-academy/design-opentelemetry-signal-path/triage-notes.md",
+            "grep -n \"authorization\\|trace_id\\|customer_email\" labs/platform-academy/design-opentelemetry-signal-path/collector.yaml labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml",
+            "grep -n \"pipelines:\\|traces:\\|histogram_quantile\" labs/platform-academy/design-opentelemetry-signal-path/collector.yaml labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml",
+            "python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py --collector labs/platform-academy/design-opentelemetry-signal-path/collector.yaml --logs labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt --rule labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml --safe-rule labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml --decision labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out false confidence in noisy telemetry.",
+            "Map the symptom to metrics, logs, traces, and collector ownership.",
+            "Find missing trace IDs and sensitive or high-cardinality labels.",
+            "Use the local analyzer to verify the signal path, safer alert, and owner map.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out header-deletion-only confidence, one-good-trace confidence, customer-level grouping, and simulator-only proof.",
+            "Collector drops authorization headers.",
+            "One log line has trace_id=missing.",
+            "The latency alert groups by customer_email, creating high cardinality risk.",
+            "The safe rule removes customer_email and the decision record assigns signal owners.",
+            "The local analyzer reports OpenTelemetry signal path analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/design-opentelemetry-signal-path/validate.sh",
+            "bash labs/platform-academy/design-opentelemetry-signal-path/validate.sh --evidence /tmp/otel-signal-path-evidence.md",
+            "python3 labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py --collector labs/platform-academy/design-opentelemetry-signal-path/collector.yaml --logs labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt --rule labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml --safe-rule labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml --decision labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
+            "grep -n \"Owner Map\" labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/design-opentelemetry-signal-path/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md plus the supplied collector, log, and rule files as the telemetry path packet.",
+            "Write the ownership map without connecting to a telemetry backend.",
+        ],
+    },
+    "run-incident-commander-tabletop": {
+        "prerequisites": [
+            "No cluster required; this tabletop uses local incident signal files and a local signal simulator.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/run-incident-commander-tabletop/setup.sh --evidence /tmp/incident-commander-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/run-incident-commander-tabletop/triage-notes.md",
+            "sed -n '1,180p' labs/platform-academy/run-incident-commander-tabletop/signals.md",
+            "sed -n '1,160p' labs/platform-academy/run-incident-commander-tabletop/roles.md",
+            "python3 labs/platform-academy/simulator.py --scenario checkout-incident --format logs --events 5",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|root cause\\|Silence\\|Timeline\" labs/platform-academy/run-incident-commander-tabletop/triage-notes.md",
+            "grep -n \"SEV-2\\|rollback\\|next stakeholder update\" labs/platform-academy/run-incident-commander-tabletop/signals.md",
+            "grep -n \"Incident commander\\|Operations lead\\|Communications lead\\|Planning lead\" labs/platform-academy/run-incident-commander-tabletop/roles.md",
+            "python3 labs/platform-academy/run-incident-commander-tabletop/incident_tabletop_analyzer.py --signals labs/platform-academy/run-incident-commander-tabletop/signals.md --roles labs/platform-academy/run-incident-commander-tabletop/roles.md --timeline labs/platform-academy/run-incident-commander-tabletop/timeline.md --brief labs/platform-academy/run-incident-commander-tabletop/commander-brief.md --completed-timeline labs/platform-academy/run-incident-commander-tabletop/completed-timeline.md",
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out delays in roles, communications, mitigation criteria, and timeline capture.",
+            "Assign incident roles and severity.",
+            "Write current impact, mitigation, and next update time.",
+            "Record timeline entries for facts, decisions, and owners.",
+            "Run the local incident tabletop analyzer to prove severity, roles, mitigation criteria, communications clock, and handoff evidence.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out waiting for root cause, delaying communications, rollback without criteria, and late timeline writing.",
+            "The incident is SEV-2 with checkout 5xx impact.",
+            "Rollback to revision 42 is identified as an option.",
+            "The tabletop requires commander, operations, communications, and planning roles.",
+            "The commander brief sets mitigation criteria and a 15-minute stakeholder update.",
+            "The local analyzer reports Incident commander tabletop analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/run-incident-commander-tabletop/validate.sh",
+            "bash labs/platform-academy/run-incident-commander-tabletop/validate.sh --evidence /tmp/incident-commander-evidence.md",
+            "python3 labs/platform-academy/run-incident-commander-tabletop/incident_tabletop_analyzer.py --signals labs/platform-academy/run-incident-commander-tabletop/signals.md --roles labs/platform-academy/run-incident-commander-tabletop/roles.md --timeline labs/platform-academy/run-incident-commander-tabletop/timeline.md --brief labs/platform-academy/run-incident-commander-tabletop/commander-brief.md --completed-timeline labs/platform-academy/run-incident-commander-tabletop/completed-timeline.md",
+            "grep -n \"Rollback revision 43\" labs/platform-academy/run-incident-commander-tabletop/commander-brief.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/run-incident-commander-tabletop/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md plus the signal, role, and timeline files as the complete tabletop packet.",
+            "Fill the timeline without live incident tooling.",
+        ],
+    },
+    "audit-eks-cost-drivers": {
+        "prerequisites": [
+            "No AWS Cost Explorer access required; this lab uses local cost evidence files.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/audit-eks-cost-drivers/setup.sh --evidence /tmp/eks-cost-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/audit-eks-cost-drivers/triage-notes.md",
+            "sed -n '1,160p' labs/platform-academy/audit-eks-cost-drivers/usage.csv",
+            "sed -n '1,120p' labs/platform-academy/audit-eks-cost-drivers/services.txt",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|Low utilization\\|Unknown owner\\|LoadBalancer age\" labs/platform-academy/audit-eks-cost-drivers/triage-notes.md",
+            "awk -F, 'NR==1 || $8==\"unknown\" || $3 > ($4 * 4) {print}' labs/platform-academy/audit-eks-cost-drivers/usage.csv",
+            "grep -n \"abandoned\\|LoadBalancer\\|unknown\" labs/platform-academy/audit-eks-cost-drivers/services.txt labs/platform-academy/audit-eks-cost-drivers/storage.txt",
+            (
+                "python3 labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py "
+                "--usage labs/platform-academy/audit-eks-cost-drivers/usage.csv "
+                "--services labs/platform-academy/audit-eks-cost-drivers/services.txt "
+                "--storage labs/platform-academy/audit-eks-cost-drivers/storage.txt "
+                "--recommendations labs/platform-academy/audit-eks-cost-drivers/recommendations.md"
+            ),
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out unsafe delete-first cost actions.",
+            "Rank compute over-requesting, idle load balancers, and abandoned storage.",
+            "Use the local analyzer to separate quick-win monthly exposure from architecture-review items.",
+            "Map each finding to an owner, savings estimate, reliability risk, and rollback.",
+            "Decide which recommendations are quick wins versus architecture changes.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out utilization-only deletion, unknown-owner deletion, age-only cleanup, and savings without rollback.",
+            "Checkout and worker CPU requests are far above usage.",
+            "Default namespace has abandoned load balancer and storage entries.",
+            "Some resources have unknown owner metadata.",
+            "The local analyzer reports EKS cost driver analysis passed and quick-win monthly exposure.",
+            "The recommendation table includes savings, reliability risk, and rollback.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/audit-eks-cost-drivers/validate.sh",
+            "bash labs/platform-academy/audit-eks-cost-drivers/validate.sh --evidence /tmp/eks-cost-evidence.md",
+            (
+                "python3 labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py "
+                "--usage labs/platform-academy/audit-eks-cost-drivers/usage.csv "
+                "--services labs/platform-academy/audit-eks-cost-drivers/services.txt "
+                "--storage labs/platform-academy/audit-eks-cost-drivers/storage.txt "
+                "--recommendations labs/platform-academy/audit-eks-cost-drivers/recommendations.md"
+            ),
+            "grep -n \"Expected Savings\" labs/platform-academy/audit-eks-cost-drivers/recommendations.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/audit-eks-cost-drivers/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md plus the CSV and text snapshots as cost evidence.",
+            "Write a cost recommendation table without live AWS access.",
+        ],
+    },
+    "build-platform-career-proof-pack": {
+        "prerequisites": [
+            "No external job board required; this lab includes sample job-skill demand and evidence files.",
+            "Run commands from the repository root.",
+        ],
+        "setup_commands": [
+            "bash labs/platform-academy/build-platform-career-proof-pack/setup.sh --evidence /tmp/career-proof-evidence.md",
+            "sed -n '1,220p' labs/platform-academy/build-platform-career-proof-pack/triage-notes.md",
+            "sed -n '1,160p' labs/platform-academy/build-platform-career-proof-pack/job-skills.txt",
+            "sed -n '1,180p' labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md",
+        ],
+        "commands": [
+            "grep -n \"False Leads\\|completed labs\\|Resume bullets\\|Redaction\" labs/platform-academy/build-platform-career-proof-pack/triage-notes.md",
+            "grep -n \"Kubernetes\\|Terraform\\|incident response\\|SLOs\\|FinOps\" labs/platform-academy/build-platform-career-proof-pack/job-skills.txt",
+            "grep -n \"Missing proof\\|rollback\\|STAR\" labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md labs/platform-academy/build-platform-career-proof-pack/readme-template.md",
+            "diff -u labs/platform-academy/build-platform-career-proof-pack/readme-template.md labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md || true",
+            "python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md --proof labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md --bullets labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md --star labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
+        ],
+        "practice_steps": [
+            "Read the triage notes and rule out broad career claims without proof.",
+            "Extract repeated skills from the sample target roles.",
+            "Pick three lab artifacts and map them to proof bullets.",
+            "Fill the README template with commands, evidence, validation, rollback, and interview talking points.",
+            "Run the local career proof analyzer to prove the README, bullets, STAR stories, missing-proof list, and public-safety boundary.",
+        ],
+        "expected_evidence": [
+            "The triage notes rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.",
+            "Target roles repeatedly mention Kubernetes, AWS, Terraform, CI/CD, observability, SRE, and security.",
+            "The evidence inventory names five candidate artifacts and missing proof to collect.",
+            "The README template forces problem, commands, validation, rollback, and STAR talking points.",
+            "The completed proof pack includes a README proof section, resume bullets, and STAR stories.",
+            "The local analyzer reports Career proof pack analysis passed.",
+        ],
+        "validation_commands": [
+            "bash labs/platform-academy/build-platform-career-proof-pack/validate.sh",
+            "bash labs/platform-academy/build-platform-career-proof-pack/validate.sh --evidence /tmp/career-proof-evidence.md",
+            "python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md --proof labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md --bullets labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md --star labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
+            "grep -n \"Release Safety\" labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
+        ],
+        "cleanup_commands": ["bash labs/platform-academy/build-platform-career-proof-pack/cleanup.sh"],
+        "no_cluster_fallback": [
+            "Use triage-notes.md plus the included job skills and evidence inventory instead of external job postings.",
+            "Write one README proof section from any converted lab.",
+        ],
+    },
+}
+
+DEEPENED_LAB_UPDATES = {
+    "trace-service-to-pod": {
+        "worksheet_prompts": [
+            "Record the current context or no-cluster transcript used, namespace, and cleanup command before changing anything.",
+            "Read triage-notes.md and list the False Leads ruled out before choosing the selector fix.",
+            "Paste the Service selector evidence and the exact label key/value the Service expects.",
+            "Paste the Pod label evidence and the exact label key/value the running Pods expose.",
+            "Paste the EndpointSlice evidence before the fix and explain why the Service has no ready backends.",
+            "Write the smallest source-manifest fix and why a one-off live Service patch is not enough.",
+            "Capture post-fix EndpointSlice validation and cleanup or no-cluster fallback evidence.",
+        ],
+        "rubric": [
+            "Names the namespace, context or transcript source, and cleanup boundary before acting.",
+            "Uses triage notes to rule out readiness, port wiring, node pressure, and live-only patch False Leads.",
+            "Captures Service selector evidence with the exact `app=checkout` value.",
+            "Captures Pod label evidence with the exact `app=checkout-api` value.",
+            "Explains why a healthy Deployment can still produce empty EndpointSlices.",
+            "Chooses the source-manifest Service selector fix instead of a console or live-only patch.",
+            "Verifies ready EndpointSlice backends after the fix and records cleanup or fallback evidence.",
+        ],
+        "validation_checks": [
+            "Safety context or no-cluster transcript recorded",
+            "Triage False Leads ruled out",
+            "Service selector evidence captured",
+            "Pod label evidence captured",
+            "EndpointSlice empty-backend evidence captured",
+            "Source manifest fix identified",
+            "Post-fix EndpointSlice validation and local analysis captured",
+            "Cleanup or fallback note recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["namespace", "context", "no-cluster", "cleanup", "payments"],
+            ["triage-notes.md", "False Leads", "readiness", "node pressure", "live-only patch"],
+            ["Service selector", "app=checkout", "selector"],
+            ["Pod label", "app=checkout-api", "Pod labels"],
+            ["EndpointSlice", "no ready", "empty", "backends"],
+            ["source-manifest", "fixed.yaml", "selector", "live patch"],
+            ["post-fix", "EndpointSlice", "cleanup", "fallback", "validate", "Service routing analysis passed"],
+        ],
+    },
+    "debug-crashloop-imagepull": {
+        "worksheet_prompts": [
+            "Record the current context or no-cluster transcript used, namespace, and cleanup command before changing anything.",
+            "Read triage-notes.md and list the False Leads ruled out before splitting the owners.",
+            "Classify each workload by status and whether its container actually started.",
+            "Paste the CrashLoopBackOff Last State, exit code, and previous-log evidence.",
+            "Paste the ImagePullBackOff image reference and event reason evidence.",
+            "Assign the app/config owner action and the image/registry owner action separately.",
+            "Capture rollout validation and cleanup or no-cluster fallback evidence.",
+        ],
+        "rubric": [
+            "Separates CrashLoopBackOff from ImagePullBackOff without mixing evidence sources.",
+            "Uses triage notes to rule out restart, resource, node-pressure, and one-outage False Leads.",
+            "Uses `logs --previous` only for the container that started and exited.",
+            "Uses events and image reference evidence for the container that never started.",
+            "Names `missing DB_URL` and exit code 42 as app/config evidence.",
+            "Names the invalid registry reference as image/registry ownership evidence.",
+            "Validates both fixed Deployments and records cleanup or fallback evidence.",
+        ],
+        "validation_checks": [
+            "Safety context or no-cluster transcript recorded",
+            "Triage False Leads ruled out",
+            "Failure modes classified",
+            "CrashLoopBackOff previous-log evidence captured",
+            "ImagePullBackOff event evidence captured",
+            "Owners and fixes separated",
+            "Rollout validation and local analysis captured",
+            "Cleanup or fallback note recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["checkout-crash", "CrashLoopBackOff", "checkout-pull", "ImagePullBackOff", "started"],
+            ["triage-notes.md", "False Leads", "restart", "resource", "node pressure", "owner split"],
+            ["logs --previous", "previous logs", "exit code 42", "missing DB_URL", "last state"],
+            ["registry.invalid.example/checkout:missing", "ImagePullBackOff", "ErrImagePull", "event", "registry"],
+            ["missing DB_URL", "exit code 42", "app/config", "owner"],
+            ["registry.invalid.example/checkout:missing", "image/registry", "owner", "registry", "fix"],
+            ["rollout", "validate", "cleanup", "fallback", "Deployments", "CrashLoop/ImagePull analysis passed"],
+        ],
+    },
+    "review-yaml-before-apply": {
+        "worksheet_prompts": [
+            "Record the reviewed vendor.yaml file, reviewer, namespace scope, and confirmation that no live apply was run.",
+            "Read triage-notes.md and list the False Leads ruled out before approving or applying anything.",
+            "Inventory resource kinds, namespaces, cluster-scoped resources, and optional dry-run or parse-check output.",
+            "Paste ClusterRole secret access, privileged container, hostPath `/`, and Secret `stringData.token` evidence.",
+            "Classify each blocker as RBAC, workload security, node filesystem exposure, or credential handling.",
+            "Write the block decision, safer baseline changes, and precise questions back to the vendor.",
+            "Capture the safe-baseline diff, validation output, cleanup, and no-live-apply evidence note.",
+        ],
+        "rubric": [
+            "Preserves the no-live-apply safety boundary and names the reviewed vendor manifest.",
+            "Uses triage notes to rule out dry-run-only approval, namespace-only isolation, sandbox-first apply, and placeholder-token False Leads.",
+            "Inventories resource kinds, namespaces, cluster-scoped resources, and parse-check evidence.",
+            "Captures `ClusterRole` secret access, `privileged: true`, `hostPath: /`, and `stringData.token` evidence.",
+            "Classifies blockers across RBAC, workload security, node filesystem exposure, and credential handling.",
+            "Blocks the manifest with safer-baseline requirements and vendor questions.",
+            "Saves safe-baseline diff, validation output, cleanup, and no-live-apply evidence.",
+        ],
+        "validation_checks": [
+            "No-live-apply safety boundary recorded",
+            "Triage False Leads ruled out",
+            "Resource inventory captured",
+            "ClusterRole secret access evidence captured",
+            "Privileged and hostPath evidence captured",
+            "Secret stringData credential evidence captured",
+            "Vendor block decision and questions recorded",
+            "Manifest risk analysis, validation output, and cleanup/no-live-apply evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["vendor.yaml", "reviewer", "no live apply", "shared cluster"],
+            ["triage-notes.md", "False Leads", "dry-run-only", "namespace-only", "stringData.token"],
+            ["ClusterRole", "Namespace", "Deployment", "Secret", "dry-run"],
+            ["resources: [\"pods\", \"secrets\"]", "privileged: true", "hostPath", "stringData.token"],
+            ["RBAC", "workload security", "node filesystem", "credential handling"],
+            ["Block", "safe-baseline.yaml", "vendor questions", "allowPrivilegeEscalation: false"],
+            ["diff", "validate", "cleanup", "evidence-template.md", "no-live-apply", "YAML manifest risk analysis passed"],
+        ],
+    },
+    "inspect-linux-failure-evidence": {
+        "worksheet_prompts": [
+            "Record the captured pod describe, previous log, id output, namespace, and confirmation that no cluster access is required.",
+            "Read triage-notes.md and list the False Leads ruled out before choosing a fix owner.",
+            "Paste `CrashLoopBackOff`, restart count, Last State reason, and exit code 126 evidence.",
+            "Paste `/app/bin/checkout: Permission denied`, runtime UID/GID, and file-permission hypothesis evidence.",
+            "Explain why the likely fix is image file permission or ownership, not memory tuning or application logic.",
+            "Write the remediation owner, rejected root workaround, and validation signal for the fixed image.",
+            "Capture remediation-note, validation output, cleanup, and no-cluster evidence to save.",
+        ],
+        "rubric": [
+            "Preserves the captured-evidence/no-cluster safety boundary and names the evidence files.",
+            "Uses triage notes to rule out memory pressure, restart-count-only diagnosis, live chmod, root runtime, and app-logic False Leads.",
+            "Captures `CrashLoopBackOff`, restart count, Last State, and exit code 126 evidence.",
+            "Connects `/app/bin/checkout: Permission denied` with runtime user `uid=10001(checkout)`.",
+            "Rejects memory tuning and app-logic debugging as first fixes because evidence points to permissions.",
+            "Chooses image file permission or ownership remediation and rejects running as root.",
+            "Saves remediation note, validation output, cleanup, and no-cluster evidence.",
+        ],
+        "validation_checks": [
+            "No-cluster evidence boundary recorded",
+            "Triage false leads recorded",
+            "CrashLoopBackOff and restart evidence captured",
+            "Exit code 126 evidence captured",
+            "Permission denied log and UID evidence captured",
+            "Wrong fixes rejected",
+            "Image permission owner and remediation recorded",
+            "Linux failure analysis, validation output, and cleanup/no-cluster evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["pod-describe.txt", "previous.log", "id-output.txt", "no cluster"],
+            ["triage-notes.md", "False Leads", "Exit code 126 is not memory pressure", "Running as root hides the permission bug", "chmod in a live container"],
+            ["CrashLoopBackOff", "Restart Count:  8", "Last State", "Exit Code:    126"],
+            ["/app/bin/checkout: Permission denied", "uid=10001(checkout)", "gid=10001(checkout)"],
+            ["not application logic or memory pressure", "permission", "ownership", "execute"],
+            ["image file permissions", "Running as root: hides the permission bug", "owner"],
+            ["remediation-note.md", "validate", "cleanup", "evidence-template.md", "no-cluster", "Linux failure evidence analysis passed"],
+        ],
+    },
+    "design-production-eks-review": {
+        "worksheet_prompts": [
+            "Record the cluster-review packet, launch-review packet, reviewer, and confirmation that no AWS changes are being made.",
+            "Read triage-notes.md and list the False Leads ruled out before writing the launch decision.",
+            "Paste endpoint posture, critical workload spread, missing PDB, and zonal storage evidence.",
+            "Paste missing cost label, idle/NAT/LoadBalancer review gap, deprecated API, and add-on compatibility evidence.",
+            "Separate immediate launch blockers from follow-up improvements and explain the reliability risk.",
+            "Assign workload, platform, data, cost, and upgrade owners with validation criteria.",
+            "Capture launch decision, analyzer output, validation output, cleanup, and no-AWS evidence packet.",
+        ],
+        "rubric": [
+            "Preserves the captured architecture-review safety boundary and avoids live AWS mutation.",
+            "Uses triage notes to rule out endpoint-only approval, missing-PDB deferral, snapshot-only recovery proof, and deferred cost-label False Leads.",
+            "Captures endpoint posture, missing PDB, critical workload spread, and zonal storage evidence.",
+            "Captures missing cost label, cost-review gaps, deprecated APIs, and add-on compatibility risk.",
+            "Separates launch blockers from follow-up improvements with reliability rationale.",
+            "Assigns workload, platform, data, FinOps, and upgrade owners with validation criteria.",
+            "Saves launch decision, validation output, cleanup, and no-AWS evidence.",
+        ],
+        "validation_checks": [
+            "No-AWS architecture review boundary recorded",
+            "Triage false leads recorded",
+            "Endpoint and workload-spread evidence captured",
+            "Missing PDB and zonal storage evidence captured",
+            "Cost label and cost-review gap evidence captured",
+            "Upgrade and add-on compatibility evidence captured",
+            "Launch blockers, follow-ups, and owners recorded",
+            "Production review analyzer output, validation output, and cleanup/no-AWS evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["cluster-review.md", "launch-review.md", "no AWS", "reviewer"],
+            ["triage-notes.md", "False Leads", "public and private endpoint is not launch approval", "One missing PDB is not a follow-up", "A snapshot policy is not restore proof", "Cost labels are not optional after launch"],
+            ["Endpoint: public and private", "payments/worker", "pdb=missing", "volume=gp3-us-west-2a"],
+            ["Missing cost label on apps-c", "deprecated APIs", "controller add-ons", "compatibility matrix"],
+            ["Block production launch", "follow-up", "reliability risk", "launch blockers"],
+            ["workload owner", "platform owner", "data owner", "FinOps owner", "validation criteria"],
+            ["launch-review.md", "validate", "cleanup", "evidence-template.md", "no-AWS", "Production EKS review analysis passed"],
+        ],
+    },
+    "trace-network-path": {
+        "worksheet_prompts": [
+            "Record the incident handoff, host/path, evidence source, manifest files, and confirmation that no live DNS, ALB, or cluster change is being made.",
+            "Use the Hop Trace to list DNS, ALB, Pod recreation, and console-only False Leads ruled out.",
+            "Paste the client `HTTP/2 503`, `awselb/2.0` server header, DNS target, and expected traffic path.",
+            "Paste the ALB `Target.ResponseCodeMismatch` target-health evidence and the unhealthy target status.",
+            "Paste the Ingress backend, Service `targetPort web`, Pod port name `http`, and readiness or EndpointSlice evidence.",
+            "Write which owners are ruled out, the source-manifest fix, owner split, and why this is not a DNS-only or ALB-console fix.",
+            "Capture the fixed manifest diff, validation output, and cleanup or no-cluster note you would save.",
+        ],
+        "rubric": [
+            "Uses the incident handoff to preserve impact context and avoid live DNS, ALB, or cluster mutation.",
+            "Uses the Hop Trace to rule out DNS, ALB listener, Pod recreation, and console-only False Leads.",
+            "Captures `HTTP/2 503`, `awselb/2.0`, DNS target, and expected host/path route evidence.",
+            "Names `Target.ResponseCodeMismatch` as the ALB target-health symptom instead of guessing.",
+            "Connects Ingress backend, Service `targetPort web`, and Pod port name `http` to the failed hop.",
+            "Rules out DNS and ALB-only ownership before choosing a source-manifest `targetPort: http` fix.",
+            "Saves fixed-ingress-service diff, validation output, cleanup, and no-cluster evidence.",
+        ],
+        "validation_checks": [
+            "Incident handoff and no-live-network-change safety boundary recorded",
+            "Hop Trace False Leads ruled out",
+            "Client 503 and DNS evidence captured",
+            "ALB Target.ResponseCodeMismatch evidence captured",
+            "Ingress backend evidence captured",
+            "Service targetPort and Pod port evidence captured",
+            "Owners ruled out plus source-manifest fix recorded",
+            "Network path analysis, validation output, and cleanup/no-cluster evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["incident-handoff.md", "Pager Snapshot", "impact", "no live DNS", "no live ALB"],
+            ["hop-trace.md", "Hop Trace", "False Leads", "console-only", "DNS owner"],
+            ["HTTP/2 503", "awselb/2.0", "k8s-payments-checkout-123456", "checkout.example.com"],
+            ["Target.ResponseCodeMismatch", "unhealthy", "Health checks failed", "target health"],
+            ["Ingress", "Service", "targetPort web", "targetPort: web", "Pod port", "http"],
+            ["DNS owner", "ALB owner", "app/platform owner", "source-manifest", "targetPort: http"],
+            ["diff", "validate", "cleanup", "no-cluster", "evidence-template.md", "Network path analysis passed"],
+        ],
+    },
+    "debug-aws-alb-health-path": {
+        "worksheet_prompts": [
+            "Record the evidence source, namespace, manifest files, and why no live AWS mutation is required.",
+            "Read triage-notes.md and list the False Leads ruled out before changing ALB or Kubernetes objects.",
+            "Paste the ALB target health reason, unhealthy target, and observed HTTP status.",
+            "Paste the Ingress health check path and explain whether it matches the app contract.",
+            "Paste the Service targetPort, Pod port name, and controller event that prove the routing mismatch.",
+            "Assign owner actions across AWS networking, ingress/controller, and application teams.",
+            "Write the source-manifest fix and the validation or rollout handoff you would require.",
+        ],
+        "rubric": [
+            "Uses exported ALB and Kubernetes evidence without requiring AWS credentials.",
+            "Uses triage notes to rule out DNS, security group, Pod recreation, and console-only False Leads.",
+            "Names `Target.ResponseCodeMismatch` and the 404 health-check symptom.",
+            "Connects `/healthz` to the application health endpoint contract instead of assuming AWS is broken.",
+            "Explains why `targetPort: web` does not match the Pod port named `http`.",
+            "Separates AWS networking, ingress/controller, and app-owner actions.",
+            "Rejects console-only fixes and defines source-manifest validation or rollout handoff.",
+        ],
+        "validation_checks": [
+            "Evidence source and no-live-mutation boundary recorded",
+            "Triage False Leads ruled out",
+            "ALB target health reason captured",
+            "Health check path reviewed",
+            "Service-to-Pod port mismatch captured",
+            "Controller event captured",
+            "Owner decision written",
+            "ALB health analysis, source-manifest fix, and validation handoff recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["evidence source", "no live AWS", "namespace", "manifest", "no live mutation"],
+            ["triage-notes.md", "False Leads", "security groups", "console-only", "Pod recreation"],
+            ["Target.ResponseCodeMismatch", "404", "unhealthy target", "target health"],
+            ["/healthz", "health check path", "app contract", "health endpoint"],
+            ["targetPort: web", "targetPort web", "Pod port", "http", "controller event"],
+            ["AWS networking", "ingress/controller", "app owner", "owner"],
+            ["source-manifest", "validation", "handoff", "console-only", "rollout", "ALB health path analysis passed"],
+        ],
+    },
+    "diagnose-eks-ip-exhaustion": {
+        "worksheet_prompts": [
+            "Record the cluster snapshot, namespace, rollout scale target, and confirmation that no AWS or cluster capacity change is being made.",
+            "Read triage-notes.md and list the False Leads ruled out before recommending capacity changes.",
+            "Paste the `FailedScheduling` and `Insufficient pods` evidence that shows scheduler pod-density pressure.",
+            "Paste the `FailedCreatePodSandBox` and aws-cni IP allocation evidence.",
+            "Paste `subnet-bbb222`, `AvailableIPv4AddressCount=7`, node maxPods/runningPods, and `prefix delegation disabled` evidence.",
+            "Write the owner split across application scale, platform node groups/CNI, and network subnet planning.",
+            "Write the staged remediation, rejected actions, validation signals, rollback note, and saved evidence packet.",
+        ],
+        "rubric": [
+            "Preserves the no-live-capacity-change safety boundary and names the reviewed rollout.",
+            "Uses triage notes to rule out app restarts, CPU/memory tuning, blind node scaling, and live CNI/CIDR False Leads.",
+            "Separates `FailedScheduling` pod-density evidence from application health assumptions.",
+            "Connects `FailedCreatePodSandBox` and aws-cni logs to IP allocation failure.",
+            "Identifies `subnet-bbb222`, `AvailableIPv4AddressCount=7`, maxPods pressure, and `prefix delegation disabled`.",
+            "Separates application, platform/CNI, and network owners before recommending capacity changes.",
+            "Rejects blind restarts or blind node scaling and records validation, rollback, and capacity-alert evidence.",
+        ],
+        "validation_checks": [
+            "No-live-capacity-change safety boundary recorded",
+            "Triage False Leads ruled out",
+            "EKS IP exhaustion analysis passed output captured",
+            "FailedScheduling pod-density evidence captured",
+            "FailedCreatePodSandBox CNI evidence captured",
+            "Subnet IPv4 exhaustion evidence captured",
+            "Nodes near maxPods and prefix delegation evidence captured",
+            "Owner split and staged remediation recorded",
+            "Validation output and rollback/no-credential evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["cluster-snapshot.txt", "payments", "checkout scale", "no AWS", "no cluster capacity"],
+            ["triage-notes.md", "False Leads", "Blind node scaling", "CPU", "application Pods"],
+            ["FailedScheduling", "Insufficient pods", "maxPods", "pod-density"],
+            ["FailedCreatePodSandBox", "aws-cni", "failed to assign an IP address", "ipamd.go"],
+            ["subnet-bbb222", "AvailableIPv4AddressCount=7", "runningPods=29", "prefix delegation disabled"],
+            ["application owner", "platform owner", "network owner", "CNI", "subnet planning"],
+            ["Pause the checkout scale-up", "Blind node scaling: rejected", "validation", "Rollback", "capacity alert"],
+        ],
+    },
+    "review-terraform-eks-plan": {
+        "worksheet_prompts": [
+            "Record the plan artifact, workspace or environment, reviewer, and confirmation that `terraform apply` is not being run.",
+            "Read triage-notes.md and list the False Leads ruled out before approving or blocking the plan.",
+            "Paste the node group replacement evidence, subnet coverage before/after, and desired/max capacity change.",
+            "Paste the public ingress and broad IAM policy evidence.",
+            "Explain the blast radius, rollback uncertainty, and whether changes should be split into smaller plans.",
+            "Write the approval decision, required remediation, owner, and follow-up validation.",
+            "Capture the validation command output and the evidence artifacts you would save for review.",
+        ],
+        "rubric": [
+            "Preserves the no-apply safety boundary and names the reviewed plan artifact.",
+            "Uses triage notes to rule out saved-plan approval, managed-replacement confidence, one-subnet coverage, public-HTTPS, broad-IAM, and rollback-after-apply False Leads.",
+            "Captures node group replacement, subnet coverage regression, and capacity reduction evidence.",
+            "Flags public `0.0.0.0/0` ingress and broad `eks:*` IAM scope.",
+            "Explains blast radius, rollback uncertainty, owner, and why separate plans are safer.",
+            "Blocks or conditions approval with concrete remediation and validation requirements.",
+            "Saves decision, plan, reviewer questions, validation output, and cleanup/no-runtime notes.",
+        ],
+        "validation_checks": [
+            "No-apply safety boundary recorded",
+            "Triage false leads recorded",
+            "Replacement and subnet regression evidence captured",
+            "Capacity reduction evidence captured",
+            "Public ingress and broad IAM evidence captured",
+            "Blast radius and rollback decision written",
+            "Approval/remediation owner recorded",
+            "Validation output and saved evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["terraform apply", "tfplan.txt", "plan artifact", "reviewer"],
+            ["triage-notes.md", "False Leads", "A saved plan is not safe because it is not applied yet", "Managed node group replacement is still blast radius", "One-subnet coverage is not a temporary detail", "eks:* is not reviewable least privilege"],
+            ["must be replaced", "subnet-aaa111", "subnet-bbb222", "desired_size = 6 -> 3", "max_size = 12 -> 6"],
+            ["0.0.0.0/0", "eks:*", "Resource = \"*\"", "public ingress", "IAM"],
+            ["blast radius", "rollback", "owner", "separate plans", "capacity"],
+            ["Do not approve", "remediation", "least-privilege", "validation", "rollback"],
+            ["decision-record.md", "tfplan.txt", "review.md", "validate", "cleanup", "Terraform plan risk analysis passed"],
+        ],
+    },
+    "debug-irsa-access-denied": {
+        "worksheet_prompts": [
+            "Record the evidence source, namespace, ServiceAccount, IAM role ARN, and confirmation that no live IAM changes are being made.",
+            "Read triage-notes.md and list the False Leads ruled out before editing IAM.",
+            "Paste the Kubernetes and runtime identity evidence: ServiceAccount namespace/name, Pod `serviceAccountName`, role annotation, and `AWS_ROLE_ARN`.",
+            "Paste the application-side SDK error from workload-error.log and compare it with CloudTrail.",
+            "Paste the trust policy subject, expected subject, and namespace mismatch.",
+            "Paste the CloudTrail denied action, error code, assumed role, bucket, and key prefix.",
+            "Decide whether the failure is trust, permission, or both, and name the owner for each fix.",
+            "Write the narrow trust and least-privilege permission fix plus validation or rollout handoff.",
+        ],
+        "rubric": [
+            "Preserves the captured-evidence safety boundary and avoids live IAM mutation.",
+            "Uses triage notes to rule out restarts, token rotation, bucket-policy-only changes, wildcard trust, and broad S3 False Leads.",
+            "Captures Kubernetes identity and runtime `AWS_ROLE_ARN` evidence for `payments/checkout`.",
+            "Connects the application SDK `AccessDenied` with the CloudTrail `s3:PutObject` denial.",
+            "Identifies the trust subject mismatch between `default/checkout` and `payments/checkout`.",
+            "Connects CloudTrail `AccessDenied` on `s3:PutObject` to bucket and key-prefix evidence.",
+            "Separates trust-policy ownership from permission-policy ownership and avoids wildcard fixes.",
+            "Defines exact trust, least-privilege permission scope, validation, and rollout handoff.",
+        ],
+        "validation_checks": [
+            "No-live-IAM safety boundary recorded",
+            "Triage False Leads ruled out",
+            "ServiceAccount and runtime role identity evidence captured",
+            "Application SDK AccessDenied evidence captured",
+            "Trust subject mismatch captured",
+            "CloudTrail AccessDenied evidence captured",
+            "Bucket and key-prefix evidence captured",
+            "Trust and permission owners separated",
+            "Narrow fix and validation handoff recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["captured evidence", "no live IAM", "ServiceAccount", "role ARN", "payments"],
+            ["triage-notes.md", "False Leads", "token rotation", "wildcard", "s3:*"],
+            ["payments/checkout", "serviceAccountName", "role-arn", "AWS_ROLE_ARN", "payments-checkout-readonly"],
+            ["workload-error.log", "botocore", "AccessDenied", "PutObject", "SDK"],
+            ["system:serviceaccount:default:checkout", "system:serviceaccount:payments:checkout", "trust policy", "namespace mismatch"],
+            ["AccessDenied", "PutObject", "payments-prod-receipts", "receipts/2026/05/30", "CloudTrail"],
+            ["trust", "permission", "owner", "wildcard", "s3:*"],
+            [
+                "s3:PutObject",
+                "arn:aws:s3:::payments-prod-receipts/receipts/*",
+                "least-privilege",
+                "validation",
+                "handoff",
+                "IRSA simulation passed",
+            ],
+        ],
+    },
+    "audit-tenant-boundaries": {
+        "worksheet_prompts": [
+            "Record the manifest reviewed, tenant namespace, safety boundary, and cleanup command if a disposable cluster was used.",
+            "Read triage-notes.md and list the False Leads ruled out before approving tenant onboarding.",
+            "Paste the ClusterRoleBinding, bound subject, cluster-admin role, and secret access evidence.",
+            "Paste the Pod Security enforcement level and the required restricted target.",
+            "Paste the NetworkPolicy egress rule and explain why it is not a default-deny boundary.",
+            "Write the onboarding decision with blocking findings, required changes, owner, and expiry for exceptions.",
+            "Capture validation output, safer target evidence, cleanup, and no-runtime-review evidence.",
+        ],
+        "rubric": [
+            "Preserves the no-shared-cluster safety boundary and names the tenant namespace.",
+            "Uses triage notes to rule out temporary admin, secret debugging, policy-object presence, baseline-default, and dry-run approval False Leads.",
+            "Captures cluster-admin and secret-read RBAC evidence with exact resources and subjects.",
+            "Identifies Pod Security `baseline` as weaker than the required `restricted` target.",
+            "Explains why `allow-all-egress` is not tenant isolation and names the default-deny target.",
+            "Blocks onboarding with owners, expiry dates, and required boundary changes.",
+            "Saves validation, safer manifest diff, cleanup, and no-runtime-review evidence.",
+        ],
+        "validation_checks": [
+            "No-shared-cluster safety boundary recorded",
+            "Triage False Leads ruled out",
+            "ClusterRoleBinding and cluster-admin evidence captured",
+            "Secret access evidence captured",
+            "Pod Security baseline/restricted evidence captured",
+            "Allow-all egress evidence captured",
+            "Onboarding decision with owner/expiry recorded",
+            "Validation output and cleanup/no-runtime evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["tenant-a", "shared cluster", "cleanup", "manifest", "dry-run"],
+            ["triage-notes.md", "False Leads", "temporary cluster-admin", "secret", "NetworkPolicy object", "dry-run"],
+            ["tenant-a-temporary-admin", "cluster-admin", "deployer", "secrets", "Role", "Tenant boundary analysis passed"],
+            ["pod-security.kubernetes.io/enforce: baseline", "restricted", "Pod Security", "exception"],
+            ["allow-all-egress", "egress", "default-deny", "NetworkPolicy", "boundary"],
+            ["Block onboarding", "owner", "expiry", "required changes", "exception"],
+            ["fixed-tenant-a.yaml", "validate", "diff", "cleanup", "no-runtime"],
+        ],
+    },
+    "validate-helm-release-artifact": {
+        "worksheet_prompts": [
+            "Record the rendered artifact, target environment, reviewer, and confirmation that the unsafe render was not applied.",
+            "Read triage-notes.md and list the False Leads ruled out before approving the rendered artifact.",
+            "Paste the immutable selector change evidence from rendered-before.yaml and rendered-after.yaml.",
+            "Paste the image, securityContext, and Service exposure regressions.",
+            "Explain rollback risk and which chart/value owners must approve changes.",
+            "Write the release decision and required safer rendered target.",
+            "Capture validation output and the evidence artifacts you would save for release review.",
+        ],
+        "rubric": [
+            "Preserves the no-apply safety boundary and names the rendered artifact under review.",
+            "Uses triage notes to rule out render-success approval, diff-only approval, mutable-tag promotion, apply-then-fix rollback, and unapproved exposure False Leads.",
+            "Captures the immutable Deployment selector change with exact before/after labels.",
+            "Flags mutable `checkout:latest` image, privileged runtime, and new `LoadBalancer` exposure.",
+            "Explains rollback risk, owner questions, and why render-success is not release approval.",
+            "Blocks or conditions the release with concrete safer-render requirements.",
+            "Saves rendered diff, decision, validation output, and cleanup/no-runtime notes.",
+        ],
+        "validation_checks": [
+            "No-apply safety boundary recorded",
+            "Triage False Leads ruled out",
+            "Selector before/after evidence captured",
+            "Mutable image evidence captured",
+            "Privileged runtime and LoadBalancer evidence captured",
+            "Rollback risk and owner questions written",
+            "Safer render decision recorded",
+            "Helm release analysis, validation output, and saved evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["rendered artifact", "rendered-after.yaml", "not applied", "reviewer"],
+            ["triage-notes.md", "False Leads", "render-success", "checkout:latest", "LoadBalancer"],
+            ["app.kubernetes.io/name=checkout", "app=checkout", "immutable selector", "Deployment selector"],
+            ["checkout:latest", "privileged: true", "LoadBalancer", "securityContext", "mutable"],
+            ["rollback", "owner", "chart values", "render-success", "release approval"],
+            ["Block the release", "safe-rendered-after.yaml", "digest-pinned", "ClusterIP", "non-privileged"],
+            ["diff", "review-notes.md", "validate", "cleanup", "no-runtime", "Helm release artifact analysis passed"],
+        ],
+    },
+    "trace-argocd-drift": {
+        "worksheet_prompts": [
+            "Record the ArgoCD report, desired/live manifest sources, reviewer, and confirmation that no force-sync or broad ignore rule was applied.",
+            "Read triage-notes.md and list the False Leads ruled out before force-sync or ignore-rule changes.",
+            "Paste the desired and live replica values plus the exact drift field path.",
+            "Paste the sync policy and explain the `selfHeal` risk if ArgoCD fights controller-owned replicas.",
+            "Paste the autoscaling/controller ownership signal from the live object.",
+            "Decide whether Git or autoscaling owns replicas and list fields that must remain Git-owned.",
+            "Review the proposed ignore rule and explain why it stays narrowly scoped.",
+            "Capture validation output, owner decision, and evidence artifacts you would save.",
+        ],
+        "rubric": [
+            "Uses the ArgoCD app report to preserve the captured-manifest safety boundary and avoid force-sync or broad ignore rules.",
+            "Uses triage notes to rule out force-sync, global self-heal changes, whole-Deployment ignore, and all-drift-is-human False Leads.",
+            "Captures desired `replicas: 3`, live `replicas: 9`, and `.spec.replicas` drift evidence.",
+            "Explains why `selfHeal: true` can fight autoscaling when field ownership is unclear.",
+            "Uses autoscaling metadata as controller-ownership evidence instead of assuming human drift.",
+            "Separates autoscaler-owned replicas from Git-owned image, labels, resources, and security fields.",
+            "Chooses a narrow `/spec/replicas` ignore rule scoped to the checkout Deployment only.",
+            "Saves ownership decision, ignore-rule review, validation output, and cleanup/no-runtime notes.",
+        ],
+        "validation_checks": [
+            "ArgoCD report and no-force-sync safety boundary recorded",
+            "Triage False Leads ruled out",
+            "Desired/live replica evidence captured",
+            "selfHeal risk captured",
+            "Autoscaling ownership evidence captured",
+            "Git-owned fields listed",
+            "Narrow ignore rule reviewed",
+            "Ownership decision written",
+            "Validation output and saved evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["argocd-app-report.txt", "OutOfSync", "desired.yaml", "live.yaml", "force-sync"],
+            ["triage-notes.md", "False Leads", "force-sync", "whole Deployment", "OutOfSync"],
+            ["replicas: 3", "replicas: 9", ".spec.replicas", "/spec/replicas"],
+            ["selfHeal: true", "force sync", "fight", "sync policy"],
+            ["autoscaling.platform.example.com/last-scale", "autoscaling", "controller-owned", "live object"],
+            ["Git-owned", "image", "labels", "resources", "security"],
+            ["ignoreDifferences", "/spec/replicas", "checkout", "payments", "Deployment"],
+            [
+                "ownership-decision.md",
+                "ignore-differences.yaml",
+                "validate",
+                "cleanup",
+                "no-runtime",
+                "ArgoCD drift analysis passed",
+            ],
+        ],
+    },
+    "review-docker-image-supply-chain": {
+        "worksheet_prompts": [
+            "Record the Dockerfile, captured inspect/history files, reviewer, and confirmation that the unsafe secret pattern will not be reused.",
+            "Read triage-notes.md and list the False Leads ruled out before approving image promotion.",
+            "Paste `checkout:latest`, digest, promotion artifact, and rollback artifact evidence.",
+            "Paste every place `API_TOKEN` appears and the blank runtime user evidence.",
+            "Paste the runtime image bloat evidence, including copied source/build files and base image risk.",
+            "Write the hardening decision with required Dockerfile, SBOM, scan, non-root, and owner actions.",
+            "Capture promotion note, validation output, digest/rollback requirements, and evidence to save.",
+        ],
+        "rubric": [
+            "Preserves the captured-evidence safety boundary and avoids reusing the secret pattern.",
+            "Uses triage notes to rule out latest freshness, deleted secret layers, runtime-only non-root controls, post-promotion scans, and rollback tag False Leads.",
+            "Captures `checkout:latest` tag-only promotion, missing RepoDigests, and rollback artifact gaps.",
+            "Finds secret leakage in Dockerfile, inspect metadata, and layer history plus blank runtime user.",
+            "Explains runtime bloat and root-runtime risk with source/build-copy evidence.",
+            "Blocks promotion with required digest, SBOM, scan, non-root runtime, and owner actions.",
+            "Saves promotion note, validation output, digest, rollback, and cleanup/no-runtime evidence.",
+        ],
+        "validation_checks": [
+            "Captured-evidence safety boundary recorded",
+            "Triage False Leads ruled out",
+            "Docker supply-chain analysis passed output captured",
+            "Tag and missing digest evidence captured",
+            "Secret leakage evidence captured",
+            "Blank runtime user and image bloat evidence captured",
+            "Hardening decision and owner actions written",
+            "Promotion/rollback evidence requirements recorded",
+            "Validation output and saved evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["Dockerfile", "image-inspect.json", "history.txt", "secret pattern", "reviewer"],
+            ["triage-notes.md", "False Leads", "latest", "deleted secret", "runAsNonRoot", "rollback digest"],
+            ["checkout:latest", "RepoDigests", "rollback digest", "promotion artifact", "Docker supply-chain analysis passed"],
+            ["API_TOKEN=do-not-bake-secrets", "Dockerfile", "image config", "history", "\"User\": \"\""],
+            ["COPY --from=build /app .", "node:22", "root", "source tree", "runtime"],
+            ["Block promotion", "digest", "SBOM", "scan", "non-root", "owner"],
+            ["promotion-note.md", "validate", "rollback digest", "cleanup", "no-runtime"],
+        ],
+    },
+    "design-safe-release-pipeline": {
+        "worksheet_prompts": [
+            "Record the unsafe workflow, checklist, reviewer, and confirmation that no real CI runner, registry, or cluster is being changed.",
+            "Read triage-notes.md and list the False Leads ruled out before approving the production pipeline.",
+            "Paste `deploy-prod`, `github.ref == 'refs/heads/main'`, direct Helm production deployment, and missing digest-promotion evidence.",
+            "Paste the missing gate evidence and the required `image-digest.txt`, `trivy image`, SBOM, render, schema, and policy gates.",
+            "Paste `deploy-staging`, smoke test, `environment: production`, canary, and approval boundary evidence.",
+            "Write the release decision, owner split, rollback artifact, and `rollback-if-slo-breach` trigger.",
+            "Capture validation output, safe pipeline excerpts, decision record, and evidence template contents to save.",
+        ],
+        "rubric": [
+            "Preserves the no-live-CI safety boundary and names the reviewed pipeline artifacts.",
+            "Uses triage notes to rule out green-build-only approval, SHA-tag-only promotion, post-deploy scans, approval without artifacts, and rollback-without-digest False Leads.",
+            "Blocks `deploy-prod` from `main` and explains why tag-only promotion is weaker than digest promotion.",
+            "Requires `image-digest.txt`, `trivy image`, SBOM, manifest render, `kubeconform`, and policy evidence before deployment.",
+            "Requires `deploy-staging`, smoke tests, `environment: production`, approval, and canary rollout before production.",
+            "Defines owner split, rollback artifact, and `rollback-if-slo-breach` criteria for production.",
+            "Saves safe-pipeline excerpts, decision record, validation output, and cleanup/no-runtime evidence.",
+        ],
+        "validation_checks": [
+            "No-live-CI safety boundary recorded",
+            "Triage False Leads ruled out",
+            "Safe release pipeline analysis passed output captured",
+            "Direct main-to-production deploy evidence captured",
+            "Digest-promotion gap captured",
+            "Scan/SBOM/render/schema/policy gates captured",
+            "Staging, smoke, approval, and canary evidence captured",
+            "Rollback-if-SLO-breach decision recorded",
+            "Validation output and saved evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["pipeline.yaml", "release-checklist.md", "no real CI", "registry", "cluster"],
+            ["triage-notes.md", "False Leads", "green build", "SHA tag", "post-deploy scans", "rollback digest"],
+            [
+                "deploy-prod",
+                "github.ref == 'refs/heads/main'",
+                "helm upgrade --install",
+                "missing digest promotion",
+                "Safe release pipeline analysis passed",
+            ],
+            ["image-digest.txt", "trivy image", "syft", "helm template", "kubeconform", "conftest test"],
+            ["deploy-staging", "smoke.sh", "environment: production", "rollout.strategy=canary", "approval"],
+            ["rollback-if-slo-breach", "rollback", "owner", "SLO", "production"],
+            ["safe-pipeline.yaml", "decision-record.md", "validate", "evidence-template.md", "no-runtime"],
+        ],
+    },
+    "create-platform-golden-path": {
+        "worksheet_prompts": [
+            "Record the service-template, catalog metadata, reviewer, and confirmation that no template engine or cluster is required.",
+            "Read triage-notes.md and list the False Leads ruled out before approving the golden path.",
+            "Paste required inputs, generated artifacts, secure runtime defaults, first-run flow, and production readiness gates.",
+            "Paste missing `pagerduty.com/service-id`, missing SLO dashboard, runbook, cost center, and concrete owner evidence.",
+            "Explain why incomplete ownership metadata blocks production onboarding.",
+            "Write the ready template decision with adoption metrics, reliability metrics, and launch-validation owners.",
+            "Capture fixed catalog diff, decision record, validation output, cleanup, and no-runtime evidence.",
+        ],
+        "rubric": [
+            "Preserves the file-review safety boundary and names the template and catalog artifacts.",
+            "Uses triage notes to rule out generated-files readiness, catalog-only ownership proof, smooth-first-run confidence, and optional metadata False Leads.",
+            "Captures required inputs, generated artifacts, secure defaults, first-run flow, and readiness gates.",
+            "Identifies missing pager, missing SLO dashboard, runbook, cost center, and concrete owner metadata.",
+            "Blocks production onboarding until ownership and observability metadata are complete.",
+            "Defines adoption metrics, reliability metrics, launch gates, and owner validation.",
+            "Saves fixed catalog diff, decision record, validation output, cleanup, and no-runtime evidence.",
+        ],
+        "validation_checks": [
+            "No-runtime template review boundary recorded",
+            "Triage False Leads ruled out",
+            "Golden path readiness analysis passed output captured",
+            "Required inputs and generated artifacts captured",
+            "Secure defaults and launch gates captured",
+            "Missing pager and SLO dashboard evidence captured",
+            "Ownership, runbook, and cost metadata captured",
+            "Adoption/reliability metrics and decision recorded",
+            "Validation output and cleanup/no-runtime evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["service-template.md", "catalog-info.yaml", "no template engine", "no cluster"],
+            ["triage-notes.md", "False Leads", "generated files", "catalog presence", "smooth first run", "optional metadata"],
+            [
+                "Required Inputs",
+                "Generated artifacts",
+                "Run as non-root",
+                "Production readiness review",
+                "Golden path readiness analysis passed",
+            ],
+            ["pagerduty.com/service-id: missing", "platform.example.com/slo-dashboard: missing", "runbook", "cost_center"],
+            ["Block the starting service template", "production onboarding", "ownership metadata"],
+            ["Adoption Metrics", "reliability metrics", "launch gates", "owner"],
+            ["fixed-catalog-info.yaml", "decision-record.md", "validate", "evidence-template.md", "no-runtime"],
+        ],
+    },
+    "audit-eks-cost-drivers": {
+        "worksheet_prompts": [
+            "Record the usage, service, storage, and recommendation files plus confirmation that no AWS or cluster deletion is being made.",
+            "Read triage-notes.md and list the False Leads ruled out before recommending cost changes.",
+            "Paste over-requested workload rows, unknown-owner rows, and request-versus-usage evidence.",
+            "Paste abandoned LoadBalancer, abandoned PVC, estimated monthly cost, and architecture-review evidence.",
+            "Rank quick wins versus architecture changes with reliability risk and ownership confidence.",
+            "Write recommendations with owner, expected savings, rollback, and review cadence.",
+            "Capture recommendations table, validation output, cleanup, and no-AWS evidence note.",
+        ],
+        "rubric": [
+            "Preserves the no-delete/no-AWS safety boundary and names the local cost evidence files.",
+            "Uses triage notes to rule out utilization-only deletion, unknown-owner deletion, age-only cleanup, and savings-without-rollback False Leads.",
+            "Captures over-requested workloads, unknown owners, and usage/request ratio evidence.",
+            "Captures abandoned LoadBalancer, abandoned PVC, expected cost, and architecture-review items.",
+            "Separates quick wins from architecture changes and avoids deletion without owner confirmation.",
+            "Assigns owner, expected savings, reliability risk, rollback, and review cadence.",
+            "Saves recommendations, validation output, cleanup, and no-AWS evidence.",
+        ],
+        "validation_checks": [
+            "No-delete/no-AWS safety boundary recorded",
+            "Triage False Leads ruled out",
+            "EKS cost driver analysis passed output captured",
+            "Compute over-request evidence captured",
+            "Unknown owner evidence captured",
+            "Abandoned LoadBalancer and PVC evidence captured",
+            "Quick-win monthly exposure and architecture-review items separated",
+            "Owner, savings, risk, rollback, and cadence recorded",
+            "Validation output and cleanup/no-AWS evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["usage.csv", "services.txt", "storage.txt", "no AWS", "no delete"],
+            ["triage-notes.md", "False Leads", "low utilization", "unknown owner", "LoadBalancer age", "savings without rollback"],
+            [
+                "payments,checkout,6000,900",
+                "payments,worker,4000,350",
+                "default,load-test,3000,0",
+                "EKS cost driver analysis passed",
+                "Compute right-size candidates",
+                "Quick-win monthly exposure",
+            ],
+            ["abandoned-demo", "abandoned-cache", "Expected Savings", "architecture review"],
+            ["quick wins", "Reliability Risk", "owner confirmation", "delete"],
+            ["Expected Savings", "Restore previous requests", "Weekly: unknown owner", "rollback"],
+            ["recommendations.md", "validate", "cleanup", "evidence-template.md", "no-AWS"],
+        ],
+    },
+    "build-platform-career-proof-pack": {
+        "worksheet_prompts": [
+            "Record the job-skill packet, evidence inventory, README template, and public-safe redaction boundary.",
+            "Read triage-notes.md and list the False Leads ruled out before publishing career claims.",
+            "Paste repeated target skills and the platform domains covered by the selected lab evidence.",
+            "Paste selected lab artifacts, command/validator proof, decision evidence, rollback evidence, and missing proof.",
+            "Write one portfolio proof section with problem, environment, commands, decision, validation, and talking points.",
+            "Write resume bullets and STAR stories tied to incident response, security, cost, and release safety evidence.",
+            "Capture analyzer output, validation output, and every claim that still needs screenshots, diagrams, or stronger evidence.",
+        ],
+        "rubric": [
+            "Preserves the public-safe evidence boundary and avoids secrets, customer data, or private identifiers.",
+            "Uses triage notes to rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.",
+            "Maps repeated target skills to concrete Platform Academy lab artifacts and domains.",
+            "Cites commands, validators, decisions, rollback notes, and missing proof instead of broad claims.",
+            "Completes a portfolio README proof section with problem, environment, command, decision, validation, and rollback.",
+            "Writes resume bullets and STAR stories tied to incident response, security, cost, and release safety.",
+            "Saves validation output and flags claims that need stronger screenshots, diagrams, or redaction.",
+        ],
+        "validation_checks": [
+            "Public-safe redaction boundary recorded",
+            "Triage False Leads ruled out",
+            "Repeated target skills captured",
+            "Lab artifacts and validators mapped",
+            "Portfolio proof README completed",
+            "Resume bullets written with action/scope/impact",
+            "STAR stories written for incident/security/cost/release",
+            "Career proof analyzer output, validation output, and missing-proof evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["job-skills.txt", "evidence-inventory.md", "public", "redaction"],
+            ["triage-notes.md", "False Leads", "completed labs", "duty-only", "STAR", "redaction"],
+            ["Kubernetes, Terraform, AWS, CI/CD", "EKS, Helm, ArgoCD", "Docker, supply chain"],
+            ["Candidate artifacts", "Missing proof to collect", "verify-full-labs.sh", "Rollback"],
+            ["completed-proof-readme.md", "Problem", "Environment", "Interview Talking Points"],
+            ["resume-bullets.md", "star-stories.md", "Incident Response", "Security", "Cost", "Release Safety"],
+            ["validate", "screenshots", "diagrams", "evidence-template.md", "stronger evidence", "Career proof pack analysis passed"],
+        ],
+    },
+    "write-slo-backed-runbook": {
+        "worksheet_prompts": [
+            "Record the alert/signal packet, service, reviewer, and confirmation that no live rollback command was run.",
+            "Read triage-notes.md and list the False Leads ruled out before mitigation.",
+            "Paste the 99.9% SLO target, CheckoutHighErrorBudgetBurn alert, 2% threshold, 14-minute duration, dashboard, and user impact.",
+            "Paste revision 43 rollout timing, readiness flapping, target-health symptoms, and dependency evidence still needed.",
+            "Write safe first commands plus rollback, traffic-shift, and escalation criteria.",
+            "Write the mitigation decision, follow-up owners, dashboard/runbook improvements, and validation signals.",
+            "Capture validation output and the alert, rollout, event, decision, and post-mitigation evidence you would save.",
+        ],
+        "rubric": [
+            "Preserves the no-live-rollback safety boundary and names the SLO signal packet.",
+            "Uses triage notes to rule out rollback-first response, correlation-only proof, threshold-only evidence, and ownerless follow-up False Leads.",
+            "Captures 99.9% availability, CheckoutHighErrorBudgetBurn, 2% 5xx threshold, and 14-minute burn evidence.",
+            "Connects revision 43, readiness flapping, and target-health symptoms without skipping dependency checks.",
+            "Defines read-only first commands and rollback/traffic-shift/escalation criteria before mitigation.",
+            "Assigns Incident commander, app, platform, SRE, and dependency owners with validation and follow-up actions.",
+            "Saves runbook, incident decision, validation output, dashboard link, and cleanup/no-runtime evidence.",
+        ],
+        "validation_checks": [
+            "No-live-rollback safety boundary recorded",
+            "Triage False Leads ruled out",
+            "SLO target, burn alert, and SLO runbook analysis output captured",
+            "Revision 43 and symptom evidence captured",
+            "Safe first commands and mitigation criteria written",
+            "Owner split and follow-up actions recorded",
+            "Validation signals documented",
+            "Saved evidence and cleanup/no-runtime note recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["no live rollback", "signals.md", "CheckoutHighErrorBudgetBurn", "reviewer"],
+            ["triage-notes.md", "False Leads", "rollback first", "Revision 43 correlation", "user impact", "ownerless follow-up"],
+            ["99.9%", "CheckoutHighErrorBudgetBurn", "2% 5xx", "14 minutes", "dashboard", "SLO runbook analysis passed"],
+            ["revision 43", "readiness flapping", "target group unhealthy", "dependency", "rollout"],
+            ["kubectl rollout history", "read-only", "rollback", "traffic", "escalation"],
+            ["Incident commander", "App owner", "Platform owner", "SRE owner", "validation"],
+            ["completed-runbook.md", "incident-decision.md", "validate", "dashboard", "cleanup"],
+        ],
+    },
+    "design-opentelemetry-signal-path": {
+        "worksheet_prompts": [
+            "Record the collector manifest, log packet, Prometheus rule, simulator command, and confirmation that no live backend is changed.",
+            "Read triage-notes.md and list the False Leads ruled out before trusting the telemetry path.",
+            "Paste the `http.request.header.authorization` deletion evidence and why it must remain.",
+            "Paste the log line with a trace ID, the `trace_id=missing` line, app instrumentation owner, and validation signal.",
+            "Paste the `customer_email` alert grouping evidence and explain the cardinality/privacy risk.",
+            "Write the safer aggregation, owner map, dashboard/runbook handoff, and privacy decision.",
+            "Capture analyzer output, simulator output, validation output, safe rule evidence, and saved artifacts.",
+        ],
+        "rubric": [
+            "Preserves the no-live-telemetry-change safety boundary and names the reviewed artifacts.",
+            "Uses triage notes to rule out header-deletion-only confidence, one-good-trace confidence, customer-level grouping, and simulator-only False Leads.",
+            "Keeps `http.request.header.authorization` deletion as a required collector privacy control.",
+            "Captures trace context evidence, including a valid trace ID and `trace_id=missing` gap.",
+            "Identifies `customer_email` as high-cardinality and sensitive alert-grouping evidence.",
+            "Defines route-only aggregation plus app, telemetry, SRE, and data/privacy owners.",
+            "Saves signal-path decision, safe rule, simulator output, validation output, and cleanup/no-runtime evidence.",
+        ],
+        "validation_checks": [
+            "No-live-telemetry-change safety boundary recorded",
+            "Triage False Leads ruled out",
+            "Sensitive header deletion evidence captured",
+            "Trace context gap evidence captured",
+            "Customer email cardinality evidence captured",
+            "Safer aggregation and owner map written",
+            "Signal path analyzer, simulator, and validation output captured",
+            "Saved evidence and cleanup/no-runtime note recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["collector.yaml", "checkout-logs.txt", "prometheus-rule.yaml", "simulator", "no live backend"],
+            ["triage-notes.md", "False Leads", "header deletion", "one valid trace", "customer-level", "owner map"],
+            ["http.request.header.authorization", "action: delete", "collector", "privacy"],
+            ["trace_id=missing", "trace_id=", "App owner", "propagate trace context", "logs"],
+            ["customer_email", "cardinality", "privacy", "alert grouping", "histogram_quantile"],
+            ["sum by (le, route)", "Owner Map", "SRE owner", "Data/privacy owner", "dashboard"],
+            [
+                "signal-path-decision.md",
+                "safe-prometheus-rule.yaml",
+                "simulator",
+                "validate",
+                "cleanup",
+                "OpenTelemetry signal path analysis passed",
+            ],
+        ],
+    },
+    "run-incident-commander-tabletop": {
+        "worksheet_prompts": [
+            "Record the signal packet, facilitator, next update clock, and confirmation that no live mitigation was executed.",
+            "Read triage-notes.md and list the False Leads ruled out before coordinating mitigation.",
+            "Paste SEV-2, checkout 5xx rate change, user impact, affected capability, and decision pressure.",
+            "Assign Incident commander, Operations lead, Communications lead, Planning lead, and escalation owner.",
+            "Write the suspect rollout, rollback option, current mitigation status, decision criterion, and stakeholder update time.",
+            "Add timeline entries with evidence, decision, and owner for each major event.",
+            "Capture analyzer output, commander brief, completed timeline, validation output, and follow-up evidence to save.",
+        ],
+        "rubric": [
+            "Preserves the tabletop/no-live-mitigation safety boundary and names the update clock.",
+            "Uses triage notes to rule out waiting for root cause, delaying communications, rollback-without-criteria, and late-timeline False Leads.",
+            "Captures SEV-2, 0.2% to 9.4% 5xx increase, payment-confirmation impact, and decision pressure.",
+            "Assigns Incident commander, Operations lead, Communications lead, Planning lead, and escalation roles before mitigation.",
+            "Defines revision 43 rollback criteria, revision 42 option, mitigation status, and stakeholder update timing.",
+            "Records timeline entries with evidence, decisions, owners, and communications handoff.",
+            "Saves commander brief, completed timeline, validation output, and cleanup/no-runtime evidence.",
+        ],
+        "validation_checks": [
+            "No-live-mitigation safety boundary recorded",
+            "Triage False Leads ruled out",
+            "Severity and user impact evidence captured",
+            "Incident roles assigned",
+            "Rollback criteria and update clock written",
+            "Timeline entries with evidence and owners recorded",
+            "Communications lead handoff documented",
+            "Incident tabletop analyzer output, validation output, and saved evidence recorded",
+        ],
+        "rubric_evidence_terms": [
+            ["signals.md", "tabletop", "no live mitigation", "15 minutes", "update clock"],
+            ["triage-notes.md", "False Leads", "root cause", "stakeholder update", "decision criterion", "timeline later"],
+            ["SEV-2", "0.2%", "9.4%", "payment confirmation", "decision pressure"],
+            ["Incident commander", "Operations lead", "Communications lead", "Planning lead", "escalation"],
+            ["revision 43", "revision 42", "rollback", "mitigation pending", "stakeholder update"],
+            ["timeline", "evidence", "decision", "owner", "communications"],
+            [
+                "commander-brief.md",
+                "completed-timeline.md",
+                "validate",
+                "cleanup",
+                "no-runtime",
+                "Incident commander tabletop analysis passed",
+            ],
+        ],
+    },
+}
+
+LAB_ARTIFACT_PATHS = {
+    "trace-service-to-pod": [
+        "labs/platform-academy/trace-service-to-pod/README.md",
+        "labs/platform-academy/trace-service-to-pod/start.yaml",
+        "labs/platform-academy/trace-service-to-pod/fixed.yaml",
+        "labs/platform-academy/trace-service-to-pod/broken-evidence.txt",
+        "labs/platform-academy/trace-service-to-pod/triage-notes.md",
+        "labs/platform-academy/trace-service-to-pod/evidence-template.md",
+        "labs/platform-academy/lib/cluster-safety.sh",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/trace-service-to-pod/service_route_analyzer.py",
+        "labs/platform-academy/trace-service-to-pod/setup.sh",
+        "labs/platform-academy/trace-service-to-pod/validate.sh",
+        "labs/platform-academy/trace-service-to-pod/cleanup.sh",
+        "labs/platform-academy/trace-service-to-pod/solution.md",
+    ],
+    "debug-crashloop-imagepull": [
+        "labs/platform-academy/debug-crashloop-imagepull/README.md",
+        "labs/platform-academy/debug-crashloop-imagepull/start.yaml",
+        "labs/platform-academy/debug-crashloop-imagepull/fixed.yaml",
+        "labs/platform-academy/debug-crashloop-imagepull/broken-evidence.txt",
+        "labs/platform-academy/debug-crashloop-imagepull/triage-notes.md",
+        "labs/platform-academy/debug-crashloop-imagepull/evidence-template.md",
+        "labs/platform-academy/lib/cluster-safety.sh",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/debug-crashloop-imagepull/failure_mode_analyzer.py",
+        "labs/platform-academy/debug-crashloop-imagepull/setup.sh",
+        "labs/platform-academy/debug-crashloop-imagepull/validate.sh",
+        "labs/platform-academy/debug-crashloop-imagepull/cleanup.sh",
+        "labs/platform-academy/debug-crashloop-imagepull/solution.md",
+    ],
+    "review-yaml-before-apply": [
+        "labs/platform-academy/review-yaml-before-apply/README.md",
+        "labs/platform-academy/review-yaml-before-apply/triage-notes.md",
+        "labs/platform-academy/review-yaml-before-apply/vendor.yaml",
+        "labs/platform-academy/review-yaml-before-apply/safe-baseline.yaml",
+        "labs/platform-academy/review-yaml-before-apply/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "scripts/yaml_contract.py",
+        "labs/platform-academy/review-yaml-before-apply/manifest_risk_analyzer.py",
+        "labs/platform-academy/review-yaml-before-apply/setup.sh",
+        "labs/platform-academy/review-yaml-before-apply/validate.sh",
+        "labs/platform-academy/review-yaml-before-apply/cleanup.sh",
+        "labs/platform-academy/review-yaml-before-apply/solution.md",
+    ],
+    "diagnose-eks-ip-exhaustion": [
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/README.md",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/triage-notes.md",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/cluster-snapshot.txt",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/remediation-plan.md",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/decision-record.md",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/ip_exhaustion_analyzer.py",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/setup.sh",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/validate.sh",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/cleanup.sh",
+        "labs/platform-academy/diagnose-eks-ip-exhaustion/solution.md",
+    ],
+    "validate-helm-release-artifact": [
+        "labs/platform-academy/validate-helm-release-artifact/README.md",
+        "labs/platform-academy/validate-helm-release-artifact/triage-notes.md",
+        "labs/platform-academy/validate-helm-release-artifact/rendered-before.yaml",
+        "labs/platform-academy/validate-helm-release-artifact/rendered-after.yaml",
+        "labs/platform-academy/validate-helm-release-artifact/safe-rendered-after.yaml",
+        "labs/platform-academy/validate-helm-release-artifact/review-notes.md",
+        "labs/platform-academy/validate-helm-release-artifact/helm_release_analyzer.py",
+        "labs/platform-academy/validate-helm-release-artifact/setup.sh",
+        "labs/platform-academy/validate-helm-release-artifact/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/validate-helm-release-artifact/validate.sh",
+        "labs/platform-academy/validate-helm-release-artifact/cleanup.sh",
+        "labs/platform-academy/validate-helm-release-artifact/solution.md",
+    ],
+    "trace-argocd-drift": [
+        "labs/platform-academy/trace-argocd-drift/README.md",
+        "labs/platform-academy/trace-argocd-drift/triage-notes.md",
+        "labs/platform-academy/trace-argocd-drift/argocd-app-report.txt",
+        "labs/platform-academy/trace-argocd-drift/desired.yaml",
+        "labs/platform-academy/trace-argocd-drift/live.yaml",
+        "labs/platform-academy/trace-argocd-drift/ignore-differences.yaml",
+        "labs/platform-academy/trace-argocd-drift/ownership-decision.md",
+        "labs/platform-academy/trace-argocd-drift/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/trace-argocd-drift/drift_analyzer.py",
+        "labs/platform-academy/trace-argocd-drift/setup.sh",
+        "labs/platform-academy/trace-argocd-drift/validate.sh",
+        "labs/platform-academy/trace-argocd-drift/cleanup.sh",
+        "labs/platform-academy/trace-argocd-drift/solution.md",
+    ],
+    "design-production-eks-review": [
+        "labs/platform-academy/design-production-eks-review/README.md",
+        "labs/platform-academy/design-production-eks-review/triage-notes.md",
+        "labs/platform-academy/design-production-eks-review/cluster-review.md",
+        "labs/platform-academy/design-production-eks-review/launch-review.md",
+        "labs/platform-academy/design-production-eks-review/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/design-production-eks-review/production_review_analyzer.py",
+        "labs/platform-academy/design-production-eks-review/setup.sh",
+        "labs/platform-academy/design-production-eks-review/validate.sh",
+        "labs/platform-academy/design-production-eks-review/cleanup.sh",
+        "labs/platform-academy/design-production-eks-review/solution.md",
+    ],
+    "audit-tenant-boundaries": [
+        "labs/platform-academy/audit-tenant-boundaries/README.md",
+        "labs/platform-academy/audit-tenant-boundaries/triage-notes.md",
+        "labs/platform-academy/audit-tenant-boundaries/tenant-a.yaml",
+        "labs/platform-academy/audit-tenant-boundaries/fixed-tenant-a.yaml",
+        "labs/platform-academy/audit-tenant-boundaries/review.md",
+        "labs/platform-academy/audit-tenant-boundaries/evidence-template.md",
+        "labs/platform-academy/lib/cluster-safety.sh",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/audit-tenant-boundaries/tenant_boundary_analyzer.py",
+        "labs/platform-academy/audit-tenant-boundaries/setup.sh",
+        "labs/platform-academy/audit-tenant-boundaries/validate.sh",
+        "labs/platform-academy/audit-tenant-boundaries/cleanup.sh",
+        "labs/platform-academy/audit-tenant-boundaries/solution.md",
+    ],
+    "write-slo-backed-runbook": [
+        "labs/platform-academy/write-slo-backed-runbook/README.md",
+        "labs/platform-academy/write-slo-backed-runbook/triage-notes.md",
+        "labs/platform-academy/write-slo-backed-runbook/prometheus-rule.yaml",
+        "labs/platform-academy/write-slo-backed-runbook/signals.md",
+        "labs/platform-academy/write-slo-backed-runbook/runbook-template.md",
+        "labs/platform-academy/write-slo-backed-runbook/completed-runbook.md",
+        "labs/platform-academy/write-slo-backed-runbook/incident-decision.md",
+        "labs/platform-academy/write-slo-backed-runbook/slo_runbook_analyzer.py",
+        "labs/platform-academy/write-slo-backed-runbook/setup.sh",
+        "labs/platform-academy/write-slo-backed-runbook/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/write-slo-backed-runbook/validate.sh",
+        "labs/platform-academy/write-slo-backed-runbook/cleanup.sh",
+        "labs/platform-academy/write-slo-backed-runbook/solution.md",
+    ],
+    "inspect-linux-failure-evidence": [
+        "labs/platform-academy/inspect-linux-failure-evidence/README.md",
+        "labs/platform-academy/inspect-linux-failure-evidence/triage-notes.md",
+        "labs/platform-academy/inspect-linux-failure-evidence/pod-describe.txt",
+        "labs/platform-academy/inspect-linux-failure-evidence/previous.log",
+        "labs/platform-academy/inspect-linux-failure-evidence/id-output.txt",
+        "labs/platform-academy/inspect-linux-failure-evidence/remediation-note.md",
+        "labs/platform-academy/inspect-linux-failure-evidence/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/inspect-linux-failure-evidence/linux_failure_analyzer.py",
+        "labs/platform-academy/inspect-linux-failure-evidence/setup.sh",
+        "labs/platform-academy/inspect-linux-failure-evidence/validate.sh",
+        "labs/platform-academy/inspect-linux-failure-evidence/cleanup.sh",
+        "labs/platform-academy/inspect-linux-failure-evidence/solution.md",
+    ],
+    "trace-network-path": [
+        "labs/platform-academy/trace-network-path/README.md",
+        "labs/platform-academy/trace-network-path/incident-handoff.md",
+        "labs/platform-academy/trace-network-path/hop-trace.md",
+        "labs/platform-academy/trace-network-path/network-evidence.md",
+        "labs/platform-academy/trace-network-path/ingress-service.yaml",
+        "labs/platform-academy/trace-network-path/fixed-ingress-service.yaml",
+        "labs/platform-academy/trace-network-path/evidence-template.md",
+        "labs/platform-academy/lib/cluster-safety.sh",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/trace-network-path/network_path_analyzer.py",
+        "labs/platform-academy/trace-network-path/setup.sh",
+        "labs/platform-academy/trace-network-path/validate.sh",
+        "labs/platform-academy/trace-network-path/cleanup.sh",
+        "labs/platform-academy/trace-network-path/solution.md",
+    ],
+    "review-terraform-eks-plan": [
+        "labs/platform-academy/review-terraform-eks-plan/README.md",
+        "labs/platform-academy/review-terraform-eks-plan/triage-notes.md",
+        "labs/platform-academy/review-terraform-eks-plan/tfplan.txt",
+        "labs/platform-academy/review-terraform-eks-plan/review.md",
+        "labs/platform-academy/review-terraform-eks-plan/decision-record.md",
+        "labs/platform-academy/review-terraform-eks-plan/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/review-terraform-eks-plan/plan_analyzer.py",
+        "labs/platform-academy/review-terraform-eks-plan/setup.sh",
+        "labs/platform-academy/review-terraform-eks-plan/validate.sh",
+        "labs/platform-academy/review-terraform-eks-plan/cleanup.sh",
+        "labs/platform-academy/review-terraform-eks-plan/solution.md",
+    ],
+    "debug-irsa-access-denied": [
+        "labs/platform-academy/debug-irsa-access-denied/README.md",
+        "labs/platform-academy/debug-irsa-access-denied/triage-notes.md",
+        "labs/platform-academy/debug-irsa-access-denied/serviceaccount.yaml",
+        "labs/platform-academy/debug-irsa-access-denied/workload-error.log",
+        "labs/platform-academy/debug-irsa-access-denied/trust-policy.json",
+        "labs/platform-academy/debug-irsa-access-denied/fixed-trust-policy.json",
+        "labs/platform-academy/debug-irsa-access-denied/least-privilege-policy.json",
+        "labs/platform-academy/debug-irsa-access-denied/cloudtrail-event.json",
+        "labs/platform-academy/debug-irsa-access-denied/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/debug-irsa-access-denied/irsa_simulator.py",
+        "labs/platform-academy/debug-irsa-access-denied/setup.sh",
+        "labs/platform-academy/debug-irsa-access-denied/validate.sh",
+        "labs/platform-academy/debug-irsa-access-denied/cleanup.sh",
+        "labs/platform-academy/debug-irsa-access-denied/solution.md",
+    ],
+    "design-safe-release-pipeline": [
+        "labs/platform-academy/design-safe-release-pipeline/README.md",
+        "labs/platform-academy/design-safe-release-pipeline/triage-notes.md",
+        "labs/platform-academy/design-safe-release-pipeline/pipeline.yaml",
+        "labs/platform-academy/design-safe-release-pipeline/safe-pipeline.yaml",
+        "labs/platform-academy/design-safe-release-pipeline/release-checklist.md",
+        "labs/platform-academy/design-safe-release-pipeline/decision-record.md",
+        "labs/platform-academy/design-safe-release-pipeline/release_pipeline_analyzer.py",
+        "labs/platform-academy/design-safe-release-pipeline/setup.sh",
+        "labs/platform-academy/design-safe-release-pipeline/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/design-safe-release-pipeline/validate.sh",
+        "labs/platform-academy/design-safe-release-pipeline/cleanup.sh",
+        "labs/platform-academy/design-safe-release-pipeline/solution.md",
+    ],
+    "create-platform-golden-path": [
+        "labs/platform-academy/create-platform-golden-path/README.md",
+        "labs/platform-academy/create-platform-golden-path/triage-notes.md",
+        "labs/platform-academy/create-platform-golden-path/service-template.md",
+        "labs/platform-academy/create-platform-golden-path/ready-service-template.md",
+        "labs/platform-academy/create-platform-golden-path/catalog-info.yaml",
+        "labs/platform-academy/create-platform-golden-path/fixed-catalog-info.yaml",
+        "labs/platform-academy/create-platform-golden-path/decision-record.md",
+        "labs/platform-academy/create-platform-golden-path/golden_path_analyzer.py",
+        "labs/platform-academy/create-platform-golden-path/setup.sh",
+        "labs/platform-academy/create-platform-golden-path/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/create-platform-golden-path/validate.sh",
+        "labs/platform-academy/create-platform-golden-path/cleanup.sh",
+        "labs/platform-academy/create-platform-golden-path/solution.md",
+    ],
+    "review-docker-image-supply-chain": [
+        "labs/platform-academy/review-docker-image-supply-chain/README.md",
+        "labs/platform-academy/review-docker-image-supply-chain/triage-notes.md",
+        "labs/platform-academy/review-docker-image-supply-chain/Dockerfile",
+        "labs/platform-academy/review-docker-image-supply-chain/hardened.Dockerfile",
+        "labs/platform-academy/review-docker-image-supply-chain/image-inspect.json",
+        "labs/platform-academy/review-docker-image-supply-chain/history.txt",
+        "labs/platform-academy/review-docker-image-supply-chain/promotion-note.md",
+        "labs/platform-academy/review-docker-image-supply-chain/supply_chain_analyzer.py",
+        "labs/platform-academy/review-docker-image-supply-chain/setup.sh",
+        "labs/platform-academy/review-docker-image-supply-chain/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/review-docker-image-supply-chain/validate.sh",
+        "labs/platform-academy/review-docker-image-supply-chain/cleanup.sh",
+        "labs/platform-academy/review-docker-image-supply-chain/solution.md",
+    ],
+    "debug-aws-alb-health-path": [
+        "labs/platform-academy/debug-aws-alb-health-path/README.md",
+        "labs/platform-academy/debug-aws-alb-health-path/triage-notes.md",
+        "labs/platform-academy/debug-aws-alb-health-path/target-health.json",
+        "labs/platform-academy/debug-aws-alb-health-path/ingress-service.yaml",
+        "labs/platform-academy/debug-aws-alb-health-path/fixed-ingress-service.yaml",
+        "labs/platform-academy/debug-aws-alb-health-path/events.txt",
+        "labs/platform-academy/debug-aws-alb-health-path/evidence-template.md",
+        "labs/platform-academy/lib/cluster-safety.sh",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/debug-aws-alb-health-path/alb_health_analyzer.py",
+        "labs/platform-academy/debug-aws-alb-health-path/setup.sh",
+        "labs/platform-academy/debug-aws-alb-health-path/validate.sh",
+        "labs/platform-academy/debug-aws-alb-health-path/cleanup.sh",
+        "labs/platform-academy/debug-aws-alb-health-path/solution.md",
+    ],
+    "design-opentelemetry-signal-path": [
+        "labs/platform-academy/design-opentelemetry-signal-path/README.md",
+        "labs/platform-academy/design-opentelemetry-signal-path/triage-notes.md",
+        "labs/platform-academy/simulator.py",
+        "labs/platform-academy/design-opentelemetry-signal-path/collector.yaml",
+        "labs/platform-academy/design-opentelemetry-signal-path/checkout-logs.txt",
+        "labs/platform-academy/design-opentelemetry-signal-path/prometheus-rule.yaml",
+        "labs/platform-academy/design-opentelemetry-signal-path/safe-prometheus-rule.yaml",
+        "labs/platform-academy/design-opentelemetry-signal-path/signal-path-decision.md",
+        "labs/platform-academy/design-opentelemetry-signal-path/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/design-opentelemetry-signal-path/signal_path_analyzer.py",
+        "labs/platform-academy/design-opentelemetry-signal-path/setup.sh",
+        "labs/platform-academy/design-opentelemetry-signal-path/validate.sh",
+        "labs/platform-academy/design-opentelemetry-signal-path/cleanup.sh",
+        "labs/platform-academy/design-opentelemetry-signal-path/solution.md",
+    ],
+    "run-incident-commander-tabletop": [
+        "labs/platform-academy/run-incident-commander-tabletop/README.md",
+        "labs/platform-academy/run-incident-commander-tabletop/triage-notes.md",
+        "labs/platform-academy/simulator.py",
+        "labs/platform-academy/run-incident-commander-tabletop/signals.md",
+        "labs/platform-academy/run-incident-commander-tabletop/roles.md",
+        "labs/platform-academy/run-incident-commander-tabletop/timeline.md",
+        "labs/platform-academy/run-incident-commander-tabletop/commander-brief.md",
+        "labs/platform-academy/run-incident-commander-tabletop/completed-timeline.md",
+        "labs/platform-academy/run-incident-commander-tabletop/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/run-incident-commander-tabletop/incident_tabletop_analyzer.py",
+        "labs/platform-academy/run-incident-commander-tabletop/setup.sh",
+        "labs/platform-academy/run-incident-commander-tabletop/validate.sh",
+        "labs/platform-academy/run-incident-commander-tabletop/cleanup.sh",
+        "labs/platform-academy/run-incident-commander-tabletop/solution.md",
+    ],
+    "audit-eks-cost-drivers": [
+        "labs/platform-academy/audit-eks-cost-drivers/README.md",
+        "labs/platform-academy/audit-eks-cost-drivers/triage-notes.md",
+        "labs/platform-academy/audit-eks-cost-drivers/usage.csv",
+        "labs/platform-academy/audit-eks-cost-drivers/services.txt",
+        "labs/platform-academy/audit-eks-cost-drivers/storage.txt",
+        "labs/platform-academy/audit-eks-cost-drivers/recommendations.md",
+        "labs/platform-academy/audit-eks-cost-drivers/cost_analyzer.py",
+        "labs/platform-academy/audit-eks-cost-drivers/setup.sh",
+        "labs/platform-academy/audit-eks-cost-drivers/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/audit-eks-cost-drivers/validate.sh",
+        "labs/platform-academy/audit-eks-cost-drivers/cleanup.sh",
+        "labs/platform-academy/audit-eks-cost-drivers/solution.md",
+    ],
+    "build-platform-career-proof-pack": [
+        "labs/platform-academy/build-platform-career-proof-pack/README.md",
+        "labs/platform-academy/build-platform-career-proof-pack/triage-notes.md",
+        "labs/platform-academy/build-platform-career-proof-pack/job-skills.txt",
+        "labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md",
+        "labs/platform-academy/build-platform-career-proof-pack/readme-template.md",
+        "labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md",
+        "labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md",
+        "labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
+        "labs/platform-academy/build-platform-career-proof-pack/evidence-template.md",
+        "labs/platform-academy/lib/evidence-check.sh",
+        "labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py",
+        "labs/platform-academy/build-platform-career-proof-pack/setup.sh",
+        "labs/platform-academy/build-platform-career-proof-pack/validate.sh",
+        "labs/platform-academy/build-platform-career-proof-pack/cleanup.sh",
+        "labs/platform-academy/build-platform-career-proof-pack/solution.md",
+    ],
+}
+
+FULL_LAB_SLUGS = {
+    "trace-service-to-pod",
+    "debug-crashloop-imagepull",
+    "review-yaml-before-apply",
+    "validate-helm-release-artifact",
+    "trace-argocd-drift",
+    "review-terraform-eks-plan",
+    "debug-irsa-access-denied",
+    "debug-aws-alb-health-path",
+    "trace-network-path",
+    "audit-tenant-boundaries",
+    "design-safe-release-pipeline",
+    "create-platform-golden-path",
+    "review-docker-image-supply-chain",
+    "build-platform-career-proof-pack",
+    "diagnose-eks-ip-exhaustion",
+    "write-slo-backed-runbook",
+    "design-production-eks-review",
+    "inspect-linux-failure-evidence",
+    "design-opentelemetry-signal-path",
+    "run-incident-commander-tabletop",
+    "audit-eks-cost-drivers",
+}
+
+PORTFOLIO_LAB_SLUGS = {
+    "trace-service-to-pod",
+    "debug-crashloop-imagepull",
+    "review-yaml-before-apply",
+    "validate-helm-release-artifact",
+    "diagnose-eks-ip-exhaustion",
+    "design-production-eks-review",
+    "trace-network-path",
+    "debug-aws-alb-health-path",
+    "review-terraform-eks-plan",
+    "debug-irsa-access-denied",
+    "audit-tenant-boundaries",
+    "trace-argocd-drift",
+    "design-safe-release-pipeline",
+    "write-slo-backed-runbook",
+    "design-opentelemetry-signal-path",
+    "review-docker-image-supply-chain",
+    "audit-eks-cost-drivers",
+    "run-incident-commander-tabletop",
+    "create-platform-golden-path",
+    "inspect-linux-failure-evidence",
+    "build-platform-career-proof-pack",
+}
+
+PORTFOLIO_LAB_FOCUS = {
+    "trace-service-to-pod": "Kubernetes Service routing",
+    "debug-crashloop-imagepull": "Pod failure classification",
+    "review-yaml-before-apply": "pre-apply manifest safety",
+    "validate-helm-release-artifact": "Helm release artifact review",
+    "diagnose-eks-ip-exhaustion": "EKS pod IP capacity incident",
+    "design-production-eks-review": "production EKS architecture review",
+    "trace-network-path": "HTTP path diagnosis",
+    "debug-aws-alb-health-path": "AWS ALB health-path diagnosis",
+    "review-terraform-eks-plan": "Terraform EKS plan review",
+    "debug-irsa-access-denied": "EKS workload identity",
+    "audit-tenant-boundaries": "Kubernetes tenant isolation",
+    "trace-argocd-drift": "GitOps ownership decisions",
+    "design-safe-release-pipeline": "production release safety",
+    "write-slo-backed-runbook": "SLO-backed incident response",
+    "design-opentelemetry-signal-path": "OpenTelemetry signal path design",
+    "review-docker-image-supply-chain": "Docker image supply-chain review",
+    "audit-eks-cost-drivers": "EKS cost-driver review",
+    "run-incident-commander-tabletop": "incident command tabletop",
+    "create-platform-golden-path": "service golden path contract",
+    "inspect-linux-failure-evidence": "Linux failure evidence diagnosis",
+    "build-platform-career-proof-pack": "portfolio proof pack",
+}
+
+EVIDENCE_PACK_LAB_SLUGS: set[str] = set()
+
+
+def _is_lab_self_check_command(command: object) -> bool:
+    command_text = str(command)
+    return "analyzer.py" in command_text or "simulator.py" in command_text
+
+
+def _without_lab_self_check_commands(commands: list[object]) -> list[str]:
+    return [str(command) for command in commands if not _is_lab_self_check_command(command)]
+
+
+def _lab_self_check_flags(slug: str) -> list[str]:
+    artifact_paths = LAB_ARTIFACT_PATHS.get(slug, [])
+    flags: list[str] = []
+    if any("analyzer.py" in artifact_path for artifact_path in artifact_paths):
+        flags.append("--run-analyzer")
+    if any("simulator.py" in artifact_path for artifact_path in artifact_paths):
+        flags.append("--run-simulator")
+    return flags
+
+
+def _lab_self_check_setup_commands(slug: str) -> list[str]:
+    return [f"bash labs/platform-academy/run-lab.sh setup {slug} {flag}" for flag in _lab_self_check_flags(slug)]
+
+
+for lab in PLATFORM_LABS:
+    runnable_update = RUNNABLE_LAB_UPDATES.get(lab["slug"])
+    if runnable_update:
+        lab.update(runnable_update)
+    deepened_update = DEEPENED_LAB_UPDATES.get(lab["slug"])
+    if deepened_update:
+        lab.update(deepened_update)
+    if lab["slug"] in FULL_LAB_SLUGS:
+        lab["lab_tier"] = "full"
+        setup_command = f"bash labs/platform-academy/run-lab.sh setup {lab['slug']}"
+        existing_setup_commands = lab.get("setup_commands", [])
+        if not any(setup_command in command for command in existing_setup_commands):
+            lab["setup_commands"] = [setup_command, *existing_setup_commands]
+        lab["setup_commands"] = _without_lab_self_check_commands(lab.get("setup_commands", []))
+        lab["commands"] = _without_lab_self_check_commands(lab.get("commands", []))
+    elif lab["slug"] in EVIDENCE_PACK_LAB_SLUGS:
+        lab["lab_tier"] = "evidence-pack"
+    else:
+        lab["lab_tier"] = "guided"
+    lab["portfolio_grade"] = lab["slug"] in PORTFOLIO_LAB_SLUGS
+    lab["portfolio_focus"] = PORTFOLIO_LAB_FOCUS.get(lab["slug"], "")
+    lab["artifact_paths"] = LAB_ARTIFACT_PATHS.get(lab["slug"], [])
+    lab["setup_self_check_commands"] = _lab_self_check_setup_commands(lab["slug"])
+    lab["workspace_archive_name"] = f"{lab['slug']}-learner-workspace.zip"
+    lab["workspace_root"] = lab["slug"]
+    lab["workspace_quickstart_commands"] = [
+        f"unzip {lab['workspace_archive_name']}",
+        f"cd {lab['workspace_root']}",
+        "./setup.sh",
+        "# Fill evidence.md with your investigation notes",
+        "./validate.sh --files-only",
+        "./validate.sh",
+        "./cleanup.sh",
+    ]
+    lab.setdefault("worksheet_prompts", [
+        f"Starting state: {lab['scenario']}",
+        "Which command output or file excerpt proves the failure mode?",
+        "What is the smallest safe action, design decision, or escalation?",
+        "What evidence will you save for a review, portfolio note, or incident handoff?",
+    ])
+    lab.setdefault("rubric", [
+        "Names the starting state, scope, and safety boundary before acting.",
+        "Captures specific evidence before changing live state or approving a design.",
+        "Explains the decision with owner, risk, validation, and rollback or fallback.",
+        "Completes validation and cleanup, or documents why the no-cluster path was used.",
+    ])
+    lab.setdefault("validation_checks", [
+        "Prerequisites reviewed",
+        "Setup or evidence pack opened",
+        "Expected evidence captured",
+        "Validation command or review check completed",
+        "Cleanup or no-cluster fallback documented",
+    ])
 
 
 RESOURCE_TYPE_BLUEPRINTS = [
@@ -3413,11 +5887,11 @@ RESOURCE_TYPE_PROFILES = {
     },
     "interview prep": {
         "title_template": "{domain} Interview Drill Packet",
-        "summary_template": "A scenario-driven interview pack for {domain}: prompts, answer signals, red flags, follow-ups, and practice tasks grounded in official docs.",
+        "summary_template": "A scenario-driven interview pack for {domain}: prompts, answer notes, common mistakes, follow-ups, and practice tasks grounded in official docs.",
         "outcomes": [
             "Answer with systems thinking instead of memorized definitions.",
             "Show evidence collection, blast-radius reasoning, and user-impact awareness.",
-            "Recognize red flags that signal unsafe production instincts.",
+            "Recognize common mistakes that can create production risk.",
         ],
         "study_tasks": [
             "Answer five prompts aloud, then rewrite each answer with stronger evidence and tradeoffs.",
@@ -3425,10 +5899,10 @@ RESOURCE_TYPE_PROFILES = {
             "Record one two-minute answer and remove filler until the reasoning is crisp.",
         ],
         "next_steps": [
-            "Open the interview prep command center for deeper drills in this domain.",
+            "Open interview prep for deeper drills in this domain.",
             "Pair each answer with a lab or project artifact you can cite as proof.",
         ],
-        "artifacts": ["answer rubric", "red flag list", "practice prompt bank"],
+        "artifacts": ["answer notes", "common mistake list", "practice prompt bank"],
         "commands": ["# Use this command as the evidence anchor for at least one scenario.", "{command}"],
         "interview_prompts": [
             "What is the first question you ask before proposing a fix?",
@@ -3456,7 +5930,7 @@ RESOURCE_TYPE_PROFILES = {
         "commands": ["# Before implementation, open the official source trail and note current version assumptions.", "{command}"],
         "interview_prompts": [
             "Which official page would you trust for this decision, and what does it not answer?",
-            "How do you keep source-backed notes current as the platform changes?",
+            "How do you keep docs-linked notes current as the platform changes?",
         ],
     },
     "architecture diagram": {
@@ -3501,7 +5975,7 @@ RESOURCE_TYPE_PROFILES = {
             "Use it for one real review and tighten fields that felt vague.",
         ],
         "artifacts": ["review template", "handoff checklist", "rollback section"],
-        "commands": ["# Template evidence placeholder", "{command}"],
+        "commands": ["# Check required template sections before reuse.", "{command}"],
         "interview_prompts": [
             "What fields must be present before you approve this change?",
             "How do templates help without becoming process theater?",
@@ -3677,7 +6151,7 @@ RESOURCE_TYPE_PROFILES = {
     },
     "portfolio artifact": {
         "title_template": "{domain} Portfolio Artifact Builder",
-        "summary_template": "A portfolio builder for {domain} that turns labs, diagrams, decisions, and source-backed notes into a credible engineering story.",
+        "summary_template": "A portfolio builder for {domain} that turns labs, diagrams, decisions, and docs-linked notes into a credible engineering story.",
         "outcomes": [
             "Show applied platform engineering judgment with evidence.",
             "Connect problem, constraints, decisions, commands, and outcomes in one story.",
@@ -3686,7 +6160,7 @@ RESOURCE_TYPE_PROFILES = {
         "study_tasks": [
             "Write the before-state, investigation, implementation, validation, and tradeoff sections.",
             "Add source links, screenshots, command output, and a rollback or safety note.",
-            "Create three resume bullets: beginner, intermediate, and senior framing.",
+            "Create three resume bullets: beginner, intermediate, and advanced framing.",
         ],
         "next_steps": [
             "Use the artifact as your answer to a behavioral or system-design prompt.",
@@ -4208,7 +6682,7 @@ RESOURCE_RESEARCH_PROFILES = {
     },
     "Observability": {
         "source_takeaways": [
-            "Metrics, logs, and traces are different signals; senior answers explain when each signal changes the next action.",
+            "Metrics, logs, and traces are different signals; strong answers explain when each signal changes the next action.",
             "Prometheus guidance emphasizes symptom-focused alerting tied to user pain and actionable consoles.",
             "OpenTelemetry interviews often test instrumentation boundaries, context propagation, sampling, cardinality, and ownership.",
         ],
@@ -4297,7 +6771,7 @@ RESOURCE_RESEARCH_PROFILES.update(
         },
         "Cloud Native": {
             "source_takeaways": [
-                "Cloud-native maturity is about declarative configuration, immutable artifacts, service ownership, observability, and automated recovery.",
+                "Cloud-native work is about declarative configuration, immutable artifacts, service ownership, observability, and automated recovery.",
                 "YAML is not proof of safety; rendered manifests, permissions, resource requests, and rollout behavior need review.",
                 "The best platform defaults make reliability and security the easiest path for application teams.",
             ],
@@ -4453,7 +6927,7 @@ def build_platform_resources() -> list[dict]:
                     "next_steps": [
                         *type_profile["next_steps"],
                         "Open the related lab and collect evidence before changing anything.",
-                        "Convert the artifact into a portfolio-ready README section.",
+                        "Convert the work into a clear README section.",
                     ],
                     "source_takeaways": [*research_profile["source_takeaways"], f"{type_summary} should be anchored to official {domain['domain']} documentation, not copied from stale examples."],
                     "study_tasks": [*type_profile["study_tasks"], *research_profile["study_tasks"]],
@@ -5723,7 +8197,7 @@ JOB_SEARCH_INTERVIEW_PACKS = [
                 [
                     "Lead with role identity: systems you operate, cloud/platform scope, and production ownership.",
                     "Name two or three concrete strengths such as Kubernetes, Terraform, CI/CD, observability, incident response, or AWS.",
-                    "Give one quantified or evidence-backed outcome.",
+                    "Give one specific outcome with evidence.",
                     "Close with the role you are targeting now and why it fits.",
                 ],
                 ["Specific scope", "Evidence-backed outcome", "Clear target role"],
@@ -5938,7 +8412,7 @@ JOB_SEARCH_INTERVIEW_PACKS = [
                     "Keep the answer grounded and specific.",
                 ],
                 ["Mature ramp-up plan", "Documentation habit", "Role-specific preparation"],
-                ["Sounds desperate", "Overpromises", "Dismisses team context"],
+                ["No ramp-up plan", "Overpromises", "Dismisses team context"],
                 "Prepare a first-30-days answer for a team with Kubernetes, Terraform, and AWS incidents.",
             ),
         ],
@@ -6564,7 +9038,7 @@ def add_job_search_layered_questions() -> None:
                     "Name what would change in a real production environment.",
                     f"Link the artifact back to {source_label} and the related course {course_slug}.",
                 ],
-                ["Shows evidence", "Explains tradeoffs", "Uses source-backed reasoning"],
+                ["Shows evidence", "Explains tradeoffs", "Uses docs-linked reasoning"],
                 ["Only lists tools", "No validation", "Cannot explain production differences"],
                 f"Create a portfolio README section proving one {domain} skill with screenshot-safe evidence.",
             ),

@@ -32,12 +32,6 @@ jobs:
 
   npm-audit:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        app:
-          - apps/frontend
-          - apps/platform-academy
     steps:
       - uses: actions/checkout@v4
 
@@ -45,11 +39,11 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+          cache-dependency-path: apps/platform-academy/package-lock.json
 
       - run: npm ci
-        working-directory: ${{ matrix.app }}
+        working-directory: apps/platform-academy
 
       - name: Audit npm dependencies
         run: npm audit --audit-level=high
-        working-directory: ${{ matrix.app }}
+        working-directory: apps/platform-academy

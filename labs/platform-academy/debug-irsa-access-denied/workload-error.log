@@ -1,0 +1,5 @@
+2026-05-30T16:42:11Z checkout.receipts uploader starting request_id=pay-8ff23 namespace=payments pod=checkout-7c9d8c6f86-nk42x
+2026-05-30T16:42:11Z identity serviceAccountName=checkout AWS_ROLE_ARN=arn:aws:iam::111122223333:role/payments-checkout-readonly AWS_WEB_IDENTITY_TOKEN_FILE=/var/run/secrets/eks.amazonaws.com/serviceaccount/token
+2026-05-30T16:42:12Z s3 put_object bucket=payments-prod-receipts key=receipts/2026/05/30/example.json
+2026-05-30T16:42:12Z botocore.exceptions.ClientError: An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::111122223333:assumed-role/payments-checkout-readonly/botocore-session is not authorized to perform: s3:PutObject on resource: arn:aws:s3:::payments-prod-receipts/receipts/2026/05/30/example.json
+2026-05-30T16:42:12Z hint trust-policy-subject=system:serviceaccount:default:checkout expected-subject=system:serviceaccount:payments:checkout permission-scope=receipts/*

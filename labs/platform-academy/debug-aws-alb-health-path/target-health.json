@@ -1,0 +1,18 @@
+{
+  "TargetHealthDescriptions": [
+    {
+      "Target": { "Id": "10.42.21.44", "Port": 8080 },
+      "TargetHealth": {
+        "State": "unhealthy",
+        "Reason": "Target.ResponseCodeMismatch",
+        "Description": "Health checks failed with code 404"
+      }
+    },
+    {
+      "Target": { "Id": "10.42.31.52", "Port": 8080 },
+      "TargetHealth": {
+        "State": "healthy"
+      }
+    }
+  ]
+}

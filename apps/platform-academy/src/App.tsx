@@ -12,6 +12,7 @@ import {
   Copy,
   Cpu,
   Database,
+  Download,
   ExternalLink,
   FileText,
   Filter,
@@ -26,23 +27,40 @@ import {
   Map,
   MonitorDot,
   Network,
+  Plus,
   RadioTower,
   RefreshCcw,
   Route,
   Search,
   Server,
   ShieldCheck,
-  Sparkles,
   Target,
   Terminal,
+  Trash2,
   UserRound
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, NavLink, Navigate, Route as RouterRoute, Routes, useLocation, useParams } from "react-router-dom";
+import { Link, NavLink, useLocation, useParams } from "react-router-dom";
 
 import { api } from "./api";
-import { getOrCreateLocalLearnerId, resetLocalLearnerId, restoreLocalLearnerId } from "./learnerIdentity";
+import { academyQueryKeys, useAcademyData } from "./api/queries";
+import { ActivityToggleButton } from "./components/ActivityToggleButton";
+import { AppShell } from "./components/AppShell";
+import { CommandBlock } from "./components/CommandBlock";
+import { EmptyState } from "./components/EmptyState";
+import { LabListSection } from "./components/LabListSection";
+import { PortfolioLabBadge } from "./components/labs/PortfolioLabBadge";
+import { RichContent } from "./components/RichContent";
+import { LabTierBadge } from "./components/ui/LabTierBadge";
+import { LevelBadge } from "./components/ui/LevelBadge";
+import { ProgressBar } from "./components/ui/ProgressBar";
+import { getOrCreateLocalLearnerId, resetLocalLearnerId } from "./learnerIdentity";
+import { STUDY_PLANS_RESTORED_EVENT, type InterviewStudyPlan, makeInterviewStudyPlanId, readInterviewStudyPlans, uniqueStrings, writeInterviewStudyPlans } from "./lib/interviewStudyPlans";
+import { DeferredContentPage } from "./pages/DeferredContentPage";
+import { AppRouter } from "./Router";
+import type { AcademyCoreData, AcademyData } from "./types/academy";
 import type {
   Course,
   Lesson,
@@ -50,56 +68,72 @@ import type {
   PlatformActivity,
   PlatformActivityInput,
   PlatformInterviewPrep,
-  PlatformInterviewPrepIndex,
-  PlatformAcademyRoadmap,
   PlatformLab,
+  PlatformLabSubmission,
+  PlatformLabSubmissionInput,
   PlatformResource,
-  PlatformResources,
   PlatformRoadmapStage,
   PlatformTrack,
   Progress,
   UserDashboard
 } from "./types";
 
-type AcademyData = {
-  catalog: PlatformAcademyCatalog;
-  roadmap: PlatformAcademyRoadmap;
-  resources: PlatformResources;
-  resourcesLoaded: boolean;
-  interviewPrep: PlatformInterviewPrepIndex;
-  interviewPrepLoaded: boolean;
-  progress: Progress[];
-  activity: PlatformActivity[];
-  dashboard: UserDashboard;
-};
-
-const EMPTY_RESOURCES: PlatformResources = {
-  domains: [],
-  types: [],
-  resources: []
-};
-
-const EMPTY_INTERVIEW_PREP: PlatformInterviewPrepIndex = {
-  domains: [],
-  levels: [],
-  total_questions: 0,
-  packs: []
-};
-
-type StaticContentCache = {
-  resources?: PlatformResources;
-  interviewPrep?: PlatformInterviewPrepIndex;
-};
-
 type SaveActivity = (activity: PlatformActivityInput) => Promise<PlatformActivity>;
+type SaveLabSubmission = (slug: string, submission: PlatformLabSubmissionInput) => Promise<PlatformLabSubmission>;
 
-type ContentBlock =
-  | { type: "heading"; content: string }
-  | { type: "paragraph"; content: string }
-  | { type: "list"; items: string[] }
-  | { type: "code"; lines: string[] };
+function createAppQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        staleTime: 60_000
+      }
+    }
+  });
+}
 
 const levelOrder = ["Fresher", "Intermediate", "Advanced"];
+const labTierLabels: Record<PlatformLab["lab_tier"], string> = {
+  full: "Full lab",
+  guided: "Guided lab",
+  "evidence-pack": "Evidence pack"
+};
+const labTierOrder: PlatformLab["lab_tier"][] = ["full", "guided", "evidence-pack"];
+const labRuntimeLabels = {
+  All: "All runtimes",
+  Cluster: "Cluster setup",
+  Files: "File-only"
+} as const;
+type LabRuntimeFilter = keyof typeof labRuntimeLabels;
+const starterLabPath = [
+  {
+    slug: "trace-service-to-pod",
+    label: "Service routing incident",
+    proof: "Selector, Pod label, EndpointSlice, fix, and cleanup evidence."
+  },
+  {
+    slug: "debug-crashloop-imagepull",
+    label: "First-response triage",
+    proof: "CrashLoopBackOff, ImagePullBackOff, previous logs, events, and owner split."
+  },
+  {
+    slug: "review-yaml-before-apply",
+    label: "Safe manifest review",
+    proof: "Risk inventory, false leads, dry-run boundary, vendor questions, and safer baseline."
+  },
+  {
+    slug: "debug-irsa-access-denied",
+    label: "Cloud access handoff",
+    proof: "ServiceAccount identity, IAM trust subject, CloudTrail denial, and least-privilege fix."
+  }
+] as const;
+const rubricStatusLabels: Record<string, string> = {
+  missing: "Missing",
+  "needs-evidence": "Needs evidence",
+  passes: "Passes",
+  strong: "Strong"
+};
+const rubricStatusOrder = ["strong", "passes", "needs-evidence", "missing"];
 
 const categoryIcons: Record<string, LucideIcon> = {
   Kubernetes: Network,
@@ -114,6 +148,27 @@ const categoryIcons: Record<string, LucideIcon> = {
 
 function iconForCategory(category: string) {
   return categoryIcons[category] ?? Layers3;
+}
+
+function sanitizeCheckedItems(value: Record<string, unknown> | undefined, allowedKeys: Set<string>) {
+  const sanitized: Record<string, boolean> = {};
+  for (const [key, entryValue] of Object.entries(value ?? {})) {
+    if (allowedKeys.has(key)) sanitized[key] = Boolean(entryValue);
+  }
+  return sanitized;
+}
+
+function sanitizeWorksheetAnswers(value: Record<string, unknown> | undefined, allowedKeys: Set<string>) {
+  const sanitized: Record<string, string> = {};
+  for (const [key, entryValue] of Object.entries(value ?? {})) {
+    if (!allowedKeys.has(key)) continue;
+    if (typeof entryValue === "string") {
+      sanitized[key] = entryValue;
+    } else if (entryValue !== null && entryValue !== undefined) {
+      sanitized[key] = String(entryValue);
+    }
+  }
+  return sanitized;
 }
 
 function allCourses(catalog: PlatformAcademyCatalog) {
@@ -137,6 +192,161 @@ function upsertActivityRow(activity: PlatformActivity[], saved: PlatformActivity
   return [saved, ...next];
 }
 
+function upsertLabSubmissionRow(submissions: PlatformLabSubmission[], saved: PlatformLabSubmission) {
+  const next = submissions.filter((row) => row.lab_slug !== saved.lab_slug);
+  return [saved, ...next];
+}
+
+function labSubmissionFor(data: AcademyData, labSlug: string) {
+  return data.labSubmissions.find((submission) => submission.lab_slug === labSlug);
+}
+
+function labTierFilterOptions(labs: PlatformLab[]): Array<"All" | PlatformLab["lab_tier"]> {
+  const presentTiers = labTierOrder.filter((tier) => labs.some((lab) => lab.lab_tier === tier));
+  return presentTiers.length > 1 ? ["All", ...presentTiers] : [];
+}
+
+function isPortfolioLab(lab: PlatformLab) {
+  return lab.portfolio_grade === true;
+}
+
+function labInventorySummary(activeSubmissionCount: number, fullLabCount: number, totalLabCount: number) {
+  if (fullLabCount === totalLabCount) {
+    return `${activeSubmissionCount} active / ${totalLabCount} full ${totalLabCount === 1 ? "lab" : "labs"}`;
+  }
+  return `${activeSubmissionCount} active / ${fullLabCount} full / ${totalLabCount} total`;
+}
+
+function averageLabMinutes(labs: PlatformLab[]) {
+  if (labs.length === 0) return 0;
+  return Math.round(labs.reduce((total, lab) => total + lab.estimated_minutes, 0) / labs.length);
+}
+
+function labSubmissionSummary(submission?: PlatformLabSubmission) {
+  if (!submission || (submission.score === 0 && submission.completed_checks === 0 && submission.answered_prompts === 0)) {
+    return { label: "Not started", className: "not-started", score: 0 };
+  }
+  if (submission.status === "submitted" || submission.score >= 100) {
+    return { label: "Submitted", className: "submitted", score: submission.score };
+  }
+  if (submission.rubric_feedback.some((item) => item.status === "strong")) {
+    return { label: "Strong evidence", className: "strong", score: submission.score };
+  }
+  return { label: "In progress", className: "in-progress", score: submission.score };
+}
+
+function hasLabSubmissionEvidence(submission: PlatformLabSubmission) {
+  return (
+    submission.score > 0 ||
+    submission.completed_checks > 0 ||
+    submission.answered_prompts > 0 ||
+    submission.status === "submitted" ||
+    submission.evidence_terms.length > 0 ||
+    Object.values(submission.checked_items).some(Boolean) ||
+    Object.values(submission.worksheet_answers).some((value) => String(value).trim().length > 0)
+  );
+}
+
+function labSubmissionUpdatedTime(submission: PlatformLabSubmission) {
+  const date = new Date(submission.updated_at);
+  if (Number.isNaN(date.getTime())) return submission.updated_at;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function sortedLabSubmissions(submissions: PlatformLabSubmission[]) {
+  return [...submissions].sort((left, right) => new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime());
+}
+
+function labRubricStatusCounts(submission: PlatformLabSubmission) {
+  return submission.rubric_feedback.reduce<Record<string, number>>((counts, item) => {
+    counts[item.status] = (counts[item.status] ?? 0) + 1;
+    return counts;
+  }, {});
+}
+
+function orderedRubricStatusEntries(counts: Record<string, number>) {
+  const known = rubricStatusOrder.filter((status) => counts[status]).map((status) => [status, counts[status]] as const);
+  const unknown = Object.entries(counts)
+    .filter(([status]) => !rubricStatusOrder.includes(status))
+    .sort(([left], [right]) => left.localeCompare(right));
+  return [...known, ...unknown];
+}
+
+function submissionReportMarkdown(data: AcademyData, submissions: PlatformLabSubmission[]) {
+  const lines = ["# Platform Academy Lab Evidence", ""];
+  if (submissions.length === 0) {
+    lines.push("No lab submissions have been saved yet.");
+    return lines.join("\n");
+  }
+
+  const allEvidenceTerms = Array.from(new Set(submissions.flatMap((submission) => submission.evidence_terms))).sort((left, right) => left.localeCompare(right));
+  const averageScore = Math.round(submissions.reduce((total, submission) => total + submission.score, 0) / submissions.length);
+  lines.push(`Saved labs: ${submissions.length}`);
+  lines.push(`Average score: ${averageScore}%`);
+  if (allEvidenceTerms.length > 0) lines.push(`Evidence terms: ${allEvidenceTerms.join(", ")}`);
+  lines.push("");
+
+  for (const submission of submissions) {
+    const lab = labForSlug(data, submission.lab_slug);
+    const statusCounts = orderedRubricStatusEntries(labRubricStatusCounts(submission));
+    const worksheetNotes = (lab?.worksheet_prompts ?? [])
+      .map((prompt, index) => ({ prompt, answer: submission.worksheet_answers[`worksheet-${index}`]?.trim() ?? "" }))
+      .filter((item) => item.answer.length > 0);
+    const learnerArtifacts = lab ? learnerArtifactPaths(lab) : [];
+    lines.push(`## ${lab?.title ?? submission.lab_slug}`);
+    lines.push("");
+    if (lab?.scenario) lines.push(`Scenario: ${lab.scenario}`);
+    lines.push("");
+    lines.push(`- Lab: ${submission.lab_slug}`);
+    lines.push(`- Route: /labs/${submission.lab_slug}`);
+    lines.push(`- Status: ${labSubmissionSummary(submission).label}`);
+    lines.push(`- Score: ${Math.round(submission.score)}%`);
+    lines.push(`- Prompts answered: ${submission.answered_prompts}/${submission.total_prompts}`);
+    lines.push(`- Checks completed: ${submission.completed_checks}/${submission.total_checks}`);
+    lines.push(`- Updated: ${labSubmissionUpdatedTime(submission)}`);
+    if (lab?.lab_tier) lines.push(`- Tier: ${labTierLabels[lab.lab_tier]}`);
+    if (submission.evidence_terms.length > 0) lines.push(`- Evidence terms: ${submission.evidence_terms.join(", ")}`);
+    if (statusCounts.length > 0) {
+      lines.push(`- Rubric: ${statusCounts.map(([status, count]) => `${rubricStatusLabels[status] ?? status}: ${count}`).join(", ")}`);
+    }
+    lines.push("");
+    if (worksheetNotes.length > 0) {
+      lines.push("### Worksheet Notes");
+      for (const item of worksheetNotes) {
+        lines.push(`- ${item.prompt}: ${item.answer.replace(/\s+/g, " ")}`);
+      }
+      lines.push("");
+    }
+    if (lab?.expected_evidence?.length) {
+      lines.push("### Expected Evidence");
+      for (const item of lab.expected_evidence) lines.push(`- ${item}`);
+      lines.push("");
+    }
+    if (learnerArtifacts.length > 0) {
+      lines.push("### Learner Artifacts");
+      for (const artifactPath of learnerArtifacts) lines.push(`- ${artifactPath}`);
+      lines.push("");
+    }
+    if (lab?.validation_commands?.length) {
+      lines.push("### Validation Commands");
+      for (const command of lab.validation_commands) lines.push(`- \`${command}\``);
+      lines.push("");
+    }
+    lines.push("### Rubric Follow-ups");
+    if (submission.rubric_feedback.length > 0) {
+      for (const item of submission.rubric_feedback) {
+        const status = rubricStatusLabels[item.status] ?? item.status;
+        lines.push(`- ${status}: ${item.criterion} - ${item.feedback}`);
+      }
+    } else {
+      lines.push("- No rubric follow-ups generated for this saved workbook yet.");
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
 function courseProgress(course: Course, completed: Set<number>) {
   const done = course.lessons.filter((lesson) => completed.has(lesson.id)).length;
   return {
@@ -150,130 +360,9 @@ function nextLesson(courses: Course[], completed: Set<number>) {
   return courses.flatMap((course) => course.lessons).find((lesson) => !completed.has(lesson.id)) ?? courses[0]?.lessons[0];
 }
 
-function parseContent(text: string): ContentBlock[] {
-  const blocks: ContentBlock[] = [];
-  let listItems: string[] = [];
-  let codeLines: string[] = [];
-
-  const flushList = () => {
-    if (listItems.length > 0) {
-      blocks.push({ type: "list", items: listItems });
-      listItems = [];
-    }
-  };
-  const flushCode = () => {
-    if (codeLines.length > 0) {
-      blocks.push({ type: "code", lines: codeLines });
-      codeLines = [];
-    }
-  };
-
-  text.split("\n").forEach((rawLine) => {
-    const line = rawLine.trim();
-    if (!line) {
-      flushList();
-      flushCode();
-      return;
-    }
-    if (line.startsWith("## ")) {
-      flushList();
-      flushCode();
-      blocks.push({ type: "heading", content: line.replace("## ", "") });
-      return;
-    }
-    if (line.startsWith("- ")) {
-      flushCode();
-      listItems.push(line.replace("- ", ""));
-      return;
-    }
-    if (line.startsWith("$ ")) {
-      flushList();
-      codeLines.push(line);
-      return;
-    }
-    flushList();
-    flushCode();
-    blocks.push({ type: "paragraph", content: line });
-  });
-  flushList();
-  flushCode();
-  return blocks;
-}
-
-function RichContent({ text }: { text: string }) {
-  return (
-    <>
-      {parseContent(text).map((block, index) => {
-        if (block.type === "heading") return <h2 key={`${block.type}-${index}`}>{block.content}</h2>;
-        if (block.type === "paragraph") return <p key={`${block.type}-${index}`}>{block.content}</p>;
-        if (block.type === "code") {
-          return (
-            <pre key={`${block.type}-${index}`}>
-              <code>{block.lines.join("\n")}</code>
-            </pre>
-          );
-        }
-        return (
-          <ul key={`${block.type}-${index}`}>
-            {block.items.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        );
-      })}
-    </>
-  );
-}
-
-function EmptyState({ title, detail }: { title: string; detail?: string }) {
-  return (
-    <section className="state-panel">
-      <Compass aria-hidden="true" />
-      <h1>{title}</h1>
-      {detail && <p>{detail}</p>}
-    </section>
-  );
-}
-
-function ProgressBar({ value }: { value: number }) {
-  return (
-    <div className="progress-track" role="progressbar" aria-label={`${value}% complete`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value}>
-      <div style={{ width: `${value}%` }} />
-    </div>
-  );
-}
-
-function LevelBadge({ level }: { level: string }) {
-  return <span className={`level-badge level-${level.toLowerCase().replace(/[^a-z]+/g, "-")}`}>{level}</span>;
-}
-
-function ActivityToggleButton({
-  completed,
-  saving,
-  onClick,
-  actionLabel,
-  completedLabel
-}: {
-  completed: boolean;
-  saving: boolean;
-  onClick: () => void;
-  actionLabel: string;
-  completedLabel: string;
-}) {
-  return (
-    <button className={completed ? "activity-toggle completed" : "activity-toggle"} disabled={completed || saving} onClick={onClick} type="button">
-      {completed ? (
-        <>
-          <CheckCircle2 aria-hidden="true" />
-          {completedLabel}
-        </>
-      ) : saving ? (
-        "Saving..."
-      ) : (
-        actionLabel
-      )}
-    </button>
-  );
+function LabRuntimeBadge({ lab }: { lab: PlatformLab }) {
+  const isCluster = isClusterRunnableLab(lab);
+  return <span className={`lab-runtime-badge ${isCluster ? "lab-runtime-cluster" : "lab-runtime-files"}`}>{isCluster ? "Cluster setup included" : "File-only lab"}</span>;
 }
 
 type AcademyStats = {
@@ -284,19 +373,6 @@ type AcademyStats = {
   completionPercent: number;
   recommended?: Course["lessons"][number];
 };
-
-const productNavItems = [
-  {
-    to: "/dashboard/home",
-    label: "Home",
-    icon: LayoutDashboard,
-    match: (path: string) => path === "/" || path.startsWith("/dashboard") || path.startsWith("/courses") || path.startsWith("/lessons")
-  },
-  { to: "/roadmap", label: "Roadmap", icon: Map, match: (path: string) => path.startsWith("/roadmap") },
-  { to: "/labs", label: "Labs", icon: Terminal, match: (path: string) => path.startsWith("/labs") },
-  { to: "/interview-prep", label: "Interview", icon: GraduationCap, match: (path: string) => path.startsWith("/interview-prep") },
-  { to: "/resources", label: "Resources", icon: BookMarked, match: (path: string) => path.startsWith("/resources") }
-] as const;
 
 function getAcademyStats(data: AcademyData): AcademyStats {
   const courses = allCourses(data.catalog);
@@ -381,248 +457,708 @@ function formatReviewDate(value?: string | null) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-function CommandBlock({ commands, title = "Command surface" }: { commands: string[]; title?: string }) {
-  const [copied, setCopied] = useState(false);
-  const commandText = commands.length > 0 ? commands.join("\n") : "No command snippet is seeded for this item.";
-  const copyCommands = async () => {
-    if (!commands.length || !navigator.clipboard?.writeText) return;
-    await navigator.clipboard.writeText(commandText);
-    setCopied(true);
-  };
+const LAB_WORKBOOK_STATE_PREFIX = "platform-academy-lab-workbook:";
+
+const labContractFiles = [
+  { label: "Guide", filename: "README.md" },
+  { label: "Evidence", filename: "evidence-template.md" },
+  { label: "Validator", filename: "validate.sh" },
+  { label: "Cleanup", filename: "cleanup.sh" }
+];
+
+function learnerArtifactPaths(lab: PlatformLab) {
+  return lab.learner_artifact_paths ?? (lab.artifact_paths ?? []).filter((path) => !path.endsWith("/solution.md") && !path.endsWith("/README.md"));
+}
+
+function labContractArtifacts(lab: PlatformLab) {
+  const paths = learnerArtifactPaths(lab);
+  return labContractFiles.map((item) => ({
+    ...item,
+    path: item.filename === "README.md" ? "README.md" : paths.find((path) => path.endsWith(`/${item.filename}`) || path === item.filename)
+  }));
+}
+
+function labWorkspaceArchiveName(lab: PlatformLab) {
+  return lab.workspace_archive_name || `${lab.slug}-learner-workspace.zip`;
+}
+
+function labWorkspaceQuickstartCommands(lab: PlatformLab) {
+  return lab.workspace_quickstart_commands?.length
+    ? lab.workspace_quickstart_commands
+    : [
+        `unzip ${labWorkspaceArchiveName(lab)}`,
+        `cd ${lab.workspace_root || lab.slug}`,
+        "./setup.sh",
+        "# Fill evidence.md with your investigation notes",
+        "./validate.sh --files-only",
+        "./validate.sh",
+        "./cleanup.sh"
+      ];
+}
+
+function labClusterWorkspaceCommands(lab: PlatformLab) {
+  return lab.cluster_workspace_commands ?? [];
+}
+
+function isClusterRunnableLab(lab: PlatformLab) {
+  return labClusterWorkspaceCommands(lab).length > 0;
+}
+
+function compactLabItems(items: Array<string | undefined>, limit = 4) {
+  return items.filter((item): item is string => Boolean(item?.trim())).slice(0, limit);
+}
+
+function labArtifactName(path: string) {
+  return path.split("/").pop() ?? path;
+}
+
+function labArtifactRole(path: string) {
+  const lower = path.toLowerCase();
+  if (lower.endsWith("triage-notes.md") || lower.endsWith("hop-trace.md")) return "False-lead review";
+  if (lower.endsWith("evidence-template.md")) return "Evidence template";
+  if (lower.endsWith("validate.sh")) return "Self-check script";
+  if (lower.endsWith("cleanup.sh")) return "Cleanup script";
+  if (lower.includes("fixed") || lower.includes("safe") || lower.includes("ready") || lower.includes("completed")) return "Target artifact";
+  if (lower.includes("start") || lower.includes("broken") || lower.includes("live") || lower.includes("snapshot") || lower.includes("report")) return "Starting evidence";
+  if (lower.includes("event") || lower.includes("log") || lower.includes("cloudtrail") || lower.includes("tfplan")) return "Captured evidence";
+  if (lower.endsWith(".yaml") || lower.endsWith(".yml") || lower.endsWith(".json")) return "Manifest";
+  if (lower.endsWith(".md")) return "Decision note";
+  return "Lab artifact";
+}
+
+function labFalseLeadArtifact(lab: PlatformLab) {
+  const paths = [...learnerArtifactPaths(lab), ...(lab.artifact_paths ?? [])];
+  return paths.find((path) => {
+    const name = labArtifactName(path).toLowerCase();
+    return name === "triage-notes.md" || name === "hop-trace.md";
+  });
+}
+
+function progressPercent(done: number, total: number) {
+  if (total <= 0) return 100;
+  return Math.min(100, Math.round((done / total) * 100));
+}
+
+function labRunPhases(lab: PlatformLab) {
+  return [
+    {
+      title: "Prepare workspace",
+      label: `${(lab.prerequisites?.length ?? 0) + (lab.setup_commands?.length ?? 0)} setup signals`,
+      icon: Terminal,
+      items: compactLabItems([...(lab.prerequisites ?? []), ...(lab.setup_commands ?? [])]),
+      emptyText: "No setup step is required before opening the evidence."
+    },
+    {
+      title: "Investigate safely",
+      label: `${(lab.practice_steps?.length ?? 0) + lab.commands.length} investigation steps`,
+      icon: Search,
+      items: compactLabItems([...(lab.practice_steps ?? []), ...lab.commands]),
+      emptyText: "Use the workbook prompts as the investigation path."
+    },
+    {
+      title: "Prove the finding",
+      label: `${(lab.expected_evidence?.length ?? 0) + (lab.validation_commands?.length ?? 0)} proof points`,
+      icon: CheckCircle2,
+      items: compactLabItems([...(lab.expected_evidence ?? []), ...(lab.validation_commands ?? [])]),
+      emptyText: "Save worksheet evidence before marking the lab complete."
+    },
+    {
+      title: "Reset or hand off",
+      label: `${(lab.cleanup_commands?.length ?? 0) + (lab.no_cluster_fallback?.length ?? 0)} closeout paths`,
+      icon: RefreshCcw,
+      items: compactLabItems([...(lab.cleanup_commands ?? []), ...(lab.no_cluster_fallback ?? [])]),
+      emptyText: "Record cleanup or no-runtime evidence in the workbook."
+    }
+  ];
+}
+
+function LabOperationalBrief({ lab }: { lab: PlatformLab }) {
+  const phases = labRunPhases(lab);
+  const artifacts = learnerArtifactPaths(lab).map((path) => ({
+    path,
+    name: labArtifactName(path),
+    role: labArtifactRole(path)
+  }));
+  const visibleArtifacts = artifacts.slice(0, 8);
+
   return (
-    <div className="command-console">
-      <div className="command-console-header">
+    <section className="lab-operational-brief" aria-label="Guided lab run sequence">
+      <div className="section-heading">
         <div>
-          <Terminal aria-hidden="true" />
-          <span>{title}</span>
+          <p className="eyebrow">Guided lab run sequence</p>
+          <h2>Investigate, prove, validate, clean up</h2>
         </div>
-        <button className={`copy-command-button${copied ? " copied" : ""}`} disabled={!commands.length} onClick={copyCommands} type="button">
-          {copied ? <CheckCircle2 aria-hidden="true" /> : <Copy aria-hidden="true" />}
-          {copied ? `Copied ${title}` : `Copy ${title}`}
-        </button>
+        <span>
+          {lab.estimated_minutes} min / {lab.validation_checks?.length ?? 0} workbook checks
+        </span>
       </div>
-      <pre>
-        <code>{commandText}</code>
-      </pre>
-    </div>
+      <div className="lab-brief-grid">
+        <div className="lab-run-phase-list">
+          {phases.map((phase, index) => {
+            const PhaseIcon = phase.icon;
+            return (
+              <article className="lab-run-phase" key={phase.title}>
+                <div className="lab-run-phase-index">
+                  <PhaseIcon aria-hidden="true" />
+                  <span>{index + 1}</span>
+                </div>
+                <div>
+                  <p className="eyebrow">{phase.label}</p>
+                  <h3>{phase.title}</h3>
+                  {phase.items.length ? (
+                    <ul>
+                      {phase.items.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>{phase.emptyText}</p>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="lab-artifact-map-panel" aria-label="Evidence artifact map">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Evidence artifact map</p>
+              <h3>Learner-safe files</h3>
+            </div>
+            <span>{artifacts.length} files</span>
+          </div>
+          {visibleArtifacts.length ? (
+            <div className="lab-artifact-map-grid">
+              {visibleArtifacts.map((artifact) => (
+                <div className="lab-artifact-map-item" key={artifact.path}>
+                  <FileText aria-hidden="true" />
+                  <div>
+                    <span>{artifact.role}</span>
+                    <strong>{artifact.name}</strong>
+                    <code>{artifact.path}</code>
+                  </div>
+                </div>
+              ))}
+              {artifacts.length > visibleArtifacts.length ? (
+                <p className="lab-artifact-map-more">{artifacts.length - visibleArtifacts.length} more files in the learner workspace bundle.</p>
+              ) : null}
+            </div>
+          ) : (
+            <p className="lab-artifact-map-empty">No learner artifact paths are advertised for this lab.</p>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
-type AppShellProps = {
-  children: React.ReactNode;
-  learnerId: string;
-  onResetLearner: () => void;
-  onRecoverLearner: (learnerId: string) => void;
+function LabContractPanel({ lab }: { lab: PlatformLab }) {
+  const artifacts = labContractArtifacts(lab);
+  return (
+    <section className="lab-contract-panel" aria-label="Learner workspace contract">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Learner workspace contract</p>
+          <h3>Guide, evidence, verification, cleanup</h3>
+        </div>
+        <span>
+          {artifacts.filter((artifact) => artifact.path).length} / {artifacts.length} present
+        </span>
+      </div>
+      <div className="lab-contract-grid">
+        {artifacts.map((artifact) => (
+          <article className={artifact.path ? "lab-contract-item present" : "lab-contract-item missing"} key={artifact.filename}>
+            <CheckCircle2 aria-hidden="true" />
+            <div>
+              <strong>{artifact.label}</strong>
+              <code>{artifact.path ?? `${artifact.filename} missing`}</code>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function LabWorkspaceQuickstart({ lab }: { lab: PlatformLab }) {
+  const clusterCommands = labClusterWorkspaceCommands(lab);
+  return (
+    <section className="lab-workspace-quickstart" aria-label="Downloaded workspace quickstart">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Downloaded workspace</p>
+          <h3>Run from extracted bundle</h3>
+        </div>
+        <span>{labWorkspaceArchiveName(lab)}</span>
+      </div>
+      <CommandBlock commands={labWorkspaceQuickstartCommands(lab)} title="Workspace commands" />
+      {clusterCommands.length ? <CommandBlock commands={clusterCommands} title="Optional cluster workflow" /> : null}
+    </section>
+  );
+}
+
+function labWorkbookPhaseRows(lab: PlatformLab, checkedItems: Record<string, boolean>, worksheetAnswers: Record<string, string>) {
+  const worksheetItems = lab.worksheet_prompts ?? [];
+  const validationItems = lab.validation_checks ?? [];
+  const setupSignals = (lab.prerequisites?.length ?? 0) + (lab.setup_commands?.length ?? 0) + labWorkspaceQuickstartCommands(lab).length;
+  const answerText = Object.values(worksheetAnswers).join("\n").toLowerCase();
+  const falseLeadArtifact = labFalseLeadArtifact(lab);
+  const falseLeadArtifactName = falseLeadArtifact ? labArtifactName(falseLeadArtifact) : "";
+  const falseLeadCaptured =
+    Boolean(falseLeadArtifactName && answerText.includes(falseLeadArtifactName.toLowerCase())) ||
+    answerText.includes("false lead") ||
+    answerText.includes("triage") ||
+    answerText.includes("hop trace");
+  const answeredPrompts = worksheetItems.filter((_, index) => worksheetAnswers[`worksheet-${index}`]?.trim()).length;
+  const completedValidation = validationItems.filter((_, index) => checkedItems[`validation-${index}`]).length;
+  const closeoutIndexes = labCloseoutIndexes(validationItems);
+  const completedCloseout = closeoutIndexes.filter(({ index }) => checkedItems[`validation-${index}`]).length;
+  const cleanupSignals = (lab.cleanup_commands?.length ?? 0) + (lab.no_cluster_fallback?.length ?? 0);
+
+  return [
+    {
+      title: "Setup",
+      status: setupSignals > 0 ? "Setup ready" : "No setup needed",
+      detail: setupSignals > 0 ? `${setupSignals} setup or workspace signals are listed` : "Open the provided evidence files.",
+      value: setupSignals > 0 ? 100 : 100,
+      icon: Terminal
+    },
+    {
+      title: "False-lead triage",
+      status: falseLeadCaptured ? "False leads captured" : "False leads pending",
+      detail: falseLeadArtifactName ? `${falseLeadArtifactName} should be cited before diagnosis.` : "No false-lead artifact is advertised.",
+      value: falseLeadCaptured ? 100 : 0,
+      icon: Search
+    },
+    {
+      title: "Evidence",
+      status: `${answeredPrompts}/${worksheetItems.length} prompts answered`,
+      detail: worksheetItems.length ? "Worksheet notes drive the rubric feedback." : "No worksheet prompts are advertised.",
+      value: progressPercent(answeredPrompts, worksheetItems.length),
+      icon: FileText
+    },
+    {
+      title: "Validation",
+      status: `${completedValidation}/${validationItems.length} validation checks`,
+      detail: validationItems.length ? "Mark checks after commands and evidence pass." : "No validation checklist is advertised.",
+      value: progressPercent(completedValidation, validationItems.length),
+      icon: CheckCircle2
+    },
+    {
+      title: "Closeout",
+      status: closeoutIndexes.length ? `${completedCloseout}/${closeoutIndexes.length} closeout checks` : cleanupSignals ? "Closeout path listed" : "No cleanup needed",
+      detail: cleanupSignals ? "Cleanup or no-runtime evidence belongs in the final note." : "Default path has no cleanup action.",
+      value: closeoutIndexes.length ? progressPercent(completedCloseout, closeoutIndexes.length) : 100,
+      icon: RefreshCcw
+    }
+  ];
+}
+
+function LabWorkbookPhaseStatus({ lab, checkedItems, worksheetAnswers }: { lab: PlatformLab; checkedItems: Record<string, boolean>; worksheetAnswers: Record<string, string> }) {
+  const phases = labWorkbookPhaseRows(lab, checkedItems, worksheetAnswers);
+  return (
+    <section className="lab-phase-status" aria-label="Lab run progress by phase">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Run progress</p>
+          <h3>Run progress by phase</h3>
+        </div>
+        <span>{phases.filter((phase) => phase.value >= 100).length} / {phases.length} ready</span>
+      </div>
+      <div className="lab-phase-status-grid">
+        {phases.map((phase) => {
+          const PhaseIcon = phase.icon;
+          return (
+            <article className="lab-phase-status-row" key={phase.title}>
+              <PhaseIcon aria-hidden="true" />
+              <div>
+                <div className="lab-phase-status-copy">
+                  <strong>{phase.title}</strong>
+                  <span>{phase.status}</span>
+                </div>
+                <ProgressBar value={phase.value} />
+                <small>{phase.detail}</small>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+type LabCommandStage = {
+  id: "setup" | "evidence" | "validation" | "closeout";
+  title: string;
+  status: string;
+  commands: string[];
+  icon: LucideIcon;
 };
 
-function AppShell({ children, learnerId, onResetLearner, onRecoverLearner }: AppShellProps) {
-  const location = useLocation();
-  const [isRecoveryOpen, setIsRecoveryOpen] = useState(false);
-  const [recoveryInput, setRecoveryInput] = useState("");
-  const [recoveryError, setRecoveryError] = useState("");
-  const [recoveryCopied, setRecoveryCopied] = useState(false);
+function labCloseoutIndexes(validationItems: string[]) {
+  return validationItems
+    .map((item, index) => ({ item: item.toLowerCase(), index }))
+    .filter(({ item }) => ["cleanup", "no-cluster", "no-aws", "no-live", "no-runtime", "handoff"].some((term) => item.includes(term)));
+}
 
-  const openRecovery = () => {
-    setRecoveryInput("");
-    setRecoveryError("");
-    setRecoveryCopied(false);
-    setIsRecoveryOpen(true);
-  };
+function labCloseoutCommands(lab: PlatformLab) {
+  return lab.cleanup_commands?.length ? lab.cleanup_commands : lab.no_cluster_fallback ?? [];
+}
 
-  const closeRecovery = () => {
-    setIsRecoveryOpen(false);
-    setRecoveryError("");
-  };
+function commandCountLabel(count: number) {
+  return `${count} ${count === 1 ? "command" : "commands"}`;
+}
 
-  const copyRecoveryKey = async () => {
-    try {
-      await navigator.clipboard?.writeText(learnerId);
-      setRecoveryCopied(true);
-    } catch {
-      setRecoveryError("Copy is blocked by this browser. Select and copy the key manually.");
+function labCommandStages(lab: PlatformLab, checkedItems: Record<string, boolean>, worksheetAnswers: Record<string, string>): LabCommandStage[] {
+  const worksheetItems = lab.worksheet_prompts ?? [];
+  const validationItems = lab.validation_checks ?? [];
+  const answeredPrompts = worksheetItems.filter((_, index) => worksheetAnswers[`worksheet-${index}`]?.trim()).length;
+  const completedValidation = validationItems.filter((_, index) => checkedItems[`validation-${index}`]).length;
+  const closeoutIndexes = labCloseoutIndexes(validationItems);
+  const completedCloseout = closeoutIndexes.filter(({ index }) => checkedItems[`validation-${index}`]).length;
+
+  return [
+    {
+      id: "setup",
+      title: "Setup",
+      status: commandCountLabel(lab.setup_commands?.length ?? 0),
+      commands: lab.setup_commands ?? [],
+      icon: Terminal
+    },
+    {
+      id: "evidence",
+      title: "Evidence",
+      status: `${answeredPrompts}/${worksheetItems.length} notes`,
+      commands: lab.commands,
+      icon: FileText
+    },
+    {
+      id: "validation",
+      title: "Validation",
+      status: `${completedValidation}/${validationItems.length} checks`,
+      commands: lab.validation_commands ?? [],
+      icon: CheckCircle2
+    },
+    {
+      id: "closeout",
+      title: "Closeout",
+      status: closeoutIndexes.length ? `${completedCloseout}/${closeoutIndexes.length} checks` : labCloseoutCommands(lab).length ? "listed" : "none",
+      commands: labCloseoutCommands(lab),
+      icon: RefreshCcw
     }
-  };
+  ];
+}
 
-  const restoreRecoveryProfile = () => {
-    const restoredLearnerId = restoreLocalLearnerId(recoveryInput);
-    if (!restoredLearnerId) {
-      setRecoveryError("Enter a valid guest recovery key.");
-      return;
-    }
-    onRecoverLearner(restoredLearnerId);
-    closeRecovery();
-  };
-
-  if (!location.pathname.startsWith("/designs")) {
-    return (
-      <div className="product-shell">
-        <aside className="product-sidebar">
-          <Link className="product-brand" to="/dashboard/home">
-            <span>PA</span>
-            <div>
-              <strong>Platform Academy</strong>
-              <small>AWS / Kubernetes / SRE</small>
-            </div>
-          </Link>
-          <nav className="product-nav" aria-label="Platform Academy navigation">
-            {productNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  to={item.to}
-                  key={item.to}
-                  className={({ isActive }) => (isActive || item.match(location.pathname) ? "active" : undefined)}
-                >
-                  <Icon aria-hidden="true" />
-                  <span>{item.label}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
-          <div className="product-sidebar-footer">
-            <span>Exploration routes</span>
-            <Link to="/designs">
-              <Sparkles aria-hidden="true" />
-              Designs
-            </Link>
-          </div>
-        </aside>
-        <div className="product-frame">
-          <header className="product-topline">
-            <div className="learner-profile" aria-label="Active learner profile">
-              <UserRound aria-hidden="true" />
-              <div>
-                <span className="learner-profile-label">Guest workspace</span>
-                <strong>{learnerId}</strong>
-                <span>Browser-local progress</span>
-              </div>
-              <div className="learner-profile-actions">
-                <button
-                  aria-label="Open guest recovery key"
-                  className="learner-recovery-button"
-                  onClick={openRecovery}
-                  title="Copy this guest recovery key or restore a saved guest workspace."
-                  type="button"
-                >
-                  <Copy aria-hidden="true" />
-                  Recovery key
-                </button>
-                <button
-                  aria-label="Start a new local guest workspace"
-                  className="learner-reset-button"
-                  onClick={onResetLearner}
-                  title="Switch this browser to a fresh local progress profile. Existing backend progress remains stored under the old guest id."
-                  type="button"
-                >
-                  <RefreshCcw aria-hidden="true" />
-                  New profile
-                </button>
-              </div>
-            </div>
-            <div className="topline-actions">
-              <Link aria-label="Open lab queue" to="/labs">
-                <Terminal aria-hidden="true" />
-                <span>Lab queue</span>
-              </Link>
-              <Link aria-label="Open resource index" to="/resources">
-                <Search aria-hidden="true" />
-                <span>Resource index</span>
-              </Link>
-            </div>
-          </header>
-          <main>{children}</main>
-        </div>
-        {isRecoveryOpen && (
-          <div className="profile-recovery-backdrop" onClick={closeRecovery}>
-            <section
-              aria-labelledby="profile-recovery-title"
-              aria-modal="true"
-              className="profile-recovery-dialog"
-              onClick={(event) => event.stopPropagation()}
-              role="dialog"
-            >
-              <div className="recovery-dialog-header">
-                <div>
-                  <p className="eyebrow">Guest recovery</p>
-                  <h2 id="profile-recovery-title">Save or restore progress</h2>
-                </div>
-                <button className="recovery-close-button" onClick={closeRecovery} type="button">
-                  Close
-                </button>
-              </div>
-              <p className="recovery-helper">Save this key outside the browser to recover progress after clearing browser data.</p>
-              <div className="recovery-key-card">
-                <span>Current recovery key</span>
-                <strong>{learnerId}</strong>
-                <button className={recoveryCopied ? "copy-command-button copied" : "copy-command-button"} onClick={copyRecoveryKey} type="button">
-                  {recoveryCopied ? <CheckCircle2 aria-hidden="true" /> : <Copy aria-hidden="true" />}
-                  {recoveryCopied ? "Copied key" : "Copy key"}
-                </button>
-              </div>
-              <form
-                className="recovery-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  restoreRecoveryProfile();
-                }}
-              >
-                <label htmlFor="guest-recovery-key">Restore saved key</label>
-                <div>
-                  <input
-                    id="guest-recovery-key"
-                    onChange={(event) => {
-                      setRecoveryInput(event.target.value);
-                      setRecoveryError("");
-                    }}
-                    placeholder="guest-abc123def456"
-                    value={recoveryInput}
-                  />
-                  <button type="submit">Restore profile</button>
-                </div>
-                {recoveryError && <p role="alert">{recoveryError}</p>}
-              </form>
-            </section>
-          </div>
-        )}
-      </div>
-    );
-  }
+function LabPhaseCommandDeck({ lab, checkedItems, worksheetAnswers }: { lab: PlatformLab; checkedItems: Record<string, boolean>; worksheetAnswers: Record<string, string> }) {
+  const stages = labCommandStages(lab, checkedItems, worksheetAnswers);
+  const [activeStageId, setActiveStageId] = useState<LabCommandStage["id"]>("setup");
+  const activeStage = stages.find((stage) => stage.id === activeStageId) ?? stages[0];
 
   return (
-    <div className="academy-shell">
-      <header className="topbar">
-        <Link className="brand" to="/">
-          <GraduationCap aria-hidden="true" />
+    <section className="lab-command-deck" aria-label="Lab phase command deck">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Phase commands</p>
+          <h3>Copy by lab phase</h3>
+        </div>
+        <span>{commandCountLabel(activeStage.commands.length)}</span>
+      </div>
+      <div className="lab-command-tabs" aria-label="Lab command phase">
+        {stages.map((stage) => {
+          const StageIcon = stage.icon;
+          return (
+            <button
+              aria-label={`${stage.title}: ${stage.status}`}
+              aria-pressed={stage.id === activeStage.id}
+              className={stage.id === activeStage.id ? "active" : undefined}
+              key={stage.id}
+              onClick={() => setActiveStageId(stage.id)}
+              type="button"
+            >
+              <StageIcon aria-hidden="true" />
+              <strong>{stage.title}</strong>
+              <span>{stage.status}</span>
+            </button>
+          );
+        })}
+      </div>
+      <CommandBlock commands={activeStage.commands} title={`${activeStage.title} commands`} />
+    </section>
+  );
+}
+
+function LabWorkbook({ lab, learnerId, onSaveSubmission }: { lab: PlatformLab; learnerId: string; onSaveSubmission: SaveLabSubmission }) {
+  const storageKey = `${LAB_WORKBOOK_STATE_PREFIX}${learnerId}:${lab.slug}`;
+  const legacyStorageKey = `${LAB_WORKBOOK_STATE_PREFIX}${lab.slug}`;
+  const worksheetItems = lab.worksheet_prompts ?? [];
+  const validationItems = lab.validation_checks ?? [];
+  const trackedItems = [
+    ...worksheetItems.map((item, index) => ({ id: `worksheet-${index}`, item, group: "Worksheet" })),
+    ...validationItems.map((item, index) => ({ id: `validation-${index}`, item, group: "Validation" })),
+  ];
+  const checkedItemIds = new Set(trackedItems.map((item) => item.id));
+  const worksheetAnswerIds = new Set(worksheetItems.map((_, index) => `worksheet-${index}`));
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const [worksheetAnswers, setWorksheetAnswers] = useState<Record<string, string>>({});
+  const [saveState, setSaveState] = useState<"loading" | "saved" | "dirty" | "saving" | "local">("loading");
+  const [savedScore, setSavedScore] = useState(0);
+  const [rubricFeedback, setRubricFeedback] = useState<PlatformLabSubmission["rubric_feedback"]>([]);
+  const [evidenceTerms, setEvidenceTerms] = useState<string[]>([]);
+  const dirtyRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    dirtyRef.current = false;
+    try {
+      const raw = globalThis.localStorage?.getItem(storageKey) ?? globalThis.localStorage?.getItem(legacyStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown;
+        if (parsed && typeof parsed === "object" && ("checkedItems" in parsed || "worksheetAnswers" in parsed)) {
+          const shaped = parsed as { checkedItems?: Record<string, unknown>; worksheetAnswers?: Record<string, unknown> };
+          setCheckedItems(sanitizeCheckedItems(shaped.checkedItems, checkedItemIds));
+          setWorksheetAnswers(sanitizeWorksheetAnswers(shaped.worksheetAnswers, worksheetAnswerIds));
+        } else {
+          setCheckedItems(sanitizeCheckedItems(parsed as Record<string, unknown>, checkedItemIds));
+        }
+      } else {
+        setCheckedItems({});
+        setWorksheetAnswers({});
+      }
+    } catch {
+      setCheckedItems({});
+      setWorksheetAnswers({});
+    }
+
+    setSaveState("loading");
+    api
+      .labSubmission(lab.slug, learnerId)
+      .then((submission) => {
+        if (cancelled || dirtyRef.current) return;
+        setCheckedItems(sanitizeCheckedItems(submission.checked_items, checkedItemIds));
+        setWorksheetAnswers(sanitizeWorksheetAnswers(submission.worksheet_answers, worksheetAnswerIds));
+        setSavedScore(submission.score);
+        setRubricFeedback(submission.rubric_feedback ?? []);
+        setEvidenceTerms(submission.evidence_terms ?? []);
+        setSaveState("saved");
+      })
+      .catch(() => {
+        if (cancelled || dirtyRef.current) return;
+        setSaveState("local");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lab.slug, learnerId, legacyStorageKey, storageKey]);
+
+  useEffect(() => {
+    try {
+      globalThis.localStorage?.setItem(
+        storageKey,
+        JSON.stringify({
+          checkedItems: sanitizeCheckedItems(checkedItems, checkedItemIds),
+          worksheetAnswers: sanitizeWorksheetAnswers(worksheetAnswers, worksheetAnswerIds)
+        })
+      );
+    } catch {
+      // Local worksheet state is optional; ignore storage failures.
+    }
+  }, [checkedItems, storageKey, worksheetAnswers]);
+
+  const completedCount = trackedItems.filter((item) => checkedItems[item.id]).length;
+  const answeredCount = worksheetItems.filter((_, index) => worksheetAnswers[`worksheet-${index}`]?.trim()).length;
+  const scoreUnits = trackedItems.length + worksheetItems.length;
+  const progressValue = scoreUnits ? Math.round(((completedCount + answeredCount) / scoreUnits) * 100) : 0;
+  const rubricStatusCounts = rubricStatusOrder
+    .map((status) => ({
+      status,
+      count: rubricFeedback.filter((item) => item.status === status).length
+    }))
+    .filter((item) => item.count > 0);
+  const unexpectedRubricStatusCounts = Array.from(
+    rubricFeedback.reduce((statuses, item) => {
+      if (!rubricStatusOrder.includes(item.status)) statuses.add(item.status);
+      return statuses;
+    }, new Set<string>())
+  ).map((status) => ({
+    status,
+    count: rubricFeedback.filter((item) => item.status === status).length
+  }));
+  const rubricNeedsAttention = rubricFeedback.filter((item) => item.status === "missing" || item.status === "needs-evidence").length;
+  const markDirty = () => {
+    dirtyRef.current = true;
+    setSaveState((current) => (current === "saving" ? current : "dirty"));
+  };
+  const toggleItem = (id: string) => {
+    setCheckedItems((current) => ({ ...current, [id]: !current[id] }));
+    markDirty();
+  };
+  const updateWorksheetAnswer = (id: string, value: string) => {
+    setWorksheetAnswers((current) => ({ ...current, [id]: value }));
+    markDirty();
+  };
+  const saveWorkbook = async () => {
+    setSaveState("saving");
+    const cleanCheckedItems = sanitizeCheckedItems(checkedItems, checkedItemIds);
+    const cleanWorksheetAnswers = sanitizeWorksheetAnswers(worksheetAnswers, worksheetAnswerIds);
+    setCheckedItems(cleanCheckedItems);
+    setWorksheetAnswers(cleanWorksheetAnswers);
+    try {
+      const saved = await onSaveSubmission(
+        lab.slug,
+        {
+          checked_items: cleanCheckedItems,
+          worksheet_answers: cleanWorksheetAnswers,
+          status: progressValue === 100 ? "submitted" : "in_progress"
+        }
+      );
+      setSavedScore(saved.score);
+      setRubricFeedback(saved.rubric_feedback ?? []);
+      setEvidenceTerms(saved.evidence_terms ?? []);
+      dirtyRef.current = false;
+      setSaveState("saved");
+    } catch {
+      setSaveState("local");
+    }
+  };
+  return (
+    <section className="lab-workbook-panel" aria-labelledby="lab-workbook-title">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Interactive lab workbook</p>
+          <h2 id="lab-workbook-title">Worksheet and validation state</h2>
+        </div>
+        <div className="lab-download-actions">
+          <a className="download-lab-button" download={`${lab.slug}-lab-packet.md`} href={api.labPacketUrl(lab.slug)}>
+            <Download aria-hidden="true" />
+            Download lab packet
+          </a>
+          <a className="download-lab-button" download={labWorkspaceArchiveName(lab)} href={api.labWorkspaceBundleUrl(lab.slug)}>
+            <Download aria-hidden="true" />
+            Download learner workspace
+          </a>
+          <button className="download-lab-button" disabled={saveState === "loading" || saveState === "saving"} type="button" onClick={() => void saveWorkbook()}>
+            <CheckCircle2 aria-hidden="true" />
+            {saveState === "saving" ? "Saving..." : "Save workbook"}
+          </button>
+        </div>
+      </div>
+      <div className="lab-workbook-progress">
+        <span>
+          {completedCount} / {trackedItems.length} checks complete · {answeredCount} / {worksheetItems.length} prompts answered · score {saveState === "saved" ? savedScore : progressValue}%
+        </span>
+        <ProgressBar value={progressValue} />
+        <small className="lab-save-state">
+          {saveState === "loading" && "Loading saved workbook"}
+          {saveState === "saved" && "Saved to profile"}
+          {saveState === "dirty" && "Unsaved changes"}
+          {saveState === "saving" && "Saving workbook"}
+          {saveState === "local" && "Stored in this browser until API save succeeds"}
+        </small>
+      </div>
+      <LabWorkbookPhaseStatus lab={lab} checkedItems={checkedItems} worksheetAnswers={worksheetAnswers} />
+      <LabPhaseCommandDeck lab={lab} checkedItems={checkedItems} worksheetAnswers={worksheetAnswers} />
+      <div className="lab-workbook-grid">
+        <section>
+          <h3>Worksheet prompts</h3>
+          {worksheetItems.map((item, index) => {
+            const id = `worksheet-${index}`;
+            return (
+              <div className="lab-worksheet-answer" key={item}>
+                <label className="lab-check-row">
+                  <input checked={Boolean(checkedItems[id])} onChange={() => toggleItem(id)} type="checkbox" />
+                  <span>{item}</span>
+                </label>
+                <textarea
+                  aria-label={`Evidence note: ${item}`}
+                  onChange={(event) => updateWorksheetAnswer(id, event.target.value)}
+                  rows={3}
+                  value={worksheetAnswers[id] ?? ""}
+                />
+              </div>
+            );
+          })}
+        </section>
+        <section>
+          <h3>Validation checks</h3>
+          {validationItems.map((item, index) => {
+            const id = `validation-${index}`;
+            return (
+              <label className="lab-check-row" key={item}>
+                <input checked={Boolean(checkedItems[id])} onChange={() => toggleItem(id)} type="checkbox" />
+                <span>{item}</span>
+              </label>
+            );
+          })}
+        </section>
+      </div>
+      <LabWorkspaceQuickstart lab={lab} />
+      <LabContractPanel lab={lab} />
+      {learnerArtifactPaths(lab).length ? (
+        <div className="lab-artifact-list" aria-label="Learner artifact paths">
+          {learnerArtifactPaths(lab).map((path) => (
+            <code key={path}>{path}</code>
+          ))}
+        </div>
+      ) : null}
+      <section className="lab-rubric-feedback">
+        <div className="section-heading">
           <div>
-            <strong>Cloud Native Platform Academy</strong>
-            <span>Kubernetes, EKS, Helm, ArgoCD, SRE</span>
+            <p className="eyebrow">Rubric feedback</p>
+            <h3>Evidence quality</h3>
           </div>
-        </Link>
-        <nav aria-label="Platform Academy navigation">
-          <NavLink to="/" end>
-            <LayoutDashboard aria-hidden="true" />
-            Dashboard
-          </NavLink>
-          <NavLink to="/roadmap">
-            <Map aria-hidden="true" />
-            Roadmap
-          </NavLink>
-          <NavLink to="/labs">
-            <ListChecks aria-hidden="true" />
-            Labs
-          </NavLink>
-          <NavLink to="/resources">
-            <FileText aria-hidden="true" />
-            Resources
-          </NavLink>
-          <NavLink to="/designs">
-            <Sparkles aria-hidden="true" />
-            Designs
-          </NavLink>
-        </nav>
-      </header>
-      <main>{children}</main>
-    </div>
+          {rubricFeedback.length ? (
+            <div className="lab-feedback-summary" aria-label="Rubric status summary">
+              {[...rubricStatusCounts, ...unexpectedRubricStatusCounts].map(({ status, count }) => (
+                <span className={`lab-feedback-summary-${status.replace(/[^a-z0-9]+/g, "-")}`} key={status}>
+                  {count} {rubricStatusLabels[status] ?? status}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        {rubricFeedback.length ? (
+          <div className="lab-feedback-overview">
+            <span>{rubricNeedsAttention ? `${rubricNeedsAttention} criteria need stronger evidence` : "All rubric criteria have passing evidence"}</span>
+            {evidenceTerms.length ? <span>Matched: {evidenceTerms.slice(0, 6).join(" / ")}</span> : <span>No matched evidence terms yet</span>}
+          </div>
+        ) : null}
+        {rubricFeedback.length ? (
+          <div className="lab-feedback-grid">
+            {rubricFeedback.map((item, index) => (
+              <article className={`lab-feedback-card feedback-${item.status}`} key={item.criterion}>
+                <div className="lab-feedback-card-header">
+                  <span>Criterion {index + 1}</span>
+                  <strong>{rubricStatusLabels[item.status] ?? item.status}</strong>
+                </div>
+                <p>{item.criterion}</p>
+                <small>{item.feedback}</small>
+                {item.status === "missing" || item.status === "needs-evidence" ? (
+                  <em className="lab-feedback-next">
+                    {worksheetItems[index] ? `Update worksheet prompt ${index + 1}` : "Add validation or cleanup evidence"}
+                  </em>
+                ) : null}
+                {item.evidence_terms.length ? (
+                  <div className="lab-feedback-terms">
+                    <span>Matched evidence</span>
+                    {item.evidence_terms.map((term) => (
+                      <code key={term}>{term}</code>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="lab-feedback-terms empty">
+                    <span>No matching evidence yet</span>
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <LabListSection items={lab.rubric} title="Rubric" />
+        )}
+      </section>
+    </section>
   );
 }
 
@@ -653,6 +1189,10 @@ function DashboardPage({ data }: { data: AcademyData }) {
   const practicedQuestions = completedActivityIds(data.activity, "interview_question").size;
   const reviewedResources = completedActivityIds(data.activity, "resource").size;
   const completedLabs = completedActivityIds(data.activity, "lab").size;
+  const activeLabSubmissions = data.labSubmissions.filter((submission) => submission.score > 0 || submission.completed_checks > 0 || submission.answered_prompts > 0);
+  const strongLabSubmissions = activeLabSubmissions.filter((submission) => submission.rubric_feedback.some((item) => item.status === "strong")).length;
+  const earnedAchievements = data.dashboard.achievements.filter((achievement) => achievement.earned);
+  const nextAchievement = data.dashboard.achievements.find((achievement) => !achievement.earned);
 
   const filteredCourses = courses.filter((course) => {
     const levelGroup = data.catalog.tracks.find((track) => track.course.slug === course.slug)?.level_group ?? course.level;
@@ -668,7 +1208,7 @@ function DashboardPage({ data }: { data: AcademyData }) {
     <section className="page canonical-page dashboard-home">
       <header className="workspace-header">
         <div>
-          <p className="eyebrow">Production learning workspace</p>
+          <p className="eyebrow">Platform learning workspace</p>
           <h1>Platform Academy</h1>
           <p className="lead">{data.catalog.promise}</p>
         </div>
@@ -688,7 +1228,7 @@ function DashboardPage({ data }: { data: AcademyData }) {
 
       <section className="ops-summary" aria-label="Academy operating summary">
         <article>
-          <span>Readiness</span>
+          <span>Progress</span>
           <strong>{stats.completionPercent}%</strong>
           <ProgressBar value={stats.completionPercent} />
           <small>
@@ -703,22 +1243,27 @@ function DashboardPage({ data }: { data: AcademyData }) {
         <article>
           <span>Lab inventory</span>
           <strong>{data.catalog.labs.length}</strong>
-          <small>{averageLabMinutes(data.catalog.labs)} min average drill</small>
+          <small>
+            {activeLabSubmissions.length} active workbooks / {averageLabMinutes(data.catalog.labs)} min average
+          </small>
         </article>
         <article>
-          <span>Review state</span>
+          <span>Lab evidence</span>
+          <strong>{strongLabSubmissions}</strong>
+          <small>{activeLabSubmissions.length} workbook submissions in progress</small>
+        </article>
+        <article>
+          <span>Due review</span>
           <strong>{data.dashboard.due_reviews}</strong>
           <small>{data.dashboard.daily_goal.earned_xp_today} / {data.dashboard.daily_goal.target_xp} XP today</small>
         </article>
-          {data.interviewPrepLoaded && (
-            <article>
-              <span>Interview bank</span>
-              <strong>{data.interviewPrep.total_questions}</strong>
-              <small>
-                {practicedQuestions} practiced / {data.interviewPrep.packs.length} packs
-              </small>
-            </article>
-          )}
+        <article>
+          <span>Interview bank</span>
+          <strong>{data.interviewPrepLoaded ? data.interviewPrep.total_questions : "..."}</strong>
+          <small>
+            {data.interviewPrepLoaded ? `${practicedQuestions} practiced / ${data.interviewPrep.packs.length} packs` : "Scenario packs loading"}
+          </small>
+        </article>
       </section>
 
       <section className="dashboard-layout">
@@ -726,7 +1271,7 @@ function DashboardPage({ data }: { data: AcademyData }) {
           <section className="workspace-panel next-work">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Next best action</p>
+                <p className="eyebrow">Next up</p>
                 <h2>{stats.recommended?.title ?? "Select a lesson"}</h2>
               </div>
               {stats.recommended && (
@@ -738,14 +1283,14 @@ function DashboardPage({ data }: { data: AcademyData }) {
             <div className="resume-status">
               <CheckCircle2 aria-hidden="true" />
               <div>
-                <span>Resume profile</span>
+                <span>Saved progress</span>
                 <strong>
                   {latestLesson && latestCourse ? `${latestCourse.title}: ${latestLesson.title}` : "New guest profile ready"}
                 </strong>
                 <p>
                   {latestLesson && latestSavedAt
-                    ? `Last saved ${latestSavedAt}. Continue with the next incomplete lesson for this browser workspace.`
-                    : "Progress will stay attached to this browser workspace until you start a new profile."}
+                    ? `Last saved ${latestSavedAt}. Pick up with the next incomplete lesson.`
+                    : "Progress is saved for this browser profile until you start a new one."}
                 </p>
               </div>
             </div>
@@ -753,18 +1298,18 @@ function DashboardPage({ data }: { data: AcademyData }) {
               <div>
                 <span>Course</span>
                 <strong>{recommendedCourse?.title ?? "No course selected"}</strong>
-                <p>{recommendedCourse?.description ?? "The seeded catalog has no available lessons."}</p>
+                <p>{recommendedCourse?.description ?? "No lessons are available yet."}</p>
               </div>
               {upcomingLab && (
                 <div>
-                  <span>Lab gate</span>
+                  <span>Lab</span>
                   <strong>{upcomingLab.title}</strong>
                   <p>{upcomingLab.scenario}</p>
                 </div>
               )}
               {featuredResource && (
                 <div>
-                  <span>Reference artifact</span>
+                  <span>Reference</span>
                   <strong>{featuredResource.title}</strong>
                   <p>{featuredResource.summary}</p>
                 </div>
@@ -775,8 +1320,8 @@ function DashboardPage({ data }: { data: AcademyData }) {
           <section className="workspace-panel">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Track pipeline</p>
-                <h2>Courses by operating level</h2>
+                <p className="eyebrow">Course list</p>
+                <h2>Courses by level</h2>
               </div>
               <span>
                 {filteredCourses.length} of {courses.length} visible
@@ -846,7 +1391,7 @@ function DashboardPage({ data }: { data: AcademyData }) {
           </section>
 
           <section className="workspace-panel activity-rail-card">
-            <p className="eyebrow">Recovery-backed prep</p>
+            <p className="eyebrow">Saved practice</p>
             <h2>Saved learning state</h2>
             <div>
               <Link to="/interview-prep">
@@ -872,24 +1417,54 @@ function DashboardPage({ data }: { data: AcademyData }) {
             </div>
           </section>
 
-          {featuredInterviewPack && (
-            <section className="workspace-panel interview-rail-card">
-              <p className="eyebrow">Interview sprint</p>
-              <h2>{featuredInterviewPack.title}</h2>
-              <p>{featuredInterviewPack.focus}</p>
-              <div className="chip-list">
-                <span>{featuredInterviewPack.questions.length} questions</span>
-                <span>{featuredInterviewPack.official_sources.length} source links</span>
+          <section className="workspace-panel achievement-rail-card">
+            <p className="eyebrow">Platform badges</p>
+            <h2>Skill signals</h2>
+            {earnedAchievements.length ? (
+              <div className="achievement-list">
+                {earnedAchievements.slice(0, 4).map((achievement) => (
+                  <div className="achievement-row earned" key={achievement.code}>
+                    <CheckCircle2 aria-hidden="true" />
+                    <div>
+                      <strong>{achievement.title}</strong>
+                      <span>{achievement.description}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
+            ) : (
+              <p className="achievement-empty">Earn badges by completing lessons, saving resources, practicing interviews, and submitting labs.</p>
+            )}
+            {nextAchievement && (
+              <div className="achievement-next">
+                <span>Next badge</span>
+                <strong>{nextAchievement.title}</strong>
+                <ProgressBar value={Math.round((nextAchievement.progress / nextAchievement.target) * 100)} />
+                <small>
+                  {nextAchievement.progress} / {nextAchievement.target} signals
+                </small>
+              </div>
+            )}
+          </section>
+
+          <section className="workspace-panel interview-rail-card">
+            <p className="eyebrow">Interview sprint</p>
+            <h2>{featuredInterviewPack?.title ?? "Scenario packs loading"}</h2>
+            <p>{featuredInterviewPack?.focus ?? "Interview drills are loading after the core workspace."}</p>
+            <div className="chip-list">
+              <span>{featuredInterviewPack ? `${featuredInterviewPack.questions.length} questions` : "Loading packs"}</span>
+              <span>{featuredInterviewPack ? `${featuredInterviewPack.official_sources.length} source links` : "Cached offline"}</span>
+            </div>
+            {featuredInterviewPack && (
               <Link className="text-link" to={`/interview-prep?pack=${featuredInterviewPack.slug}`}>
                 Open prep <ArrowRight aria-hidden="true" />
               </Link>
-            </section>
-          )}
+            )}
+          </section>
 
           <section className="workspace-panel readiness-panel">
-            <p className="eyebrow">Readiness gates</p>
-            <h2>Evidence before progress</h2>
+            <p className="eyebrow">Learning checks</p>
+            <h2>What gets counted</h2>
             <div>
               <span className={data.dashboard.daily_goal.met ? "gate-state met" : "gate-state"}>{data.dashboard.daily_goal.met ? "Met" : "In progress"}</span>
               <strong>Daily XP target</strong>
@@ -904,8 +1479,8 @@ function DashboardPage({ data }: { data: AcademyData }) {
             </div>
             <div>
               <span className="gate-state">Review</span>
-              <strong>Source posture</strong>
-              <p>Resources expose official-source links and reviewed dates. Lessons and courses still need version targets in the API payload.</p>
+              <strong>Sources</strong>
+              <p>Resource pages include official links and reviewed dates when available. Course and lesson pages currently rely on the local catalog.</p>
             </div>
           </section>
         </aside>
@@ -926,11 +1501,11 @@ function RoadmapPage({ data }: { data: AcademyData }) {
       <header className="workspace-header">
         <div>
         <p className="eyebrow">Recommended order</p>
-          <h1>Roadmap from first kubectl habits to production platform ownership</h1>
-          <p className="lead">Each stage pairs lessons with checkpoints, course evidence, and lab validation before advancing.</p>
+          <h1>Roadmap from kubectl basics to running platforms</h1>
+          <p className="lead">Each stage groups lessons, checkpoints, and labs so you know what to practice next.</p>
         </div>
         <div className="readiness-score">
-          <span>Current readiness</span>
+          <span>Current progress</span>
           <strong>{stats.completionPercent}%</strong>
           <ProgressBar value={stats.completionPercent} />
         </div>
@@ -959,7 +1534,7 @@ function RoadmapPage({ data }: { data: AcademyData }) {
                     <span>{relatedLabs.length} labs</span>
                     <span>{completedLessons} complete</span>
                   </div>
-                  <h3>Promotion checkpoints</h3>
+                  <h3>Checkpoints</h3>
                   <ul>
                     {stage.checkpoints.map((checkpoint) => (
                       <li key={checkpoint}>{checkpoint}</li>
@@ -981,12 +1556,12 @@ function RoadmapPage({ data }: { data: AcademyData }) {
 
         <aside className="roadmap-rail">
           <section className="workspace-panel">
-            <p className="eyebrow">Source and review posture</p>
-            <h2>Trust model</h2>
-            <p>Roadmap gates use seeded courses, labs, checkpoints, and resources. External official-source links and review timestamps are not in the current payload.</p>
+            <p className="eyebrow">Sources</p>
+            <h2>What this roadmap uses</h2>
+            <p>Roadmap stages are built from the app's courses, labs, checkpoints, and resources. Resource pages include official links and reviewed dates where available.</p>
           </section>
           <section className="workspace-panel">
-            <p className="eyebrow">Evidence gates</p>
+            <p className="eyebrow">Level summary</p>
             {data.catalog.levels.map((level) => (
               <div className="evidence-row" key={level.slug}>
                 <LevelBadge level={level.level_group} />
@@ -1005,29 +1580,67 @@ function LabsPage({ data }: { data: AcademyData }) {
   const topics = useMemo(() => Array.from(new Set(data.catalog.labs.map((lab) => lab.track))), [data.catalog.labs]);
   const [selectedLevel, setSelectedLevel] = useState("All");
   const [selectedTopic, setSelectedTopic] = useState("All");
+  const [selectedTier, setSelectedTier] = useState<"All" | PlatformLab["lab_tier"]>("All");
+  const [selectedRuntime, setSelectedRuntime] = useState<LabRuntimeFilter>("All");
   const completedLabs = completedActivityIds(data.activity, "lab");
+  const fullLabCount = data.catalog.labs.filter((lab) => lab.lab_tier === "full").length;
+  const portfolioLabCount = data.catalog.labs.filter(isPortfolioLab).length;
+  const clusterLabCount = data.catalog.labs.filter(isClusterRunnableLab).length;
+  const activeSubmissionCount = data.labSubmissions.filter((submission) => submission.score > 0 || submission.completed_checks > 0 || submission.answered_prompts > 0).length;
+  const tierOptions = labTierFilterOptions(data.catalog.labs);
   const filteredLabs = data.catalog.labs.filter(
-    (lab) => (selectedLevel === "All" || lab.level_group === selectedLevel) && (selectedTopic === "All" || lab.track === selectedTopic)
+    (lab) =>
+      (selectedRuntime === "All" || (selectedRuntime === "Cluster" ? isClusterRunnableLab(lab) : !isClusterRunnableLab(lab))) &&
+      (selectedLevel === "All" || lab.level_group === selectedLevel) &&
+      (selectedTopic === "All" || lab.track === selectedTopic) &&
+      (selectedTier === "All" || lab.lab_tier === selectedTier)
   );
   const activeLab = filteredLabs[0];
   const activeResource = activeLab ? resourcesForLab(data, activeLab)[0] : undefined;
+  const activeSubmission = activeLab ? labSubmissionFor(data, activeLab.slug) : undefined;
+  const activeSubmissionSummary = labSubmissionSummary(activeSubmission);
+  const inventoryDetail = labInventorySummary(activeSubmissionCount, fullLabCount, data.catalog.labs.length);
+  const inventorySummary = [
+    clusterLabCount > 0 ? `${clusterLabCount} cluster-ready` : "",
+    portfolioLabCount > 0 ? `${portfolioLabCount} portfolio-grade` : "",
+    inventoryDetail
+  ]
+    .filter(Boolean)
+    .join(" / ");
 
   return (
     <section className="page canonical-page labs-page">
       <header className="workspace-header">
         <div>
-          <p className="eyebrow">Command workspace</p>
-          <h1>Labs for platform incidents and architecture reviews</h1>
-          <p className="lead">Runbook-style drills expose scenario context, command surfaces, and validation gates before a lesson counts as ready.</p>
+          <p className="eyebrow">Lab workspace</p>
+          <h1>Labs for incidents and architecture reviews</h1>
+          <p className="lead">Practice short scenarios with commands and checks you can run locally before marking a lesson complete.</p>
         </div>
-        <div className="readiness-score">
-          <span>Lab inventory</span>
-          <strong>{filteredLabs.length}</strong>
-          <small>{data.catalog.labs.length} total seeded labs</small>
+        <div className="workspace-actions">
+          <Link className="secondary-action" to="/labs/history">
+            <FileText aria-hidden="true" />
+            Evidence journal
+          </Link>
+          <div className="readiness-score">
+            <span>Lab inventory</span>
+            <strong>{filteredLabs.length}</strong>
+            <small>{inventorySummary}</small>
+          </div>
         </div>
       </header>
 
+      <LabStarterPath data={data} />
+
       <section className="toolbar compact canonical-toolbar" aria-label="Lab filters">
+        {clusterLabCount > 0 ? (
+          <div className="segmented lab-runtime-filter">
+            {(Object.keys(labRuntimeLabels) as LabRuntimeFilter[]).map((runtime) => (
+              <button key={runtime} className={selectedRuntime === runtime ? "selected" : ""} onClick={() => setSelectedRuntime(runtime)}>
+                {labRuntimeLabels[runtime]}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <div className="segmented">
           {["All", ...levelOrder].map((level) => (
             <button key={level} className={selectedLevel === level ? "selected" : ""} onClick={() => setSelectedLevel(level)}>
@@ -1042,12 +1655,21 @@ function LabsPage({ data }: { data: AcademyData }) {
             </button>
           ))}
         </div>
+        {tierOptions.length > 0 ? (
+          <div className="segmented lab-tier-filter">
+            {tierOptions.map((tier) => (
+              <button key={tier} className={selectedTier === tier ? "selected" : ""} onClick={() => setSelectedTier(tier)}>
+                {tier === "All" ? "All tiers" : labTierLabels[tier]}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <section className="lab-workspace">
         <aside className="lab-queue" aria-label="Platform labs">
           {filteredLabs.map((lab) => (
-            <LabCard completed={completedLabs.has(lab.slug)} lab={lab} key={lab.slug} />
+            <LabCard completed={completedLabs.has(lab.slug)} lab={lab} key={lab.slug} submission={labSubmissionFor(data, lab.slug)} />
           ))}
         </aside>
 
@@ -1056,7 +1678,7 @@ function LabsPage({ data }: { data: AcademyData }) {
             <>
               <div className="section-heading">
                 <div>
-                  <p className="eyebrow">Selected runbook</p>
+                  <p className="eyebrow">Selected lab</p>
                   <h2>{activeLab.title}</h2>
                 </div>
                 <Link className="text-link" to={`/labs/${activeLab.slug}`}>
@@ -1066,10 +1688,29 @@ function LabsPage({ data }: { data: AcademyData }) {
               <p>{activeLab.scenario}</p>
               <div className="runbook-meta">
                 <LevelBadge level={activeLab.level_group} />
+                <LabTierBadge tier={activeLab.lab_tier} />
+                <PortfolioLabBadge lab={activeLab} />
+                <LabRuntimeBadge lab={activeLab} />
+                <LabSubmissionBadge submission={activeSubmission} />
                 <span>{activeLab.track}</span>
                 <span>{activeLab.estimated_minutes} min</span>
                 <span>{activeLab.difficulty}</span>
               </div>
+              {isPortfolioLab(activeLab) ? (
+                <div className="portfolio-lab-callout">
+                  <strong>Structurally verified lab</strong>
+                  <span>Broken and fixed artifacts are parsed in the release gate, including YAML or JSON contracts where this lab uses them.</span>
+                </div>
+              ) : null}
+              {activeSubmission ? (
+                <div className="lab-submission-summary">
+                  <strong>{activeSubmissionSummary.label}</strong>
+                  <span>{Math.round(activeSubmission.score)}% workbook score</span>
+                  <span>
+                    {activeSubmission.answered_prompts} prompts / {activeSubmission.completed_checks} checks
+                  </span>
+                </div>
+              ) : null}
               <CommandBlock commands={activeLab.commands} />
               <div className="validation-grid">
                 <div>
@@ -1081,8 +1722,8 @@ function LabsPage({ data }: { data: AcademyData }) {
                   </ul>
                 </div>
                 <div>
-                  <h3>Evidence artifact</h3>
-                  <p>{activeResource?.artifacts.slice(0, 2).join(" / ") ?? "No related resource artifact is seeded for this lab."}</p>
+                  <h3>What to save</h3>
+                  <p>{activeResource?.artifacts.slice(0, 2).join(" / ") ?? "No related resource is linked to this lab."}</p>
                   {activeResource && (
                     <Link className="text-link" to={`/resources/${activeResource.slug}`}>
                       Open resource <ArrowRight aria-hidden="true" />
@@ -1100,16 +1741,162 @@ function LabsPage({ data }: { data: AcademyData }) {
   );
 }
 
-function LabCard({ lab, completed }: { lab: PlatformLab; completed: boolean }) {
+function LabEvidenceJournalPage({ data }: { data: AcademyData }) {
+  const submissions = sortedLabSubmissions(data.labSubmissions.filter(hasLabSubmissionEvidence));
+  const strongSignals = submissions.reduce((total, submission) => total + submission.rubric_feedback.filter((item) => item.status === "strong").length, 0);
+  const averageScore = submissions.length > 0 ? Math.round(submissions.reduce((total, submission) => total + submission.score, 0) / submissions.length) : 0;
+  const evidenceTerms = Array.from(new Set(submissions.flatMap((submission) => submission.evidence_terms))).slice(0, 18);
+
+  const downloadReport = () => {
+    const blob = new Blob([submissionReportMarkdown(data, submissions)], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "platform-academy-lab-evidence.md";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <section className="page canonical-page lab-evidence-page">
+      <Link className="back-link" to="/labs">
+        <ChevronLeft aria-hidden="true" />
+        Labs
+      </Link>
+      <header className="workspace-header">
+        <div>
+          <p className="eyebrow">Lab evidence journal</p>
+          <h1>Saved workbooks and rubric signals</h1>
+          <p className="lead">Review the lab evidence already attached to this guest profile and export it as a short portfolio note.</p>
+        </div>
+        <div className="readiness-score">
+          <span>Saved labs</span>
+          <strong>{submissions.length}</strong>
+          <small>
+            {averageScore}% average / {strongSignals} strong signals
+          </small>
+        </div>
+      </header>
+
+      <section className="lab-evidence-actions" aria-label="Lab evidence actions">
+        <Link className="secondary-action" to="/labs">
+          <Terminal aria-hidden="true" />
+          Lab queue
+        </Link>
+        <button className="secondary-action" disabled={submissions.length === 0} onClick={downloadReport} type="button">
+          <Download aria-hidden="true" />
+          Download report
+        </button>
+      </section>
+
+      {evidenceTerms.length > 0 ? (
+        <section className="lab-evidence-term-strip" aria-label="Evidence terms">
+          {evidenceTerms.map((term) => (
+            <code key={term}>{term}</code>
+          ))}
+        </section>
+      ) : null}
+
+      {submissions.length > 0 ? (
+        <section className="lab-evidence-list" aria-label="Saved lab submissions">
+          {submissions.map((submission) => {
+            const lab = labForSlug(data, submission.lab_slug);
+            const summary = labSubmissionSummary(submission);
+            const statusCounts = orderedRubricStatusEntries(labRubricStatusCounts(submission));
+            return (
+              <article className="lab-evidence-card" key={submission.lab_slug}>
+                <div className="lab-evidence-card-header">
+                  <div>
+                    <div className="runbook-meta">
+                      {lab ? <LevelBadge level={lab.level_group} /> : null}
+                      {lab ? <LabTierBadge tier={lab.lab_tier} /> : null}
+                      {lab ? <PortfolioLabBadge lab={lab} /> : null}
+                      <LabSubmissionBadge submission={submission} />
+                      <span>Updated {labSubmissionUpdatedTime(submission)}</span>
+                    </div>
+                    <h2>{lab?.title ?? submission.lab_slug}</h2>
+                    <p>{lab?.scenario ?? "This saved workbook references a lab that is not in the current catalog."}</p>
+                  </div>
+                  <Link className="text-link" to={`/labs/${submission.lab_slug}`}>
+                    Open lab <ArrowRight aria-hidden="true" />
+                  </Link>
+                </div>
+
+                <dl className="lab-evidence-metrics">
+                  <div>
+                    <dt>Score</dt>
+                    <dd>{Math.round(submission.score)}%</dd>
+                  </div>
+                  <div>
+                    <dt>Prompts</dt>
+                    <dd>
+                      {submission.answered_prompts}/{submission.total_prompts}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Checks</dt>
+                    <dd>
+                      {submission.completed_checks}/{submission.total_checks}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd>{summary.label}</dd>
+                  </div>
+                </dl>
+
+                {statusCounts.length > 0 ? (
+                  <div className="lab-evidence-rubric" aria-label={`${lab?.title ?? submission.lab_slug} rubric status`}>
+                    {statusCounts.map(([status, count]) => (
+                      <span className={`lab-evidence-rubric-${status.replace(/[^a-z0-9]+/g, "-")}`} key={status}>
+                        {rubricStatusLabels[status] ?? status}: {count}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+
+                {submission.evidence_terms.length > 0 ? (
+                  <div className="lab-evidence-terms">
+                    {submission.evidence_terms.map((term) => (
+                      <code key={term}>{term}</code>
+                    ))}
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </section>
+      ) : (
+        <EmptyState title="No lab evidence saved yet." detail="Run a lab workbook and save it to build this journal." />
+      )}
+    </section>
+  );
+}
+
+function LabSubmissionBadge({ submission }: { submission?: PlatformLabSubmission }) {
+  const summary = labSubmissionSummary(submission);
+  return (
+    <span className={`lab-submission-badge lab-submission-${summary.className}`}>
+      {summary.label}
+      {submission && summary.score > 0 ? ` · ${Math.round(summary.score)}%` : ""}
+    </span>
+  );
+}
+
+function LabCard({ lab, completed, submission }: { lab: PlatformLab; completed: boolean; submission?: PlatformLabSubmission }) {
   return (
     <Link className="lab-card lab-queue-row" to={`/labs/${lab.slug}`}>
       <div className="lab-meta">
         <LevelBadge level={lab.level_group} />
-        <span>
+        <LabTierBadge tier={lab.lab_tier} />
+        <PortfolioLabBadge lab={lab} />
+        <LabRuntimeBadge lab={lab} />
+        <LabSubmissionBadge submission={submission} />
+        <span className="lab-duration">
           <Clock aria-hidden="true" />
           {lab.estimated_minutes} min
         </span>
-        {completed && <span>saved</span>}
+        {completed && <span className="lab-saved-badge">saved</span>}
       </div>
       <h2>{lab.title}</h2>
       <p>{lab.scenario}</p>
@@ -1119,6 +1906,44 @@ function LabCard({ lab, completed }: { lab: PlatformLab; completed: boolean }) {
         ))}
       </div>
     </Link>
+  );
+}
+
+function LabStarterPath({ data }: { data: AcademyData }) {
+  const starterLabs = starterLabPath.flatMap((item) => {
+    const lab = labForSlug(data, item.slug);
+    return lab ? [{ ...item, lab, submission: labSubmissionFor(data, lab.slug) }] : [];
+  });
+
+  if (!starterLabs.length) return null;
+
+  return (
+    <section className="lab-starter-path" aria-label="Starter incident path">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Starter incident path</p>
+          <h2>Begin with live-feeling incidents</h2>
+        </div>
+        <span>{starterLabs.length} priority labs</span>
+      </div>
+      <div className="lab-starter-path-grid">
+        {starterLabs.map((item, index) => (
+          <Link className="lab-starter-step" to={`/labs/${item.lab.slug}`} aria-label={`Open starter lab: ${item.lab.title}`} key={item.lab.slug}>
+            <span className="lab-starter-step-number">{index + 1}</span>
+            <div>
+              <p className="eyebrow">{item.label}</p>
+              <strong>{item.lab.title}</strong>
+              <span>{item.proof}</span>
+              <div className="lab-starter-meta">
+                <LabRuntimeBadge lab={item.lab} />
+                <LabSubmissionBadge submission={item.submission} />
+              </div>
+            </div>
+            <ArrowRight aria-hidden="true" />
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -1171,6 +1996,166 @@ function matchingQuestionResources(question: PlatformInterviewPrep["questions"][
   return Array.from(new globalThis.Map<string, PlatformResource>(linkedResources.map((resource) => [resource.slug, resource])).values());
 }
 
+function markdownList(items: string[]) {
+  return items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : "- None listed.";
+}
+
+function fileSafeSlug(value: string) {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "platform-academy"
+  );
+}
+
+function downloadMarkdownFile(filename: string, markdown: string) {
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function courseForInterviewPack(data: AcademyData, pack: PlatformInterviewPrep) {
+  return allCourses(data.catalog).find((course) => course.slug === pack.related_course_slug);
+}
+
+function labsForInterviewPack(data: AcademyData, pack: PlatformInterviewPrep) {
+  return data.catalog.labs.filter((lab) => pack.related_labs.includes(lab.slug));
+}
+
+function interviewCramSheetMarkdown(
+  pack: PlatformInterviewPrep,
+  data: AcademyData,
+  relatedCourse?: Course,
+  relatedLabs: PlatformLab[] = [],
+  headingLevel = 1,
+  options: { questionIndexes?: number[] } = {}
+) {
+  const packHeading = "#".repeat(Math.max(1, Math.min(headingLevel, 5)));
+  const questionHeading = "#".repeat(Math.max(2, Math.min(headingLevel + 1, 6)));
+  const packSources = pack.official_sources.map((source) => `${source.label}: ${source.url}`);
+  const labLines = relatedLabs.map((lab) => `${lab.title} (${lab.level_group}) - /labs/${lab.slug}`);
+  const questionIndexes = options.questionIndexes ?? pack.questions.map((_, index) => index);
+  const questionSections = questionIndexes
+    .map((index) => ({ index, question: pack.questions[index] }))
+    .filter((item): item is { index: number; question: PlatformInterviewPrep["questions"][number] } => Boolean(item.question))
+    .map(({ question, index }) => {
+      const questionSources = matchingOfficialSources(question, pack.official_sources);
+      const questionLabs = matchingQuestionLabs(question, relatedLabs);
+      const questionResources = matchingQuestionResources(question, pack, data);
+      const resourceLines = questionResources.map((resource) => {
+        const reviewed = resource.reviewed_at ? `, reviewed ${formatReviewDate(resource.reviewed_at)}` : "";
+        const official = officialSourcesForResource(resource)
+          .map((source) => `${source.label}: ${source.url}`)
+          .join("; ");
+        return `${resource.title} (${resource.resource_type}${reviewed}) - /resources/${resource.slug}${official ? `; ${official}` : ""}`;
+      });
+
+      return [
+        `${questionHeading} ${index + 1}. ${question.question}`,
+        "",
+        `Scenario: ${question.scenario}`,
+        "",
+        "Answer outline:",
+        markdownList(question.answer_outline),
+        "",
+        "Strong signals:",
+        markdownList(question.strong_signals),
+        "",
+        "Red flags:",
+        markdownList(question.red_flags),
+        "",
+        `Practice task: ${question.practice_task}`,
+        "",
+        "Study links:",
+        markdownList([
+          ...questionResources.map((resource) => `Resource: ${resource.title} - /resources/${resource.slug}`),
+          ...questionLabs.map((lab) => `Lab: ${lab.title} - /labs/${lab.slug}`),
+          ...questionSources.map((source) => `Docs: ${source.label} - ${source.url}`)
+        ]),
+        "",
+        "Resource source notes:",
+        markdownList(resourceLines)
+      ].join("\n");
+    });
+
+  return [
+    `${packHeading} ${pack.title}`,
+    "",
+    `Domain: ${pack.domain}`,
+    `Level: ${pack.level_group}`,
+    `Focus: ${pack.focus}`,
+    relatedCourse ? `Related course: ${relatedCourse.title} - ${coursePath(relatedCourse)}` : "Related course: None linked.",
+    "",
+    "Official docs:",
+    markdownList(packSources),
+    "",
+    "Related labs:",
+    markdownList(labLines),
+    "",
+    ...questionSections
+  ].join("\n");
+}
+
+function interviewCramSheetCollectionMarkdown(title: string, packs: PlatformInterviewPrep[], data: AcademyData) {
+  const questionCount = packs.reduce((total, pack) => total + pack.questions.length, 0);
+  const domains = Array.from(new Set(packs.map((pack) => pack.domain))).sort();
+  const levels = Array.from(new Set(packs.map((pack) => pack.level_group))).sort();
+  return [
+    `# ${title}`,
+    "",
+    `Packs: ${packs.length}`,
+    `Questions: ${questionCount}`,
+    `Domains: ${domains.length ? domains.join(", ") : "None"}`,
+    `Levels: ${levels.length ? levels.join(", ") : "None"}`,
+    "",
+    ...packs.map((pack) =>
+      interviewCramSheetMarkdown(pack, data, courseForInterviewPack(data, pack), labsForInterviewPack(data, pack), 2)
+    )
+  ].join("\n\n");
+}
+
+function studyPlanQuestionGroups(plan: InterviewStudyPlan, data: AcademyData) {
+  const selectedQuestions = new Set(plan.questionIds);
+  return data.interviewPrep.packs
+    .map((pack) => ({
+      pack,
+      questionIndexes: pack.questions.map((_, index) => index).filter((index) => selectedQuestions.has(interviewQuestionActivityId(pack, index)))
+    }))
+    .filter((group) => group.questionIndexes.length > 0);
+}
+
+function interviewStudyPlanMarkdown(plan: InterviewStudyPlan, data: AcademyData) {
+  const groups = studyPlanQuestionGroups(plan, data);
+  const questionCount = groups.reduce((total, group) => total + group.questionIndexes.length, 0);
+  const domains = Array.from(new Set(groups.map((group) => group.pack.domain))).sort();
+  const levels = Array.from(new Set(groups.map((group) => group.pack.level_group))).sort();
+  return [
+    `# ${plan.name} study plan`,
+    "",
+    `Packs: ${groups.length}`,
+    `Questions: ${questionCount}`,
+    `Domains: ${domains.length ? domains.join(", ") : "None"}`,
+    `Levels: ${levels.length ? levels.join(", ") : "None"}`,
+    `Updated: ${plan.updatedAt}`,
+    "",
+    ...groups.map((group) =>
+      interviewCramSheetMarkdown(
+        group.pack,
+        data,
+        courseForInterviewPack(data, group.pack),
+        labsForInterviewPack(data, group.pack),
+        2,
+        { questionIndexes: group.questionIndexes }
+      )
+    )
+  ].join("\n\n");
+}
+
 function interviewQuestionActivityId(pack: PlatformInterviewPrep, questionIndex: number) {
   return `${pack.slug}:${questionIndex + 1}`;
 }
@@ -1184,12 +2169,32 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
   const [activeSlug, setActiveSlug] = useState(requestedPack || data.interviewPrep.packs[0]?.slug || "");
   const [savingQuestionId, setSavingQuestionId] = useState("");
   const [showUnpracticedOnly, setShowUnpracticedOnly] = useState(false);
+  const [studyPlans, setStudyPlans] = useState<InterviewStudyPlan[]>(() => readInterviewStudyPlans());
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [planName, setPlanName] = useState("");
+  const [planStatus, setPlanStatus] = useState("");
   const questionPanelRef = useRef<HTMLElement | null>(null);
   const practicedQuestions = completedActivityIds(data.activity, "interview_question");
 
   useEffect(() => {
     if (requestedPack) setActiveSlug(requestedPack);
   }, [requestedPack]);
+
+  useEffect(() => {
+    const reloadStudyPlans = () => setStudyPlans(readInterviewStudyPlans());
+    window.addEventListener(STUDY_PLANS_RESTORED_EVENT, reloadStudyPlans);
+    return () => window.removeEventListener(STUDY_PLANS_RESTORED_EVENT, reloadStudyPlans);
+  }, []);
+
+  useEffect(() => {
+    if (studyPlans.length === 0) {
+      if (selectedPlanId) setSelectedPlanId("");
+      return;
+    }
+    if (!selectedPlanId || !studyPlans.some((plan) => plan.id === selectedPlanId)) {
+      setSelectedPlanId(studyPlans[0].id);
+    }
+  }, [selectedPlanId, studyPlans]);
 
   const selectPack = useCallback((slug: string) => {
     setActiveSlug(slug);
@@ -1219,8 +2224,8 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
     );
   });
   const activePack = filteredPacks.find((pack) => pack.slug === activeSlug) ?? filteredPacks[0];
-  const relatedCourse = activePack ? allCourses(data.catalog).find((course) => course.slug === activePack.related_course_slug) : undefined;
-  const relatedLabs = activePack ? data.catalog.labs.filter((lab) => activePack.related_labs.includes(lab.slug)) : [];
+  const relatedCourse = activePack ? courseForInterviewPack(data, activePack) : undefined;
+  const relatedLabs = activePack ? labsForInterviewPack(data, activePack) : [];
   const studyLinkCount = new Set(
     data.interviewPrep.packs.flatMap((pack) => [
       ...pack.official_sources.map((source) => `source:${source.url}`),
@@ -1239,15 +2244,110 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
       }))
       .filter((item) => !showUnpracticedOnly || !item.practiced)
     : [];
+  const selectedPlan = studyPlans.find((plan) => plan.id === selectedPlanId);
+  const selectedPlanGroups = selectedPlan ? studyPlanQuestionGroups(selectedPlan, data) : [];
+  const selectedPlanQuestionCount = selectedPlanGroups.reduce((total, group) => total + group.questionIndexes.length, 0);
+  const selectedPlanPackCount = selectedPlanGroups.length;
+  const activePackQuestionIds = activePack ? activePack.questions.map((_, index) => interviewQuestionActivityId(activePack, index)) : [];
+  const visibleQuestionIds = filteredPacks.flatMap((pack) => pack.questions.map((_, index) => interviewQuestionActivityId(pack, index)));
+  const activePackInSelectedPlan =
+    Boolean(selectedPlan) && activePackQuestionIds.length > 0 && activePackQuestionIds.every((questionId) => selectedPlan?.questionIds.includes(questionId));
+
+  const saveStudyPlans = useCallback((nextPlans: InterviewStudyPlan[]) => {
+    setStudyPlans(nextPlans);
+    writeInterviewStudyPlans(nextPlans);
+  }, []);
+  const addQuestionIdsToSelectedPlan = useCallback(
+    (questionIds: string[], status: string) => {
+      if (!selectedPlan || questionIds.length === 0) return;
+      const now = new Date().toISOString();
+      const nextPlans = studyPlans.map((plan) =>
+        plan.id === selectedPlan.id
+          ? {
+              ...plan,
+              questionIds: uniqueStrings([...plan.questionIds, ...questionIds]),
+              updatedAt: now
+            }
+          : plan
+      );
+      saveStudyPlans(nextPlans);
+      setPlanStatus(status);
+    },
+    [saveStudyPlans, selectedPlan, studyPlans]
+  );
+  const createStudyPlan = () => {
+    const now = new Date().toISOString();
+    const name = planName.trim() || (activePack ? `${activePack.domain} ${activePack.level_group} plan` : "Platform interview plan");
+    const plan: InterviewStudyPlan = {
+      id: makeInterviewStudyPlanId(),
+      name,
+      questionIds: uniqueStrings(activePackQuestionIds),
+      createdAt: now,
+      updatedAt: now
+    };
+    saveStudyPlans([plan, ...studyPlans].slice(0, 25));
+    setSelectedPlanId(plan.id);
+    setPlanName("");
+    setPlanStatus("Study plan saved.");
+  };
+  const addActivePackToSelectedPlan = () => {
+    if (!activePack) return;
+    addQuestionIdsToSelectedPlan(activePackQuestionIds, `${activePack.title} added.`);
+  };
+  const addVisiblePacksToSelectedPlan = () => {
+    addQuestionIdsToSelectedPlan(visibleQuestionIds, `${filteredPacks.length} visible ${filteredPacks.length === 1 ? "pack" : "packs"} added.`);
+  };
+  const removeActivePackFromSelectedPlan = () => {
+    if (!selectedPlan || !activePack) return;
+    const removeIds = new Set(activePackQuestionIds);
+    const now = new Date().toISOString();
+    const nextPlans = studyPlans.map((plan) =>
+      plan.id === selectedPlan.id
+        ? {
+            ...plan,
+            questionIds: plan.questionIds.filter((questionId) => !removeIds.has(questionId)),
+            updatedAt: now
+          }
+        : plan
+    );
+    saveStudyPlans(nextPlans);
+    setPlanStatus(`${activePack.title} removed.`);
+  };
+  const deleteSelectedPlan = () => {
+    if (!selectedPlan) return;
+    const nextPlans = studyPlans.filter((plan) => plan.id !== selectedPlan.id);
+    saveStudyPlans(nextPlans);
+    setSelectedPlanId(nextPlans[0]?.id ?? "");
+    setPlanStatus("Study plan deleted.");
+  };
+  const downloadCramSheet = () => {
+    if (!activePack) return;
+    downloadMarkdownFile(`${activePack.slug}-cram-sheet.md`, interviewCramSheetMarkdown(activePack, data, relatedCourse, relatedLabs));
+  };
+  const downloadVisibleCramSheets = () => {
+    if (filteredPacks.length === 0) return;
+    const scope = [
+      selectedDomain !== "All" ? selectedDomain : "",
+      selectedLevel !== "All" ? selectedLevel : "",
+      query.trim() ? "search" : ""
+    ].filter(Boolean);
+    const title = `${scope.length ? scope.join(" ") : "Platform Academy"} interview cram sheets`;
+    const filename = `${fileSafeSlug(scope.length ? scope.join("-") : "platform-academy")}-interview-cram-sheets.md`;
+    downloadMarkdownFile(filename, interviewCramSheetCollectionMarkdown(title, filteredPacks, data));
+  };
+  const downloadSelectedStudyPlan = () => {
+    if (!selectedPlan || selectedPlanQuestionCount === 0) return;
+    downloadMarkdownFile(`${fileSafeSlug(selectedPlan.name)}-study-plan.md`, interviewStudyPlanMarkdown(selectedPlan, data));
+  };
 
   return (
     <section className="page canonical-page interview-page">
       <header className="workspace-header interview-heading">
         <div>
-          <p className="eyebrow">Scenario questions, answer rubrics, source-backed drills</p>
-          <h1>Interview prep command center</h1>
+          <p className="eyebrow">Scenario questions, answer notes, docs links</p>
+          <h1>Interview prep</h1>
           <p className="lead">
-            Practice platform engineering interviews with operational scenarios, strong answer signals, red flags, and official-source reading paths.
+            Practice realistic platform interview scenarios with answer outlines, common mistakes, and links to official docs.
           </p>
         </div>
         <dl className="resource-stats">
@@ -1289,6 +2389,68 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
               {domain}
             </button>
           ))}
+        </div>
+        <div className="interview-export-row">
+          <span>
+            {filteredPacks.length} visible {filteredPacks.length === 1 ? "pack" : "packs"} / {data.interviewPrep.packs.length} total
+          </span>
+          <button className="secondary-action" disabled={filteredPacks.length === 0} onClick={downloadVisibleCramSheets} type="button">
+            <Download aria-hidden="true" />
+            Download {filteredPacks.length} visible {filteredPacks.length === 1 ? "pack" : "packs"}
+          </button>
+        </div>
+        <div className="interview-plan-builder" aria-label="Saved interview study plans">
+          <div className="interview-plan-summary">
+            <span>{studyPlans.length} saved {studyPlans.length === 1 ? "plan" : "plans"}</span>
+            <strong>{selectedPlan ? selectedPlan.name : "No saved plan"}</strong>
+            <small>
+              {selectedPlan
+                ? `${selectedPlanQuestionCount} questions / ${selectedPlanPackCount} ${selectedPlanPackCount === 1 ? "pack" : "packs"}`
+                : "Create a plan from the active pack"}
+            </small>
+          </div>
+          <input
+            aria-label="Study plan name"
+            onChange={(event) => setPlanName(event.target.value)}
+            placeholder="Study plan name"
+            value={planName}
+          />
+          <select aria-label="Saved study plan" onChange={(event) => setSelectedPlanId(event.target.value)} value={selectedPlanId}>
+            <option value="">Select plan</option>
+            {studyPlans.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name}
+              </option>
+            ))}
+          </select>
+          <div className="interview-plan-actions">
+            <button className="secondary-action" disabled={!activePack} onClick={createStudyPlan} type="button">
+              <Plus aria-hidden="true" />
+              New plan
+            </button>
+            <button className="secondary-action" disabled={!selectedPlan || !activePack || activePackInSelectedPlan} onClick={addActivePackToSelectedPlan} type="button">
+              <BookMarked aria-hidden="true" />
+              Add active
+            </button>
+            <button className="secondary-action" disabled={!selectedPlan || filteredPacks.length === 0} onClick={addVisiblePacksToSelectedPlan} type="button">
+              <Layers3 aria-hidden="true" />
+              Add visible
+            </button>
+            <button className="secondary-action" disabled={!selectedPlan || selectedPlanQuestionCount === 0} onClick={downloadSelectedStudyPlan} type="button">
+              <Download aria-hidden="true" />
+              Download plan
+            </button>
+            <button className="secondary-action danger-action" disabled={!selectedPlan} onClick={deleteSelectedPlan} type="button">
+              <Trash2 aria-hidden="true" />
+              Delete
+            </button>
+          </div>
+          {activePackInSelectedPlan && (
+            <button className="text-link" onClick={removeActivePackFromSelectedPlan} type="button">
+              Remove active pack
+            </button>
+          )}
+          {planStatus && <span className="interview-plan-status" role="status">{planStatus}</span>}
         </div>
       </section>
 
@@ -1337,17 +2499,23 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
                 </p>
                 <h2>{activePack.title}</h2>
               </div>
-              {relatedCourse && (
-                <Link className="text-link" to={coursePath(relatedCourse)}>
-                  Related course <ArrowRight aria-hidden="true" />
-                </Link>
-              )}
+              <div className="section-actions">
+                <button className="secondary-action" onClick={downloadCramSheet} type="button">
+                  <Download aria-hidden="true" />
+                  Download cram sheet
+                </button>
+                {relatedCourse && (
+                  <Link className="text-link" to={coursePath(relatedCourse)}>
+                    Related course <ArrowRight aria-hidden="true" />
+                  </Link>
+                )}
+              </div>
             </div>
             <p className="interview-focus">{activePack.focus}</p>
 
             <div className="interview-source-grid">
               <section>
-                <p className="eyebrow">Official reading path</p>
+                <p className="eyebrow">Docs to read</p>
                 {activePack.official_sources.map((source) => (
                   <a className="source-link" href={source.url} target="_blank" rel="noreferrer" key={source.url}>
                     <ExternalLink aria-hidden="true" />
@@ -1356,7 +2524,7 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
                 ))}
               </section>
               <section>
-                <p className="eyebrow">Hands-on pairing</p>
+                <p className="eyebrow">Related labs</p>
                 {relatedLabs.length > 0 ? (
                   relatedLabs.map((lab) => (
                     <Link className="resource-mini-row" aria-label={lab.title} to={`/labs/${lab.slug}`} key={lab.slug}>
@@ -1414,6 +2582,21 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
                             "Mark practiced"
                           )}
                         </button>
+                        <button
+                          className={selectedPlan?.questionIds.includes(targetId) ? "activity-toggle completed" : "activity-toggle"}
+                          disabled={!selectedPlan || selectedPlan.questionIds.includes(targetId)}
+                          onClick={() => addQuestionIdsToSelectedPlan([targetId], "Question added to study plan.")}
+                          type="button"
+                        >
+                          {selectedPlan?.questionIds.includes(targetId) ? (
+                            <>
+                              <CheckCircle2 aria-hidden="true" />
+                              In plan
+                            </>
+                          ) : (
+                            "Add to plan"
+                          )}
+                        </button>
                       </div>
                       <p>{question.scenario}</p>
                       <h4>Answer outline</h4>
@@ -1424,7 +2607,7 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
                       </ul>
                       <div className="interview-signal-grid">
                         <div>
-                          <h4>Strong signals</h4>
+                          <h4>Good answers include</h4>
                           <div className="chip-list">
                             {question.strong_signals.map((signal) => (
                               <span key={signal}>{signal}</span>
@@ -1432,7 +2615,7 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
                           </div>
                         </div>
                         <div>
-                          <h4>Red flags</h4>
+                          <h4>Common mistakes</h4>
                           <ul className="check-list compact-list">
                             {question.red_flags.map((flag) => (
                               <li key={flag}>{flag}</li>
@@ -1490,14 +2673,26 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
   );
 }
 
-function LabDetailPage({ data, onSaveActivity }: { data: AcademyData; onSaveActivity: SaveActivity }) {
+function LabDetailPage({
+  data,
+  learnerId,
+  onSaveActivity,
+  onSaveLabSubmission
+}: {
+  data: AcademyData;
+  learnerId: string;
+  onSaveActivity: SaveActivity;
+  onSaveLabSubmission: SaveLabSubmission;
+}) {
   const { slug = "" } = useParams();
   const [savingActivity, setSavingActivity] = useState(false);
   const lab = labForSlug(data, slug);
-  if (!lab) return <EmptyState title="Lab not found." detail="The lab slug is not present in the seeded catalog." />;
+  if (!lab) return <EmptyState title="Lab not found." detail="That lab is not in the current catalog." />;
   const course = allCourses(data.catalog).find((item) => item.slug === lab.course_slug);
   const relatedResources = resourcesForLab(data, lab);
   const isTracked = hasCompletedActivity(data, "lab", lab.slug);
+  const submission = labSubmissionFor(data, lab.slug);
+  const submissionSummary = labSubmissionSummary(submission);
 
   const saveLabActivity = async () => {
     setSavingActivity(true);
@@ -1523,9 +2718,9 @@ function LabDetailPage({ data, onSaveActivity }: { data: AcademyData; onSaveActi
           <p className="lead">{lab.scenario}</p>
         </div>
         <div className="readiness-score">
-          <span>Estimated time</span>
-          <strong>{lab.estimated_minutes}</strong>
-          <small>minutes</small>
+          <span>{submissionSummary.label}</span>
+          <strong>{submission ? Math.round(submission.score) : lab.estimated_minutes}</strong>
+          <small>{submission ? "score" : "minutes"}</small>
         </div>
       </header>
 
@@ -1533,14 +2728,22 @@ function LabDetailPage({ data, onSaveActivity }: { data: AcademyData; onSaveActi
         <article className="workspace-panel">
           <div className="runbook-meta">
             <LevelBadge level={lab.level_group} />
+            <LabTierBadge tier={lab.lab_tier} />
+            <PortfolioLabBadge lab={lab} />
             <span>{lab.track}</span>
             {course && <span>{course.title}</span>}
           </div>
+          {isPortfolioLab(lab) ? (
+            <div className="portfolio-lab-callout">
+              <strong>Portfolio-grade practice</strong>
+              <span>Use the workbook and saved evidence as a reusable incident, release, or architecture review note.</span>
+            </div>
+          ) : null}
           <div className="activity-save-panel">
             <div>
-              <p className="eyebrow">Recovery-backed state</p>
+              <p className="eyebrow">Saved in your profile</p>
               <h2>{isTracked ? "Lab run is saved" : "Track this lab after practice"}</h2>
-              <p>Saved lab activity follows the guest recovery key, so clearing browser data does not erase what you already ran.</p>
+              <p>Saved lab activity stays with this guest profile.</p>
             </div>
             <ActivityToggleButton
               actionLabel="Mark lab run"
@@ -1550,13 +2753,25 @@ function LabDetailPage({ data, onSaveActivity }: { data: AcademyData; onSaveActi
               saving={savingActivity}
             />
           </div>
+          <LabOperationalBrief lab={lab} />
+          <LabWorkbook lab={lab} learnerId={learnerId} onSaveSubmission={onSaveLabSubmission} />
+          <LabListSection items={lab.prerequisites} title="Prerequisites" />
+          {lab.setup_commands?.length ? <CommandBlock commands={lab.setup_commands} title="Setup commands" /> : null}
+          {lab.setup_self_check_commands?.length ? (
+            <CommandBlock commands={lab.setup_self_check_commands} title="Opt-in self-check commands" />
+          ) : null}
+          <LabListSection items={lab.practice_steps} title="Practice steps" />
           <CommandBlock commands={lab.commands} title="Runbook commands" />
+          <LabListSection items={lab.expected_evidence} title="Expected evidence" />
+          {lab.validation_commands?.length ? <CommandBlock commands={lab.validation_commands} title="Validation commands" /> : null}
           <h2>Validation checklist</h2>
           <ul className="check-list">
             {lab.checklist.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
+          {lab.cleanup_commands?.length ? <CommandBlock commands={lab.cleanup_commands} title="Cleanup commands" /> : null}
+          <LabListSection items={lab.no_cluster_fallback} title="No-cluster fallback" />
           <h2>Skills covered</h2>
           <div className="chip-list">
             {lab.skills.map((skill) => (
@@ -1585,57 +2800,17 @@ function LabDetailPage({ data, onSaveActivity }: { data: AcademyData; onSaveActi
                 </Link>
               ))
             ) : (
-              <p>No related resource is seeded for this lab.</p>
+              <p>No related resource is linked to this lab.</p>
             )}
           </section>
           <section className="workspace-panel">
-            <p className="eyebrow">Source and review posture</p>
-            <p>This lab is seeded with local-safe scenario data and command snippets. Verify cloud-provider commands against current official docs before live-cluster use.</p>
+            <p className="eyebrow">Before using commands</p>
+            <p>These lab commands are meant for local practice. Check the current official docs before using them on a live cluster.</p>
           </section>
         </aside>
       </section>
     </section>
   );
-}
-
-function DeferredContentPage({ title, detail }: { title: string; detail: string }) {
-  return (
-    <section className="page canonical-page">
-      <EmptyState title={title} detail={detail} />
-    </section>
-  );
-}
-
-let designStylesLoaded = false;
-let designStylesPromise: Promise<unknown> | undefined;
-
-function loadDesignStyles() {
-  if (!designStylesPromise) {
-    designStylesPromise = import("./designs.css").then(() => {
-      designStylesLoaded = true;
-    });
-  }
-  return designStylesPromise;
-}
-
-function DesignStylesGate({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(designStylesLoaded);
-
-  useEffect(() => {
-    let isMounted = true;
-    void loadDesignStyles().then(() => {
-      if (isMounted) setReady(true);
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  if (!ready) {
-    return <DeferredContentPage title="Loading design system..." detail="The visual exploration stylesheet is loading." />;
-  }
-
-  return <>{children}</>;
 }
 
 function ResourcesPage({ data }: { data: AcademyData }) {
@@ -1654,12 +2829,9 @@ function ResourcesPage({ data }: { data: AcademyData }) {
       text.includes(query.toLowerCase())
     );
   });
-  const featuredResource = filteredResources[0];
   const visibleResources = filteredResources.slice(0, visibleLimit);
   const hiddenResourceCount = Math.max(filteredResources.length - visibleResources.length, 0);
   const nextPageCount = Math.min(36, hiddenResourceCount);
-  const featuredLab = featuredResource ? data.catalog.labs.find((lab) => featuredResource.related_labs.includes(lab.slug)) : undefined;
-  const featuredSources = featuredResource ? officialSourcesForResource(featuredResource) : [];
   const hasActiveFilters = selectedDomain !== "All" || selectedType !== "All" || query.trim().length > 0;
 
   useEffect(() => {
@@ -1670,10 +2842,10 @@ function ResourcesPage({ data }: { data: AcademyData }) {
     <section className="page canonical-page resources-page">
       <header className="workspace-header resources-heading">
         <div>
-          <p className="eyebrow">Runbooks, projects, rubrics, references</p>
+          <p className="eyebrow">Runbooks, projects, checklists, references</p>
           <h1>Resource library</h1>
           <p className="lead">
-            Searchable operational artifacts for Kubernetes, EKS, Helm, ArgoCD, SRE, platform engineering, security, Terraform, and FinOps practice.
+            Searchable runbooks, project briefs, checklists, and references for Kubernetes, EKS, Helm, ArgoCD, SRE, security, Terraform, and FinOps practice.
           </p>
         </div>
         <dl className="resource-stats">
@@ -1735,44 +2907,11 @@ function ResourcesPage({ data }: { data: AcademyData }) {
       </section>
 
       <section className="resource-layout">
-        <article className="resource-feature">
-          {featuredResource ? (
-            <>
-              <div className="resource-card-top">
-                <LevelBadge level={featuredResource.level_group} />
-                <span>{featuredResource.resource_type}</span>
-                <span>{featuredResource.safety_level}</span>
-              </div>
-              <h2>{featuredResource.title}</h2>
-              <p>{featuredResource.summary}</p>
-              {featuredSources.length > 0 && (
-                <div className="resource-source-strip" aria-label="Official source trail">
-                  {featuredSources.slice(0, 3).map((source) => (
-                    <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>
-                      <ExternalLink aria-hidden="true" />
-                      {source.label}
-                    </a>
-                  ))}
-                </div>
-              )}
-              <CommandBlock commands={featuredResource.commands.slice(0, 3)} title="Primary snippets" />
-              <div className="resource-feature-footer">
-                {featuredLab && <span>Related lab: {featuredLab.title}</span>}
-                <Link className="primary-action" to={`/resources/${featuredResource.slug}`}>
-                  Open resource <ArrowRight aria-hidden="true" />
-                </Link>
-              </div>
-            </>
-          ) : (
-            <EmptyState title="No resources match those filters." />
-          )}
-        </article>
-
         <section className="resource-index" aria-label="Platform Academy resources">
           <div className="section-heading">
             <div>
               <p className="eyebrow">Library index</p>
-              <h2>{visibleResources.length} shown / {filteredResources.length} matching artifacts</h2>
+              <h2>{visibleResources.length} shown / {filteredResources.length} matching resources</h2>
             </div>
           </div>
           {visibleResources.map((resource) => (
@@ -1780,7 +2919,7 @@ function ResourcesPage({ data }: { data: AcademyData }) {
           ))}
           {hiddenResourceCount > 0 && (
             <div className="resource-pagination">
-              <span>{hiddenResourceCount} matching artifacts remain.</span>
+              <span>{hiddenResourceCount} matching resources remain.</span>
               <button type="button" onClick={() => setVisibleLimit((current) => current + 36)}>
                 Load {nextPageCount} more resources
               </button>
@@ -1826,7 +2965,7 @@ function ResourceDetailPage({ data, onSaveActivity }: { data: AcademyData; onSav
   const { slug = "" } = useParams();
   const [savingActivity, setSavingActivity] = useState(false);
   const resource = resourceForSlug(data, slug);
-  if (!resource) return <EmptyState title="Resource not found." detail="The resource slug is not present in the seeded library." />;
+  if (!resource) return <EmptyState title="Resource not found." detail="That resource is not in the current library." />;
   const sourceTakeaways = resource.source_takeaways ?? [];
   const studyTasks = resource.study_tasks ?? [];
   const interviewPrompts = resource.interview_prompts ?? [];
@@ -1880,9 +3019,9 @@ function ResourceDetailPage({ data, onSaveActivity }: { data: AcademyData; onSav
           </div>
           <div className="activity-save-panel">
             <div>
-              <p className="eyebrow">Recovery-backed state</p>
+              <p className="eyebrow">Saved in your profile</p>
               <h2>{isTracked ? "Resource review is saved" : "Track this resource after review"}</h2>
-              <p>Marking this resource reviewed saves it to the guest profile so recovery restores more than lesson completion.</p>
+              <p>Marking this reviewed saves it to this guest profile.</p>
             </div>
             <ActivityToggleButton
               actionLabel="Mark reviewed"
@@ -1892,10 +3031,10 @@ function ResourceDetailPage({ data, onSaveActivity }: { data: AcademyData; onSav
               saving={savingActivity}
             />
           </div>
-          <CommandBlock commands={resource.commands} title="Command surface" />
+          <CommandBlock commands={resource.commands} title="Commands" />
           {officialSources.length > 0 && (
             <>
-              <h2>Official source trail</h2>
+              <h2>Official links</h2>
               <div className="resource-source-grid">
                 {officialSources.map((source) => (
                   <a className="source-link" href={source.url} target="_blank" rel="noreferrer" key={source.url}>
@@ -1914,7 +3053,7 @@ function ResourceDetailPage({ data, onSaveActivity }: { data: AcademyData; onSav
           </ul>
           {sourceTakeaways.length > 0 && (
             <>
-              <h2>Source-backed takeaways</h2>
+              <h2>Takeaways from docs</h2>
               <ul className="check-list">
                 {sourceTakeaways.map((takeaway) => (
                   <li key={takeaway}>{takeaway}</li>
@@ -1942,7 +3081,7 @@ function ResourceDetailPage({ data, onSaveActivity }: { data: AcademyData; onSav
               </ul>
             </>
           )}
-          <h2>Expected artifacts</h2>
+          <h2>What to produce</h2>
           <div className="chip-list">
             {resource.artifacts.map((artifact) => (
               <span key={artifact}>{artifact}</span>
@@ -1975,7 +3114,7 @@ function ResourceDetailPage({ data, onSaveActivity }: { data: AcademyData; onSav
                 </Link>
               ))
             ) : (
-              <p>No related lab is seeded for this resource.</p>
+              <p>No related lab is linked to this resource.</p>
             )}
           </section>
           <section className="workspace-panel">
@@ -1988,861 +3127,26 @@ function ResourceDetailPage({ data, onSaveActivity }: { data: AcademyData; onSav
                 </Link>
               ))
             ) : (
-              <p>No related course could be inferred from seeded labs.</p>
+              <p>No related course is linked yet.</p>
             )}
           </section>
           <section className="workspace-panel source-review-panel">
-            <p className="eyebrow">Source and review posture</p>
+            <p className="eyebrow">Sources and review</p>
             {officialSources.length > 0 ? (
               <p>
-                {officialSources.length} official source{officialSources.length === 1 ? "" : "s"} available in the source trail.
+                {officialSources.length} official link{officialSources.length === 1 ? "" : "s"} available.
               </p>
             ) : (
-              <p>No external source URL is seeded for this resource yet.</p>
+              <p>No external source URL is available for this resource yet.</p>
             )}
             <p>
               {resource.reviewed_at
                 ? `Reviewed ${formatReviewDate(resource.reviewed_at)}`
-                : "No review timestamp is seeded for this resource yet."}
+                : "No review timestamp is available for this resource yet."}
             </p>
             <p>Use the safety label and prerequisites as local guidance, then verify live commands against current official docs.</p>
           </section>
         </aside>
-      </section>
-    </section>
-  );
-}
-
-const designBriefs = [
-  {
-    id: 1,
-    title: "Cinematic Cloud Control Room",
-    direction: "A launch-room view of incidents, rollout gates, and academy progress.",
-    signal: "Control room"
-  },
-  {
-    id: 2,
-    title: "Editorial Academy",
-    direction: "A refined journal for senior platform judgment and curriculum sequencing.",
-    signal: "Editorial"
-  },
-  {
-    id: 3,
-    title: "Terminal Ops Cockpit",
-    direction: "A keyboard-first training console built around commands, queues, and runbooks.",
-    signal: "TUI"
-  },
-  {
-    id: 4,
-    title: "Glass Cloud Atlas",
-    direction: "A translucent atlas of domains, tracks, and cloud-native waypoints.",
-    signal: "Atlas"
-  },
-  {
-    id: 5,
-    title: "Observability Wall",
-    direction: "A dark monitoring wall for readiness, labs, reviews, and learning signals.",
-    signal: "Telemetry"
-  },
-  {
-    id: 6,
-    title: "Infra Blueprint",
-    direction: "A precise blueprint sheet for platform architecture progression.",
-    signal: "Blueprint"
-  },
-  {
-    id: 7,
-    title: "Premium SaaS Dashboard",
-    direction: "A restrained operating dashboard for academy administration and cohort planning.",
-    signal: "SaaS"
-  },
-  {
-    id: 8,
-    title: "Command Center Map",
-    direction: "A network map that treats the curriculum as deployable platform territory.",
-    signal: "Map"
-  },
-  {
-    id: 9,
-    title: "Certification Bootcamp",
-    direction: "A focused bootcamp surface for outcomes, drills, and exam-grade practice.",
-    signal: "Bootcamp"
-  },
-  {
-    id: 10,
-    title: "Resource Magazine Library",
-    direction: "An elegant library for runbooks, cheatsheets, references, and project briefs.",
-    signal: "Library"
-  }
-] as const;
-
-type DesignStats = {
-  courses: Course[];
-  tracks: PlatformTrack[];
-  labs: PlatformLab[];
-  resources: PlatformResource[];
-  stages: PlatformRoadmapStage[];
-  domains: string[];
-  totalCompleted: number;
-  completionPercent: number;
-  recommended?: Course["lessons"][number];
-};
-
-function getDesignStats(data: AcademyData): DesignStats {
-  const courses = allCourses(data.catalog);
-  const lessons = courses.flatMap((course) => course.lessons);
-  const completed = completedLessonIds(data.progress);
-  const totalCompleted = lessons.filter((lesson) => completed.has(lesson.id)).length;
-  return {
-    courses,
-    tracks: data.catalog.tracks,
-    labs: data.catalog.labs,
-    resources: data.resources.resources,
-    stages: data.roadmap.stages,
-    domains: data.resources.domains,
-    totalCompleted,
-    completionPercent: data.catalog.total_lessons > 0 ? Math.round((totalCompleted / data.catalog.total_lessons) * 100) : 0,
-    recommended: nextLesson(courses, completed)
-  };
-}
-
-function averageLabMinutes(labs: PlatformLab[]) {
-  if (labs.length === 0) return 0;
-  return Math.round(labs.reduce((total, lab) => total + lab.estimated_minutes, 0) / labs.length);
-}
-
-function firstResourceForLab(resources: PlatformResource[], lab?: PlatformLab) {
-  if (!lab) return resources[0];
-  return resources.find((resource) => resource.related_labs.includes(lab.slug)) ?? resources[0];
-}
-
-function DesignFrameNav({ activeId }: { activeId?: number }) {
-  return (
-    <div className="design-navline">
-      <Link to="/designs">
-        <ChevronLeft aria-hidden="true" />
-        Designs
-      </Link>
-      <Link to="/">Academy</Link>
-      {activeId && <span>{String(activeId).padStart(2, "0")} / 10</span>}
-    </div>
-  );
-}
-
-function DesignEvidenceStrip({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  const items = [
-    {
-      label: "Curriculum",
-      value: `${data.catalog.total_courses} courses`,
-      detail: `${data.catalog.total_lessons} sequenced lessons`
-    },
-    {
-      label: "Practice",
-      value: `${stats.labs.length} labs`,
-      detail: `${averageLabMinutes(stats.labs)} min average drill`
-    },
-    {
-      label: "Artifacts",
-      value: `${stats.resources.length} resources`,
-      detail: `${stats.domains.length} domains with commands`
-    },
-    {
-      label: "Progress",
-      value: `${stats.completionPercent}% ready`,
-      detail: `${stats.totalCompleted} completed / ${data.dashboard.xp.total} XP`
-    }
-  ];
-
-  return (
-    <dl className="design-proof-strip" aria-label="Academy proof points">
-      {items.map((item) => (
-        <div key={item.label}>
-          <dt>{item.label}</dt>
-          <dd>{item.value}</dd>
-          <dd className="design-proof-detail">{item.detail}</dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
-function DesignLabBrief({ lab, title = "Featured lab" }: { lab?: PlatformLab; title?: string }) {
-  if (!lab) return null;
-  return (
-    <article className="design-lab-brief">
-      <p className="design-kicker">{title}</p>
-      <h2>{lab.title}</h2>
-      <p>{lab.scenario}</p>
-      <div>
-        {lab.skills.slice(0, 4).map((skill) => (
-          <span key={skill}>{skill}</span>
-        ))}
-      </div>
-      <pre>
-        <code>{lab.commands.slice(0, 2).join("\n")}</code>
-      </pre>
-      <ul>
-        {lab.checklist.slice(0, 3).map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-    </article>
-  );
-}
-
-function DesignResourceBrief({ resource }: { resource?: PlatformResource }) {
-  if (!resource) return null;
-  return (
-    <article className="design-resource-brief">
-      <p className="design-kicker">Reusable artifact</p>
-      <h2>{resource.title}</h2>
-      <p>{resource.summary}</p>
-      <div>
-        <span>{resource.resource_type}</span>
-        <span>{resource.safety_level}</span>
-        <span>{resource.estimated_minutes} min</span>
-      </div>
-      <strong>{resource.artifacts.slice(0, 2).join(" / ")}</strong>
-    </article>
-  );
-}
-
-function DesignsIndexPage({ data }: { data: AcademyData }) {
-  const stats = getDesignStats(data);
-  return (
-    <section className="design-page design-index">
-      <header className="design-index-hero">
-        <DesignFrameNav />
-        <div>
-          <p className="design-kicker">Design explorations</p>
-          <h1>Ten visual systems for Platform Academy.</h1>
-          <p>
-            Each direction uses the same Kubernetes, EKS, Helm, ArgoCD, and SRE curriculum data, reshaped into a different senior platform
-            learning product.
-          </p>
-        </div>
-        <dl>
-          <div>
-            <dt>Courses</dt>
-            <dd>{data.catalog.total_courses}</dd>
-          </div>
-          <div>
-            <dt>Lessons</dt>
-            <dd>{data.catalog.total_lessons}</dd>
-          </div>
-          <div>
-            <dt>Resources</dt>
-            <dd>{stats.resources.length}</dd>
-          </div>
-        </dl>
-      </header>
-
-      <DesignEvidenceStrip data={data} stats={stats} />
-
-      <section className="design-research-notes" aria-label="Research lens">
-        <article>
-          <span>Research lens</span>
-          <p>Benchmarked in May 2026 against official docs, cloud learning hubs, hands-on lab platforms, and certification simulators.</p>
-        </article>
-        <article>
-          <span>Product bar</span>
-          <p>Senior learners need command surfaces, timed labs, source freshness, progress state, and artifacts they can reuse at work.</p>
-        </article>
-      </section>
-
-      <section className="design-index-grid" aria-label="Design routes">
-        {designBriefs.map((brief) => (
-          <Link className={`design-index-card design-index-card-${brief.id}`} to={`/designs/${brief.id}`} key={brief.id}>
-            <span>{String(brief.id).padStart(2, "0")}</span>
-            <div>
-              <p>{brief.signal}</p>
-              <h2>{brief.title}</h2>
-            </div>
-            <small>{brief.direction}</small>
-            <ArrowRight aria-hidden="true" />
-          </Link>
-        ))}
-      </section>
-    </section>
-  );
-}
-
-function DesignVariantPage({ data }: { data: AcademyData }) {
-  const { id = "" } = useParams();
-  const stats = getDesignStats(data);
-  const numericId = Number(id);
-
-  if (!Number.isInteger(numericId) || numericId < 1 || numericId > 10) {
-    return <EmptyState title="Design route not found." detail="Choose a numbered design exploration from the index." />;
-  }
-
-  switch (numericId) {
-    case 1:
-      return <DesignControlRoom data={data} stats={stats} />;
-    case 2:
-      return <DesignEditorialAcademy data={data} stats={stats} />;
-    case 3:
-      return <DesignTerminalCockpit data={data} stats={stats} />;
-    case 4:
-      return <DesignCloudAtlas data={data} stats={stats} />;
-    case 5:
-      return <DesignObservabilityWall data={data} stats={stats} />;
-    case 6:
-      return <DesignInfraBlueprint data={data} stats={stats} />;
-    case 7:
-      return <DesignSaasDashboard data={data} stats={stats} />;
-    case 8:
-      return <DesignCommandCenterMap data={data} stats={stats} />;
-    case 9:
-      return <DesignBootcamp data={data} stats={stats} />;
-    case 10:
-      return <DesignResourceLibrary data={data} stats={stats} />;
-    default:
-      return null;
-  }
-}
-
-function DesignControlRoom({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  const leadCourse = stats.courses[0];
-  const leadStage = stats.stages[0];
-  const leadLab = stats.labs[0];
-  return (
-    <section className="design-page design-control-room">
-      <DesignFrameNav activeId={1} />
-      <div className="control-room-grid">
-        <div className="control-copy">
-          <p className="design-kicker">Live platform academy</p>
-          <h1>Platform Academy</h1>
-          <p>{data.catalog.promise}</p>
-          <div className="design-actions">
-            {leadCourse && (
-              <Link to={coursePath(leadCourse)}>
-                Start control sequence <ArrowRight aria-hidden="true" />
-              </Link>
-            )}
-            <Link to="/roadmap">Open roadmap</Link>
-          </div>
-        </div>
-        <div className="control-screen" aria-label="Cloud control room status">
-          <div className="control-screen-header">
-            <RadioTower aria-hidden="true" />
-            <span>Platform readiness board</span>
-            <strong>{stats.completionPercent}% trained</strong>
-          </div>
-          <div className="radar-scope" aria-hidden="true">
-            <span />
-            <i />
-            <b />
-          </div>
-          {leadLab && (
-            <div className="control-current-lab">
-              <span>Current drill</span>
-              <strong>{leadLab.title}</strong>
-              <code>{leadLab.commands[0]}</code>
-            </div>
-          )}
-          <div className="control-status-list">
-            {stats.tracks.slice(0, 4).map((track) => (
-              <div key={track.slug}>
-                <span>{track.level_group}</span>
-                <strong>{track.title}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <DesignEvidenceStrip data={data} stats={stats} />
-      <section className="control-mission-strip" aria-label="Mission metrics">
-        <article>
-          <span>Active courses</span>
-          <strong>{data.catalog.total_courses}</strong>
-        </article>
-        <article>
-          <span>Local-safe labs</span>
-          <strong>{stats.labs.length}</strong>
-        </article>
-        <article>
-          <span>Current objective</span>
-          <strong>{leadStage?.title ?? "Roadmap calibration"}</strong>
-        </article>
-      </section>
-    </section>
-  );
-}
-
-function DesignEditorialAcademy({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  const leadCourse = stats.courses[0];
-  return (
-    <section className="design-page design-editorial">
-      <DesignFrameNav activeId={2} />
-      <header className="editorial-masthead">
-        <p>Platform Academy Review</p>
-        <h1>Production judgment, taught in sequence.</h1>
-        <span>{data.catalog.total_lessons} lessons across Kubernetes, GitOps, SRE, and cloud operations.</span>
-      </header>
-      <DesignEvidenceStrip data={data} stats={stats} />
-      <section className="editorial-layout">
-        <article className="editorial-feature">
-          <p className="design-kicker">Featured syllabus</p>
-          <h2>{leadCourse?.title ?? data.catalog.title}</h2>
-          <p>{leadCourse?.description ?? data.catalog.promise}</p>
-          {leadCourse && (
-            <Link to={coursePath(leadCourse)}>
-              Read the course brief <ArrowRight aria-hidden="true" />
-            </Link>
-          )}
-        </article>
-        <div className="editorial-columns">
-          {stats.tracks.slice(0, 3).map((track) => (
-            <article key={track.slug}>
-              <BookMarked aria-hidden="true" />
-              <span>{track.level_group}</span>
-              <h3>{track.title}</h3>
-              <p>{track.summary}</p>
-            </article>
-          ))}
-        </div>
-        <aside className="editorial-aside">
-          <h2>Field notes</h2>
-          {stats.resources.slice(0, 4).map((resource) => (
-            <Link to="/resources" key={resource.slug}>
-              <span>{resource.resource_type}</span>
-              {resource.title}
-            </Link>
-          ))}
-          <div className="editorial-source-note">
-            <span>Source posture</span>
-            <p>Every serious course page should expose upstream docs, version context, and last-reviewed dates next to the lesson.</p>
-          </div>
-        </aside>
-      </section>
-    </section>
-  );
-}
-
-function DesignTerminalCockpit({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  const commands = [
-    ...stats.labs.flatMap((lab) => lab.commands),
-    ...stats.resources.flatMap((resource) => resource.commands)
-  ].slice(0, 6);
-  return (
-    <section className="design-page design-terminal">
-      <DesignFrameNav activeId={3} />
-      <div className="terminal-shell">
-        <header>
-          <Terminal aria-hidden="true" />
-          <span>academyctl session --profile sre</span>
-          <strong>{data.dashboard.xp.total} xp</strong>
-        </header>
-        <DesignEvidenceStrip data={data} stats={stats} />
-        <div className="terminal-grid">
-          <article className="terminal-hero">
-            <p>local-guest@platform-academy:~$ ./start-learning</p>
-            <h1>Ops cockpit for Kubernetes practice.</h1>
-            <span>{data.catalog.promise}</span>
-          </article>
-          <article className="terminal-panel">
-            <h2>Queue</h2>
-            {stats.labs.slice(0, 4).map((lab) => (
-              <div key={lab.slug}>
-                <span>{lab.level_group}</span>
-                <strong>{lab.title}</strong>
-              </div>
-            ))}
-          </article>
-          <article className="terminal-panel terminal-command-panel">
-            <h2>Command buffer</h2>
-            <pre>
-              <code>{commands.length > 0 ? commands.join("\n") : "$ kubectl get pods -A"}</code>
-            </pre>
-          </article>
-          <article className="terminal-panel terminal-route-panel">
-            <h2>Route table</h2>
-            {stats.courses.slice(0, 5).map((course) => (
-              <Link to={coursePath(course)} key={course.id}>
-                <span>{course.category}</span>
-                {course.title}
-              </Link>
-            ))}
-          </article>
-          <article className="terminal-panel terminal-signal-panel">
-            <h2>Signal panel</h2>
-            {stats.resources.slice(0, 4).map((resource) => (
-              <div key={resource.slug}>
-                <span>{resource.resource_type}</span>
-                <strong>{resource.domain}</strong>
-              </div>
-            ))}
-          </article>
-          <article className="terminal-panel terminal-lab-panel">
-            <h2>Verification gates</h2>
-            {stats.labs[0]?.checklist.slice(0, 4).map((item) => (
-              <div key={item}>
-                <span>assert</span>
-                <strong>{item}</strong>
-              </div>
-            ))}
-          </article>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function DesignCloudAtlas({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  return (
-    <section className="design-page design-atlas">
-      <DesignFrameNav activeId={4} />
-      <header className="atlas-header">
-        <p className="design-kicker">Cloud atlas</p>
-        <h1>Navigate the platform curriculum by domain.</h1>
-        <p>{data.catalog.promise}</p>
-      </header>
-      <DesignEvidenceStrip data={data} stats={stats} />
-      <section className="atlas-layout">
-        <div className="atlas-map" aria-label="Course atlas">
-          {stats.tracks.slice(0, 6).map((track, index) => (
-            <Link className={`atlas-node atlas-node-${index + 1}`} to={coursePath(track.course)} key={track.slug}>
-              <Globe aria-hidden="true" />
-              <span>{track.level_group}</span>
-              <strong>{track.course.category}</strong>
-            </Link>
-          ))}
-        </div>
-        <aside className="atlas-panel">
-          <h2>Domain layers</h2>
-          <div>
-            {stats.domains.slice(0, 8).map((domain) => (
-              <span key={domain}>{domain}</span>
-            ))}
-          </div>
-          <dl>
-            <div>
-              <dt>Tracks</dt>
-              <dd>{stats.tracks.length}</dd>
-            </div>
-            <div>
-              <dt>Resources</dt>
-              <dd>{stats.resources.length}</dd>
-            </div>
-            <div>
-              <dt>Labs</dt>
-              <dd>{stats.labs.length}</dd>
-            </div>
-          </dl>
-          <DesignLabBrief lab={stats.labs.find((lab) => lab.level_group === "Advanced") ?? stats.labs[0]} title="Map waypoint" />
-        </aside>
-      </section>
-    </section>
-  );
-}
-
-function DesignObservabilityWall({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  const metricRows = [
-    { label: "Course inventory", value: data.catalog.total_courses },
-    { label: "Lessons shipped", value: data.catalog.total_lessons },
-    { label: "Completed lessons", value: stats.totalCompleted },
-    { label: "Due reviews", value: data.dashboard.due_reviews }
-  ];
-  return (
-    <section className="design-page design-observability">
-      <DesignFrameNav activeId={5} />
-      <header className="obs-header">
-        <div>
-          <p className="design-kicker">Observability wall</p>
-          <h1>Learning signals for platform operators.</h1>
-        </div>
-        <Gauge aria-hidden="true" />
-      </header>
-      <DesignEvidenceStrip data={data} stats={stats} />
-      <section className="obs-metric-grid">
-        {metricRows.map((metric) => (
-          <article key={metric.label}>
-            <span>{metric.label}</span>
-            <strong>{metric.value}</strong>
-          </article>
-        ))}
-      </section>
-      <section className="obs-wall">
-        <article className="obs-chart">
-          <h2>Curriculum load</h2>
-          {data.catalog.levels.map((level) => (
-            <div key={level.slug}>
-              <span>{level.level_group}</span>
-              <i style={{ width: `${Math.max(8, Math.min(100, level.total_lessons * 8))}%` }} />
-              <strong>{level.total_lessons}</strong>
-            </div>
-          ))}
-        </article>
-        <article className="obs-logs">
-          <h2>Training event stream</h2>
-          {stats.labs.slice(0, 5).map((lab) => (
-            <p key={lab.slug}>
-              <Activity aria-hidden="true" />
-              <span>{lab.track}</span>
-              {lab.scenario}
-            </p>
-          ))}
-        </article>
-        <article className="obs-current">
-          <MonitorDot aria-hidden="true" />
-          <span>Next lesson</span>
-          <strong>{stats.recommended?.title ?? "Select a lesson"}</strong>
-          {stats.recommended && <Link to={lessonPathForId(data, stats.recommended.id)}>Resume lesson</Link>}
-        </article>
-        <DesignLabBrief lab={stats.labs.find((lab) => lab.track === "SRE") ?? stats.labs[0]} title="Runbook drill" />
-      </section>
-    </section>
-  );
-}
-
-function DesignInfraBlueprint({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  return (
-    <section className="design-page design-blueprint">
-      <DesignFrameNav activeId={6} />
-      <header className="blueprint-title">
-        <div>
-          <p className="design-kicker">Infrastructure blueprint</p>
-          <h1>Platform Academy build sheet.</h1>
-        </div>
-        <Hexagon aria-hidden="true" />
-      </header>
-      <DesignEvidenceStrip data={data} stats={stats} />
-      <section className="blueprint-sheet">
-        <div className="blueprint-spec">
-          <span>Spec PA-2026</span>
-          <strong>{data.catalog.total_courses} courses / {data.catalog.total_lessons} lessons</strong>
-          <p>{data.catalog.promise}</p>
-          <ul>
-            <li>Each lab is tied to a lesson ID.</li>
-            <li>Resources produce reusable runbooks, diagrams, worksheets, or review artifacts.</li>
-            <li>AWS commands remain sandbox-first or read-only.</li>
-          </ul>
-        </div>
-        <div className="blueprint-plan">
-          {stats.stages.map((stage) => (
-            <article key={stage.sequence}>
-              <span>{String(stage.sequence).padStart(2, "0")}</span>
-              <div>
-                <h2>{stage.title}</h2>
-                <p>{stage.focus}</p>
-              </div>
-              <strong>{stage.level_group}</strong>
-            </article>
-          ))}
-        </div>
-      </section>
-    </section>
-  );
-}
-
-function DesignSaasDashboard({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  return (
-    <section className="design-page design-saas">
-      <div className="saas-layout">
-        <aside className="saas-sidebar">
-          <DesignFrameNav activeId={7} />
-          <div>
-            <GraduationCap aria-hidden="true" />
-            <strong>Platform Academy</strong>
-            <span>Cohort console</span>
-          </div>
-          <nav aria-label="Dashboard sections">
-            <a href="#overview">Overview</a>
-            <a href="#tracks">Tracks</a>
-            <a href="#resources">Resources</a>
-          </nav>
-        </aside>
-        <div className="saas-workspace">
-          <header id="overview">
-            <div>
-              <p className="design-kicker">Academy operations</p>
-              <h1>Curriculum health dashboard.</h1>
-            </div>
-            <Link to="/labs">Review labs</Link>
-          </header>
-          <DesignEvidenceStrip data={data} stats={stats} />
-          <section className="saas-kpis">
-            <article>
-              <Database aria-hidden="true" />
-              <span>Resources</span>
-              <strong>{stats.resources.length}</strong>
-            </article>
-            <article>
-              <Gauge aria-hidden="true" />
-              <span>Completion</span>
-              <strong>{stats.completionPercent}%</strong>
-            </article>
-            <article>
-              <Cpu aria-hidden="true" />
-              <span>XP earned</span>
-              <strong>{data.dashboard.xp.total}</strong>
-            </article>
-          </section>
-          <section className="saas-table" id="tracks">
-            <div className="saas-table-head">
-              <h2>Track pipeline</h2>
-              <span>{stats.tracks.length} active tracks</span>
-            </div>
-            {stats.tracks.slice(0, 6).map((track) => (
-              <Link to={coursePath(track.course)} key={track.slug}>
-                <span>{track.level_group}</span>
-                <strong>{track.title}</strong>
-                <p>{track.role}</p>
-              </Link>
-            ))}
-          </section>
-          <section className="saas-evidence" id="resources">
-            <div className="saas-table-head">
-              <h2>Evidence gates</h2>
-              <span>{stats.resources.length} reusable artifacts</span>
-            </div>
-            {stats.resources.slice(0, 4).map((resource) => (
-              <article key={resource.slug}>
-                <span>{resource.resource_type}</span>
-                <strong>{resource.domain}</strong>
-                <p>{resource.artifacts.slice(0, 2).join(" / ")}</p>
-              </article>
-            ))}
-          </section>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function DesignCommandCenterMap({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  const positions = [
-    { left: "12%", top: "24%" },
-    { left: "42%", top: "12%" },
-    { left: "70%", top: "30%" },
-    { left: "28%", top: "64%" },
-    { left: "62%", top: "70%" }
-  ];
-  return (
-    <section className="design-page design-command-map">
-      <DesignFrameNav activeId={8} />
-      <header className="command-header">
-        <p className="design-kicker">Command center</p>
-        <h1>Deploy learning routes across the platform map.</h1>
-        <p>{data.catalog.promise}</p>
-      </header>
-      <DesignEvidenceStrip data={data} stats={stats} />
-      <section className="command-layout">
-        <div className="command-map-board" aria-label="Platform course map">
-          <span className="map-line map-line-a" />
-          <span className="map-line map-line-b" />
-          <span className="map-line map-line-c" />
-          {stats.courses.slice(0, 5).map((course, index) => (
-            <Link className="command-node" style={positions[index]} to={coursePath(course)} key={course.id}>
-              <Server aria-hidden="true" />
-              <span>{course.category}</span>
-              <strong>{course.title}</strong>
-            </Link>
-          ))}
-        </div>
-        <aside className="command-rail">
-          <h2>Dispatch queue</h2>
-          {stats.labs.slice(0, 5).map((lab) => (
-            <article key={lab.slug}>
-              <RadioTower aria-hidden="true" />
-              <div>
-                <strong>{lab.title}</strong>
-                <span>{lab.estimated_minutes} min / {lab.level_group}</span>
-                <p>{lab.scenario}</p>
-              </div>
-            </article>
-          ))}
-        </aside>
-      </section>
-    </section>
-  );
-}
-
-function DesignBootcamp({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  return (
-    <section className="design-page design-bootcamp">
-      <DesignFrameNav activeId={9} />
-      <header className="bootcamp-hero">
-        <div>
-          <p className="design-kicker">Certification bootcamp</p>
-          <h1>Train for platform interviews, incidents, and architecture reviews.</h1>
-          <p>{data.catalog.promise}</p>
-          {stats.recommended && (
-            <Link to={lessonPathForId(data, stats.recommended.id)}>
-              Continue drill <ArrowRight aria-hidden="true" />
-            </Link>
-          )}
-        </div>
-        <aside>
-          <Target aria-hidden="true" />
-          <strong>{stats.completionPercent}%</strong>
-          <span>readiness score</span>
-        </aside>
-      </header>
-      <DesignEvidenceStrip data={data} stats={stats} />
-      <section className="bootcamp-timeline" aria-label="Bootcamp progression">
-        {data.catalog.levels.map((level, index) => (
-          <article key={level.slug}>
-            <span>Week {index + 1}</span>
-            <h2>{level.level_group}</h2>
-            <p>{level.audience}</p>
-            <strong>{level.total_courses} courses</strong>
-          </article>
-        ))}
-      </section>
-      <section className="bootcamp-drills">
-        {stats.resources.slice(0, 4).map((resource) => (
-          <article key={resource.slug}>
-            <span>{resource.resource_type}</span>
-            <h3>{resource.title}</h3>
-            <p>{resource.summary}</p>
-          </article>
-        ))}
-      </section>
-      <section className="bootcamp-assessment" aria-label="Assessment gates">
-        <DesignLabBrief lab={stats.labs.find((lab) => lab.level_group === "Advanced") ?? stats.labs[0]} title="Timed assessment" />
-        <DesignResourceBrief resource={firstResourceForLab(stats.resources, stats.labs[0])} />
-      </section>
-    </section>
-  );
-}
-
-function DesignResourceLibrary({ data, stats }: { data: AcademyData; stats: DesignStats }) {
-  const leadResource = stats.resources[0];
-  const leadLab = stats.labs.find((lab) => leadResource?.related_labs.includes(lab.slug)) ?? stats.labs[0];
-  return (
-    <section className="design-page design-library">
-      <DesignFrameNav activeId={10} />
-      <header className="library-hero">
-        <p className="design-kicker">Resource library</p>
-        <h1>Runbooks, briefs, and references for every platform domain.</h1>
-        <p>{data.catalog.promise}</p>
-      </header>
-      <DesignEvidenceStrip data={data} stats={stats} />
-      <section className="library-layout">
-        <article className="library-feature">
-          <BookMarked aria-hidden="true" />
-          <span>{leadResource?.resource_type ?? "resource"}</span>
-          <h2>{leadResource?.title ?? "Platform resource collection"}</h2>
-          <p>{leadResource?.summary ?? "Curated support material for the academy."}</p>
-          {leadResource && (
-            <pre>
-              <code>{leadResource.commands.slice(0, 2).join("\n")}</code>
-            </pre>
-          )}
-          {leadLab && <small>Related lab: {leadLab.title}</small>}
-          <Link to="/resources">Open resource library</Link>
-        </article>
-        <div className="library-stack">
-          {stats.resources.slice(0, 6).map((resource) => (
-            <article key={resource.slug}>
-              <span>{resource.domain}</span>
-              <h3>{resource.title}</h3>
-              <p>{resource.outcomes.slice(0, 2).join(" ")}</p>
-            </article>
-          ))}
-        </div>
       </section>
     </section>
   );
@@ -2924,7 +3228,7 @@ function CoursePage({ data }: { data: AcademyData }) {
 
         <aside className="detail-rail">
           <section className="workspace-panel">
-            <p className="eyebrow">Lab gates</p>
+            <p className="eyebrow">Labs</p>
             {courseLabs.length > 0 ? (
               courseLabs.slice(0, 5).map((lab) => (
                 <Link className="resource-mini-row" aria-label={lab.title} to={`/labs/${lab.slug}`} key={lab.slug}>
@@ -2933,11 +3237,11 @@ function CoursePage({ data }: { data: AcademyData }) {
                 </Link>
               ))
             ) : (
-              <p>No labs are seeded for this course.</p>
+              <p>No labs are linked to this course yet.</p>
             )}
           </section>
           <section className="workspace-panel">
-            <p className="eyebrow">Reusable artifacts</p>
+            <p className="eyebrow">Reusable resources</p>
             {courseResources.length > 0 ? (
               courseResources.slice(0, 6).map((resource) => (
                 <Link className="resource-mini-row" aria-label={resource.title} to={`/resources/${resource.slug}`} key={resource.slug}>
@@ -2946,12 +3250,12 @@ function CoursePage({ data }: { data: AcademyData }) {
                 </Link>
               ))
             ) : (
-              <p>No resources are linked to this course in the seeded data.</p>
+              <p>No resources are linked to this course yet.</p>
             )}
           </section>
           <section className="workspace-panel">
-            <p className="eyebrow">Source and review posture</p>
-            <p>Course metadata is seeded from the local catalog. External docs links, vendor version context, and last-reviewed dates are not exposed by the current API.</p>
+            <p className="eyebrow">Sources and review</p>
+            <p>This course uses the local catalog. Resource pages carry official links and reviewed dates where available.</p>
           </section>
         </aside>
       </section>
@@ -3086,7 +3390,7 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
       <section className="detail-layout lesson-layout">
         <div className="detail-main">
           <article className="lesson-body workspace-panel">
-            <RichContent text={lesson.body_simplified} />
+            <RichContent text={lesson.body} />
           </article>
 
           <section className="practice-panel workspace-panel">
@@ -3094,16 +3398,16 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
               <p className="eyebrow">Lab scenario</p>
               <h2>Practice the lesson</h2>
             </div>
-            <RichContent text={lesson.pinyin} />
+            <RichContent text={lesson.practice_notes} />
           </section>
 
           <section className="workspace-panel">
             <h2>Key terms</h2>
             <div className="term-grid">
-              {lesson.vocabulary.map((term) => (
+              {lesson.terms.map((term) => (
                 <article className="term-card" key={term.id}>
-                  <strong>{term.simplified}</strong>
-                  <span>{term.pinyin}</span>
+                  <strong>{term.term}</strong>
+                  <span>{term.context}</span>
                   <p>{term.definition}</p>
                 </article>
               ))}
@@ -3124,7 +3428,7 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
             </div>
           </section>
           <section className="workspace-panel">
-            <p className="eyebrow">Related lab gates</p>
+            <p className="eyebrow">Related labs</p>
             {relatedLabs.length > 0 ? (
               relatedLabs.map((lab) => (
                 <Link className="resource-mini-row" aria-label={lab.title} to={`/labs/${lab.slug}`} key={lab.slug}>
@@ -3133,7 +3437,7 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
                 </Link>
               ))
             ) : (
-              <p>No lab is linked to this lesson in the seeded data.</p>
+              <p>No lab is linked to this lesson yet.</p>
             )}
           </section>
           <section className="workspace-panel">
@@ -3146,13 +3450,13 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
                 </Link>
               ))
             ) : (
-              <p>No resource is linked to this lesson in the seeded data.</p>
+              <p>No resource is linked to this lesson yet.</p>
             )}
           </section>
           <section className="workspace-panel">
-            <p className="eyebrow">Source and review posture</p>
-            <p>Lesson content is loaded from the local API. No external source URL, version target, or last-reviewed timestamp is present in the lesson payload.</p>
-            <p>Use the linked lab checklist and resource artifacts as the completion evidence.</p>
+            <p className="eyebrow">Sources and practice</p>
+            <p>Lesson content is loaded from the local API. Resource pages carry official links and reviewed dates where available.</p>
+            <p>Use the linked lab checklist and resources to decide what to save.</p>
           </section>
         </aside>
       </section>
@@ -3172,98 +3476,83 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
   );
 }
 
-export default function App() {
+function NotFoundPage() {
+  return (
+    <section className="page canonical-page not-found-page">
+      <header className="workspace-header not-found-header">
+        <div>
+          <p className="eyebrow">Not found</p>
+          <h1>Page not found</h1>
+          <p className="lead">This route is not available in Platform Academy.</p>
+        </div>
+        <div className="workspace-actions not-found-actions">
+          <Link className="primary-action" to="/dashboard/home">
+            <LayoutDashboard aria-hidden="true" />
+            Open dashboard
+          </Link>
+          <Link className="secondary-action" to="/labs">
+            <Terminal aria-hidden="true" />
+            Open labs
+          </Link>
+          <Link className="secondary-action" to="/resources">
+            <BookMarked aria-hidden="true" />
+            Open resources
+          </Link>
+        </div>
+      </header>
+      <section className="workspace-panel not-found-panel">
+        <h2>Available sections</h2>
+        <p>Use the dashboard, lab workspace, or resource library to continue from the current catalog.</p>
+      </section>
+    </section>
+  );
+}
+
+function PlatformAcademyApp() {
   const [learnerId, setLearnerId] = useState(getOrCreateLocalLearnerId);
-  const [data, setData] = useState<AcademyData | null>(null);
-  const [error, setError] = useState("");
-  const loadRequestId = useRef(0);
-  const staticContentCache = useRef<StaticContentCache>({});
-
-  const loadDeferredStaticContent = useCallback((requestId: number) => {
-    const cached = staticContentCache.current;
-    if (cached.resources && cached.interviewPrep) return Promise.resolve();
-
-    return Promise.all([cached.resources ? Promise.resolve(cached.resources) : api.resources(), cached.interviewPrep ? Promise.resolve(cached.interviewPrep) : api.interviewPrep()])
-      .then(([resources, interviewPrep]) => {
-        staticContentCache.current = { resources, interviewPrep };
-        if (requestId !== loadRequestId.current) return;
-        setData((current) =>
-          current
-            ? {
-                ...current,
-                resources,
-                resourcesLoaded: true,
-                interviewPrep,
-                interviewPrepLoaded: true
-              }
-            : current
-        );
-      })
-      .catch((err) => {
-        if (requestId !== loadRequestId.current) return;
-        setError(err.message);
-      });
-  }, []);
-
-  const loadData = useCallback(() => {
-    const requestId = loadRequestId.current + 1;
-    loadRequestId.current = requestId;
-    setError("");
-
-    return Promise.all([api.catalog(), api.roadmap(), api.progress(learnerId), api.activity(learnerId), api.dashboard(learnerId, "platform")])
-      .then(([catalog, roadmap, progress, activity, dashboard]) => {
-        if (requestId !== loadRequestId.current) return;
-        const cached = staticContentCache.current;
-        setData({
-          catalog,
-          roadmap,
-          resources: cached.resources ?? EMPTY_RESOURCES,
-          resourcesLoaded: Boolean(cached.resources),
-          interviewPrep: cached.interviewPrep ?? EMPTY_INTERVIEW_PREP,
-          interviewPrepLoaded: Boolean(cached.interviewPrep),
-          progress,
-          activity,
-          dashboard
-        });
-        void loadDeferredStaticContent(requestId);
-      })
-      .catch((err) => {
-        if (requestId !== loadRequestId.current) return;
-        setError(err.message);
-      });
-  }, [learnerId, loadDeferredStaticContent]);
+  const queryClient = useQueryClient();
+  const { data, error, refetchCore } = useAcademyData(learnerId);
+  const errorMessage = error instanceof Error ? error.message : error ? String(error) : "";
 
   const resetLearner = () => {
-    loadRequestId.current += 1;
-    setData(null);
-    setError("");
     setLearnerId(resetLocalLearnerId());
   };
 
   const recoverLearner = (restoredLearnerId: string) => {
-    loadRequestId.current += 1;
-    setData(null);
-    setError("");
     setLearnerId(restoredLearnerId);
+    void api.saveActivity({ target_type: "guest_recovery", target_id: "profile-restore" }, restoredLearnerId).catch(() => undefined);
   };
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const refreshAcademyData = useCallback(() => {
+    void refetchCore();
+  }, [refetchCore]);
 
   const saveActivity = useCallback<SaveActivity>(
     async (activity) => {
       const saved = await api.saveActivity(activity, learnerId);
-      setData((current) => (current ? { ...current, activity: upsertActivityRow(current.activity, saved) } : current));
+      queryClient.setQueryData<AcademyCoreData>(academyQueryKeys.core(learnerId), (current) =>
+        current ? { ...current, activity: upsertActivityRow(current.activity, saved) } : current
+      );
       return saved;
     },
-    [learnerId]
+    [learnerId, queryClient]
   );
 
-  if (error) {
+  const saveLabSubmission = useCallback<SaveLabSubmission>(
+    async (slug, submission) => {
+      const saved = await api.saveLabSubmission(slug, submission, learnerId);
+      queryClient.setQueryData<AcademyCoreData>(academyQueryKeys.core(learnerId), (current) =>
+        current ? { ...current, labSubmissions: upsertLabSubmissionRow(current.labSubmissions, saved) } : current
+      );
+      return saved;
+    },
+    [learnerId, queryClient]
+  );
+
+  if (errorMessage) {
     return (
       <AppShell learnerId={learnerId} onRecoverLearner={recoverLearner} onResetLearner={resetLearner}>
-        <EmptyState title="Platform Academy is unavailable." detail={error} />
+        <EmptyState title="Platform Academy is unavailable." detail={errorMessage} />
       </AppShell>
     );
   }
@@ -3278,63 +3567,48 @@ export default function App() {
 
   return (
     <AppShell learnerId={learnerId} onRecoverLearner={recoverLearner} onResetLearner={resetLearner}>
-      <Routes>
-        <RouterRoute path="/" element={<DashboardPage data={data} />} />
-        <RouterRoute path="/dashboard/home" element={<DashboardPage data={data} />} />
-        <RouterRoute path="/roadmap" element={<RoadmapPage data={data} />} />
-        <RouterRoute path="/labs" element={<LabsPage data={data} />} />
-        <RouterRoute path="/labs/:slug" element={<LabDetailPage data={data} onSaveActivity={saveActivity} />} />
-        <RouterRoute
-          path="/interview-prep"
-          element={
-            data.interviewPrepLoaded ? (
-              <InterviewPrepPage data={data} onSaveActivity={saveActivity} />
-            ) : (
-              <DeferredContentPage title="Loading interview prep..." detail="Scenario packs are loading after the core academy workspace." />
-            )
-          }
-        />
-        <RouterRoute
-          path="/resources"
-          element={
-            data.resourcesLoaded ? (
-              <ResourcesPage data={data} />
-            ) : (
-              <DeferredContentPage title="Loading resource library..." detail="Runbooks and references are loading after the core academy workspace." />
-            )
-          }
-        />
-        <RouterRoute
-          path="/resources/:slug"
-          element={
-            data.resourcesLoaded ? (
-              <ResourceDetailPage data={data} onSaveActivity={saveActivity} />
-            ) : (
-              <DeferredContentPage title="Loading resource..." detail="The resource library is loading after the core academy workspace." />
-            )
-          }
-        />
-        <RouterRoute
-          path="/designs"
-          element={
-            <DesignStylesGate>
-              <DesignsIndexPage data={data} />
-            </DesignStylesGate>
-          }
-        />
-        <RouterRoute
-          path="/designs/:id"
-          element={
-            <DesignStylesGate>
-              <DesignVariantPage data={data} />
-            </DesignStylesGate>
-          }
-        />
-        <RouterRoute path="/courses/:courseRef" element={<CoursePage data={data} />} />
-        <RouterRoute path="/courses/:courseRef/lessons/:sequence" element={<LessonPage data={data} learnerId={learnerId} onProgressSaved={loadData} />} />
-        <RouterRoute path="/lessons/:id" element={<LessonPage data={data} learnerId={learnerId} onProgressSaved={loadData} />} />
-        <RouterRoute path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <AppRouter
+        dashboard={<DashboardPage data={data} />}
+        roadmap={<RoadmapPage data={data} />}
+        labs={<LabsPage data={data} />}
+        labEvidenceJournal={<LabEvidenceJournalPage data={data} />}
+        labDetail={<LabDetailPage data={data} learnerId={learnerId} onSaveActivity={saveActivity} onSaveLabSubmission={saveLabSubmission} />}
+        interviewPrep={
+          data.interviewPrepLoaded ? (
+            <InterviewPrepPage data={data} onSaveActivity={saveActivity} />
+          ) : (
+            <DeferredContentPage title="Loading interview prep..." detail="Scenario packs are loading after the core academy workspace." />
+          )
+        }
+        resources={
+          data.resourcesLoaded ? (
+            <ResourcesPage data={data} />
+          ) : (
+            <DeferredContentPage title="Loading resource library..." detail="Runbooks and references are loading after the core academy workspace." />
+          )
+        }
+        resourceDetail={
+          data.resourcesLoaded ? (
+            <ResourceDetailPage data={data} onSaveActivity={saveActivity} />
+          ) : (
+            <DeferredContentPage title="Loading resource..." detail="The resource library is loading after the core academy workspace." />
+          )
+        }
+        course={<CoursePage data={data} />}
+        lessonByCourseSequence={<LessonPage data={data} learnerId={learnerId} onProgressSaved={refreshAcademyData} />}
+        lessonById={<LessonPage data={data} learnerId={learnerId} onProgressSaved={refreshAcademyData} />}
+        notFound={<NotFoundPage />}
+      />
     </AppShell>
+  );
+}
+
+export default function App() {
+  const [client] = useState(createAppQueryClient);
+
+  return (
+    <QueryClientProvider client={client}>
+      <PlatformAcademyApp />
+    </QueryClientProvider>
   );
 }

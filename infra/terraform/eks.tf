@@ -1,5 +1,5 @@
 resource "aws_iam_role" "eks_cluster" {
-  name = "zhongwen-${var.environment}-eks-cluster"
+  name = "platform-academy-${var.environment}-eks-cluster"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -19,7 +19,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster" {
 }
 
 resource "aws_eks_cluster" "main" {
-  name     = "zhongwen-${var.environment}"
+  name     = "platform-academy-${var.environment}"
   role_arn = aws_iam_role.eks_cluster.arn
   version  = "1.31"
 
@@ -33,7 +33,7 @@ resource "aws_eks_cluster" "main" {
 }
 
 resource "aws_iam_role" "eks_nodes" {
-  name = "zhongwen-${var.environment}-eks-nodes"
+  name = "platform-academy-${var.environment}-eks-nodes"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

@@ -4,7 +4,7 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = {
-    Name = "zhongwen-${var.environment}"
+    Name = "platform-academy-${var.environment}"
   }
 }
 
@@ -16,7 +16,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name                     = "zhongwen-${var.environment}-public-${count.index}"
+    Name                     = "platform-academy-${var.environment}-public-${count.index}"
     "kubernetes.io/role/elb" = "1"
   }
 }
@@ -28,7 +28,7 @@ resource "aws_subnet" "private" {
   availability_zone = data.aws_availability_zones.available.names[count.index]
 
   tags = {
-    Name                              = "zhongwen-${var.environment}-private-${count.index}"
+    Name                              = "platform-academy-${var.environment}-private-${count.index}"
     "kubernetes.io/role/internal-elb" = "1"
   }
 }
@@ -37,7 +37,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "zhongwen-${var.environment}"
+    Name = "platform-academy-${var.environment}"
   }
 }
 

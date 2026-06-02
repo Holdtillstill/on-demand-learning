@@ -1,0 +1,730 @@
+{
+  "title": "Platform Academy advanced SRE curriculum draft objects",
+  "status": "draft",
+  "integration_notes": [
+    "IDs 22-25 and 85-100 are provisional and should be reconciled before seeding live catalog data.",
+    "These objects are shaped to match the current Platform Academy Course and PlatformLab fields.",
+    "Do not publish these labs as live full labs until repository artifacts, analyzers, workspace bundles, static API exports, and cleanup scripts exist."
+  ],
+  "courses": [
+    {
+      "id": 22,
+      "slug": "platform-stateful-workloads-recovery",
+      "title": "Stateful Workloads and Storage Recovery",
+      "era": "Platform Academy",
+      "level": "Advanced",
+      "category": "EKS",
+      "description": "Debug StatefulSets, PVC/PV binding, volume attachment, EBS CSI driver behavior, disruption boundaries, and recovery decisions for production Kubernetes workloads.",
+      "subscription_tier": "free",
+      "lessons": [
+        {
+          "id": 85,
+          "course_id": 22,
+          "title": "StatefulSet Identity, Ordering, and Readiness",
+          "summary": "Understand stable Pod identity, ordered rollout, readiness, and why StatefulSet failure modes differ from Deployments.",
+          "sequence": 1
+        },
+        {
+          "id": 86,
+          "course_id": 22,
+          "title": "PVC, PV, StorageClass, and Reclaim Policy",
+          "summary": "Trace storage binding from claim to volume and understand capacity, access mode, zone, and reclaim decisions.",
+          "sequence": 2
+        },
+        {
+          "id": 87,
+          "course_id": 22,
+          "title": "EBS CSI Attachment and Multi-AZ Failure Modes",
+          "summary": "Debug EBS volume attach, detach, node affinity, CSI controller events, and stuck VolumeAttachment objects.",
+          "sequence": 3
+        },
+        {
+          "id": 88,
+          "course_id": 22,
+          "title": "Stateful Recovery, Backups, and Maintenance Windows",
+          "summary": "Choose repair, failover, restore, or maintenance actions with clear data-loss and downtime boundaries.",
+          "sequence": 4
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "slug": "platform-external-secrets-operations",
+      "title": "External Secrets Operations",
+      "era": "Platform Academy",
+      "level": "Advanced",
+      "category": "Security",
+      "description": "Operate External Secrets Operator with AWS Secrets Manager, IRSA, refresh intervals, secret rotation, failure diagnosis, and least-privilege ownership.",
+      "subscription_tier": "free",
+      "lessons": [
+        {
+          "id": 89,
+          "course_id": 23,
+          "title": "Secret Ownership and Rotation Contracts",
+          "summary": "Define which team owns secret source, sync policy, consuming workload, and rotation blast radius.",
+          "sequence": 1
+        },
+        {
+          "id": 90,
+          "course_id": 23,
+          "title": "External Secrets Operator Resource Model",
+          "summary": "Read SecretStore, ClusterSecretStore, ExternalSecret, target Secret, refresh, and status conditions.",
+          "sequence": 2
+        },
+        {
+          "id": 91,
+          "course_id": 23,
+          "title": "AWS Secrets Manager and IRSA Integration",
+          "summary": "Connect ESO service accounts to AWS Secrets Manager through least-privilege IAM trust and policy documents.",
+          "sequence": 3
+        },
+        {
+          "id": 92,
+          "course_id": 23,
+          "title": "Sync Failures, Rotation, and Audit Evidence",
+          "summary": "Debug provider errors, access denied, stale target Secrets, and rotation handoff evidence without exposing secret values.",
+          "sequence": 4
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "slug": "platform-service-mesh-operations",
+      "title": "Service Mesh Operations",
+      "era": "Platform Academy",
+      "level": "Advanced",
+      "category": "Service Mesh",
+      "description": "Operate Istio or Linkerd service mesh controls for mTLS, sidecar injection, Envoy diagnostics, traffic routing, and progressive delivery safety.",
+      "subscription_tier": "free",
+      "lessons": [
+        {
+          "id": 93,
+          "course_id": 24,
+          "title": "Mesh Control Plane and Sidecar Injection",
+          "summary": "Understand namespaces, injection labels, proxy lifecycle, and workload readiness after sidecar admission.",
+          "sequence": 1
+        },
+        {
+          "id": 94,
+          "course_id": 24,
+          "title": "mTLS Policy and Identity",
+          "summary": "Read PeerAuthentication, DestinationRule, service identity, and TLS mode evidence.",
+          "sequence": 2
+        },
+        {
+          "id": 95,
+          "course_id": 24,
+          "title": "Envoy Debugging and Traffic Routing",
+          "summary": "Use proxy status, config dump, routes, clusters, and endpoints to debug traffic decisions.",
+          "sequence": 3
+        },
+        {
+          "id": 96,
+          "course_id": 24,
+          "title": "Canaries, Retries, Timeouts, and Failure Boundaries",
+          "summary": "Review VirtualService or Linkerd traffic splits with explicit rollback, retry, and timeout decisions.",
+          "sequence": 4
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "slug": "platform-chaos-load-resilience",
+      "title": "Chaos, Load, and Resilience Validation",
+      "era": "Platform Academy",
+      "level": "Advanced",
+      "category": "Incident Response",
+      "description": "Design controlled game days that combine k6 load tests, node disruption, SLO evidence, PDB validation, and incident response decisions.",
+      "subscription_tier": "free",
+      "lessons": [
+        {
+          "id": 97,
+          "course_id": 25,
+          "title": "Experiment Design and Blast Radius",
+          "summary": "Define hypothesis, stop conditions, safety owners, and rollback before causing disruption.",
+          "sequence": 1
+        },
+        {
+          "id": 98,
+          "course_id": 25,
+          "title": "k6 Load Profiles and SLO Evidence",
+          "summary": "Build smoke, ramp, spike, and soak tests that map to user impact and error-budget evidence.",
+          "sequence": 2
+        },
+        {
+          "id": 99,
+          "course_id": 25,
+          "title": "Node Termination, PDBs, and Capacity Recovery",
+          "summary": "Validate disruption budgets, replica spread, autoscaler behavior, and recovery time under node loss.",
+          "sequence": 3
+        },
+        {
+          "id": 100,
+          "course_id": 25,
+          "title": "Game Day Reports and Corrective Actions",
+          "summary": "Turn chaos evidence into a timeline, user-impact call, follow-up list, and readiness decision.",
+          "sequence": 4
+        }
+      ]
+    }
+  ],
+  "labs": [
+    {
+      "slug": "debug-statefulset-volume-attachment",
+      "title": "Debug StatefulSet EBS volume attachment",
+      "track": "EKS",
+      "difficulty": "Advanced",
+      "level_group": "Advanced",
+      "estimated_minutes": 75,
+      "lab_tier": "full",
+      "portfolio_grade": true,
+      "portfolio_focus": "StatefulSet and EBS recovery",
+      "scenario": "A payments database StatefulSet is stuck after a node replacement because its EBS-backed volume cannot attach in the new zone.",
+      "skills": [
+        "StatefulSets",
+        "PVC/PV binding",
+        "StorageClass",
+        "VolumeAttachment",
+        "EBS CSI",
+        "multi-AZ recovery"
+      ],
+      "prerequisites": [
+        "No live AWS credentials required for draft mode; use the included evidence packet and mock EBS attachment records.",
+        "Optional sandbox cluster for kubectl object inspection.",
+        "Run commands from the repository root once lab artifacts are generated."
+      ],
+      "setup_commands": [
+        "bash labs/platform-academy/run-lab.sh setup debug-statefulset-volume-attachment",
+        "bash labs/platform-academy/debug-statefulset-volume-attachment/setup.sh --evidence /tmp/stateful-volume-evidence.md",
+        "sed -n '1,220p' labs/platform-academy/debug-statefulset-volume-attachment/triage-notes.md",
+        "sed -n '1,180p' labs/platform-academy/debug-statefulset-volume-attachment/volume-events.txt"
+      ],
+      "setup_self_check_commands": [
+        "bash labs/platform-academy/run-lab.sh setup debug-statefulset-volume-attachment --run-analyzer"
+      ],
+      "commands": [
+        "kubectl get statefulset,pods,pvc,pv -n payments-db -o wide",
+        "kubectl describe pod payments-db-0 -n payments-db",
+        "kubectl get volumeattachment -o wide",
+        "grep -n \"Multi-Attach\\|node affinity\\|zone\\|VolumeAttachment\" labs/platform-academy/debug-statefulset-volume-attachment/volume-events.txt",
+        "python3 labs/platform-academy/debug-statefulset-volume-attachment/stateful_volume_analyzer.py --snapshot labs/platform-academy/debug-statefulset-volume-attachment/cluster-snapshot.yaml --events labs/platform-academy/debug-statefulset-volume-attachment/volume-events.txt"
+      ],
+      "practice_steps": [
+        "Record the namespace, affected ordinal, volume name, and no-live-AWS safety boundary.",
+        "Use StatefulSet identity to prove which Pod owns the stuck PVC.",
+        "Trace PVC to PV, StorageClass, zone affinity, and VolumeAttachment state.",
+        "Rule out application crash, image pull, and generic node pressure before choosing a storage fix.",
+        "Write the recovery decision: reschedule into the volume zone, detach stale attachment, restore from backup, or fail over.",
+        "Capture validation evidence and cleanup or no-runtime evidence."
+      ],
+      "expected_evidence": [
+        "The stuck Pod is the stable ordinal payments-db-0, not a replaceable Deployment replica.",
+        "The PVC is bound to an EBS-backed PV with zone affinity that conflicts with the replacement node.",
+        "VolumeAttachment or CSI events show attach/detach failure rather than application startup failure.",
+        "The recovery plan names data-loss, downtime, and owner approval boundaries.",
+        "The local analyzer reports StatefulSet volume attachment analysis passed."
+      ],
+      "validation_commands": [
+        "bash labs/platform-academy/debug-statefulset-volume-attachment/validate.sh",
+        "bash labs/platform-academy/debug-statefulset-volume-attachment/validate.sh --evidence /tmp/stateful-volume-evidence.md",
+        "python3 labs/platform-academy/debug-statefulset-volume-attachment/stateful_volume_analyzer.py --snapshot labs/platform-academy/debug-statefulset-volume-attachment/cluster-snapshot.yaml --events labs/platform-academy/debug-statefulset-volume-attachment/volume-events.txt --decision labs/platform-academy/debug-statefulset-volume-attachment/recovery-decision.md"
+      ],
+      "cleanup_commands": [
+        "bash labs/platform-academy/debug-statefulset-volume-attachment/cleanup.sh"
+      ],
+      "no_cluster_fallback": [
+        "Use cluster-snapshot.yaml, volume-events.txt, and mock-ebs-volumes.json as the evidence source.",
+        "Write recovery-decision.md without making any AWS or cluster mutation."
+      ],
+      "artifact_paths": [
+        "labs/platform-academy/debug-statefulset-volume-attachment/cluster-snapshot.yaml",
+        "labs/platform-academy/debug-statefulset-volume-attachment/volume-events.txt",
+        "labs/platform-academy/debug-statefulset-volume-attachment/mock-ebs-volumes.json",
+        "labs/platform-academy/debug-statefulset-volume-attachment/recovery-decision.md",
+        "labs/platform-academy/debug-statefulset-volume-attachment/stateful_volume_analyzer.py",
+        "labs/platform-academy/debug-statefulset-volume-attachment/evidence-template.md",
+        "labs/platform-academy/debug-statefulset-volume-attachment/validate.sh",
+        "labs/platform-academy/debug-statefulset-volume-attachment/cleanup.sh"
+      ],
+      "learner_artifact_paths": [
+        "labs/platform-academy/debug-statefulset-volume-attachment/cluster-snapshot.yaml",
+        "labs/platform-academy/debug-statefulset-volume-attachment/volume-events.txt",
+        "labs/platform-academy/debug-statefulset-volume-attachment/mock-ebs-volumes.json",
+        "labs/platform-academy/debug-statefulset-volume-attachment/recovery-decision.md",
+        "labs/platform-academy/debug-statefulset-volume-attachment/evidence-template.md"
+      ],
+      "workspace_archive_name": "debug-statefulset-volume-attachment-learner-workspace.zip",
+      "workspace_root": "debug-statefulset-volume-attachment",
+      "workspace_quickstart_commands": [
+        "unzip debug-statefulset-volume-attachment-learner-workspace.zip",
+        "cd debug-statefulset-volume-attachment",
+        "./setup.sh",
+        "# Fill evidence.md and recovery-decision.md",
+        "./validate.sh --files-only",
+        "./cleanup.sh"
+      ],
+      "cluster_workspace_commands": [
+        "Use only a disposable sandbox context.",
+        "Create the broken state: ./setup.sh --cluster",
+        "Verify evidence and recovery decision: ./validate.sh --cluster",
+        "Clean up lab resources: ./cleanup.sh"
+      ],
+      "worksheet_prompts": [
+        "Record context, namespace, affected ordinal, PVC, PV, and no-live-AWS safety boundary.",
+        "Paste StatefulSet, Pod, PVC, PV, StorageClass, and VolumeAttachment evidence.",
+        "Explain why this is not an app crash, image pull, or generic node-pressure incident.",
+        "Identify the zone or stale attachment conflict and the owner who can approve remediation.",
+        "Write the recovery decision with data-loss, downtime, rollback, and backup boundaries.",
+        "Capture analyzer output, validation output, and cleanup or fallback evidence."
+      ],
+      "rubric": [
+        "Preserves the no-live-AWS and data-safety boundary before recovery decisions.",
+        "Traces StatefulSet ordinal identity through PVC, PV, StorageClass, and VolumeAttachment.",
+        "Uses CSI and attach/detach evidence rather than generic Pod restart assumptions.",
+        "Names zone affinity or stale attachment as the failure mode with supporting evidence.",
+        "Chooses a recovery path with explicit data-loss, downtime, owner approval, and rollback notes.",
+        "Saves analyzer output, validation output, and cleanup or fallback evidence."
+      ],
+      "validation_checks": [
+        "Safety boundary recorded",
+        "StatefulSet ordinal and PVC owner identified",
+        "PV, StorageClass, and zone evidence captured",
+        "VolumeAttachment or CSI failure evidence captured",
+        "False leads ruled out",
+        "Recovery decision written with data-loss and downtime boundary",
+        "Analyzer and validation output captured",
+        "Cleanup or fallback evidence recorded"
+      ],
+      "checklist": [
+        "Trace Pod ordinal to PVC and PV before changing anything.",
+        "Inspect StorageClass, reclaim policy, node affinity, and VolumeAttachment.",
+        "Use CSI events to separate attach failure from app failure.",
+        "Write recovery decisions with backup, owner, rollback, and downtime boundaries."
+      ],
+      "course_slug": "platform-stateful-workloads-recovery",
+      "lesson_id": 87
+    },
+    {
+      "slug": "external-secrets-aws-secrets-manager",
+      "title": "Integrate External Secrets with AWS Secrets Manager",
+      "track": "Security",
+      "difficulty": "Advanced",
+      "level_group": "Advanced",
+      "estimated_minutes": 70,
+      "lab_tier": "full",
+      "portfolio_grade": true,
+      "portfolio_focus": "Secrets sync and least privilege",
+      "scenario": "A checkout workload expects a Kubernetes Secret from External Secrets Operator, but sync is failing after a Secrets Manager rotation.",
+      "skills": [
+        "External Secrets Operator",
+        "AWS Secrets Manager",
+        "IRSA",
+        "SecretStore",
+        "ExternalSecret",
+        "rotation evidence"
+      ],
+      "prerequisites": [
+        "No real secret values or AWS credentials required; use mock provider responses and IAM documents.",
+        "Optional sandbox cluster with ESO CRDs installed.",
+        "Never paste secret values into worksheet evidence."
+      ],
+      "setup_commands": [
+        "bash labs/platform-academy/run-lab.sh setup external-secrets-aws-secrets-manager",
+        "bash labs/platform-academy/external-secrets-aws-secrets-manager/setup.sh --evidence /tmp/external-secrets-evidence.md",
+        "sed -n '1,220p' labs/platform-academy/external-secrets-aws-secrets-manager/triage-notes.md",
+        "sed -n '1,200p' labs/platform-academy/external-secrets-aws-secrets-manager/externalsecret.yaml"
+      ],
+      "setup_self_check_commands": [
+        "bash labs/platform-academy/run-lab.sh setup external-secrets-aws-secrets-manager --run-analyzer"
+      ],
+      "commands": [
+        "kubectl get secretstore,externalsecret,secret -n payments",
+        "kubectl describe externalsecret checkout-db -n payments",
+        "kubectl logs -n external-secrets deploy/external-secrets --tail=80",
+        "grep -n \"AccessDenied\\|remoteRef\\|refreshInterval\\|serviceAccountRef\" labs/platform-academy/external-secrets-aws-secrets-manager/*.txt labs/platform-academy/external-secrets-aws-secrets-manager/*.yaml",
+        "python3 labs/platform-academy/external-secrets-aws-secrets-manager/external_secret_analyzer.py --manifest labs/platform-academy/external-secrets-aws-secrets-manager/externalsecret.yaml --trust labs/platform-academy/external-secrets-aws-secrets-manager/trust-policy.json --policy labs/platform-academy/external-secrets-aws-secrets-manager/least-privilege-policy.json"
+      ],
+      "practice_steps": [
+        "Record namespace, target Secret name, provider secret ARN, and no-secret-value evidence boundary.",
+        "Read ExternalSecret status and ESO controller logs before changing IAM or manifests.",
+        "Trace SecretStore service account to IRSA trust subject and Secrets Manager permissions.",
+        "Identify whether the failure is remote key mismatch, IAM denial, stale refresh, or target Secret ownership.",
+        "Write the least-privilege fix and rotation validation plan without exposing secret data.",
+        "Capture validation output and cleanup or no-runtime evidence."
+      ],
+      "expected_evidence": [
+        "ExternalSecret status shows sync failure or stale target Secret condition.",
+        "Controller logs or mock provider transcript show AccessDenied or missing remote key evidence.",
+        "IRSA trust policy subject matches the ESO service account and namespace.",
+        "Least-privilege policy allows only the required Secrets Manager ARN and read actions.",
+        "The local analyzer reports External Secrets integration analysis passed."
+      ],
+      "validation_commands": [
+        "bash labs/platform-academy/external-secrets-aws-secrets-manager/validate.sh",
+        "bash labs/platform-academy/external-secrets-aws-secrets-manager/validate.sh --evidence /tmp/external-secrets-evidence.md",
+        "python3 labs/platform-academy/external-secrets-aws-secrets-manager/external_secret_analyzer.py --manifest labs/platform-academy/external-secrets-aws-secrets-manager/externalsecret.yaml --store labs/platform-academy/external-secrets-aws-secrets-manager/secretstore.yaml --trust labs/platform-academy/external-secrets-aws-secrets-manager/trust-policy.json --policy labs/platform-academy/external-secrets-aws-secrets-manager/least-privilege-policy.json --rotation labs/platform-academy/external-secrets-aws-secrets-manager/rotation-note.md"
+      ],
+      "cleanup_commands": [
+        "bash labs/platform-academy/external-secrets-aws-secrets-manager/cleanup.sh"
+      ],
+      "no_cluster_fallback": [
+        "Use externalsecret.yaml, secretstore.yaml, controller-log.txt, provider-response.json, and IAM documents as evidence.",
+        "Write rotation-note.md and least-privilege-review.md without creating real secrets."
+      ],
+      "artifact_paths": [
+        "labs/platform-academy/external-secrets-aws-secrets-manager/externalsecret.yaml",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/secretstore.yaml",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/controller-log.txt",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/provider-response.json",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/trust-policy.json",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/least-privilege-policy.json",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/rotation-note.md",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/external_secret_analyzer.py",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/evidence-template.md",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/validate.sh",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/cleanup.sh"
+      ],
+      "learner_artifact_paths": [
+        "labs/platform-academy/external-secrets-aws-secrets-manager/externalsecret.yaml",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/secretstore.yaml",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/controller-log.txt",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/provider-response.json",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/trust-policy.json",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/least-privilege-policy.json",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/rotation-note.md",
+        "labs/platform-academy/external-secrets-aws-secrets-manager/evidence-template.md"
+      ],
+      "workspace_archive_name": "external-secrets-aws-secrets-manager-learner-workspace.zip",
+      "workspace_root": "external-secrets-aws-secrets-manager",
+      "workspace_quickstart_commands": [
+        "unzip external-secrets-aws-secrets-manager-learner-workspace.zip",
+        "cd external-secrets-aws-secrets-manager",
+        "./setup.sh",
+        "# Fill evidence.md and rotation-note.md without secret values",
+        "./validate.sh --files-only",
+        "./cleanup.sh"
+      ],
+      "cluster_workspace_commands": [
+        "Use only a disposable sandbox context with ESO CRDs.",
+        "Create the broken state: ./setup.sh --cluster",
+        "Verify sync evidence and least-privilege review: ./validate.sh --cluster",
+        "Clean up lab resources: ./cleanup.sh"
+      ],
+      "worksheet_prompts": [
+        "Record namespace, target Secret, provider secret ARN, service account, and no-secret-value boundary.",
+        "Paste ExternalSecret condition and ESO controller-log evidence without secret values.",
+        "Paste SecretStore serviceAccountRef, IRSA trust subject, and policy scope evidence.",
+        "Explain whether the failure is IAM, remote key, refresh, or target ownership.",
+        "Write the least-privilege and rotation validation note.",
+        "Capture analyzer output, validation output, and cleanup or fallback evidence."
+      ],
+      "rubric": [
+        "Preserves the no-secret-value evidence boundary.",
+        "Reads ExternalSecret status and ESO controller logs before changing IAM.",
+        "Traces SecretStore service account to IRSA trust and least-privilege policy.",
+        "Separates IAM denial, remote key mismatch, stale refresh, and target Secret ownership evidence.",
+        "Writes a rotation validation plan that proves sync without leaking values.",
+        "Saves analyzer output, validation output, and cleanup or fallback evidence."
+      ],
+      "validation_checks": [
+        "No-secret-value boundary recorded",
+        "ExternalSecret status evidence captured",
+        "Controller log or mock provider evidence captured",
+        "SecretStore service account and IRSA trust reviewed",
+        "Least-privilege Secrets Manager policy reviewed",
+        "Failure mode classified",
+        "Rotation validation note written",
+        "Analyzer and cleanup evidence recorded"
+      ],
+      "checklist": [
+        "Inspect ExternalSecret status and controller logs before editing IAM.",
+        "Map SecretStore identity to IRSA trust and AWS permissions.",
+        "Validate remoteRef key, property, refresh interval, and target Secret ownership.",
+        "Prove rotation without exposing secret values."
+      ],
+      "course_slug": "platform-external-secrets-operations",
+      "lesson_id": 91
+    },
+    {
+      "slug": "service-mesh-mtls-traffic-routing",
+      "title": "Debug mesh mTLS and traffic routing",
+      "track": "Service Mesh",
+      "difficulty": "Advanced",
+      "level_group": "Advanced",
+      "estimated_minutes": 80,
+      "lab_tier": "full",
+      "portfolio_grade": true,
+      "portfolio_focus": "Service mesh mTLS and routing",
+      "scenario": "A checkout service was onboarded to a service mesh and now receives intermittent 503 responses after sidecar injection and mTLS policy changes.",
+      "skills": [
+        "Istio",
+        "Linkerd",
+        "Envoy sidecars",
+        "mTLS",
+        "VirtualService",
+        "DestinationRule",
+        "traffic splitting"
+      ],
+      "prerequisites": [
+        "No production mesh required; use local manifests and proxy evidence in draft mode.",
+        "Optional sandbox mesh such as Istio demo profile or Linkerd edge install.",
+        "Run commands from the repository root once lab artifacts are generated."
+      ],
+      "setup_commands": [
+        "bash labs/platform-academy/run-lab.sh setup service-mesh-mtls-traffic-routing",
+        "bash labs/platform-academy/service-mesh-mtls-traffic-routing/setup.sh --evidence /tmp/service-mesh-evidence.md",
+        "sed -n '1,220p' labs/platform-academy/service-mesh-mtls-traffic-routing/triage-notes.md",
+        "sed -n '1,220p' labs/platform-academy/service-mesh-mtls-traffic-routing/mesh-manifests.yaml"
+      ],
+      "setup_self_check_commands": [
+        "bash labs/platform-academy/run-lab.sh setup service-mesh-mtls-traffic-routing --run-analyzer"
+      ],
+      "commands": [
+        "kubectl get ns,pods,svc -n payments --show-labels",
+        "kubectl get peerauthentication,destinationrule,virtualservice -n payments -o yaml",
+        "istioctl proxy-status",
+        "istioctl proxy-config routes deploy/checkout -n payments",
+        "grep -n \"STRICT\\|DISABLE\\|subset\\|weight\\|injected\" labs/platform-academy/service-mesh-mtls-traffic-routing/*.txt labs/platform-academy/service-mesh-mtls-traffic-routing/*.yaml",
+        "python3 labs/platform-academy/service-mesh-mtls-traffic-routing/mesh_route_analyzer.py --manifests labs/platform-academy/service-mesh-mtls-traffic-routing/mesh-manifests.yaml --proxy labs/platform-academy/service-mesh-mtls-traffic-routing/proxy-evidence.txt"
+      ],
+      "practice_steps": [
+        "Record mesh type, namespace injection label, affected workload, and rollback boundary.",
+        "Prove whether both client and server have sidecars before blaming the application.",
+        "Read PeerAuthentication or Linkerd identity policy and identify mTLS mode.",
+        "Trace route, subset, DestinationRule, endpoints, and weight evidence.",
+        "Explain whether the 503 is caused by mTLS mismatch, missing sidecar, bad subset labels, or traffic split drift.",
+        "Write the smallest source-manifest fix and rollback command."
+      ],
+      "expected_evidence": [
+        "Namespace and Pod labels show whether sidecar injection is enabled and applied.",
+        "mTLS policy evidence shows STRICT mode or equivalent identity requirement.",
+        "DestinationRule or traffic split references a subset that does not match ready Pods.",
+        "Proxy evidence shows route or cluster mismatch supporting the failure mode.",
+        "The local analyzer reports service mesh routing analysis passed."
+      ],
+      "validation_commands": [
+        "bash labs/platform-academy/service-mesh-mtls-traffic-routing/validate.sh",
+        "bash labs/platform-academy/service-mesh-mtls-traffic-routing/validate.sh --evidence /tmp/service-mesh-evidence.md",
+        "python3 labs/platform-academy/service-mesh-mtls-traffic-routing/mesh_route_analyzer.py --manifests labs/platform-academy/service-mesh-mtls-traffic-routing/mesh-manifests.yaml --proxy labs/platform-academy/service-mesh-mtls-traffic-routing/proxy-evidence.txt --decision labs/platform-academy/service-mesh-mtls-traffic-routing/routing-decision.md"
+      ],
+      "cleanup_commands": [
+        "bash labs/platform-academy/service-mesh-mtls-traffic-routing/cleanup.sh"
+      ],
+      "no_cluster_fallback": [
+        "Use mesh-manifests.yaml, proxy-evidence.txt, namespace-labels.txt, and traffic-split-report.txt as the evidence source.",
+        "Write routing-decision.md without installing a mesh."
+      ],
+      "artifact_paths": [
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/mesh-manifests.yaml",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/proxy-evidence.txt",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/namespace-labels.txt",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/traffic-split-report.txt",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/routing-decision.md",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/mesh_route_analyzer.py",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/evidence-template.md",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/validate.sh",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/cleanup.sh"
+      ],
+      "learner_artifact_paths": [
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/mesh-manifests.yaml",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/proxy-evidence.txt",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/namespace-labels.txt",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/traffic-split-report.txt",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/routing-decision.md",
+        "labs/platform-academy/service-mesh-mtls-traffic-routing/evidence-template.md"
+      ],
+      "workspace_archive_name": "service-mesh-mtls-traffic-routing-learner-workspace.zip",
+      "workspace_root": "service-mesh-mtls-traffic-routing",
+      "workspace_quickstart_commands": [
+        "unzip service-mesh-mtls-traffic-routing-learner-workspace.zip",
+        "cd service-mesh-mtls-traffic-routing",
+        "./setup.sh",
+        "# Fill evidence.md and routing-decision.md",
+        "./validate.sh --files-only",
+        "./cleanup.sh"
+      ],
+      "cluster_workspace_commands": [
+        "Use only a disposable sandbox mesh.",
+        "Create the broken state: ./setup.sh --cluster",
+        "Verify mesh evidence and routing decision: ./validate.sh --cluster",
+        "Clean up mesh lab resources: ./cleanup.sh"
+      ],
+      "worksheet_prompts": [
+        "Record mesh type, namespace, injection state, affected workload, and rollback boundary.",
+        "Paste sidecar injection and workload readiness evidence.",
+        "Paste mTLS policy, service identity, and TLS mode evidence.",
+        "Paste route, subset, endpoint, and traffic weight evidence.",
+        "Classify the failure as mTLS mismatch, missing sidecar, bad subset, or traffic split drift.",
+        "Write the source-manifest fix, rollback command, analyzer output, and cleanup evidence."
+      ],
+      "rubric": [
+        "Preserves a rollback boundary before changing mesh policy.",
+        "Proves sidecar injection state for client and server workloads.",
+        "Reads mTLS mode and identity evidence before changing traffic policy.",
+        "Traces route, subset, DestinationRule, endpoint, and weight evidence.",
+        "Classifies the mesh failure mode with proxy or manifest evidence.",
+        "Saves source-manifest fix, rollback, analyzer output, validation output, and cleanup evidence."
+      ],
+      "validation_checks": [
+        "Rollback boundary recorded",
+        "Sidecar injection evidence captured",
+        "mTLS policy and identity evidence captured",
+        "Route and subset evidence captured",
+        "Endpoint and traffic weight evidence captured",
+        "Failure mode classified",
+        "Source fix and rollback written",
+        "Analyzer and cleanup evidence recorded"
+      ],
+      "checklist": [
+        "Check injection before debugging app code.",
+        "Read mTLS policy and identity requirements.",
+        "Trace proxy routes, clusters, subsets, endpoints, and weights.",
+        "Patch source manifests and keep a rollback path."
+      ],
+      "course_slug": "platform-service-mesh-operations",
+      "lesson_id": 95
+    },
+    {
+      "slug": "chaos-load-node-termination-game-day",
+      "title": "Run k6 load and node termination game day",
+      "track": "Incident Response",
+      "difficulty": "Advanced",
+      "level_group": "Advanced",
+      "estimated_minutes": 90,
+      "lab_tier": "full",
+      "portfolio_grade": true,
+      "portfolio_focus": "Chaos engineering and resilience validation",
+      "scenario": "A checkout API must prove it can keep its SLO during load while one worker node is terminated or drained.",
+      "skills": [
+        "k6",
+        "chaos engineering",
+        "PodDisruptionBudget",
+        "node termination",
+        "SLO validation",
+        "incident command"
+      ],
+      "prerequisites": [
+        "No production cluster disruption allowed; use local simulator or disposable sandbox only.",
+        "k6 installed locally or use the included summary transcript.",
+        "Define stop conditions before running any disruption."
+      ],
+      "setup_commands": [
+        "bash labs/platform-academy/run-lab.sh setup chaos-load-node-termination-game-day",
+        "bash labs/platform-academy/chaos-load-node-termination-game-day/setup.sh --evidence /tmp/chaos-game-day-evidence.md",
+        "sed -n '1,220p' labs/platform-academy/chaos-load-node-termination-game-day/experiment-plan.md",
+        "sed -n '1,180p' labs/platform-academy/chaos-load-node-termination-game-day/k6-summary.txt"
+      ],
+      "setup_self_check_commands": [
+        "bash labs/platform-academy/run-lab.sh setup chaos-load-node-termination-game-day --run-analyzer"
+      ],
+      "commands": [
+        "k6 run labs/platform-academy/chaos-load-node-termination-game-day/load-test.js",
+        "kubectl get deploy,pods,pdb,nodes -n payments -o wide",
+        "kubectl drain NODE_NAME --ignore-daemonsets --delete-emptydir-data --dry-run=server",
+        "grep -n \"stop condition\\|error rate\\|p95\\|recovery\" labs/platform-academy/chaos-load-node-termination-game-day/*.md labs/platform-academy/chaos-load-node-termination-game-day/*.txt",
+        "python3 labs/platform-academy/chaos-load-node-termination-game-day/chaos_resilience_analyzer.py --plan labs/platform-academy/chaos-load-node-termination-game-day/experiment-plan.md --k6 labs/platform-academy/chaos-load-node-termination-game-day/k6-summary.txt --events labs/platform-academy/chaos-load-node-termination-game-day/node-events.txt"
+      ],
+      "practice_steps": [
+        "Record hypothesis, blast radius, owner, stop condition, and no-production-disruption boundary.",
+        "Run or inspect the k6 baseline and capture p95 latency, error rate, and throughput.",
+        "Inspect replicas, PDB, topology spread, and node placement before disruption.",
+        "Simulate or dry-run node termination and capture scheduling/recovery evidence.",
+        "Compare during-disruption k6 results with SLO threshold and stop condition.",
+        "Write game day report with pass/fail decision, corrective actions, and follow-up owners."
+      ],
+      "expected_evidence": [
+        "The experiment plan names hypothesis, blast radius, stop condition, and rollback owner.",
+        "Baseline k6 summary captures p95 latency, request rate, and error rate.",
+        "PDB and replica placement evidence show whether one node loss is survivable.",
+        "Node event or simulator evidence shows eviction, rescheduling, and recovery timing.",
+        "Game day report ties results to SLO threshold and corrective actions.",
+        "The local analyzer reports chaos resilience analysis passed."
+      ],
+      "validation_commands": [
+        "bash labs/platform-academy/chaos-load-node-termination-game-day/validate.sh",
+        "bash labs/platform-academy/chaos-load-node-termination-game-day/validate.sh --evidence /tmp/chaos-game-day-evidence.md",
+        "python3 labs/platform-academy/chaos-load-node-termination-game-day/chaos_resilience_analyzer.py --plan labs/platform-academy/chaos-load-node-termination-game-day/experiment-plan.md --k6 labs/platform-academy/chaos-load-node-termination-game-day/k6-summary.txt --events labs/platform-academy/chaos-load-node-termination-game-day/node-events.txt --report labs/platform-academy/chaos-load-node-termination-game-day/game-day-report.md"
+      ],
+      "cleanup_commands": [
+        "bash labs/platform-academy/chaos-load-node-termination-game-day/cleanup.sh"
+      ],
+      "no_cluster_fallback": [
+        "Use k6-summary.txt, node-events.txt, pdb-snapshot.yaml, and simulator output as evidence.",
+        "Write game-day-report.md and corrective-actions.md without draining a real node."
+      ],
+      "artifact_paths": [
+        "labs/platform-academy/chaos-load-node-termination-game-day/experiment-plan.md",
+        "labs/platform-academy/chaos-load-node-termination-game-day/load-test.js",
+        "labs/platform-academy/chaos-load-node-termination-game-day/k6-summary.txt",
+        "labs/platform-academy/chaos-load-node-termination-game-day/pdb-snapshot.yaml",
+        "labs/platform-academy/chaos-load-node-termination-game-day/node-events.txt",
+        "labs/platform-academy/chaos-load-node-termination-game-day/game-day-report.md",
+        "labs/platform-academy/chaos-load-node-termination-game-day/corrective-actions.md",
+        "labs/platform-academy/chaos-load-node-termination-game-day/chaos_resilience_analyzer.py",
+        "labs/platform-academy/chaos-load-node-termination-game-day/evidence-template.md",
+        "labs/platform-academy/chaos-load-node-termination-game-day/validate.sh",
+        "labs/platform-academy/chaos-load-node-termination-game-day/cleanup.sh"
+      ],
+      "learner_artifact_paths": [
+        "labs/platform-academy/chaos-load-node-termination-game-day/experiment-plan.md",
+        "labs/platform-academy/chaos-load-node-termination-game-day/load-test.js",
+        "labs/platform-academy/chaos-load-node-termination-game-day/k6-summary.txt",
+        "labs/platform-academy/chaos-load-node-termination-game-day/pdb-snapshot.yaml",
+        "labs/platform-academy/chaos-load-node-termination-game-day/node-events.txt",
+        "labs/platform-academy/chaos-load-node-termination-game-day/game-day-report.md",
+        "labs/platform-academy/chaos-load-node-termination-game-day/corrective-actions.md",
+        "labs/platform-academy/chaos-load-node-termination-game-day/evidence-template.md"
+      ],
+      "workspace_archive_name": "chaos-load-node-termination-game-day-learner-workspace.zip",
+      "workspace_root": "chaos-load-node-termination-game-day",
+      "workspace_quickstart_commands": [
+        "unzip chaos-load-node-termination-game-day-learner-workspace.zip",
+        "cd chaos-load-node-termination-game-day",
+        "./setup.sh",
+        "# Fill evidence.md, game-day-report.md, and corrective-actions.md",
+        "./validate.sh --files-only",
+        "./cleanup.sh"
+      ],
+      "cluster_workspace_commands": [
+        "Use only a disposable sandbox context.",
+        "Create the lab state: ./setup.sh --cluster",
+        "Run load and controlled disruption only after stop conditions are written.",
+        "Verify report and cleanup: ./validate.sh --cluster && ./cleanup.sh"
+      ],
+      "worksheet_prompts": [
+        "Record hypothesis, blast radius, owner, stop condition, rollback, and no-production-disruption boundary.",
+        "Paste baseline k6 p95, error rate, throughput, and SLO threshold evidence.",
+        "Paste replica, PDB, topology spread, and node placement evidence.",
+        "Paste node drain or simulator events and recovery timing.",
+        "Compare during-disruption results to SLO and stop condition.",
+        "Write pass/fail decision, corrective actions, follow-up owners, validation output, and cleanup evidence."
+      ],
+      "rubric": [
+        "Preserves the no-production-disruption boundary and names stop conditions before load or chaos.",
+        "Captures baseline and during-disruption k6 evidence tied to an SLO threshold.",
+        "Inspects PDB, replica count, topology spread, and node placement before disruption.",
+        "Captures node termination, eviction, rescheduling, and recovery timing evidence.",
+        "Writes a game day report with pass/fail decision, corrective actions, owners, and follow-up dates.",
+        "Saves analyzer output, validation output, and cleanup or fallback evidence."
+      ],
+      "validation_checks": [
+        "Experiment safety boundary recorded",
+        "Baseline k6 evidence captured",
+        "SLO threshold and stop condition written",
+        "PDB and placement evidence captured",
+        "Node disruption or simulator evidence captured",
+        "Recovery timing captured",
+        "Game day report and corrective actions written",
+        "Analyzer and cleanup evidence recorded"
+      ],
+      "checklist": [
+        "Write hypothesis, blast radius, stop condition, owner, and rollback before disruption.",
+        "Capture k6 baseline and during-disruption results.",
+        "Check replicas, PDB, topology spread, and node placement.",
+        "Turn experiment evidence into corrective actions with owners."
+      ],
+      "course_slug": "platform-chaos-load-resilience",
+      "lesson_id": 99
+    }
+  ]
+}

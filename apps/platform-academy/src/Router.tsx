@@ -1,0 +1,50 @@
+import type { ReactNode } from "react";
+import { Route, Routes } from "react-router-dom";
+
+export type AppRouterProps = {
+  dashboard: ReactNode;
+  roadmap: ReactNode;
+  labs: ReactNode;
+  labEvidenceJournal: ReactNode;
+  labDetail: ReactNode;
+  interviewPrep: ReactNode;
+  resources: ReactNode;
+  resourceDetail: ReactNode;
+  course: ReactNode;
+  lessonByCourseSequence: ReactNode;
+  lessonById: ReactNode;
+  notFound: ReactNode;
+};
+
+export function AppRouter({
+  dashboard,
+  roadmap,
+  labs,
+  labEvidenceJournal,
+  labDetail,
+  interviewPrep,
+  resources,
+  resourceDetail,
+  course,
+  lessonByCourseSequence,
+  lessonById,
+  notFound
+}: AppRouterProps) {
+  return (
+    <Routes>
+      <Route path="/" element={dashboard} />
+      <Route path="/dashboard/home" element={dashboard} />
+      <Route path="/roadmap" element={roadmap} />
+      <Route path="/labs" element={labs} />
+      <Route path="/labs/history" element={labEvidenceJournal} />
+      <Route path="/labs/:slug" element={labDetail} />
+      <Route path="/interview-prep" element={interviewPrep} />
+      <Route path="/resources" element={resources} />
+      <Route path="/resources/:slug" element={resourceDetail} />
+      <Route path="/courses/:courseRef" element={course} />
+      <Route path="/courses/:courseRef/lessons/:sequence" element={lessonByCourseSequence} />
+      <Route path="/lessons/:id" element={lessonById} />
+      <Route path="*" element={notFound} />
+    </Routes>
+  );
+}

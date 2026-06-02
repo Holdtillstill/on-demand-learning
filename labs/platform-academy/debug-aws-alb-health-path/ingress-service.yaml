@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: checkout
+  namespace: payments
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/success-codes: "200"
+spec:
+  ingressClassName: alb
+  rules:
+    - host: checkout.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: checkout
+                port:
+                  name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkout
+  namespace: payments
+spec:
+  selector:
+    app: checkout
+  ports:
+    - name: http
+      port: 80
+      targetPort: web
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: checkout-example
+  namespace: payments
+  labels:
+    app: checkout
+spec:
+  containers:
+    - name: checkout
+      image: python:3.12-alpine
+      command:
+        - python
+        - -m
+        - http.server
+        - "8080"
+      ports:
+        - name: http
+          containerPort: 8080

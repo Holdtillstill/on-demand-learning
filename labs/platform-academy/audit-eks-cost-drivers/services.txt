@@ -1,0 +1,5 @@
+NAMESPACE       NAME                  TYPE           AGE     ESTIMATED_MONTHLY_COST
+payments        checkout              LoadBalancer   180d    22
+payments        checkout-canary       LoadBalancer   92d     22
+observability   grafana-public        LoadBalancer   240d    22
+default         abandoned-demo        LoadBalancer   61d     22

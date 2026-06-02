@@ -1,0 +1,66 @@
+name: checkout-release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  security-events: write
+
+env:
+  IMAGE: registry.example.com/checkout
+
+jobs:
+  build:
+    outputs:
+      image_digest: ${{ steps.digest.outputs.image_digest }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker buildx build --push --provenance=true --sbom=true -t ${IMAGE}:${GITHUB_SHA} .
+      - id: digest
+        run: |
+          docker buildx imagetools inspect ${IMAGE}:${GITHUB_SHA} --format '{{json .Manifest.Digest}}' | tr -d '"' > image-digest.txt
+          echo "image_digest=$(cat image-digest.txt)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-digest
+          path: image-digest.txt
+
+  verify:
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: image-digest
+      - run: trivy image --exit-code 1 --severity CRITICAL,HIGH ${IMAGE}@$(cat image-digest.txt)
+      - run: syft ${IMAGE}@$(cat image-digest.txt) -o spdx-json > sbom.spdx.json
+      - run: helm template checkout charts/checkout --set image.repository=${IMAGE} --set image.digest=$(cat image-digest.txt) -f values/staging.yaml > rendered-staging.yaml
+      - run: kubeconform -strict rendered-staging.yaml
+      - run: conftest test rendered-staging.yaml
+
+  deploy-staging:
+    needs: verify
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: image-digest
+      - run: helm upgrade --install checkout charts/checkout --namespace payments-staging --set image.repository=${IMAGE} --set image.digest=$(cat image-digest.txt)
+      - run: ./scripts/smoke.sh --namespace payments-staging --service checkout
+
+  deploy-prod:
+    needs: deploy-staging
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: image-digest
+      - run: helm upgrade --install checkout charts/checkout --namespace payments --set image.repository=${IMAGE} --set image.digest=$(cat image-digest.txt) --set rollout.strategy=canary
+      - run: ./scripts/smoke.sh --namespace payments --service checkout
+      - run: ./scripts/rollback-if-slo-breach.sh --service checkout --window 15m

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vendor-payments
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vendor-agent
+  namespace: vendor-payments
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vendor-agent
+  template:
+    metadata:
+      labels:
+        app: vendor-agent
+    spec:
+      containers:
+        - name: agent
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true

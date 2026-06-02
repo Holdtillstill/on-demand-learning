@@ -13,16 +13,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.10.3
-      - name: Validate Docker Compose config
-        run: docker compose config
-      - name: Validate Terraform scaffold
-        working-directory: infra/terraform
+      - name: Install actionlint
         run: |
-          terraform fmt -check
-          terraform init -backend=false
-          terraform validate
+          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash \
+            | bash -s -- 1.7.7 /usr/local/bin
+      - name: Validate shell script syntax
+        run: make script-syntax-check
+      - name: Verify smoke helper dry runs
+        run: make smoke-helper-check PYTHON=python3
+      - name: Verify documentation links
+        run: make doc-link-check PYTHON=python3
+      - name: Verify environment contract
+        run: make env-contract-check PYTHON=python3
+      - name: Verify Platform Academy content counts
+        run: make platform-content-count-check PYTHON=python3
+      - name: Verify working tree hygiene
+        run: make working-tree-hygiene-check PYTHON=python3
+      - name: Validate Docker Compose config
+        run: docker compose config --quiet
+      - name: Verify Kubernetes Platform Academy contract
+        run: make k8s-platform-contract PYTHON=python3
+      - name: Verify full Platform Academy labs
+        run: make platform-lab-verify PYTHON=python3
+      - name: Validate Terraform scaffold
+        run: make terraform-validate
       - name: Validate Kubernetes manifests
-        run: docker run --rm -v "${PWD}:/work" ghcr.io/yannh/kubeconform:v0.6.7 -strict -summary /work/infra/k8s/zhongwen-platform.yaml
+        run: docker run --rm -v "${PWD}:/work" ghcr.io/yannh/kubeconform:v0.6.7 -strict -summary /work/infra/k8s/platform-academy.yaml
+      - name: Validate GitHub Actions workflows
+        run: make workflow-lint PYTHON=python3

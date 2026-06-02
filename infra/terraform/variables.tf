@@ -25,7 +25,7 @@ variable "monthly_budget_limit_usd" {
 variable "db_username" {
   description = "RDS username placeholder. Use Secrets Manager in production."
   type        = string
-  default     = "zhongwen"
+  default     = "platform-academy"
 }
 
 variable "db_password" {

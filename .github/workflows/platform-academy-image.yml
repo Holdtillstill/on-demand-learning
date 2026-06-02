@@ -7,6 +7,12 @@ on:
     paths:
       - apps/api/**
       - apps/platform-academy/**
+      - labs/**
+      - scripts/audit_api_log.sh
+      - scripts/smoke_platform_academy_api.sh
+      - scripts/smoke_platform_academy_labs.sh
+      - scripts/smoke_platform_academy_container.sh
+      - scripts/verify_api_image_migrations.sh
       - .github/workflows/platform-academy-image.yml
 
 permissions:
@@ -16,7 +22,6 @@ permissions:
 env:
   AWS_REGION: us-west-2
   ECR_REPOSITORY: platform-academy
-  AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
 
 jobs:
   publish:
@@ -26,32 +31,94 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/platform-academy/package-lock.json
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
       - uses: aws-actions/amazon-ecr-login@v2
         id: ecr
 
-      - name: Build and push API image
+      - name: Build API image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/api/Dockerfile
-          push: true
+          push: false
+          load: true
           platforms: linux/amd64
           tags: |
             ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:api-main
             ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:api-${{ github.sha }}
 
-      - name: Build and push web image
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:api-${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Verify API image migrations
+        run: API_IMAGE="${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:api-${{ github.sha }}" scripts/verify_api_image_migrations.sh
+
+      - name: Build web image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/platform-academy/Dockerfile
-          push: true
+          push: false
+          load: true
           platforms: linux/amd64
           tags: |
             ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:web-main
             ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:web-${{ github.sha }}
+
+      - name: Scan web image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:web-${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Install browser smoke dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+        working-directory: apps/platform-academy
+
+      - name: Smoke built Platform Academy images
+        run: |
+          SMOKE_SKIP_BUILD=true \
+          API_IMAGE="${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:api-${{ github.sha }}" \
+          WEB_IMAGE="${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:web-${{ github.sha }}" \
+          SMOKE_ARTIFACT_DIR="${GITHUB_WORKSPACE}/smoke-artifacts" \
+          scripts/smoke_platform_academy_container.sh
+
+      - name: Upload image smoke artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-academy-image-smoke
+          path: smoke-artifacts
+          if-no-files-found: ignore
+
+      - name: Push images
+        run: |
+          docker push "${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:api-main"
+          docker push "${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:api-${{ github.sha }}"
+          docker push "${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:web-main"
+          docker push "${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:web-${{ github.sha }}"

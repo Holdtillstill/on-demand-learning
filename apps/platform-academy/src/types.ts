@@ -1,8 +1,7 @@
-export interface VocabularyTerm {
+export interface GlossaryTerm {
   id: number;
-  simplified: string;
-  traditional: string;
-  pinyin: string;
+  term: string;
+  context: string;
   definition: string;
 }
 
@@ -11,7 +10,7 @@ export interface Flashcard {
   lesson_id: number;
   prompt: string;
   answer: string;
-  pinyin: string;
+  hint: string;
   difficulty: string;
 }
 
@@ -24,15 +23,14 @@ export interface LessonSummary {
 }
 
 export interface Lesson extends LessonSummary {
-  body_simplified: string;
-  body_traditional: string;
-  pinyin: string;
+  body: string;
+  practice_notes: string;
   audio_url?: string | null;
   video_url?: string | null;
   course_slug?: string | null;
   course_category?: string | null;
   course_era?: string | null;
-  vocabulary: VocabularyTerm[];
+  terms: GlossaryTerm[];
   flashcards: Flashcard[];
 }
 
@@ -66,10 +64,82 @@ export interface PlatformActivity {
   updated_at: string;
 }
 
+export type PlatformLabSubmissionStatus = "in_progress" | "submitted";
+
 export interface PlatformActivityInput {
   target_type: string;
   target_id: string;
   state?: string;
+}
+
+export interface PlatformLabSubmission {
+  id: number;
+  user_id: string;
+  lab_slug: string;
+  worksheet_answers: Record<string, string>;
+  checked_items: Record<string, boolean>;
+  status: PlatformLabSubmissionStatus;
+  score: number;
+  completed_checks: number;
+  total_checks: number;
+  answered_prompts: number;
+  total_prompts: number;
+  evidence_terms: string[];
+  rubric_feedback: Array<{
+    criterion: string;
+    status: "missing" | "needs-evidence" | "passes" | "strong" | string;
+    feedback: string;
+    evidence_terms: string[];
+  }>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlatformLabSubmissionInput {
+  worksheet_answers: Record<string, string>;
+  checked_items: Record<string, boolean>;
+  status?: PlatformLabSubmissionStatus;
+}
+
+export interface PlatformInterviewStudyPlan {
+  id: string;
+  name: string;
+  questionIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlatformLearnerStateExport {
+  schema_version: number;
+  exported_at: string;
+  source_user_id: string;
+  progress: Array<{
+    lesson_id: number;
+    completed: boolean;
+    score: number;
+    updated_at?: string | null;
+  }>;
+  activity: Array<{
+    target_type: string;
+    target_id: string;
+    state: string;
+    updated_at?: string | null;
+  }>;
+  lab_submissions: Array<{
+    lab_slug: string;
+    worksheet_answers: Record<string, string>;
+    checked_items: Record<string, boolean>;
+    status: PlatformLabSubmissionStatus;
+    updated_at?: string | null;
+  }>;
+  interview_study_plans?: PlatformInterviewStudyPlan[];
+}
+
+export interface PlatformLearnerStateImportResult {
+  user_id: string;
+  progress_imported: number;
+  activity_imported: number;
+  lab_submissions_imported: number;
 }
 
 export interface Achievement {
@@ -112,9 +182,29 @@ export interface PlatformLab {
   difficulty: string;
   level_group: string;
   estimated_minutes: number;
+  lab_tier: "full" | "guided" | "evidence-pack";
+  portfolio_grade?: boolean;
+  portfolio_focus?: string;
   scenario: string;
   skills: string[];
+  prerequisites?: string[];
+  setup_commands?: string[];
+  setup_self_check_commands?: string[];
   commands: string[];
+  practice_steps?: string[];
+  expected_evidence?: string[];
+  validation_commands?: string[];
+  cleanup_commands?: string[];
+  no_cluster_fallback?: string[];
+  artifact_paths?: string[];
+  learner_artifact_paths?: string[];
+  workspace_archive_name?: string;
+  workspace_root?: string;
+  workspace_quickstart_commands?: string[];
+  cluster_workspace_commands?: string[];
+  worksheet_prompts?: string[];
+  rubric?: string[];
+  validation_checks?: string[];
   checklist: string[];
   course_slug: string;
   lesson_id?: number | null;

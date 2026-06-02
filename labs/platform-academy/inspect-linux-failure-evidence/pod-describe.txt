@@ -1,0 +1,24 @@
+Name:             checkout-6db7f58d9d-l9q2x
+Namespace:        payments
+Service Account: checkout
+Node:             worker-a/10.42.11.12
+Status:           Running
+Containers:
+  checkout:
+    Image:          registry.example.com/checkout@sha256:3333
+    State:          Waiting
+      Reason:       CrashLoopBackOff
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    126
+      Started:      Sat, 30 May 2026 10:16:11 -0700
+      Finished:     Sat, 30 May 2026 10:16:12 -0700
+    Ready:          False
+    Restart Count:  8
+    Limits:
+      memory:       256Mi
+    Requests:
+      cpu:          100m
+      memory:       128Mi
+Events:
+  Warning  BackOff  kubelet  Back-off restarting failed container checkout

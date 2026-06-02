@@ -9,7 +9,7 @@
    - Course: "Linux and Command Line Foundations"
 2. The user does not want these secondary descriptions to look identical to primary headings/buttons, but they must be easily readable.
 3. During long content scrolling, the left nav/sidebar visually only covers one screen length instead of staying full-height/sticky through the scroll.
-4. User explicitly asked that Codex thoroughly look/validate the UI, not just guess at CSS.
+4. The fix requires rendered UI validation, not CSS inspection alone.
 
 ## Required fix direction
 

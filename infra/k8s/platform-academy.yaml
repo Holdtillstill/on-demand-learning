@@ -1,0 +1,449 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platform-academy
+  labels:
+    app.kubernetes.io/part-of: platform-academy
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: platform-academy-api
+  namespace: platform-academy
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: platform-academy-worker
+  namespace: platform-academy
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-config
+  namespace: platform-academy
+data:
+  ENVIRONMENT: demo
+  CORS_ORIGINS: https://academy.example.com
+  AUTO_SEED: "false"
+  CREATE_SCHEMA_ON_STARTUP: "false"
+  RATE_LIMIT_PER_MINUTE: "120"
+  RATE_LIMIT_EXEMPT_PATHS: /healthz,/readyz,/metrics
+  # Demo scaffold. Restrict this to ingress/load-balancer source CIDRs in real environments.
+  TRUSTED_PROXY_CIDRS: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+  PLATFORM_SOURCE_BUNDLE_PUBLIC: "false"
+  REDIS_URL: redis://redis:6379/0
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger-collector.observability:4318
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: platform-secrets-template
+  namespace: platform-academy
+type: Opaque
+stringData:
+  # Template only. Use External Secrets or sealed secrets in real environments.
+  DATABASE_URL: postgresql+psycopg://replace:replace@rds-endpoint:5432/platform_academy
+  PLATFORM_SOURCE_BUNDLE_TOKEN: replace-with-instructor-source-bundle-token
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: backend-migrations
+  namespace: platform-academy
+  labels:
+    app: backend-migrations
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: backend-migrations
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: platform-academy-api
+      containers:
+        - name: alembic
+          image: ghcr.io/example/platform-academy-api:replace-me
+          imagePullPolicy: IfNotPresent
+          command: ["alembic", "upgrade", "head"]
+          envFrom:
+            - configMapRef:
+                name: platform-config
+            - secretRef:
+                name: platform-secrets-template
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: platform-academy
+  labels:
+    app: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8000"
+    spec:
+      serviceAccountName: platform-academy-api
+      containers:
+        - name: backend
+          image: ghcr.io/example/platform-academy-api:replace-me
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: platform-config
+            - secretRef:
+                name: platform-secrets-template
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: platform-academy
+spec:
+  selector:
+    app: backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: platform-academy
+  labels:
+    app: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+    spec:
+      serviceAccountName: platform-academy-worker
+      containers:
+        - name: worker
+          image: ghcr.io/example/platform-academy-worker:replace-me
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9100
+          envFrom:
+            - configMapRef:
+                name: platform-config
+            - secretRef:
+                name: platform-secrets-template
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker
+  namespace: platform-academy
+spec:
+  selector:
+    app: worker
+  ports:
+    - name: metrics
+      port: 9100
+      targetPort: 9100
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform-academy
+  namespace: platform-academy
+  labels:
+    app: platform-academy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: platform-academy
+  template:
+    metadata:
+      labels:
+        app: platform-academy
+    spec:
+      containers:
+        - name: platform-academy
+          image: ghcr.io/example/platform-academy-web:replace-me
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PLATFORM_API_UPSTREAM
+              value: http://backend:8000
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /dashboard/home
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /dashboard/home
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 192Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: platform-academy
+  namespace: platform-academy
+spec:
+  selector:
+    app: platform-academy
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: platform-academy
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: platform-academy
+spec:
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: platform-academy
+  namespace: platform-academy
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: platform-academy
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend
+  namespace: platform-academy
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: platform-academy
+  namespace: platform-academy
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: platform-academy
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: backend
+  namespace: platform-academy
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: backend
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-except-platform
+  namespace: platform-academy
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+  egress:
+    - to:
+        - namespaceSelector: {}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platform-academy
+  namespace: platform-academy
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: academy.example.com
+      http:
+        paths:
+          - path: /healthz
+            pathType: Exact
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /readyz
+            pathType: Exact
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /metrics
+            pathType: Exact
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: platform-academy
+                port:
+                  number: 80

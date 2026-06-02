@@ -1,10 +1,10 @@
 resource "aws_db_subnet_group" "main" {
-  name       = "zhongwen-${var.environment}"
+  name       = "platform-academy-${var.environment}"
   subnet_ids = aws_subnet.private[*].id
 }
 
 resource "aws_security_group" "rds" {
-  name        = "zhongwen-${var.environment}-rds"
+  name        = "platform-academy-${var.environment}-rds"
   description = "Allow PostgreSQL from EKS node subnets"
   vpc_id      = aws_vpc.main.id
 
@@ -24,12 +24,12 @@ resource "aws_security_group" "rds" {
 }
 
 resource "aws_db_instance" "postgres" {
-  identifier             = "zhongwen-${var.environment}"
+  identifier             = "platform-academy-${var.environment}"
   engine                 = "postgres"
   engine_version         = "16"
   instance_class         = "db.t4g.micro"
   allocated_storage      = 20
-  db_name                = "zhongwen"
+  db_name                = "platformacademy"
   username               = var.db_username
   password               = var.db_password
   db_subnet_group_name   = aws_db_subnet_group.main.name

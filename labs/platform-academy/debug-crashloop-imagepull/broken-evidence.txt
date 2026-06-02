@@ -1,0 +1,40 @@
+# Captured Evidence: Separate CrashLoopBackOff From ImagePullBackOff
+
+Use this transcript when you do not have a disposable Kubernetes cluster. It mirrors the broken state created by `start.yaml`.
+
+```text
+$ kubectl get pods -n payments-debug
+NAME                              READY   STATUS             RESTARTS   AGE
+checkout-crash-74d9d7cf8c-qh8q9   0/1     CrashLoopBackOff   4          5m
+checkout-pull-65d4c8dbd7-v2q6m    0/1     ImagePullBackOff   0          5m
+
+$ kubectl describe pod -n payments-debug -l app=checkout-crash
+Containers:
+  checkout:
+    State:          Waiting
+      Reason:       CrashLoopBackOff
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    42
+Events:
+  Warning  BackOff  kubelet  Back-off restarting failed container checkout
+
+$ kubectl logs -n payments-debug -l app=checkout-crash --previous
+missing DB_URL
+
+$ kubectl describe pod -n payments-debug -l app=checkout-pull
+Containers:
+  checkout:
+    Image:          registry.invalid.example/checkout:missing
+    State:          Waiting
+      Reason:       ImagePullBackOff
+Events:
+  Warning  Failed     kubelet  Failed to pull image "registry.invalid.example/checkout:missing": failed to resolve reference: registry.invalid.example: no such host
+  Warning  Failed     kubelet  Error: ErrImagePull
+  Warning  BackOff    kubelet  Back-off pulling image "registry.invalid.example/checkout:missing"
+
+$ kubectl logs -n payments-debug -l app=checkout-pull --previous
+Error from server (BadRequest): container "checkout" in pod "checkout-pull-65d4c8dbd7-v2q6m" is waiting to start: trying and failing to pull image
+```
+
+Operator note: `checkout-crash` started and exited, so previous logs matter. `checkout-pull` never started, so events and image reference ownership matter first.

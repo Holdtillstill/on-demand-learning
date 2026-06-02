@@ -1,0 +1,32 @@
+# EKS IP exhaustion evidence pack
+
+Context:
+  Cluster: shared-preview
+  Namespace: payments
+  Rollout: checkout scale from 12 to 30 replicas
+
+Events:
+  10:14:22 checkout-7cf79c9c9f-hx2k9 FailedScheduling 0/3 nodes are available: 3 Insufficient pods.
+  10:14:24 checkout-7cf79c9c9f-jpq9t FailedCreatePodSandBox failed to assign an IP address to container
+  10:14:26 checkout-7cf79c9c9f-nb8tm FailedCreatePodSandBox plugin type="aws-cni" name="aws-cni" failed add: failed to assign an IP address to container
+
+Node summary:
+  ip-10-42-11-12.us-west-2.compute.internal  m5.large  zone=us-west-2a  maxPods=29  runningPods=29
+  ip-10-42-21-18.us-west-2.compute.internal  m5.large  zone=us-west-2b  maxPods=29  runningPods=28
+  ip-10-42-31-22.us-west-2.compute.internal  m5.large  zone=us-west-2c  maxPods=29  runningPods=29
+
+Subnet inventory:
+  subnet-aaa111 us-west-2a AvailableIPv4AddressCount=18
+  subnet-bbb222 us-west-2b AvailableIPv4AddressCount=7
+  subnet-ccc333 us-west-2c AvailableIPv4AddressCount=41
+
+aws-node logs:
+  10:14:24 ipamd.go: failed to allocate ENI: subnet subnet-bbb222 has insufficient free IPv4 addresses
+  10:14:24 ipamd.go: failed to assign IP address to pod payments/checkout-7cf79c9c9f-jpq9t
+  10:14:25 ipamd.go: warm IP target not met; waiting for more IP addresses
+  10:14:29 ipamd.go: prefix delegation disabled on nodegroup payments-ng
+
+Decision notes to write:
+  - Separate scheduler max-pod pressure from subnet IP exhaustion.
+  - Identify whether prefix delegation, node group sizing, or CIDR redesign is the right next action.
+  - Capture the owner for subnet planning before scaling the workload again.

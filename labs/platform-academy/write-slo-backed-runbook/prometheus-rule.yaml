@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: checkout-slo
+  namespace: observability
+spec:
+  groups:
+    - name: checkout-slo
+      rules:
+        - alert: CheckoutHighErrorBudgetBurn
+          expr: |
+            (
+              sum(rate(http_requests_total{service="checkout",status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total{service="checkout"}[5m]))
+            ) > 0.02
+          for: 10m
+          labels:
+            severity: page
+          annotations:
+            summary: "Checkout is burning error budget quickly"
+            dashboard: "https://grafana.example.com/d/checkout"

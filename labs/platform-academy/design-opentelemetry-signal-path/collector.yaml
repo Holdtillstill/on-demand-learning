@@ -1,0 +1,28 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: platform
+  namespace: observability
+spec:
+  mode: deployment
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc: {}
+          http: {}
+    processors:
+      batch: {}
+      attributes/drop-sensitive:
+        actions:
+          - key: http.request.header.authorization
+            action: delete
+    exporters:
+      otlphttp:
+        endpoint: https://telemetry.example.com
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch, attributes/drop-sensitive]
+          exporters: [otlphttp]

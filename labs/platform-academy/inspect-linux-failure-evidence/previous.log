@@ -1,0 +1,4 @@
+/app/start.sh: line 4: /app/bin/checkout: Permission denied
+startup user: uid=10001 gid=10001 groups=10001
+config loaded from /etc/checkout/config.yaml
+fatal: process exited before listening on :8080

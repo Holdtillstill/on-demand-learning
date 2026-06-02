@@ -1,8 +1,7 @@
 # Architecture
 
-Zhongwen Cloud Learning Platform is a monorepo with four runtime application services:
+Platform Academy is a monorepo with three runtime application services:
 
-- `frontend`: Zhongwen React/Vite SPA served by Nginx on port `8080`.
 - `platform-academy`: standalone Cloud Native Platform Academy React/Vite SPA served by Nginx on port `8090`.
 - `api`: FastAPI service exposing catalog, lesson, progress, search, flashcard, quiz, health, readiness, and metrics endpoints.
 - `worker`: periodic background processor for recommendation refresh and spaced-repetition metadata.
@@ -18,8 +17,8 @@ Local dependencies:
 
 Request flow:
 
-1. The browser loads the Zhongwen frontend on port `8080` or Platform Academy on port `8090`.
-2. Each frontend calls API routes under `/api`.
+1. The browser loads Platform Academy on port `8090`.
+2. The frontend calls API routes under `/api`.
 3. The API reads/writes PostgreSQL and records learning events.
 4. The worker periodically reads product data, updates recommendations, and writes due-card counts to Redis.
 5. Prometheus, Jaeger, and logs provide the operational view.
@@ -27,5 +26,5 @@ Request flow:
 Production direction:
 
 - Put the API and worker behind EKS.
-- Serve the frontend through CDN/object storage or Kubernetes ingress.
+- Serve the Platform Academy frontend through CDN/object storage or Kubernetes ingress.
 - Use RDS PostgreSQL, ElastiCache Redis, S3 media storage, external secrets, TLS, and managed observability where appropriate.

@@ -1,0 +1,6 @@
+namespace,workload,cpu_request_mcores,cpu_usage_mcores,memory_request_mib,memory_usage_mib,monthly_cost_usd,owner
+payments,checkout,6000,900,12288,4096,340,team-payments
+payments,worker,4000,350,8192,1024,220,team-payments
+observability,loki,8000,6200,32768,29000,1180,platform
+default,load-test,3000,0,4096,0,160,unknown
+data,postgres,4000,3300,16384,12000,910,data-platform

@@ -1,0 +1,48 @@
+name: Content Correction
+description: Report an error or improvement for lessons, labs, resources, interview prep, or docs.
+title: "[Content]: "
+labels: ["content"]
+body:
+  - type: dropdown
+    id: content_type
+    attributes:
+      label: Content Type
+      options:
+        - Platform Academy lesson
+        - Platform Academy lab
+        - Platform Academy resource
+        - Interview prep
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Course/lab/resource slug, URL path, file path, or heading.
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: Correction Needed
+      description: Explain what is wrong, stale, unclear, unsafe, or missing.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Suggested Replacement
+      description: Provide corrected wording, source links, or acceptance criteria.
+  - type: textarea
+    id: sources
+    attributes:
+      label: Source Evidence
+      description: Link official docs or primary sources when the correction depends on product behavior.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety Check
+      options:
+        - label: This correction does not require real cloud credentials or production access.
+        - label: Any AWS/Kubernetes command examples are safe, read-only, local, or clearly labeled.

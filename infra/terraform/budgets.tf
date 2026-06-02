@@ -1,5 +1,5 @@
 resource "aws_budgets_budget" "monthly_guardrail" {
-  name         = "zhongwen-${var.environment}-monthly-guardrail"
+  name         = "platform-academy-${var.environment}-monthly-guardrail"
   budget_type  = "COST"
   limit_amount = var.monthly_budget_limit_usd
   limit_unit   = "USD"

@@ -1,0 +1,6 @@
+IMAGE          CREATED BY                                      SIZE
+checkout      CMD ["npm" "start"]                             0B
+checkout      EXPOSE map[3000/tcp:{}]                         0B
+checkout      COPY /app . # build output plus source tree      225MB
+checkout      ENV API_TOKEN=do-not-bake-secrets               0B
+checkout      FROM node:22                                    1.1GB

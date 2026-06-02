@@ -1,0 +1,182 @@
+name: platform-deployed-smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: Deployed API origin, for example https://preview.platform-academy.bozhi.dev
+        required: false
+        type: string
+      web_base:
+        description: Deployed Platform Academy web origin. Defaults to api_base when the same ingress serves web and API.
+        required: false
+        type: string
+      smoke_viewports:
+        description: Browser smoke viewports, for example desktop,mobile or desktop.
+        required: false
+        default: desktop,mobile
+        type: string
+      skip_workbook_flow:
+        description: Skip mutating workbook save and guest recovery validation.
+        required: false
+        default: false
+        type: boolean
+      skip_lab_details:
+        description: Skip Chromium rendering for every lab detail route.
+        required: false
+        default: false
+        type: boolean
+      skip_learning_routes:
+        description: Skip Chromium rendering for every course and lesson route.
+        required: false
+        default: false
+        type: boolean
+      skip_resource_details:
+        description: Skip Chromium rendering for every resource detail route.
+        required: false
+        default: false
+        type: boolean
+      skip_interview_packs:
+        description: Skip Chromium rendering for every interview prep pack.
+        required: false
+        default: false
+        type: boolean
+      source_bundle_token_required:
+        description: Require instructor/source bundles to reject unauthenticated requests, then download with PLATFORM_SOURCE_BUNDLE_TOKEN.
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: "17 15 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-deployed-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: ${{ github.event_name != 'schedule' || vars.PLATFORM_API_BASE != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/platform-academy/package-lock.json
+
+      - name: Resolve smoke origins
+        run: |
+          require_env_safe() {
+            local name="$1"
+            local value="$2"
+            if [[ "${value}" == *$'\n'* || "${value}" == *$'\r'* ]]; then
+              echo "::error::${name} must not contain newlines."
+              exit 1
+            fi
+          }
+
+          api_base="${INPUT_API_BASE:-${VAR_PLATFORM_API_BASE}}"
+          web_base="${INPUT_WEB_BASE:-${VAR_PLATFORM_WEB_BASE:-${INPUT_API_BASE:-${VAR_PLATFORM_API_BASE}}}}"
+          if [ -z "${api_base}" ]; then
+            echo "::error::Set the api_base workflow input or PLATFORM_API_BASE repository variable."
+            exit 1
+          fi
+          if [ -z "${web_base}" ]; then
+            echo "::error::Set the web_base workflow input, PLATFORM_WEB_BASE repository variable, or an API origin that also serves the web app."
+            exit 1
+          fi
+
+          case "${api_base}" in
+            http://*|https://*) ;;
+            *) echo "::error::api_base/PLATFORM_API_BASE must start with http:// or https://."; exit 1 ;;
+          esac
+          case "${web_base}" in
+            http://*|https://*) ;;
+            *) echo "::error::web_base/PLATFORM_WEB_BASE must start with http:// or https://."; exit 1 ;;
+          esac
+
+          smoke_viewports="${INPUT_SMOKE_VIEWPORTS:-desktop,mobile}"
+          source_bundle_token_required="${INPUT_SOURCE_BUNDLE_TOKEN_REQUIRED:-${VAR_PLATFORM_SOURCE_BUNDLE_TOKEN_REQUIRED:-false}}"
+          case "${source_bundle_token_required}" in
+            true|false) ;;
+            *) echo "::error::source_bundle_token_required/PLATFORM_SOURCE_BUNDLE_TOKEN_REQUIRED must be true or false."; exit 1 ;;
+          esac
+          if [ "${source_bundle_token_required}" = "true" ] && [ -z "${SECRET_PLATFORM_SOURCE_BUNDLE_TOKEN}" ]; then
+            echo "::error::PLATFORM_SOURCE_BUNDLE_TOKEN secret is required when source bundle token verification is enabled."
+            exit 1
+          fi
+
+          for item in api_base web_base smoke_viewports INPUT_SKIP_WORKBOOK_FLOW INPUT_SKIP_LAB_DETAILS INPUT_SKIP_LEARNING_ROUTES INPUT_SKIP_RESOURCE_DETAILS INPUT_SKIP_INTERVIEW_PACKS source_bundle_token_required SECRET_PLATFORM_SOURCE_BUNDLE_TOKEN; do
+            require_env_safe "${item}" "${!item}"
+          done
+
+          {
+            printf 'API_BASE=%s\n' "${api_base%/}"
+            printf 'WEB_BASE=%s\n' "${web_base%/}"
+            printf 'SMOKE_VIEWPORTS=%s\n' "${smoke_viewports}"
+            printf 'SMOKE_SKIP_WORKBOOK_FLOW=%s\n' "${INPUT_SKIP_WORKBOOK_FLOW:-false}"
+            printf 'SMOKE_SKIP_ALL_LAB_DETAILS=%s\n' "${INPUT_SKIP_LAB_DETAILS:-false}"
+            printf 'SMOKE_SKIP_ALL_LEARNING_ROUTES=%s\n' "${INPUT_SKIP_LEARNING_ROUTES:-false}"
+            printf 'SMOKE_SKIP_ALL_RESOURCE_DETAILS=%s\n' "${INPUT_SKIP_RESOURCE_DETAILS:-false}"
+            printf 'SMOKE_SKIP_ALL_INTERVIEW_PACKS=%s\n' "${INPUT_SKIP_INTERVIEW_PACKS:-false}"
+            printf 'SMOKE_EXPECT_SOURCE_BUNDLE_TOKEN_REQUIRED=%s\n' "${source_bundle_token_required}"
+          } >> "${GITHUB_ENV}"
+        env:
+          INPUT_API_BASE: ${{ inputs.api_base }}
+          INPUT_WEB_BASE: ${{ inputs.web_base }}
+          INPUT_SMOKE_VIEWPORTS: ${{ inputs.smoke_viewports }}
+          INPUT_SKIP_WORKBOOK_FLOW: ${{ inputs.skip_workbook_flow }}
+          INPUT_SKIP_LAB_DETAILS: ${{ inputs.skip_lab_details }}
+          INPUT_SKIP_LEARNING_ROUTES: ${{ inputs.skip_learning_routes }}
+          INPUT_SKIP_RESOURCE_DETAILS: ${{ inputs.skip_resource_details }}
+          INPUT_SKIP_INTERVIEW_PACKS: ${{ inputs.skip_interview_packs }}
+          INPUT_SOURCE_BUNDLE_TOKEN_REQUIRED: ${{ inputs.source_bundle_token_required }}
+          VAR_PLATFORM_API_BASE: ${{ vars.PLATFORM_API_BASE }}
+          VAR_PLATFORM_WEB_BASE: ${{ vars.PLATFORM_WEB_BASE }}
+          VAR_PLATFORM_SOURCE_BUNDLE_TOKEN_REQUIRED: ${{ vars.PLATFORM_SOURCE_BUNDLE_TOKEN_REQUIRED }}
+          SECRET_PLATFORM_SOURCE_BUNDLE_TOKEN: ${{ secrets.PLATFORM_SOURCE_BUNDLE_TOKEN }}
+
+      - name: Install Platform Academy browser dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+        working-directory: apps/platform-academy
+
+      - name: Run Platform Academy deployed smoke
+        run: SMOKE_INSTALL_BROWSER_DEPS=false SMOKE_ARTIFACT_DIR="${GITHUB_WORKSPACE}/smoke-artifacts" scripts/smoke_platform_academy_deployed.sh
+        env:
+          PLATFORM_SOURCE_BUNDLE_TOKEN: ${{ secrets.PLATFORM_SOURCE_BUNDLE_TOKEN }}
+
+      - name: Upload deployed browser smoke artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-deployed-browser-smoke
+          path: smoke-artifacts
+          if-no-files-found: ignore
+
+      - name: Write smoke summary
+        if: always()
+        run: |
+          {
+            echo "## Platform Deployed Smoke"
+            echo
+            echo "- API base: ${API_BASE:-not resolved}"
+            echo "- Web base: ${WEB_BASE:-not resolved}"
+            echo "- Browser viewports: ${SMOKE_VIEWPORTS:-desktop,mobile}"
+            echo "- Skip workbook flow: ${SMOKE_SKIP_WORKBOOK_FLOW:-false}"
+            echo "- Skip lab detail rendering: ${SMOKE_SKIP_ALL_LAB_DETAILS:-false}"
+            echo "- Skip course and lesson rendering: ${SMOKE_SKIP_ALL_LEARNING_ROUTES:-false}"
+            echo "- Skip resource detail rendering: ${SMOKE_SKIP_ALL_RESOURCE_DETAILS:-false}"
+            echo "- Skip interview-pack rendering: ${SMOKE_SKIP_ALL_INTERVIEW_PACKS:-false}"
+            echo "- Source bundle token gate expected: ${SMOKE_EXPECT_SOURCE_BUNDLE_TOKEN_REQUIRED:-false}"
+            echo "- Workflow: ${GITHUB_WORKFLOW}"
+            echo "- Commit: ${GITHUB_SHA}"
+          } >> "${GITHUB_STEP_SUMMARY}"
