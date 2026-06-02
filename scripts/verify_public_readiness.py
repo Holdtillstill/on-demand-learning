@@ -102,6 +102,18 @@ def scan_file(path: Path, errors: list[str]) -> None:
                 errors.append(f"{rel}:{line_number}: {label}")
 
 
+def verify_public_shell(errors: list[str]) -> None:
+    shell_path = REPO_ROOT / "apps" / "platform-academy" / "index.html"
+    shell = read_text(shell_path)
+    if shell is None:
+        errors.append("apps/platform-academy/index.html: public shell is unreadable")
+        return
+    if 'src="https://on-demand-demos.bozhi.dev/visitor.js"' not in shell:
+        errors.append("apps/platform-academy/index.html: missing first-party visitor script")
+    if 'data-project="platform-academy"' not in shell:
+        errors.append("apps/platform-academy/index.html: missing platform-academy visitor project id")
+
+
 def main() -> int:
     errors: list[str] = []
     for stale_doc in sorted(REMOVED_DOCS):
@@ -115,6 +127,8 @@ def main() -> int:
         if rel == Path("scripts/verify_public_readiness.py"):
             continue
         scan_file(path, errors)
+
+    verify_public_shell(errors)
 
     if errors:
         print("FAIL: public-readiness check failed:", file=sys.stderr)
