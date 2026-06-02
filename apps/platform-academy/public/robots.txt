@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://platform-academy.bozhi.dev/sitemap.xml

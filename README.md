@@ -2,7 +2,7 @@
 
 Platform Academy is a local-first, production-style portfolio project for Kubernetes, EKS, Helm, ArgoCD, security, SRE, and platform engineering. The portfolio story is the full stack around the learning product: Docker Compose, FastAPI, React, PostgreSQL, Redis, a worker, metrics, traces, JSON logs, Kubernetes manifests, Terraform AWS scaffolding, CI/CD, SLOs, and runbooks.
 
-Live static demo: <https://platform-academy.bozhi.dev>
+Public static workspace: <https://platform-academy.bozhi.dev>
 Runtime preview: request-only through <https://bozhi.dev/#request>
 
 ![Platform Academy dashboard](docs/assets/platform-academy-dashboard.png)

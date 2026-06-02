@@ -54,6 +54,7 @@ PUBLIC_TEXT_PATTERNS = [
     ("internal workspace artifact", re.compile(r"\b(antigravity|portfolio_review|ybz\.dev)\b", re.IGNORECASE)),
     ("stale branch reference", re.compile(r"\bcodex/runnable-labs\b", re.IGNORECASE)),
     ("controller prompt language", re.compile(r"\bdo not commit; controller\b", re.IGNORECASE)),
+    ("runtime status mislabel", re.compile(r"\bLive static demo\b", re.IGNORECASE)),
     ("GitHub Actions badge URL", re.compile(r"actions/workflows/[^\s)]+/badge\.svg|badge\.svg", re.IGNORECASE)),
 ]
 
@@ -113,6 +114,38 @@ def verify_public_shell(errors: list[str]) -> None:
         errors.append("apps/platform-academy/index.html: missing first-party visitor script")
     if 'data-project="platform-academy"' not in shell:
         errors.append("apps/platform-academy/index.html: missing platform-academy visitor project id")
+    required_markers = {
+        "canonical metadata": '<link rel="canonical" href="https://platform-academy.bozhi.dev/"',
+        "OpenGraph URL metadata": 'property="og:url" content="https://platform-academy.bozhi.dev/"',
+        "OpenGraph preview image": 'property="og:image" content="https://platform-academy.bozhi.dev/social-preview.jpg"',
+        "Twitter large preview card": 'name="twitter:card" content="summary_large_image"',
+        "Twitter preview image": 'name="twitter:image" content="https://platform-academy.bozhi.dev/social-preview.jpg"',
+        "robots metadata": 'name="robots" content="index,follow"',
+    }
+    for label, marker in required_markers.items():
+        if marker not in shell:
+            errors.append(f"apps/platform-academy/index.html: missing {label}")
+
+
+def verify_public_discovery(errors: list[str]) -> None:
+    public_dir = REPO_ROOT / "apps" / "platform-academy" / "public"
+    robots = read_text(public_dir / "robots.txt")
+    if robots is None:
+        errors.append("apps/platform-academy/public/robots.txt: missing")
+    elif "Sitemap: https://platform-academy.bozhi.dev/sitemap.xml" not in robots:
+        errors.append("apps/platform-academy/public/robots.txt: missing sitemap reference")
+
+    sitemap = read_text(public_dir / "sitemap.xml")
+    if sitemap is None:
+        errors.append("apps/platform-academy/public/sitemap.xml: missing")
+    else:
+        for route in ["/", "/dashboard/home", "/roadmap", "/labs", "/resources", "/interview-prep"]:
+            expected = f"https://platform-academy.bozhi.dev{route if route != '/' else '/'}"
+            if expected not in sitemap:
+                errors.append(f"apps/platform-academy/public/sitemap.xml: missing {route}")
+
+    if not (public_dir / "social-preview.jpg").exists():
+        errors.append("apps/platform-academy/public/social-preview.jpg: missing social preview image")
 
 
 def main() -> int:
@@ -130,6 +163,7 @@ def main() -> int:
         scan_file(path, errors)
 
     verify_public_shell(errors)
+    verify_public_discovery(errors)
 
     if errors:
         print("FAIL: public-readiness check failed:", file=sys.stderr)
