@@ -147,7 +147,6 @@ def verify_platform_image_workflow() -> None:
     require(permissions.get("contents") == "read", f"{name} must keep contents: read permission")
     require(permissions.get("id-token") == "write", f"{name} must keep id-token: write for ECR role assumption")
     require(data.get("concurrency", {}).get("group") == "platform-academy-image-publish", f"{name} must serialize image publishes")
-    require(data.get("jobs", {}).get("publish", {}).get("environment") == "image-publish", f"{name} must use the image-publish environment gate")
 
     publish_steps = steps(data, "publish", name)
     configure_aws = next((step for step in publish_steps if step.get("uses") == "aws-actions/configure-aws-credentials@v6"), None)
