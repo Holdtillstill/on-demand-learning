@@ -1,6 +1,6 @@
 # Privacy Note
 
-The public Platform Academy host may load first-party pageview telemetry from
+The public Platform Academy host loads first-party pageview telemetry from
 `https://on-demand-demos.bozhi.dev/visitor.js`. It is used to understand which
 routes are being reviewed and to support the private daily visitor digest.
 

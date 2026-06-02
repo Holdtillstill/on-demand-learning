@@ -148,6 +148,16 @@ def verify_public_discovery(errors: list[str]) -> None:
         errors.append("apps/platform-academy/public/social-preview.jpg: missing social preview image")
 
 
+def verify_privacy_note(errors: list[str]) -> None:
+    privacy = read_text(REPO_ROOT / "docs" / "privacy.md")
+    if privacy is None:
+        errors.append("docs/privacy.md: missing")
+        return
+    for marker in ["Do Not Track", "Global Privacy Control", "Raw IP", "user agent"]:
+        if marker not in privacy:
+            errors.append(f"docs/privacy.md: missing visitor privacy marker {marker}")
+
+
 def verify_issue_templates(errors: list[str]) -> None:
     config = read_text(REPO_ROOT / ".github" / "ISSUE_TEMPLATE" / "config.yml")
     if config is None:
@@ -247,6 +257,7 @@ def main() -> int:
 
     verify_public_shell(errors)
     verify_public_discovery(errors)
+    verify_privacy_note(errors)
     verify_issue_templates(errors)
     verify_contributing(errors)
     verify_code_of_conduct(errors)
