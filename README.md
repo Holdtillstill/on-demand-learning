@@ -1,14 +1,5 @@
 # On-Demand Learning / Platform Academy
 
-[![Backend](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/backend.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/backend.yml)
-[![Platform Academy frontend](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-academy-frontend.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-academy-frontend.yml)
-[![Docker build](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/docker-build.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/docker-build.yml)
-[![Platform validate](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-validate.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-validate.yml)
-[![Security](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/security.yml)
-[![Static smoke](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-static-smoke.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/platform-static-smoke.yml)
-[![Dependency audit](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/dependency-audit.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/dependency-audit.yml)
-[![Secret scan](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/secret-scan.yml/badge.svg?branch=main)](https://github.com/Holdtillstill/on-demand-learning/actions/workflows/secret-scan.yml)
-
 Platform Academy is a local-first, production-style portfolio project for Kubernetes, EKS, Helm, ArgoCD, security, SRE, and platform engineering. The portfolio story is the full stack around the learning product: Docker Compose, FastAPI, React, PostgreSQL, Redis, a worker, metrics, traces, JSON logs, Kubernetes manifests, Terraform AWS scaffolding, CI/CD, SLOs, and runbooks.
 
 Live static demo: <https://platform-academy.bozhi.dev>
