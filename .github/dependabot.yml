@@ -66,6 +66,9 @@ updates:
         patterns:
           - "*"
     ignore:
+      - dependency-name: "python"
+        versions:
+          - ">= 3.13"
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
@@ -80,6 +83,9 @@ updates:
         patterns:
           - "*"
     ignore:
+      - dependency-name: "nginxinc/nginx-unprivileged"
+        versions:
+          - ">= 1.30"
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
@@ -94,6 +100,9 @@ updates:
         patterns:
           - "*"
     ignore:
+      - dependency-name: "python"
+        versions:
+          - ">= 3.13"
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"

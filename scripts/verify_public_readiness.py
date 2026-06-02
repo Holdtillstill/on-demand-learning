@@ -193,6 +193,24 @@ def verify_dependabot(errors: list[str]) -> None:
     ]:
         if group not in dependabot:
             errors.append(f".github/dependabot.yml: missing grouped update rule {group}")
+    docker_guardrails = {
+        "/apps/api": ['dependency-name: "python"', '">= 3.13"'],
+        "/apps/worker": ['dependency-name: "python"', '">= 3.13"'],
+        "/apps/platform-academy": ['dependency-name: "nginxinc/nginx-unprivileged"', '">= 1.30"'],
+    }
+    for directory, markers in docker_guardrails.items():
+        block_pattern = re.compile(
+            rf"- package-ecosystem: docker\n\s+directory: {re.escape(directory)}\n(?P<block>.*?)(?=\n\s+- package-ecosystem:|\Z)",
+            re.DOTALL,
+        )
+        match = block_pattern.search(dependabot)
+        if not match:
+            errors.append(f".github/dependabot.yml: missing Docker update block for {directory}")
+            continue
+        block = match.group("block")
+        for marker in markers:
+            if marker not in block:
+                errors.append(f".github/dependabot.yml: Docker block {directory} missing base-image guardrail {marker}")
 
 
 def main() -> int:
