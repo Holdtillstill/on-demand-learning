@@ -1,160 +1,103 @@
-# Platform Academy canonical design implementation
+# Platform Academy canonical design record
 
 ## Decision
 
-The canonical product direction is a composite, not a single visual variant:
+Platform Academy now uses one canonical product shell rather than exposing separate design exploration routes. The live UI is available through the app routes for the dashboard, roadmap, labs, interview prep, resources, courses, and lessons.
 
-- **Primary app shell:** the Design 7 SaaS-dashboard direction, translated into a calm product workspace with a persistent sidebar, top workspace bar, operating summary, filters, and table/list hierarchy.
-- **Labs/workspace:** the Design 3 terminal/runbook direction, translated into command consoles, scenario queues, validation checklists, and evidence artifacts.
-- **Resources:** the Design 10 resource-library direction, translated into a searchable artifact library with a featured resource, command snippets, domain/type filtering, and resource detail pages.
-- **Observability/readiness influence:** the Design 5 critique became readiness gates, progress summaries, evidence gates, and source/review posture panels.
-- **Landing influence:** the Design 1 cinematic direction was kept subtle; the production app avoids theatrical decorative panels and prioritizes utility.
+The current direction is a practical operator workspace:
 
-The `/designs` exploration gallery and `/designs/1` through `/designs/10` remain available as reference explorations. The real product UI is now on the canonical routes.
+- **Primary app shell:** a calm product workspace with persistent navigation, a workspace bar, operating summaries, filters, and dense list/table hierarchy.
+- **Labs/workspace:** command consoles, scenario queues, validation checklists, evidence artifacts, and downloadable learner workspaces.
+- **Resources:** a searchable artifact library with command snippets, official references where available, domain/type filtering, and resource detail pages.
+- **Readiness model:** progress summaries, lab gates, workbook state, source/review posture, and portfolio-grade evidence prompts.
+- **Visual posture:** dark, restrained, technical, and command-forward. Decorative exploration concepts were retired in favor of the usable academy surface.
 
-## Changed routes
+## Live Routes
 
 ### `/` and `/dashboard/home`
 
-Implemented a production learning dashboard:
+Production learning dashboard with:
 
 - persistent product sidebar
-- demo workspace top bar
-- operating summary: readiness, curriculum, lab inventory, review state
-- next-best-action panel linking lesson, lab gate, and resource artifact
-- course pipeline with search, level filters, topic filters, progress state
-- readiness gate rail and level coverage rail
+- browser-local learner profile controls
+- operating summary for readiness, curriculum, lab inventory, and interview practice
+- next-best-action panel linking lessons, labs, and resources
+- course pipeline with search, level filters, topic filters, and progress state
 
 ### `/roadmap`
 
-Reworked into a product roadmap surface:
+Curriculum roadmap with:
 
-- stage progression with course/lab/resource metrics
+- stage progression
+- course, lab, and resource metrics
 - outcome checklists
-- level-readiness rail
-- evidence and source/review posture panels
+- readiness context
 
 ### `/labs`
 
-Reworked into a command workspace:
+Lab workspace with:
 
-- level and track filters
-- lab queue list
-- selected runbook panel
-- dark command console
+- runtime, level, and track filters
+- lab queue
+- selected lab summary
+- command console
 - validation checklist
 - evidence artifact linkage
-- detail route links
 
 ### `/labs/:slug`
 
-Added lab detail pages:
+Lab detail pages with:
 
-- estimated time summary
-- runbook command console
-- validation checklist
-- skills covered
-- linked lesson
-- related resources
-- source/review posture note
+- guided run sequence
+- learner workspace contract
+- setup, evidence, validation, and cleanup commands
+- workbook and validation state
+- linked lesson and related resources
 
 ### `/resources`
 
-Reworked into a searchable resource library:
+Resource library with:
 
 - resource stats
 - search, domain filters, and type filters
-- featured resource card with command snippets and related lab
-- capped visible index: 36 shown at a time, with refinement guidance for remaining matching artifacts
-
-This avoids dumping all 180 resources into one giant page while preserving access through filters/search.
+- compact resource index
+- links to resource detail pages
 
 ### `/resources/:slug`
 
-Added resource detail pages:
+Resource detail pages with:
 
 - command surface
 - outcomes
 - expected artifacts
 - next steps
 - prerequisites
-- related labs
-- inferred related courses
-- source/review posture note
+- related labs and courses
+- official links and reviewed dates where available
 
-### `/courses/:id` and `/lessons/:id`
+### `/courses/:courseRef`, `/courses/:courseRef/lessons/:sequence`, and `/lessons/:id`
 
-Reworked detail pages into the canonical workspace style:
+Learning routes with:
 
-- course progress panel
+- course progress
 - lesson sequence
 - linked lab gates
 - reusable artifacts
-- lesson-side related labs/resources
-- source/review posture note
+- related labs/resources
+- source and practice posture
 
-## Controller fixes after Codex
+## Retired Exploration Work
 
-Codex produced the main implementation but timed out before final verification/reporting. Controller follow-up fixed:
+Earlier visual exploration variants informed the current shell, command workspace, resource library, and readiness model. Those exploratory routes are no longer part of the app. Unknown paths now render a dedicated Not Found page instead of silently redirecting to the dashboard.
 
-- TypeScript error from `Map` name collision with the imported Lucide `Map` icon by using `globalThis.Map<number, Course>`.
-- Updated tests to match the new canonical copy and route hierarchy.
-- Course row overflow/misalignment found during browser visual QA by tightening the grid columns, constraining row overflow, and aligning arrows inside rows.
-- Awkward course filter wrapping by simplifying the canonical toolbar to a single-column filter stack.
-- Oversized Resources page list by limiting the initial render to 36 resources and adding a refinement note for remaining matches.
+## Verification Baseline
 
-## Verification
-
-Passed:
+Use the release checks as the source of truth for the current UI:
 
 ```bash
-make fmt-check
-make backend-test
-cd apps/platform-academy && npm run typecheck
-cd apps/platform-academy && npm test -- --run
-cd apps/platform-academy && npm run build
+cd apps/platform-academy
+npm run typecheck
+npm test -- --run
+npm run build
+WEB_BASE=http://127.0.0.1:5179 SMOKE_API_BASE=http://127.0.0.1:5179 SMOKE_FAIL_ON_CONSOLE_ERROR=true npm run smoke:routes
 ```
-
-Results:
-
-- Ruff API/worker checks: passed
-- Backend tests: 14 passed
-- Platform Academy TypeScript: passed
-- Platform Academy Vitest: 10 passed
-- Platform Academy production build: passed
-
-Container verification:
-
-```bash
-docker compose build platform-academy
-docker compose up -d --force-recreate platform-academy
-```
-
-Route smoke checks returned 200:
-
-- `/`
-- `/dashboard/home`
-- `/roadmap`
-- `/labs`
-- `/labs/trace-service-to-pod`
-- `/resources`
-- `/resources/linux-cheatsheet`
-- `/courses/16`
-- `/lessons/27`
-- `/designs`
-- `/designs/1`
-- `/designs/3`
-- `/designs/7`
-- `/designs/10`
-
-Browser QA:
-
-- `/`: loaded with no console errors. Initial visual QA found course-row progress/arrow overflow; fixed and rechecked. The course rows are now contained and aligned.
-- `/labs`: loaded with no console errors. Visual QA found no severe layout issues; command console is readable. Minor backlog: long commands wrap rather than offering copy/scroll affordances.
-- `/resources`: loaded with no console errors. Initial visual QA flagged the 180-item single-column list as too large; fixed by capping to 36 visible items with filter guidance. Rechecked successfully.
-- `/labs/trace-service-to-pod`: loaded with no console errors.
-
-## Remaining backlog
-
-- Consider a compact/table toggle for the resources page once filters become heavily used.
-- Add responsive/mobile visual QA for the canonical shell beyond desktop browser checks.

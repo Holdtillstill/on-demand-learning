@@ -87,7 +87,7 @@ make platform-release-check
 For a deployed preview or stable release, keep the full smoke profile:
 
 ```bash
-make platform-deployed-smoke API_BASE=https://preview.academy.ybz.dev WEB_BASE=https://preview.academy.ybz.dev
+make platform-deployed-smoke API_BASE=https://preview.platform-academy.bozhi.dev WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
 Do not use skip flags as release evidence. Skip flags are for triage after an already-known infrastructure issue.
@@ -110,7 +110,7 @@ Do not use skip flags as release evidence. Skip flags are for triage after an al
 Before DNS or ingress is live, dry-run command wiring:
 
 ```bash
-SMOKE_DRY_RUN=true make platform-deployed-smoke API_BASE=https://preview.academy.ybz.dev WEB_BASE=https://preview.academy.ybz.dev
+SMOKE_DRY_RUN=true make platform-deployed-smoke API_BASE=https://preview.platform-academy.bozhi.dev WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
 Dry-run validates origin syntax, browser smoke knobs, optional `USER_ID`, and smoke ID safety before touching the remote deployment.

@@ -1033,7 +1033,7 @@ describe("Platform Academy app", () => {
 
     expect(await screen.findByRole("heading", { name: "Resource library" })).toBeInTheDocument();
     expect(screen.getByText("Runbooks, projects, checklists, references")).toBeInTheDocument();
-    expect(screen.queryByText(/Codex gap audit/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/implementation gap audit/i)).not.toBeInTheDocument();
     expect(screen.getAllByText("Kubernetes Debugging Cheatsheet").length).toBeGreaterThan(0);
     expect(screen.getByText("Library index")).toBeInTheDocument();
   });
@@ -1064,17 +1064,20 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("Trace a Deployment to a Pod.")).toBeInTheDocument();
   });
 
-  it("redirects the removed design exploration routes to the dashboard", async () => {
+  it("renders a not found page for unknown routes", async () => {
     stubAcademyFetch();
 
     render(
-      <MemoryRouter initialEntries={["/designs"]}>
+      <MemoryRouter initialEntries={["/missing-route"]}>
         <App />
       </MemoryRouter>
     );
 
-    expect(await screen.findByText("Platform learning workspace")).toBeInTheDocument();
-    expect(screen.queryByText("Design explorations")).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+    expect(screen.getByText("This route is not available in Platform Academy.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open dashboard" })).toHaveAttribute("href", "/dashboard/home");
+    expect(screen.getByRole("link", { name: "Open labs" })).toHaveAttribute("href", "/labs");
+    expect(screen.getByRole("link", { name: "Open resources" })).toHaveAttribute("href", "/resources");
   });
 
   it("surfaces saved workbook status in the lab queue", async () => {

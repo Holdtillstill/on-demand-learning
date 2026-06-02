@@ -112,12 +112,12 @@ The browser lab-detail smoke also requires every advertised lab route to render 
 For remote triage after a known infrastructure-only change, keep API smoke full and narrow only the browser rendering pass:
 
 ```bash
-make platform-api-smoke API_BASE=https://preview.academy.ybz.dev
+make platform-api-smoke API_BASE=https://preview.platform-academy.bozhi.dev
 SMOKE_VIEWPORTS=desktop \
 SMOKE_SKIP_WORKBOOK_FLOW=true \
 SMOKE_SKIP_ALL_RESOURCE_DETAILS=true \
 SMOKE_SKIP_ALL_INTERVIEW_PACKS=true \
-  make platform-browser-smoke WEB_BASE=https://preview.academy.ybz.dev
+  make platform-browser-smoke WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
 Do not use the narrowed browser profile as release evidence. It still verifies catalog counts and HTML deep links, but it intentionally skips some Chromium render coverage and the mutating workbook/recovery flow.
@@ -139,22 +139,22 @@ API_IMAGE=registry.example.test/platform-academy:api-<sha> make api-image-migrat
 7. Run deployed smoke:
 
 ```bash
-make platform-api-smoke API_BASE=https://preview.academy.ybz.dev
-make platform-browser-smoke WEB_BASE=https://preview.academy.ybz.dev
+make platform-api-smoke API_BASE=https://preview.platform-academy.bozhi.dev
+make platform-browser-smoke WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
 Or run both through the deployed-smoke wrapper:
 
 ```bash
-make platform-deployed-smoke API_BASE=https://preview.academy.ybz.dev WEB_BASE=https://preview.academy.ybz.dev
+make platform-deployed-smoke API_BASE=https://preview.platform-academy.bozhi.dev WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
 Before a preview DNS record is live, validate local command wiring without touching the remote deployment:
 
 ```bash
-SMOKE_DRY_RUN=true make platform-deployed-smoke API_BASE=https://preview.academy.ybz.dev WEB_BASE=https://preview.academy.ybz.dev
-SMOKE_DRY_RUN=true make platform-api-smoke API_BASE=https://preview.academy.ybz.dev
-SMOKE_DRY_RUN=true make platform-lab-smoke API_BASE=https://preview.academy.ybz.dev
+SMOKE_DRY_RUN=true make platform-deployed-smoke API_BASE=https://preview.platform-academy.bozhi.dev WEB_BASE=https://preview.platform-academy.bozhi.dev
+SMOKE_DRY_RUN=true make platform-api-smoke API_BASE=https://preview.platform-academy.bozhi.dev
+SMOKE_DRY_RUN=true make platform-lab-smoke API_BASE=https://preview.platform-academy.bozhi.dev
 SMOKE_DRY_RUN=true make platform-container-smoke RUN_ID=preview-dry-run
 ```
 

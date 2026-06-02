@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       api_base:
-        description: Deployed API origin, for example https://preview.academy.ybz.dev
+        description: Deployed API origin, for example https://preview.platform-academy.bozhi.dev
         required: false
         type: string
       web_base:

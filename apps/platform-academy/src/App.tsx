@@ -3476,6 +3476,38 @@ function LessonPage({ data, learnerId, onProgressSaved }: { data: AcademyData; l
   );
 }
 
+function NotFoundPage() {
+  return (
+    <section className="page canonical-page not-found-page">
+      <header className="workspace-header not-found-header">
+        <div>
+          <p className="eyebrow">Not found</p>
+          <h1>Page not found</h1>
+          <p className="lead">This route is not available in Platform Academy.</p>
+        </div>
+        <div className="workspace-actions not-found-actions">
+          <Link className="primary-action" to="/dashboard/home">
+            <LayoutDashboard aria-hidden="true" />
+            Open dashboard
+          </Link>
+          <Link className="secondary-action" to="/labs">
+            <Terminal aria-hidden="true" />
+            Open labs
+          </Link>
+          <Link className="secondary-action" to="/resources">
+            <BookMarked aria-hidden="true" />
+            Open resources
+          </Link>
+        </div>
+      </header>
+      <section className="workspace-panel not-found-panel">
+        <h2>Available sections</h2>
+        <p>Use the dashboard, lab workspace, or resource library to continue from the current catalog.</p>
+      </section>
+    </section>
+  );
+}
+
 function PlatformAcademyApp() {
   const [learnerId, setLearnerId] = useState(getOrCreateLocalLearnerId);
   const queryClient = useQueryClient();
@@ -3565,6 +3597,7 @@ function PlatformAcademyApp() {
         course={<CoursePage data={data} />}
         lessonByCourseSequence={<LessonPage data={data} learnerId={learnerId} onProgressSaved={refreshAcademyData} />}
         lessonById={<LessonPage data={data} learnerId={learnerId} onProgressSaved={refreshAcademyData} />}
+        notFound={<NotFoundPage />}
       />
     </AppShell>
   );

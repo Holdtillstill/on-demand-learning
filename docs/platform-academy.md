@@ -74,7 +74,7 @@ For each lesson:
 
 ## Resource Library
 
-Codex identified the biggest remaining gap as a reusable resources/projects layer: learners need artifacts they can return to while building real portfolio-grade systems. The app now exposes `/resources` and `/api/platform-academy/resources` with filters for domain and artifact type.
+The resource library closes a key product gap: learners need reusable artifacts they can return to while building portfolio-grade systems. The app exposes `/resources` and `/api/platform-academy/resources` with filters for domain and artifact type.
 
 Resource domains include Linux, Networking, Docker, Kubernetes, kubectl, Cloud Native, EKS, Terraform, AWS IAM, AWS Operations, Helm, ArgoCD, CI/CD, Security, SRE, Observability, Incident Response, FinOps, Platform Engineering, and Career.
 
@@ -208,6 +208,6 @@ Prometheus exposes Platform Academy product counters for activity saves, guest r
 
 ## Next Iterations
 
-- Add manual instructor review or LLM-assisted critique as an optional layer on top of deterministic rubric feedback.
+- Add expert review workflows as an optional layer on top of deterministic rubric feedback.
 - Move backend tests from direct `Base.metadata.create_all` fixtures to an Alembic-backed fixture once migration speed and isolation are acceptable.
 - Add a split static public catalog if a read-only CloudFront/S3 surface becomes useful.

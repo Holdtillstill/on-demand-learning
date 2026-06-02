@@ -36,6 +36,11 @@ const ROUTES = [
     heading: "Roadmap from kubectl basics to running platforms",
     visibleText: ["Recommended order", "Checkpoints"],
   },
+  {
+    path: "/missing-route",
+    heading: "Page not found",
+    visibleText: ["This route is not available in Platform Academy.", "Open dashboard", "Open labs", "Open resources"],
+  },
 ];
 const VIEWPORTS = parseViewports(process.env.SMOKE_VIEWPORTS || "desktop,mobile");
 const DIRECT_DEEPLINKS = process.env.SMOKE_DIRECT_ROUTES !== "false";

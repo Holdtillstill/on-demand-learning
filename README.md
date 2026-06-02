@@ -70,7 +70,7 @@ make api-image-migration-check
 make platform-api-smoke API_BASE=http://localhost:8000
 make platform-browser-smoke WEB_BASE=http://localhost:8090
 make platform-container-smoke
-make platform-deployed-smoke API_BASE=https://preview.academy.ybz.dev WEB_BASE=https://preview.academy.ybz.dev
+make platform-deployed-smoke API_BASE=https://preview.platform-academy.bozhi.dev WEB_BASE=https://preview.platform-academy.bozhi.dev
 make test
 make workflow-lint
 make doc-link-check
@@ -134,7 +134,7 @@ See [docs/platform-academy-handoff.md](docs/platform-academy-handoff.md), [docs/
 
 - Keep Platform Academy full-stack for progress, activity, learner profile recovery, and API-backed catalog data.
 - Use Docker Compose for local demos and a shared EKS preview for Kubernetes proof.
-- Use `academy.ybz.dev` later as the stable public entry and `preview.academy.ybz.dev` for on-demand shared-EKS previews.
+- Use `platform-academy.bozhi.dev` later as the stable public entry and `preview.platform-academy.bozhi.dev` for on-demand shared-EKS previews.
 - Do not deploy as pure static S3 unless the public surface is split into a read-only catalog/marketing/docs site.
 - Avoid an always-on dedicated EKS cluster; use shared infrastructure, TTL previews, and budgets.
 - Run Alembic migrations before production-like persistent API startup.

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 export type AppRouterProps = {
   dashboard: ReactNode;
@@ -13,6 +13,7 @@ export type AppRouterProps = {
   course: ReactNode;
   lessonByCourseSequence: ReactNode;
   lessonById: ReactNode;
+  notFound: ReactNode;
 };
 
 export function AppRouter({
@@ -26,7 +27,8 @@ export function AppRouter({
   resourceDetail,
   course,
   lessonByCourseSequence,
-  lessonById
+  lessonById,
+  notFound
 }: AppRouterProps) {
   return (
     <Routes>
@@ -42,7 +44,7 @@ export function AppRouter({
       <Route path="/courses/:courseRef" element={course} />
       <Route path="/courses/:courseRef/lessons/:sequence" element={lessonByCourseSequence} />
       <Route path="/lessons/:id" element={lessonById} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={notFound} />
     </Routes>
   );
 }

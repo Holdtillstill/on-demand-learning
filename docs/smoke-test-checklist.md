@@ -47,7 +47,7 @@ Use environment-variable prefixes before the `make` command when a deployed smok
 
 ```bash
 SMOKE_VIEWPORTS=desktop SMOKE_SKIP_WORKBOOK_FLOW=true \
-  make platform-browser-smoke WEB_BASE=https://preview.academy.ybz.dev
+  make platform-browser-smoke WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
 - `API_BASE` points API smoke at the backend origin; `WEB_BASE` points browser smoke at the Platform Academy web origin.

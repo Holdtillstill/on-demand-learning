@@ -4802,6 +4802,18 @@ pre {
   color: var(--pa-readable-secondary);
 }
 
+.not-found-page {
+  align-content: start;
+}
+
+.not-found-panel {
+  max-width: 720px;
+}
+
+.not-found-panel h2 {
+  margin-top: 0;
+}
+
 .interview-plan-builder input,
 .interview-plan-builder select {
   border-color: rgba(158, 187, 177, 0.24);

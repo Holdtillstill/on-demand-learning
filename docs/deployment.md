@@ -111,7 +111,7 @@ Preview goals:
 Recommended preview shape:
 
 - Namespace: `platform-academy-preview`
-- Host: `preview.academy.ybz.dev`
+- Host: `preview.platform-academy.bozhi.dev`
 - Images: immutable tags from GitHub SHA or release tag
 - Kubernetes scaffold: replace `ghcr.io/example/platform-academy-api:replace-me`, `ghcr.io/example/platform-academy-web:replace-me`, and example hosts before applying.
 - Secrets: injected through Kubernetes Secret or external secret controller
@@ -125,15 +125,15 @@ Recommended preview shape:
 Preview smoke test:
 
 ```bash
-curl -f https://preview.academy.ybz.dev/readyz
-make platform-api-smoke API_BASE=https://preview.academy.ybz.dev
-make platform-browser-smoke WEB_BASE=https://preview.academy.ybz.dev
+curl -f https://preview.platform-academy.bozhi.dev/readyz
+make platform-api-smoke API_BASE=https://preview.platform-academy.bozhi.dev
+make platform-browser-smoke WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
 Or run the same deployed API and browser smoke sequence from one command:
 
 ```bash
-make platform-deployed-smoke API_BASE=https://preview.academy.ybz.dev WEB_BASE=https://preview.academy.ybz.dev
+make platform-deployed-smoke API_BASE=https://preview.platform-academy.bozhi.dev WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
 The browser smoke runs Chromium against `/dashboard/home`, `/resources`, `/interview-prep`, `/labs`, and `/roadmap` at desktop and mobile viewport sizes, verifies the 21 portfolio-grade lab UI signals and all advertised course, lesson, lab detail, resource detail, and interview-pack routes, and exercises interview cram-sheet downloads, custom study-plan save/download, one workbook save, and guest recovery export/import validation.
@@ -142,13 +142,13 @@ The image publish workflow runs that container smoke against the already-built A
 
 ## Stable Public Entry
 
-Use `academy.ybz.dev` for the stable public entry when the app has a persistent deployment target.
+Use `platform-academy.bozhi.dev` for the stable public entry when the app has a persistent deployment target.
 
 Suggested route plan:
 
-- `academy.ybz.dev`: stable public Platform Academy frontend
-- `academy.ybz.dev/api/*`: API route if frontend and API share an origin
-- `preview.academy.ybz.dev`: on-demand shared-EKS preview
+- `platform-academy.bozhi.dev`: stable public Platform Academy frontend
+- `platform-academy.bozhi.dev/api/*`: API route if frontend and API share an origin
+- `preview.platform-academy.bozhi.dev`: on-demand shared-EKS preview
 - `academy.example.com` in `infra/k8s/platform-academy.yaml` is the placeholder for the Platform Academy host.
 
 CloudFront can sit in front of the frontend later. Do not make Platform Academy pure static S3-only unless the product is intentionally split into a read-only public catalog with no progress/activity persistence.
@@ -221,7 +221,7 @@ Run after every deployment or major rebuild:
 Before a preview DNS record is live, dry-run the smoke wiring:
 
 ```bash
-SMOKE_DRY_RUN=true make platform-deployed-smoke API_BASE=https://preview.academy.ybz.dev WEB_BASE=https://preview.academy.ybz.dev
+SMOKE_DRY_RUN=true make platform-deployed-smoke API_BASE=https://preview.platform-academy.bozhi.dev WEB_BASE=https://preview.platform-academy.bozhi.dev
 ```
 
 Dry-run mode validates origin syntax, boolean smoke options, and smoke ID safety without touching the remote deployment. Keep custom `SMOKE_RUN_ID` and `USER_ID` values to letters, numbers, dot, underscore, colon, and hyphen so they remain shell-safe and accepted by the public API contract.
