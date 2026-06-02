@@ -1,4 +1,4 @@
-# Full Lab: Build a Platform Career Proof Pack
+# Full Lab: Build a Platform Career Artifact Pack
 
 ## Goal
 
@@ -27,7 +27,7 @@ sed -n '1,180p' labs/platform-academy/build-platform-career-proof-pack/evidence-
 
 Setup only stages the evidence note and prints investigation commands. It does not run the analyzer by default.
 
-Compare the empty template with the completed proof section:
+Compare the empty template with the completed artifact section:
 
 ```bash
 diff -u labs/platform-academy/build-platform-career-proof-pack/readme-template.md labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md || true
@@ -39,8 +39,8 @@ Find:
 
 - The triage False Leads that make a portfolio claim sound stronger than its evidence.
 - Which platform skills repeat across target roles.
-- Which labs prove Kubernetes, Terraform, security, SRE, CI/CD, Docker, cost, and ownership judgment.
-- Which proof is missing before a portfolio claim would be credible.
+- Which labs demonstrate Kubernetes, Terraform, security, SRE, CI/CD, Docker, cost, and ownership judgment.
+- Which evidence is missing before a portfolio claim would be credible.
 - Which results can become resume bullets.
 - Which incidents, tradeoffs, and influence moments can become STAR stories.
 - Which claims still need screenshots, diagrams, validation output, or public-safe redaction.
@@ -76,9 +76,9 @@ python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_anal
 ## Success Criteria
 
 - You map repeated job skills to lab artifacts.
-- You rule out false confidence from lab lists, duty-only bullets, weak STAR stories, screenshots without context, and unredacted proof.
-- You complete one proof README with problem, environment, commands, decision, validation, rollback, and talking points.
+- You rule out false confidence from lab lists, duty-only bullets, weak STAR stories, screenshots without context, and unredacted claims.
+- You complete one artifact README with problem, environment, commands, decision, validation, rollback, and talking points.
 - You write resume bullets with action, platform scope, and impact.
 - You write STAR stories for incident response, security, cost, and release safety.
-- Your evidence includes `Career proof pack analysis passed`.
+- Your evidence includes `Career artifact pack analysis passed`.
 - You keep every public claim tied to artifact, command, validation, rollback, or redaction evidence.

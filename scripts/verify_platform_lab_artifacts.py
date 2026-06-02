@@ -1569,14 +1569,14 @@ def verify_build_platform_career_proof_pack() -> None:
         "SLO-backed runbook",
         "Tenant boundary audit",
         "Cost driver audit",
-        "Missing proof to collect",
+        "Missing evidence to collect",
         "Screenshots of lab output",
         "Before/after manifest snippets",
         "One architecture diagram",
         "One measurable business or reliability outcome",
     ]:
         require(term in inventory, f"career proof inventory should include {term}")
-    require(len(markdown_bullets(inventory)) >= 10, "career proof inventory should include candidate and missing-proof bullets")
+    require(len(markdown_bullets(inventory)) >= 10, "career proof inventory should include candidate and missing-artifact bullets")
     for heading in [
         "## Problem",
         "## Environment",
@@ -1586,8 +1586,8 @@ def verify_build_platform_career_proof_pack() -> None:
         "## Rollback",
         "## Interview Talking Points",
     ]:
-        require(heading in template, f"career proof README template should include {heading}")
-        require(heading in proof, f"completed career proof README should include {heading}")
+        require(heading in template, f"career artifact README template should include {heading}")
+        require(heading in proof, f"completed career artifact README should include {heading}")
     for term in [
         "Kubernetes Service Debugging and Release Safety",
         "kubectl describe svc checkout -n payments",
@@ -1601,7 +1601,7 @@ def verify_build_platform_career_proof_pack() -> None:
         "bash labs/platform-academy/trace-service-to-pod/validate.sh",
         "bash labs/platform-academy/design-safe-release-pipeline/validate.sh",
     ]:
-        require(term in proof, f"completed career proof README should include {term}")
+        require(term in proof, f"completed career artifact README should include {term}")
     for term in [
         "repository-backed Kubernetes and platform engineering labs",
         "profile-backed lab workbooks",
@@ -1618,11 +1618,11 @@ def verify_build_platform_career_proof_pack() -> None:
         for label in ["Situation:", "Task:", "Action:", "Result:"]:
             require(label in body, f"career proof {story} STAR story should include {label}")
     for term in [
-        "A long list of completed labs is not proof",
+        "A long list of completed labs is not credible",
         "Resume bullets are weak",
         "STAR stories are not credible",
         "Screenshots and diagrams help only when they are public-safe",
-        "Missing proof should be named directly",
+        "Missing evidence should be named directly",
         "Redaction is part of the artifact",
     ]:
         require(term in triage, f"career proof triage notes should include {term}")
@@ -1634,13 +1634,13 @@ def verify_build_platform_career_proof_pack() -> None:
     ]:
         require(heading in evidence_template, f"career proof evidence template should include {heading}")
     for term in [
-        "Career proof pack analysis passed",
+        "Career artifact pack analysis passed",
         "Skill demand",
         "Evidence inventory",
-        "Proof README",
+        "Artifact README",
         "Resume bullets",
         "STAR stories",
-        "public proof avoids obvious secrets",
+        "public artifacts avoid obvious secrets",
     ]:
         require(term in analyzer, f"career proof analyzer should include {term}")
     for private_value in ["secret=", "password=", "customer@example.com", "prod-111122223333"]:

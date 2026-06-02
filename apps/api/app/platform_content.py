@@ -1931,7 +1931,7 @@ PLATFORM_COURSES.extend(
                     "Treat image security findings as operational risk instead of dashboard noise.",
                     "Image security combines vulnerability scanning, software bill of materials, base image updates, non-root runtime, least privilege, and registry governance. The platform team should define which findings block release and which become tracked risk.",
                     "Practice reviewing a scan result and separating exploitable runtime risk from irrelevant build-only noise. Check USER, file ownership, writable paths, package inventory, and whether scanners can map findings to actual runtime components.",
-                    "Create an image review checklist that a hiring manager could believe: severity policy, exception owner, SBOM location, runtime user, exposed ports, update cadence, and proof of promotion by digest.",
+                    "Create an image review checklist with severity policy, exception owner, SBOM location, runtime user, exposed ports, update cadence, and digest-based promotion evidence.",
                 ),
             ],
         ),
@@ -2092,22 +2092,22 @@ PLATFORM_COURSES.extend(
             [
                 (
                     "Skill Gap Map for Platform Roles",
-                    "Prioritize learning by job descriptions instead of panic-scrolling tutorials.",
-                    "A laid-off DevOps/SRE/cloud engineer needs ruthless focus. Most platform interviews cluster around Linux, networking, Kubernetes, AWS, Terraform, CI/CD, observability, incident response, security, and communication. A gap map turns that into a weekly plan.",
+                    "Prioritize learning by role requirements instead of scattered tutorials.",
+                    "A DevOps, SRE, or cloud engineer preparing for platform roles needs focused practice. Most platform interviews cluster around Linux, networking, Kubernetes, AWS, Terraform, CI/CD, observability, incident response, security, and communication. A gap map turns that into a weekly plan.",
                     "Practice collecting five target job descriptions and scoring yourself across must-have skills, nice-to-have skills, evidence you already have, and labs you need to complete.",
                     "Create a gap map that chooses your next 10 study blocks and ties each block to one interview story or portfolio artifact.",
                 ),
                 (
                     "Portfolio Evidence and Project Narratives",
-                    "Make hiring managers believe you can operate real systems.",
+                    "Show credible operational judgment with real system artifacts.",
                     "Portfolio-grade proof is not a screenshot. It shows constraints, architecture, commands, decisions, validation, rollback, cost, security, and what you would improve next. The goal is credible judgment, not pretending a lab is production.",
                     "Practice turning a Platform Academy lab into a README section with problem, environment, commands, evidence, tradeoffs, diagram, and interview talking points.",
-                    "Produce a proof pack with one Kubernetes debug story, one Terraform/AWS story, one CI/CD story, one incident story, and one platform-product story.",
+                    "Produce an artifact pack with one Kubernetes debug story, one Terraform/AWS story, one CI/CD story, one incident story, and one platform-product story.",
                 ),
                 (
                     "Resume Bullets, Recruiter Screens, and STAR Stories",
                     "Translate engineering work into clear job-search signal.",
-                    "Recruiters scan for keywords and scope. Hiring managers listen for judgment. Strong prep means having concise bullets and deeper STAR stories for the same work: situation, task, action, result, tradeoffs, and what you learned.",
+                    "Recruiters scan for keywords and scope. Technical reviewers listen for judgment. Strong prep means having concise bullets and deeper STAR stories for the same work: situation, task, action, result, tradeoffs, and what you learned.",
                     "Practice rewriting vague resume lines into specific platform outcomes with action, technology, scale, risk, and result. Prepare recruiter answers for layoffs, gaps, compensation, relocation, and role fit.",
                     "Create a question bank of 12 STAR stories covering incidents, conflict, automation, cost, security, failed project, learning fast, and leading without authority.",
                 ),
@@ -2466,14 +2466,14 @@ PLATFORM_TRACKS.extend(
         {
             "slug": "career-job-search-sprint",
             "title": "Platform Job Search Sprint Track",
-            "role": "Laid-off or job-searching DevOps/SRE/cloud engineer turning practice into interview proof",
-            "summary": "Build skill gap maps, proof packs, resume bullets, STAR stories, and a 30-day prep plan.",
+            "role": "Platform engineer turning practice into interview-ready artifacts",
+            "summary": "Build skill gap maps, artifact packs, resume bullets, STAR stories, and a 30-day prep plan.",
             "course_slug": "platform-career-job-search-sprint",
             "level_group": ADVANCED_LEVEL,
             "audience": "Engineers who need to convert learning into interviews, confidence, and credible job-search artifacts fast.",
             "outcomes": [
                 "Prioritize study from real platform job descriptions instead of tutorial drift.",
-                "Turn labs into portfolio proof with commands, evidence, tradeoffs, diagrams, and rollback thinking.",
+                "Turn labs into portfolio artifacts with commands, evidence, tradeoffs, diagrams, and rollback thinking.",
                 "Prepare recruiter answers and STAR stories across incidents, automation, cost, security, and leadership.",
             ],
         },
@@ -2755,7 +2755,7 @@ PLATFORM_ROADMAP.extend(
             "sequence": 21,
             "title": "Platform Career Sprint",
             "role": "You can convert platform study into interview stories, portfolio evidence, and a focused 30-day search plan.",
-            "focus": "Skill gap mapping, proof packs, resume bullets, recruiter screens, STAR stories, mock interviews, and job-search metrics.",
+            "focus": "Skill gap mapping, artifact packs, resume bullets, recruiter screens, STAR stories, mock interviews, and job-search metrics.",
             "level_group": ADVANCED_LEVEL,
             "course_slugs": ["platform-career-job-search-sprint"],
             "checkpoints": [
@@ -3436,14 +3436,14 @@ PLATFORM_LABS.extend(
         },
         {
             "slug": "build-platform-career-proof-pack",
-            "title": "Build a platform career proof pack",
+            "title": "Build a platform career artifact pack",
             "track": "Career",
             "difficulty": ADVANCED_LEVEL,
             "level_group": ADVANCED_LEVEL,
             "estimated_minutes": 75,
             "course_slug": "platform-career-job-search-sprint",
             "lesson_title": "Portfolio Evidence and Project Narratives",
-            "scenario": "You need interview-ready proof that your platform skills are practical, current, and credible after a layoff.",
+            "scenario": "You need interview-ready artifacts that show your platform skills are practical, current, and credible.",
             "skills": ["portfolio", "resume bullets", "STAR stories", "job description analysis", "mock interview prep"],
             "commands": [
             "git log --oneline --decorate -5",
@@ -3453,7 +3453,7 @@ PLATFORM_LABS.extend(
         ],
             "checklist": [
                 "Choose five target job descriptions and extract repeated skill demands.",
-                "Turn one lab into a README proof section with commands, evidence, tradeoffs, and rollback.",
+                "Turn one lab into a README artifact section with commands, evidence, tradeoffs, and rollback.",
                 "Write resume bullets for implementation, operations, and business impact.",
             "Use the local analyzer to verify that every career claim is backed by artifacts, commands, validation, and public-safe notes.",
         ],
@@ -4374,24 +4374,24 @@ RUNNABLE_LAB_UPDATES = {
         "commands": [
             "grep -n \"False Leads\\|completed labs\\|Resume bullets\\|Redaction\" labs/platform-academy/build-platform-career-proof-pack/triage-notes.md",
             "grep -n \"Kubernetes\\|Terraform\\|incident response\\|SLOs\\|FinOps\" labs/platform-academy/build-platform-career-proof-pack/job-skills.txt",
-            "grep -n \"Missing proof\\|rollback\\|STAR\" labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md labs/platform-academy/build-platform-career-proof-pack/readme-template.md",
+            "grep -n \"Missing evidence\\|rollback\\|STAR\" labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md labs/platform-academy/build-platform-career-proof-pack/readme-template.md",
             "diff -u labs/platform-academy/build-platform-career-proof-pack/readme-template.md labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md || true",
             "python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md --proof labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md --bullets labs/platform-academy/build-platform-career-proof-pack/resume-bullets.md --star labs/platform-academy/build-platform-career-proof-pack/star-stories.md",
         ],
         "practice_steps": [
-            "Read the triage notes and rule out broad career claims without proof.",
+            "Read the triage notes and rule out broad career claims without evidence.",
             "Extract repeated skills from the sample target roles.",
-            "Pick three lab artifacts and map them to proof bullets.",
+            "Pick three lab artifacts and map them to artifact bullets.",
             "Fill the README template with commands, evidence, validation, rollback, and interview talking points.",
-            "Run the local career proof analyzer to prove the README, bullets, STAR stories, missing-proof list, and public-safety boundary.",
+            "Run the local career proof analyzer to verify the README, bullets, STAR stories, missing-evidence list, and public-safety boundary.",
         ],
         "expected_evidence": [
-            "The triage notes rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.",
+            "The triage notes rule out lab-count claims, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.",
             "Target roles repeatedly mention Kubernetes, AWS, Terraform, CI/CD, observability, SRE, and security.",
-            "The evidence inventory names five candidate artifacts and missing proof to collect.",
+            "The evidence inventory names five candidate artifacts and missing evidence to collect.",
             "The README template forces problem, commands, validation, rollback, and STAR talking points.",
-            "The completed proof pack includes a README proof section, resume bullets, and STAR stories.",
-            "The local analyzer reports Career proof pack analysis passed.",
+            "The completed artifact pack includes a README artifact section, resume bullets, and STAR stories.",
+            "The local analyzer reports Career artifact pack analysis passed.",
         ],
         "validation_commands": [
             "bash labs/platform-academy/build-platform-career-proof-pack/validate.sh",
@@ -4402,7 +4402,7 @@ RUNNABLE_LAB_UPDATES = {
         "cleanup_commands": ["bash labs/platform-academy/build-platform-career-proof-pack/cleanup.sh"],
         "no_cluster_fallback": [
             "Use triage-notes.md plus the included job skills and evidence inventory instead of external job postings.",
-            "Write one README proof section from any converted lab.",
+            "Write one README artifact section from any converted lab.",
         ],
     },
 }
@@ -5122,17 +5122,17 @@ DEEPENED_LAB_UPDATES = {
             "Record the job-skill packet, evidence inventory, README template, and public-safe redaction boundary.",
             "Read triage-notes.md and list the False Leads ruled out before publishing career claims.",
             "Paste repeated target skills and the platform domains covered by the selected lab evidence.",
-            "Paste selected lab artifacts, command/validator proof, decision evidence, rollback evidence, and missing proof.",
-            "Write one portfolio proof section with problem, environment, commands, decision, validation, and talking points.",
+            "Paste selected lab artifacts, command/validator evidence, decision evidence, rollback evidence, and missing evidence.",
+            "Write one portfolio artifact section with problem, environment, commands, decision, validation, and talking points.",
             "Write resume bullets and STAR stories tied to incident response, security, cost, and release safety evidence.",
             "Capture analyzer output, validation output, and every claim that still needs screenshots, diagrams, or stronger evidence.",
         ],
         "rubric": [
             "Preserves the public-safe evidence boundary and avoids secrets, customer data, or private identifiers.",
-            "Uses triage notes to rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.",
+            "Uses triage notes to rule out lab-count claims, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.",
             "Maps repeated target skills to concrete Platform Academy lab artifacts and domains.",
-            "Cites commands, validators, decisions, rollback notes, and missing proof instead of broad claims.",
-            "Completes a portfolio README proof section with problem, environment, command, decision, validation, and rollback.",
+            "Cites commands, validators, decisions, rollback notes, and missing evidence instead of broad claims.",
+            "Completes a portfolio README artifact section with problem, environment, command, decision, validation, and rollback.",
             "Writes resume bullets and STAR stories tied to incident response, security, cost, and release safety.",
             "Saves validation output and flags claims that need stronger screenshots, diagrams, or redaction.",
         ],
@@ -5141,19 +5141,19 @@ DEEPENED_LAB_UPDATES = {
             "Triage False Leads ruled out",
             "Repeated target skills captured",
             "Lab artifacts and validators mapped",
-            "Portfolio proof README completed",
+            "Portfolio artifact README completed",
             "Resume bullets written with action/scope/impact",
             "STAR stories written for incident/security/cost/release",
-            "Career proof analyzer output, validation output, and missing-proof evidence recorded",
+            "Career artifact analyzer output, validation output, and missing-evidence notes recorded",
         ],
         "rubric_evidence_terms": [
             ["job-skills.txt", "evidence-inventory.md", "public", "redaction"],
             ["triage-notes.md", "False Leads", "completed labs", "duty-only", "STAR", "redaction"],
             ["Kubernetes, Terraform, AWS, CI/CD", "EKS, Helm, ArgoCD", "Docker, supply chain"],
-            ["Candidate artifacts", "Missing proof to collect", "verify-full-labs.sh", "Rollback"],
+            ["Candidate artifacts", "Missing evidence to collect", "verify-full-labs.sh", "Rollback"],
             ["completed-proof-readme.md", "Problem", "Environment", "Interview Talking Points"],
             ["resume-bullets.md", "star-stories.md", "Incident Response", "Security", "Cost", "Release Safety"],
-            ["validate", "screenshots", "diagrams", "evidence-template.md", "stronger evidence", "Career proof pack analysis passed"],
+            ["validate", "screenshots", "diagrams", "evidence-template.md", "stronger evidence", "Career artifact pack analysis passed"],
         ],
     },
     "write-slo-backed-runbook": {
@@ -5685,7 +5685,7 @@ PORTFOLIO_LAB_FOCUS = {
     "run-incident-commander-tabletop": "incident command tabletop",
     "create-platform-golden-path": "service golden path contract",
     "inspect-linux-failure-evidence": "Linux failure evidence diagnosis",
-    "build-platform-career-proof-pack": "portfolio proof pack",
+    "build-platform-career-proof-pack": "portfolio artifact pack",
 }
 
 EVIDENCE_PACK_LAB_SLUGS: set[str] = set()
@@ -6354,7 +6354,7 @@ RESOURCE_DOMAIN_BLUEPRINTS = [
         "lab_slug": "build-platform-career-proof-pack",
         "topics": "skill matrix, portfolio projects, interview scenarios, CKA/CKAD/CKS, AWS, Terraform Associate, resume proof",
         "command": "git log --oneline --decorate -5",
-        "artifact": "portfolio proof and interview rubric",
+        "artifact": "portfolio artifact and interview rubric",
     },
 ]
 
@@ -6834,7 +6834,7 @@ RESOURCE_RESEARCH_PROFILES.update(
             "interview_prompts": [
                 "Tell me about a platform project where you changed your mind after seeing evidence.",
                 "How do you keep learning material from becoming tutorial-only experience?",
-                "What proof would make a hiring manager believe you can operate production systems?",
+                "What artifact would show a technical reviewer you can operate production systems?",
             ],
         },
     }
@@ -6848,7 +6848,7 @@ def resource_research_profile(domain: str) -> dict[str, list[str]]:
             "source_takeaways": [
                 f"Use official {domain} references as the source of truth before turning examples into production changes.",
                 "Separate concepts, commands, safety constraints, and evidence artifacts when studying.",
-                "Convert every learning session into a reusable note, checklist, or portfolio proof point.",
+                "Convert every learning session into a reusable note, checklist, or portfolio artifact point.",
             ],
             "study_tasks": [
                 f"Summarize the current official {domain} docs in five operational bullets.",
@@ -8193,7 +8193,7 @@ JOB_SEARCH_INTERVIEW_PACKS = [
         "questions": [
             interview_question(
                 "Give me your two-minute DevOps/SRE background.",
-                "A recruiter asks for a quick summary before deciding whether to pass you to the hiring manager.",
+                "A recruiter asks for a quick summary before deciding whether to pass you to the technical reviewer.",
                 [
                     "Lead with role identity: systems you operate, cloud/platform scope, and production ownership.",
                     "Name two or three concrete strengths such as Kubernetes, Terraform, CI/CD, observability, incident response, or AWS.",
@@ -8215,7 +8215,7 @@ JOB_SEARCH_INTERVIEW_PACKS = [
                 ],
                 ["Calm concise framing", "Forward-looking", "Shows active preparation"],
                 ["Blames people", "Sounds ashamed", "Turns the answer into a long story"],
-                "Draft a 45-second layoff answer and pair it with a portfolio proof point.",
+                "Draft a 45-second layoff answer and pair it with a portfolio artifact point.",
             ),
             interview_question(
                 "What roles are you best matched for?",
@@ -8245,7 +8245,7 @@ JOB_SEARCH_INTERVIEW_PACKS = [
             ),
             interview_question(
                 "Tell me about your strongest platform project.",
-                "A hiring manager asks for the project that best proves you can help their team quickly.",
+                "A technical reviewer asks for the project that best proves you can help their team quickly.",
                 [
                     "Frame the business or engineering problem.",
                     "Explain architecture, tools, tradeoffs, and your direct contribution.",
@@ -8378,7 +8378,7 @@ JOB_SEARCH_INTERVIEW_PACKS = [
             ),
             interview_question(
                 "How do you handle being on call?",
-                "A hiring manager wants to know if you understand operational load.",
+                "A technical reviewer wants to know if you understand operational load.",
                 [
                     "Discuss alert quality, runbooks, escalation, handoff, and incident review.",
                     "Explain how you protect focus work while meeting support obligations.",
@@ -9030,8 +9030,8 @@ def add_job_search_layered_questions() -> None:
         source_label = pack["official_sources"][0]["label"] if pack["official_sources"] else "the primary official source"
         additions = [
             interview_question(
-                f"What portfolio proof would you show for {domain}?",
-                f"You need to convince a hiring manager that your {domain} knowledge is applied, not tutorial-only.",
+                f"Which portfolio artifact would you show for {domain}?",
+                f"You need to show a technical reviewer that your {domain} knowledge is applied, not tutorial-only.",
                 [
                     f"Pick one artifact tied to {title}: lab note, diagram, runbook, Terraform plan review, dashboard, or incident write-up.",
                     "Explain the problem, constraints, commands or design choices, and validation evidence.",

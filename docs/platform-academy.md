@@ -123,7 +123,7 @@ Each course has a lab tied to a real lesson ID:
 - Audit EKS cost drivers.
 - Design a safe Kubernetes release pipeline.
 - Create a service golden path.
-- Build a platform career proof pack.
+- Build a platform career artifact pack.
 
 Labs have been moved from short drill cards to repository-backed local exercises. Each current lab now includes setup or evidence files under `labs/platform-academy`, expected evidence, validation commands, cleanup guidance, no-cluster fallback notes, worksheet prompts, validation checks, learner artifact paths, instructor/source artifact paths, and a rubric.
 

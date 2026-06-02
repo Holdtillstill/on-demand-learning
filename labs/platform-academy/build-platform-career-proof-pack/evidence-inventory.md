@@ -8,7 +8,7 @@ Candidate artifacts:
 - Tenant boundary audit: RBAC, secret access, NetworkPolicy, Pod Security.
 - Cost driver audit: over-requested workloads, idle load balancers, abandoned PVCs.
 
-Missing proof to collect:
+Missing evidence to collect:
 
 - Screenshots of lab output.
 - Before/after manifest snippets.

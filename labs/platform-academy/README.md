@@ -134,7 +134,7 @@ These labs have extra captured evidence, worksheet templates, and lab-specific r
 - [`design-opentelemetry-signal-path`](design-opentelemetry-signal-path/README.md): triage notes, false leads, sensitive-header deletion, missing trace context, metric cardinality risk, safer aggregation, owner map, and simulator evidence.
 - [`run-incident-commander-tabletop`](run-incident-commander-tabletop/README.md): triage notes, false leads, SEV-2 impact, role assignment, rollback decision pressure, stakeholder update clock, timeline discipline, and handoff evidence.
 - [`audit-eks-cost-drivers`](audit-eks-cost-drivers/README.md): triage notes, false leads, over-requested workloads, unknown owners, abandoned LoadBalancer/PVC evidence, expected savings, reliability risk, rollback, and review cadence.
-- [`build-platform-career-proof-pack`](build-platform-career-proof-pack/README.md): triage notes, false leads, repeated skill demand, artifact mapping, public-safe redaction, proof README, resume bullets, STAR stories, and missing-proof evidence.
+- [`build-platform-career-proof-pack`](build-platform-career-proof-pack/README.md): triage notes, false leads, repeated skill demand, artifact mapping, public-safe redaction, artifact README, resume bullets, STAR stories, and missing-evidence notes.
 
 ## Lab Catalog
 

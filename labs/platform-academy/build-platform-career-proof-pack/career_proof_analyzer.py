@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evidence-oriented local analyzer for the platform career proof pack."""
+"""Evidence-oriented local analyzer for the platform career artifact pack."""
 
 from __future__ import annotations
 
@@ -71,7 +71,7 @@ def main() -> int:
                 "SLO-backed runbook",
                 "Tenant boundary audit",
                 "Cost driver audit",
-                "Missing proof to collect",
+                "Missing evidence to collect",
                 "Screenshots of lab output",
                 "One architecture diagram",
             ],
@@ -104,7 +104,7 @@ def main() -> int:
     )
 
     if len(markdown_bullets(inventory)) < 10:
-        errors.append("evidence-inventory.md should include candidate artifacts and missing-proof bullets")
+        errors.append("evidence-inventory.md should include candidate artifacts and missing-evidence bullets")
     if len(markdown_bullets(bullets)) < 5:
         errors.append("resume-bullets.md should include at least five evidence-backed bullets")
     for story in ["Incident Response", "Security", "Cost", "Release Safety"]:
@@ -117,7 +117,7 @@ def main() -> int:
                 errors.append(f"star-stories.md {story} missing {label}")
     for risky_claim in ["secret=", "password=", "customer@example.com", "prod-111122223333"]:
         if risky_claim in proof or risky_claim in bullets or risky_claim in star:
-            errors.append(f"public proof pack should not include private-looking value: {risky_claim}")
+            errors.append(f"public artifact pack should not include private-looking value: {risky_claim}")
 
     if errors:
         for error in errors:
@@ -125,13 +125,13 @@ def main() -> int:
         return 1
 
     if not args.quiet:
-        print("Career proof pack analysis passed.")
+        print("Career artifact pack analysis passed.")
         print("- Skill demand: Kubernetes, Terraform, AWS, CI/CD, incident, observability, EKS, Helm, ArgoCD, Docker.")
-        print("- Evidence inventory: candidate artifacts and missing proof are both explicit.")
-        print("- Proof README: problem, environment, commands, decision, validation, rollback, and talking points are filled.")
+        print("- Evidence inventory: candidate artifacts and missing evidence are both explicit.")
+        print("- Artifact README: problem, environment, commands, decision, validation, rollback, and talking points are filled.")
         print("- Resume bullets: platform scope, product implementation, supply chain, and portfolio evidence are represented.")
         print("- STAR stories: incident response, security, cost, and release safety each include Situation/Task/Action/Result.")
-        print("- Safety: public proof avoids obvious secrets, customer identifiers, and live production account values.")
+        print("- Safety: public artifacts avoid obvious secrets, customer identifiers, and live production account values.")
     return 0
 
 

@@ -95,7 +95,7 @@ else
 fi
 
 echo
-echo "Proof README delta from template:"
+echo "Artifact README delta from template:"
 diff -u "$LAB_DIR/readme-template.md" "$LAB_DIR/completed-proof-readme.md" || true
 
 echo

@@ -489,7 +489,7 @@ grep -q "Docker supply-chain analysis passed" "$tmpdir/runner-docker-supply-chai
 "$LAB_ROOT/run-lab.sh" setup audit-eks-cost-drivers --run-analyzer --evidence "$tmpdir/eks-cost-analyzer-evidence.md" >"$tmpdir/runner-eks-cost-analyzer-setup.txt"
 grep -q "EKS cost driver analysis passed" "$tmpdir/runner-eks-cost-analyzer-setup.txt" || fail "EKS cost setup --run-analyzer should execute the analyzer"
 "$LAB_ROOT/run-lab.sh" setup build-platform-career-proof-pack --run-analyzer --evidence "$tmpdir/career-proof-analyzer-evidence.md" >"$tmpdir/runner-career-proof-analyzer-setup.txt"
-grep -q "Career proof pack analysis passed" "$tmpdir/runner-career-proof-analyzer-setup.txt" || fail "Career proof setup --run-analyzer should execute the analyzer"
+grep -q "Career artifact pack analysis passed" "$tmpdir/runner-career-proof-analyzer-setup.txt" || fail "Career proof setup --run-analyzer should execute the analyzer"
 "$LAB_ROOT/run-lab.sh" setup trace-service-to-pod --run-analyzer --evidence "$tmpdir/trace-service-analyzer-evidence.md" >"$tmpdir/runner-trace-service-analyzer-setup.txt"
 grep -q "Service routing analysis passed" "$tmpdir/runner-trace-service-analyzer-setup.txt" || fail "Trace service setup --run-analyzer should execute the analyzer"
 "$LAB_ROOT/run-lab.sh" setup debug-crashloop-imagepull --run-analyzer --evidence "$tmpdir/crashloop-imagepull-analyzer-evidence.md" >"$tmpdir/runner-crashloop-imagepull-analyzer-setup.txt"

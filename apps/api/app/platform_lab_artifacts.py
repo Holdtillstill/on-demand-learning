@@ -6,7 +6,7 @@ import stat
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
-from zipfile import ZipFile, ZipInfo
+from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 
 class LabArtifactError(Exception):
@@ -14,6 +14,7 @@ class LabArtifactError(Exception):
 
 
 LAB_WORKSPACE_SCRIPT_NAMES = ("setup.sh", "validate.sh", "cleanup.sh")
+STABLE_ZIP_TIMESTAMP = (2024, 1, 1, 0, 0, 0)
 
 
 @dataclass(frozen=True)
@@ -50,13 +51,30 @@ def source_bundle_manifest(lab: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def archive_info(member_name: str, mode: int = 0o644) -> ZipInfo:
+    info = ZipInfo(member_name)
+    info.date_time = STABLE_ZIP_TIMESTAMP
+    info.external_attr = mode << 16
+    info.compress_type = ZIP_DEFLATED
+    return info
+
+
+def write_archive_text(archive: ZipFile, member_name: str, content: str, mode: int = 0o644) -> None:
+    archive.writestr(archive_info(member_name, mode), content)
+
+
+def write_archive_file(archive: ZipFile, source: Path, member_name: str) -> None:
+    mode = source.stat().st_mode & 0o777
+    archive.writestr(archive_info(member_name, mode), source.read_bytes())
+
+
 def write_source_bundle_archive(archive: ZipFile, lab: dict, repo_root: Path) -> None:
     slug = lab["slug"]
-    archive.writestr(f"{slug}/README.md", lab_packet_markdown(lab))
-    archive.writestr(f"{slug}/SOURCE-MANIFEST.txt", source_bundle_manifest(lab))
+    write_archive_text(archive, f"{slug}/README.md", lab_packet_markdown(lab))
+    write_archive_text(archive, f"{slug}/SOURCE-MANIFEST.txt", source_bundle_manifest(lab))
     for artifact_path in source_artifact_paths(lab):
         source = safe_source_path(repo_root, artifact_path)
-        archive.write(source, f"{slug}/{artifact_path}")
+        write_archive_file(archive, source, f"{slug}/{artifact_path}")
 
 
 def _markdown_section(title: str, items: Iterable[str] | None, checklist: bool = False) -> str:
@@ -384,9 +402,7 @@ bash "$TARGET" "$@"
 
 
 def write_executable_archive_text(archive: ZipFile, member_name: str, content: str) -> None:
-    info = ZipInfo(member_name)
-    info.external_attr = 0o755 << 16
-    archive.writestr(info, content)
+    write_archive_text(archive, member_name, content, mode=0o755)
 
 
 def write_workspace_script(destination: Path, slug: str, script_name: str) -> None:
@@ -532,20 +548,21 @@ def write_lab_workspace(
 
 def write_learner_workspace_archive(archive: ZipFile, lab: dict, repo_root: Path) -> WorkspaceArtifactSelection:
     slug = lab["slug"]
-    archive.writestr(f"{slug}/README.md", lab_packet_markdown(lab, include_downloaded_workspace=False))
+    write_archive_text(archive, f"{slug}/README.md", lab_packet_markdown(lab, include_downloaded_workspace=False))
     for script_name in LAB_WORKSPACE_SCRIPT_NAMES:
         write_executable_archive_text(archive, f"{slug}/{script_name}", workspace_script_text(slug, script_name))
 
     evidence_template_path = f"labs/platform-academy/{slug}/evidence-template.md"
     evidence_source = safe_source_path(repo_root, evidence_template_path)
-    archive.write(evidence_source, f"{slug}/evidence.md")
+    write_archive_file(archive, evidence_source, f"{slug}/evidence.md")
 
     selection = selected_workspace_artifacts(lab, include_solution=False)
     for artifact_path in selection.copied_artifacts:
         source = safe_source_path(repo_root, artifact_path)
-        archive.write(source, f"{slug}/artifacts/{artifact_path}")
+        write_archive_file(archive, source, f"{slug}/artifacts/{artifact_path}")
 
-    archive.writestr(
+    write_archive_text(
+        archive,
         f"{slug}/MANIFEST.txt",
         learner_workspace_manifest(
             lab,

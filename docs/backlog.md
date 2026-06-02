@@ -2,7 +2,7 @@
 
 ## Launch Readiness
 
-- Decide whether to make the GitHub repository public after the demo URL, screenshots, and license posture are final.
+- Confirm branch protection, license posture, screenshots, and release notes before public launch.
 - Add branch protection after CI stays green on the protected branch.
 - Record a short demo video or GIF for Platform Academy once the preferred local/demo flow is stable.
 

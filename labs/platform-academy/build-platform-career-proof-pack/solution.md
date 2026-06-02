@@ -1,4 +1,4 @@
-# Solution: Build a Platform Career Proof Pack
+# Solution: Build a Platform Career Artifact Pack
 
 ## Decision
 
@@ -13,15 +13,15 @@ Use real lab evidence as the portfolio core. Do not make broad claims without co
 
 ## Target Pack
 
-- `completed-proof-readme.md`: one complete portfolio proof section.
+- `completed-proof-readme.md`: one complete portfolio artifact section.
 - `resume-bullets.md`: resume bullets tied to actual platform work.
 - `star-stories.md`: short STAR stories for incident response, security, cost, and release safety.
 
 ## Evidence to Save
 
-Save the proof README, resume bullets, STAR stories, evidence inventory, local analyzer output, public-safe redaction note, missing-proof list, and links to the lab validators that back each claim in `evidence-template.md`.
+Save the artifact README, resume bullets, STAR stories, evidence inventory, local analyzer output, public-safe redaction note, missing-evidence list, and links to the lab validators that back each claim in `evidence-template.md`.
 
-The local career proof analyzer reports `Career proof pack analysis passed`.
+The local career proof analyzer reports `Career artifact pack analysis passed`.
 
 ## Cleanup
 

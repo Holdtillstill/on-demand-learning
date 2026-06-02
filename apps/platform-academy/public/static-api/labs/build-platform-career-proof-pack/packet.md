@@ -1,4 +1,4 @@
-# Build a platform career proof pack
+# Build a platform career artifact pack
 
 Track: Career
 Level: Advanced
@@ -7,7 +7,7 @@ Estimated time: 75 minutes
 
 ## Scenario
 
-You need interview-ready proof that your platform skills are practical, current, and credible after a layoff.
+You need interview-ready artifacts that show your platform skills are practical, current, and credible.
 
 ## Guided run sequence
 
@@ -17,19 +17,19 @@ You need interview-ready proof that your platform skills are practical, current,
    - bash labs/platform-academy/run-lab.sh setup build-platform-career-proof-pack
    - bash labs/platform-academy/build-platform-career-proof-pack/setup.sh --evidence /tmp/career-proof-evidence.md
 2. Investigate safely
-   - Read the triage notes and rule out broad career claims without proof.
+   - Read the triage notes and rule out broad career claims without evidence.
    - Extract repeated skills from the sample target roles.
-   - Pick three lab artifacts and map them to proof bullets.
+   - Pick three lab artifacts and map them to artifact bullets.
    - Fill the README template with commands, evidence, validation, rollback, and interview talking points.
 3. Prove the finding
-   - The triage notes rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.
+   - The triage notes rule out lab-count claims, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.
    - Target roles repeatedly mention Kubernetes, AWS, Terraform, CI/CD, observability, SRE, and security.
-   - The evidence inventory names five candidate artifacts and missing proof to collect.
+   - The evidence inventory names five candidate artifacts and missing evidence to collect.
    - The README template forces problem, commands, validation, rollback, and STAR talking points.
 4. Reset or hand off
    - bash labs/platform-academy/build-platform-career-proof-pack/cleanup.sh
    - Use triage-notes.md plus the included job skills and evidence inventory instead of external job postings.
-   - Write one README proof section from any converted lab.
+   - Write one README artifact section from any converted lab.
 
 ## Evidence artifact map
 
@@ -68,8 +68,8 @@ You need interview-ready proof that your platform skills are practical, current,
 - [ ] Record the job-skill packet, evidence inventory, README template, and public-safe redaction boundary.
 - [ ] Read triage-notes.md and list the False Leads ruled out before publishing career claims.
 - [ ] Paste repeated target skills and the platform domains covered by the selected lab evidence.
-- [ ] Paste selected lab artifacts, command/validator proof, decision evidence, rollback evidence, and missing proof.
-- [ ] Write one portfolio proof section with problem, environment, commands, decision, validation, and talking points.
+- [ ] Paste selected lab artifacts, command/validator evidence, decision evidence, rollback evidence, and missing evidence.
+- [ ] Write one portfolio artifact section with problem, environment, commands, decision, validation, and talking points.
 - [ ] Write resume bullets and STAR stories tied to incident response, security, cost, and release safety evidence.
 - [ ] Capture analyzer output, validation output, and every claim that still needs screenshots, diagrams, or stronger evidence.
 
@@ -107,27 +107,27 @@ You need interview-ready proof that your platform skills are practical, current,
 
 ## Practice steps
 
-- [ ] Read the triage notes and rule out broad career claims without proof.
+- [ ] Read the triage notes and rule out broad career claims without evidence.
 - [ ] Extract repeated skills from the sample target roles.
-- [ ] Pick three lab artifacts and map them to proof bullets.
+- [ ] Pick three lab artifacts and map them to artifact bullets.
 - [ ] Fill the README template with commands, evidence, validation, rollback, and interview talking points.
-- [ ] Run the local career proof analyzer to prove the README, bullets, STAR stories, missing-proof list, and public-safety boundary.
+- [ ] Run the local career proof analyzer to verify the README, bullets, STAR stories, missing-evidence list, and public-safety boundary.
 
 ## Runbook commands
 
 - grep -n "False Leads\|completed labs\|Resume bullets\|Redaction" labs/platform-academy/build-platform-career-proof-pack/triage-notes.md
 - grep -n "Kubernetes\|Terraform\|incident response\|SLOs\|FinOps" labs/platform-academy/build-platform-career-proof-pack/job-skills.txt
-- grep -n "Missing proof\|rollback\|STAR" labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md labs/platform-academy/build-platform-career-proof-pack/readme-template.md
+- grep -n "Missing evidence\|rollback\|STAR" labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md labs/platform-academy/build-platform-career-proof-pack/readme-template.md
 - diff -u labs/platform-academy/build-platform-career-proof-pack/readme-template.md labs/platform-academy/build-platform-career-proof-pack/completed-proof-readme.md || true
 
 ## Expected evidence
 
-- [ ] The triage notes rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.
+- [ ] The triage notes rule out lab-count claims, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.
 - [ ] Target roles repeatedly mention Kubernetes, AWS, Terraform, CI/CD, observability, SRE, and security.
-- [ ] The evidence inventory names five candidate artifacts and missing proof to collect.
+- [ ] The evidence inventory names five candidate artifacts and missing evidence to collect.
 - [ ] The README template forces problem, commands, validation, rollback, and STAR talking points.
-- [ ] The completed proof pack includes a README proof section, resume bullets, and STAR stories.
-- [ ] The local analyzer reports Career proof pack analysis passed.
+- [ ] The completed artifact pack includes a README artifact section, resume bullets, and STAR stories.
+- [ ] The local analyzer reports Career artifact pack analysis passed.
 
 ## Validation commands
 
@@ -142,18 +142,18 @@ You need interview-ready proof that your platform skills are practical, current,
 - [ ] Triage False Leads ruled out
 - [ ] Repeated target skills captured
 - [ ] Lab artifacts and validators mapped
-- [ ] Portfolio proof README completed
+- [ ] Portfolio artifact README completed
 - [ ] Resume bullets written with action/scope/impact
 - [ ] STAR stories written for incident/security/cost/release
-- [ ] Career proof analyzer output, validation output, and missing-proof evidence recorded
+- [ ] Career artifact analyzer output, validation output, and missing-evidence notes recorded
 
 ## Rubric
 
 - [ ] Preserves the public-safe evidence boundary and avoids secrets, customer data, or private identifiers.
-- [ ] Uses triage notes to rule out lab-count proof, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.
+- [ ] Uses triage notes to rule out lab-count claims, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.
 - [ ] Maps repeated target skills to concrete Platform Academy lab artifacts and domains.
-- [ ] Cites commands, validators, decisions, rollback notes, and missing proof instead of broad claims.
-- [ ] Completes a portfolio README proof section with problem, environment, command, decision, validation, and rollback.
+- [ ] Cites commands, validators, decisions, rollback notes, and missing evidence instead of broad claims.
+- [ ] Completes a portfolio README artifact section with problem, environment, command, decision, validation, and rollback.
 - [ ] Writes resume bullets and STAR stories tied to incident response, security, cost, and release safety.
 - [ ] Saves validation output and flags claims that need stronger screenshots, diagrams, or redaction.
 
@@ -164,4 +164,4 @@ You need interview-ready proof that your platform skills are practical, current,
 ## No-cluster fallback
 
 - [ ] Use triage-notes.md plus the included job skills and evidence inventory instead of external job postings.
-- [ ] Write one README proof section from any converted lab.
+- [ ] Write one README artifact section from any converted lab.

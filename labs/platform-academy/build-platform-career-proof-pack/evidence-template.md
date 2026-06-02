@@ -1,4 +1,4 @@
-# Career Proof Pack Evidence Template
+# Career Artifact Pack Evidence Template
 
 ## Triage Notes And False Leads
 
@@ -14,7 +14,7 @@
 - Repeated target skills:
 - Role or job-skill source:
 - Platform domains covered:
-- Missing proof to collect:
+- Missing evidence to collect:
 
 ## Portfolio Artifact Evidence
 
@@ -26,7 +26,7 @@
 
 ## Interview And Resume Evidence
 
-- README proof section:
+- README artifact section:
 - Resume bullet with action/scope/impact:
 - STAR story:
 - Local analyzer output:

@@ -299,7 +299,7 @@ DEEPENED_LAB_CONTRACT = {
             "completed-proof-readme.md",
             "Incident Response",
             "Release Safety",
-            "Career proof pack analysis passed",
+            "Career artifact pack analysis passed",
         },
     },
 }

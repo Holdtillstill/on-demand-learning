@@ -38,7 +38,7 @@ grep -q "Kubernetes, Terraform, AWS, CI/CD, incident response, observability" "$
 grep -q "EKS, Helm, ArgoCD" "$SKILLS" || fail "job-skills.txt should include EKS delivery skills"
 grep -q "Docker, supply chain, release engineering" "$SKILLS" || fail "job-skills.txt should include supply-chain skills"
 grep -q "Candidate artifacts" "$INVENTORY" || fail "evidence-inventory.md should list candidate artifacts"
-grep -q "Missing proof to collect" "$INVENTORY" || fail "evidence-inventory.md should list missing proof"
+grep -q "Missing evidence to collect" "$INVENTORY" || fail "evidence-inventory.md should list missing evidence"
 grep -q "Interview Talking Points" "$TEMPLATE" || fail "readme-template.md should include interview talking points"
 
 grep -q "Kubernetes Service Debugging and Release Safety" "$PROOF" || fail "completed-proof-readme.md should name a concrete proof project"
@@ -65,7 +65,7 @@ grep -q "## Triage Notes And False Leads" "$TEMPLATE_EVIDENCE" || fail "evidence
 grep -q "## Skill Demand Evidence" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for skill demand evidence"
 grep -q "## Portfolio Artifact Evidence" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for portfolio artifact evidence"
 grep -q "## Interview And Resume Evidence" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for interview and resume evidence"
-grep -q "Career proof pack analysis passed" "$ANALYZER" || fail "career_proof_analyzer.py should report successful analysis"
+grep -q "Career artifact pack analysis passed" "$ANALYZER" || fail "career_proof_analyzer.py should report successful analysis"
 
 python3 "$ANALYZER" --skills "$SKILLS" --inventory "$INVENTORY" --proof "$PROOF" --bullets "$BULLETS" --star "$STAR" --quiet
 
@@ -75,13 +75,13 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_file "$evidence_file"
   require_evidence_match "$evidence_file" "triage notes and false leads" "triage-notes\\.md|False Leads|completed labs|duty-only|STAR|screenshots|redaction"
   require_evidence_match "$evidence_file" "repeated target skills" "Kubernetes|Terraform|AWS|CI/CD|incident response|observability"
-  require_evidence_match "$evidence_file" "candidate artifact inventory" "Candidate artifacts|evidence inventory|Missing proof"
-  require_evidence_match "$evidence_file" "concrete proof README" "Kubernetes Service Debugging|completed-proof-readme|proof README"
+  require_evidence_match "$evidence_file" "candidate artifact inventory" "Candidate artifacts|evidence inventory|Missing evidence"
+  require_evidence_match "$evidence_file" "concrete artifact README" "Kubernetes Service Debugging|completed-proof-readme|artifact README"
   require_evidence_match "$evidence_file" "command or validator evidence" "kubectl describe svc|verify-full-labs|command|validation|validator"
   require_evidence_match "$evidence_file" "release and rollback evidence" "digest promotion|Rollback|rollback"
   require_evidence_match "$evidence_file" "resume bullet evidence" "resume bullet|repository-backed|profile-backed|digest, SBOM, scan"
   require_evidence_match "$evidence_file" "STAR story coverage" "Incident Response|Security|Cost|Release Safety|STAR"
-  require_evidence_match "$evidence_file" "local career proof analyzer evidence" "Career proof pack analysis passed|career proof analyzer|proof pack analysis"
-  require_evidence_match "$evidence_file" "public-safe or missing-proof note" "public-safe|redaction|missing proof|stronger evidence"
+  require_evidence_match "$evidence_file" "local career artifact analyzer evidence" "Career artifact pack analysis passed|career proof analyzer|artifact pack analysis"
+  require_evidence_match "$evidence_file" "public-safe or missing-evidence note" "public-safe|redaction|missing evidence|stronger evidence"
   echo "Evidence checks passed for build-platform-career-proof-pack."
 fi
