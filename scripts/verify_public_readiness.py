@@ -176,6 +176,17 @@ def verify_contributing(errors: list[str]) -> None:
         errors.append("CONTRIBUTING.md: missing public-readiness validation command")
 
 
+def verify_code_of_conduct(errors: list[str]) -> None:
+    code_of_conduct = read_text(REPO_ROOT / "CODE_OF_CONDUCT.md")
+    if code_of_conduct is None:
+        errors.append("CODE_OF_CONDUCT.md: missing")
+        return
+    if "Respect privacy and operational safety" not in code_of_conduct:
+        errors.append("CODE_OF_CONDUCT.md: missing privacy and operational safety boundary")
+    if "SECURITY.md" not in code_of_conduct:
+        errors.append("CODE_OF_CONDUCT.md: missing security policy escalation path")
+
+
 def verify_dependabot(errors: list[str]) -> None:
     dependabot = read_text(REPO_ROOT / ".github" / "dependabot.yml")
     if dependabot is None:
@@ -231,6 +242,7 @@ def main() -> int:
     verify_public_discovery(errors)
     verify_issue_templates(errors)
     verify_contributing(errors)
+    verify_code_of_conduct(errors)
     verify_dependabot(errors)
 
     if errors:
