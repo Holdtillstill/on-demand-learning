@@ -773,6 +773,41 @@ describe("Platform Academy app", () => {
     expect(readLocalProgress(restoredLearnerId)).toContainEqual(expect.objectContaining({ lesson_id: 201, completed: true }));
   });
 
+  it("keeps recovery dialog focus keyboard-friendly", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+
+        if (isStaticOrApi(url, "/api/platform-academy/catalog", "/static-api/platform-academy-catalog.json")) return jsonResponse(catalog);
+        if (isStaticOrApi(url, "/api/platform-academy/roadmap", "/static-api/platform-academy-roadmap.json")) return jsonResponse(roadmap);
+        if (isLabsIndexUrl(url)) return jsonResponse(catalog.labs);
+        if (isStaticOrApi(url, "/api/platform-academy/resources", "/static-api/platform-academy-resources.json")) return jsonResponse(resources);
+        if (isStaticOrApi(url, "/api/platform-academy/interview-prep", "/static-api/platform-academy-interview-prep.json")) return jsonResponse(interviewPrep);
+        return jsonResponse([]);
+      })
+    );
+
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole("heading", { name: "Platform Academy" })).toBeInTheDocument();
+    const opener = screen.getByRole("button", { name: /open guest recovery key/i });
+
+    fireEvent.click(opener);
+    const dialog = screen.getByRole("dialog", { name: /save or restore progress/i });
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^close$/i })).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: /save or restore progress/i })).not.toBeInTheDocument());
+    await waitFor(() => expect(opener).toHaveFocus());
+  });
+
   it("exports and imports a guest profile backup from the recovery dialog", async () => {
     const exportedState = {
       schema_version: 1,

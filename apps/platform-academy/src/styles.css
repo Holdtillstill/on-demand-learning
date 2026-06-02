@@ -3463,6 +3463,39 @@ pre {
   color: #abffe5;
 }
 
+.product-sidebar-note {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  border: 1px solid rgba(125, 243, 211, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 10px;
+}
+
+.product-sidebar-note span {
+  color: var(--pa-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.product-sidebar-note p {
+  margin: 0;
+  color: var(--pa-text-soft);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.product-sidebar-note a {
+  justify-self: start;
+  color: #abffe5;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-underline-offset: 3px;
+}
+
 .product-frame {
   min-height: 100vh;
 }

@@ -12,7 +12,7 @@ import {
   Terminal,
   UserRound
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
@@ -49,6 +49,9 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
   const [recoveryError, setRecoveryError] = useState("");
   const [recoveryStatus, setRecoveryStatus] = useState("");
   const [recoveryCopied, setRecoveryCopied] = useState(false);
+  const recoveryButtonRef = useRef<HTMLButtonElement | null>(null);
+  const recoveryDialogRef = useRef<HTMLElement | null>(null);
+  const recoveryCloseRef = useRef<HTMLButtonElement | null>(null);
 
   const openRecovery = () => {
     setRecoveryInput("");
@@ -141,6 +144,55 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
     closeRecovery();
   };
 
+  useEffect(() => {
+    if (!isRecoveryOpen) return;
+    const dialog = recoveryDialogRef.current;
+    const closeButton = recoveryCloseRef.current;
+    const previousActive = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    closeButton?.focus();
+
+    const focusableSelector = [
+      "a[href]",
+      "button:not([disabled])",
+      "input:not([disabled])",
+      "select:not([disabled])",
+      "textarea:not([disabled])",
+      "[tabindex]:not([tabindex='-1'])"
+    ].join(",");
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeRecovery();
+        return;
+      }
+      if (event.key !== "Tab" || !dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+        (element) => element.offsetParent !== null
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      window.setTimeout(() => {
+        if (previousActive && previousActive !== document.body && document.contains(previousActive)) previousActive.focus();
+        else recoveryButtonRef.current?.focus();
+      }, 0);
+    };
+  }, [isRecoveryOpen]);
+
   return (
     <div className="product-shell">
       <aside className="product-sidebar">
@@ -166,6 +218,11 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
             );
           })}
         </nav>
+        <div className="product-sidebar-note">
+          <span>Privacy</span>
+          <p>First-party pageview telemetry respects DNT and GPC. Learning inputs stay browser-local on the static host.</p>
+          <a href="https://bozhi.dev/privacy.html">Privacy note</a>
+        </div>
       </aside>
       <div className="product-frame">
         <header className="product-topline">
@@ -181,6 +238,7 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
                 aria-label="Open guest recovery key"
                 className="learner-recovery-button"
                 onClick={openRecovery}
+                ref={recoveryButtonRef}
                 title="Copy this guest recovery key or restore a saved guest workspace."
                 type="button"
               >
@@ -219,6 +277,7 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
             aria-modal="true"
             className="profile-recovery-dialog"
             onClick={(event) => event.stopPropagation()}
+            ref={recoveryDialogRef}
             role="dialog"
           >
             <div className="recovery-dialog-header">
@@ -226,7 +285,7 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
                 <p className="eyebrow">Guest recovery</p>
                 <h2 id="profile-recovery-title">Save or restore progress</h2>
               </div>
-              <button className="recovery-close-button" onClick={closeRecovery} type="button">
+              <button className="recovery-close-button" onClick={closeRecovery} ref={recoveryCloseRef} type="button">
                 Close
               </button>
             </div>

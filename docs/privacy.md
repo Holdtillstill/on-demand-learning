@@ -6,9 +6,11 @@ routes are being reviewed and to support the private daily visitor digest.
 
 Collected signals are limited to operational visitor context such as project
 name, page path, referrer/source parameters, user agent-derived device type,
-locale, timezone, viewport, approximate location, network/ISP summary when
-available, and a masked IP address. Public pages must not show visitor events,
-raw IP addresses, request history, private deployment details, or cloud account
+derived traffic source/channel, locale, timezone, viewport, approximate
+location, network/ISP summary when available, and a masked IP address. Raw IP
+address and user agent are retained briefly for digest, abuse, and reliability
+analysis, then purged. Public pages must not show visitor events, raw IP
+addresses, request history, private deployment details, or cloud account
 identifiers.
 
 Do Not Track and Global Privacy Control signals are respected by the shared

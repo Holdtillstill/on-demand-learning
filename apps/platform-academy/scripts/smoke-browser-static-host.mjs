@@ -1,4 +1,5 @@
 import { chromium } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 const WEB_BASE = normalizeBase(process.env.WEB_BASE || process.env.PLATFORM_WEB_BASE || "https://platform-academy.bozhi.dev");
 const TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 30000);
@@ -93,6 +94,9 @@ async function checkRoute(context, viewport, route) {
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   if (horizontalOverflow > 2) issues.push(`horizontal overflow: ${horizontalOverflow}px`);
 
+  const accessibilityIssues = await seriousAccessibilityViolations(page);
+  issues.push(...accessibilityIssues.map((issue) => `accessibility: ${issue}`));
+
   const pageview = visitorEvents.find((event) => event.project === "platform-academy" && event.eventType === "pageview");
   if (!pageview) {
     issues.push("first-party visitor pageview was not sent");
@@ -107,6 +111,15 @@ async function checkRoute(context, viewport, route) {
   if (issues.length) {
     throw new Error(`${viewport.name} ${route.path}\n${issues.join("\n")}`);
   }
+}
+
+async function seriousAccessibilityViolations(page) {
+  const results = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  return results.violations
+    .filter((violation) => ["serious", "critical"].includes(violation.impact || ""))
+    .map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.length} node(s))`);
 }
 
 async function verifyPrivacySignals(browser) {
@@ -155,4 +168,6 @@ try {
   await browser.close();
 }
 
-console.log(`Platform Academy static browser smoke passed for ${WEB_BASE} across ${routes.length} route(s), ${viewports.length} viewport(s), and privacy telemetry checks.`);
+console.log(
+  `Platform Academy static browser smoke passed for ${WEB_BASE} across ${routes.length} route(s), ${viewports.length} viewport(s), privacy telemetry checks, and serious/critical accessibility checks.`
+);
