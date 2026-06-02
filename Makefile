@@ -3,6 +3,7 @@
 PYTHON ?= python3.11
 KUBECONFORM_IMAGE ?= ghcr.io/yannh/kubeconform:v0.6.7
 ACTIONLINT_IMAGE ?= rhysd/actionlint:1.7.7
+ACTIONLINT ?= actionlint
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "%-24s %s\n", $$1, $$2}'
@@ -47,7 +48,18 @@ kubeconform-check: ## Validate Kubernetes manifests with kubeconform
 	docker run --rm -v "$(CURDIR):/work" $(KUBECONFORM_IMAGE) -strict -summary /work/infra/k8s/platform-academy.yaml
 
 workflow-lint: ## Validate GitHub Actions workflows with actionlint
-	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ACTIONLINT_IMAGE) -color=false .github/workflows/*.yml
+	@if command -v "$(ACTIONLINT)" >/dev/null 2>&1; then \
+		"$(ACTIONLINT)" -color=false .github/workflows/*.yml; \
+	else \
+		status=1; \
+		for attempt in 1 2 3; do \
+			docker run --rm -v "$(CURDIR):/repo" -w /repo $(ACTIONLINT_IMAGE) -color=false .github/workflows/*.yml && status=0 && break; \
+			status=$$?; \
+			echo "actionlint Docker attempt $$attempt failed with status $$status" >&2; \
+			sleep $$((attempt * 5)); \
+		done; \
+		exit $$status; \
+	fi
 	$(PYTHON) scripts/verify_workflow_contracts.py
 
 workflow-contract-check: ## Verify release-critical GitHub Actions workflow contracts

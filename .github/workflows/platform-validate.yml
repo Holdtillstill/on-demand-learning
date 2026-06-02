@@ -21,6 +21,10 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.10.3
+      - name: Install actionlint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash \
+            | bash -s -- 1.7.7 /usr/local/bin
       - name: Validate shell script syntax
         run: make script-syntax-check
       - name: Verify smoke helper dry runs
