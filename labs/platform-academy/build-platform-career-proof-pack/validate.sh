@@ -57,7 +57,7 @@ grep -q "Cost" "$STAR" || fail "star-stories.md should include cost"
 grep -q "Release Safety" "$STAR" || fail "star-stories.md should include release safety"
 
 grep -q "False Leads Ruled Out" "$TRIAGE" || fail "triage-notes.md should include false leads"
-grep -q "A long list of completed labs is not proof" "$TRIAGE" || fail "triage-notes.md should reject lab-count-only proof"
+grep -q "A long list of completed labs is not credible" "$TRIAGE" || fail "triage-notes.md should reject lab-count-only claims"
 grep -q "Resume bullets are weak" "$TRIAGE" || fail "triage-notes.md should reject duty-only bullets"
 grep -q "STAR stories are not credible" "$TRIAGE" || fail "triage-notes.md should reject STAR stories without validation"
 grep -q "Redaction is part of the artifact" "$TRIAGE" || fail "triage-notes.md should require public-safe redaction"

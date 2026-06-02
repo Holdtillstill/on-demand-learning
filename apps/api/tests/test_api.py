@@ -828,7 +828,7 @@ def test_platform_lab_workspace_bundles_extract_to_runnable_file_checks(tmp_path
         "create-platform-golden-path": ["Golden path readiness analysis passed"],
         "review-docker-image-supply-chain": ["Docker supply-chain analysis passed"],
         "audit-eks-cost-drivers": ["EKS cost driver analysis passed"],
-        "build-platform-career-proof-pack": ["Career proof pack analysis passed"],
+        "build-platform-career-proof-pack": ["Career artifact pack analysis passed"],
         "trace-argocd-drift": ["ArgoCD drift analysis passed"],
         "inspect-linux-failure-evidence": ["Linux failure evidence analysis passed"],
         "trace-network-path": ["Network path analysis passed"],
@@ -1408,12 +1408,12 @@ def test_career_proof_lab_feedback_tracks_claim_quality_false_leads():
                 "worksheet-0": "Reviewed job-skills.txt and evidence-inventory.md with public redaction boundary.",
                 "worksheet-1": "triage-notes.md False Leads rule out completed labs, duty-only bullets, weak STAR, and redaction gaps.",
                 "worksheet-2": "Kubernetes, Terraform, AWS, CI/CD plus EKS, Helm, ArgoCD and Docker, supply chain domains mapped.",
-                "worksheet-3": "Candidate artifacts, Missing proof to collect, verify-full-labs.sh, and Rollback evidence cited.",
+                "worksheet-3": "Candidate artifacts, Missing evidence to collect, verify-full-labs.sh, and Rollback evidence cited.",
                 "worksheet-4": "completed-proof-readme.md includes Problem, Environment, and Interview Talking Points.",
                 "worksheet-5": "resume-bullets.md and star-stories.md cover Incident Response, Security, Cost, and Release Safety.",
                 "worksheet-6": (
                     "validate output, screenshots, diagrams, evidence-template.md, stronger evidence, "
-                    "and Career proof pack analysis passed saved."
+                    "and Career artifact pack analysis passed saved."
                 ),
             },
             "checked_items": checked_items,
@@ -1423,7 +1423,7 @@ def test_career_proof_lab_feedback_tracks_claim_quality_false_leads():
 
     assert response.status_code == 200
     feedback = response.json()["rubric_feedback"]
-    triage_feedback = next(item for item in feedback if "lab-count proof" in item["criterion"])
+    triage_feedback = next(item for item in feedback if "lab-count claims" in item["criterion"])
     skill_feedback = next(item for item in feedback if "Maps repeated target skills" in item["criterion"])
     proof_feedback = next(item for item in feedback if "Completes a portfolio README" in item["criterion"])
     star_feedback = next(item for item in feedback if "resume bullets and STAR" in item["criterion"])
