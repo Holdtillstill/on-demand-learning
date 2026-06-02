@@ -2,18 +2,6 @@ name: publish-platform-academy-images
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - apps/api/**
-      - apps/platform-academy/**
-      - labs/**
-      - scripts/audit_api_log.sh
-      - scripts/smoke_platform_academy_api.sh
-      - scripts/smoke_platform_academy_labs.sh
-      - scripts/smoke_platform_academy_container.sh
-      - scripts/verify_api_image_migrations.sh
-      - .github/workflows/platform-academy-image.yml
 
 permissions:
   contents: read

@@ -151,6 +151,7 @@ See [docs/platform-academy-handoff.md](docs/platform-academy-handoff.md), [docs/
 - Use Docker Compose for local demos and a shared EKS preview for Kubernetes runtime validation.
 - Use `platform-academy.bozhi.dev` as the stable static public entry when configured; API-backed persistence remains preview/runtime-only unless explicitly deployed.
 - Use `preview.platform-academy.bozhi.dev` for approved on-demand shared-EKS previews.
+- Keep ECR image publishing manual-only; regular CI builds and scans images without pushing new AWS artifacts.
 - Do not deploy as pure static S3 unless the public surface is split into a read-only catalog/marketing/docs site.
 - Avoid an always-on dedicated EKS cluster; use shared infrastructure, TTL previews, and budgets.
 - Run Alembic migrations before production-like persistent API startup.

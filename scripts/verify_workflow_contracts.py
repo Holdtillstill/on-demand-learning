@@ -25,18 +25,6 @@ EXPECTED_WORKFLOWS = {
     "deploy-template.yml",
 }
 
-IMAGE_WORKFLOW_PATHS = {
-    "apps/api/**",
-    "apps/platform-academy/**",
-    "labs/**",
-    "scripts/audit_api_log.sh",
-    "scripts/smoke_platform_academy_api.sh",
-    "scripts/smoke_platform_academy_labs.sh",
-    "scripts/smoke_platform_academy_container.sh",
-    "scripts/verify_api_image_migrations.sh",
-    ".github/workflows/platform-academy-image.yml",
-}
-
 PLATFORM_VALIDATE_COMMANDS = {
     "make script-syntax-check",
     "make smoke-helper-check PYTHON=python3",
@@ -137,10 +125,7 @@ def verify_platform_image_workflow() -> None:
     workflow_text = (WORKFLOW_DIR / name).read_text()
     require("vars.AWS_ROLE_TO_ASSUME" not in workflow_text, f"{name} must not expose AWS role ARN through repository variables")
     on_config = data.get("on", {})
-    push = on_config.get("push", {}) if isinstance(on_config, dict) else {}
-    paths = set(push.get("paths", [])) if isinstance(push, dict) else set()
-    missing_paths = sorted(IMAGE_WORKFLOW_PATHS - paths)
-    require(not missing_paths, f"{name} push paths missing release dependencies: {missing_paths}")
+    require("push" not in on_config, f"{name} must be manual-only because it pushes ECR images")
     require("workflow_dispatch" in on_config, f"{name} must support manual dispatch")
 
     permissions = data.get("permissions", {})
