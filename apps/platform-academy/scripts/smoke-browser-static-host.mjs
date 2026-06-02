@@ -17,8 +17,12 @@ const routes = [
   { path: "/dashboard/home", markers: ["Platform Academy", "Curriculum", "Lab inventory", "Interview bank"] },
   { path: "/roadmap", markers: ["Roadmap from kubectl basics to running platforms", "Checkpoints"] },
   { path: "/labs", markers: ["Labs for incidents and architecture reviews", "Evidence journal"] },
+  { path: "/labs/history", markers: ["Saved workbooks and rubric signals"] },
   { path: "/labs/trace-service-to-pod", markers: ["Trace Service traffic to ready Pods", "GUIDED LAB RUN SEQUENCE"] },
   { path: "/resources", markers: ["Resource library", "320 matches"] },
+  { path: "/resources/linux-cheatsheet", markers: ["Linux Field Cheatsheet", "Official links"] },
+  { path: "/courses/platform-kubernetes-fundamentals", markers: ["Kubernetes Fundamentals", "Course progress"] },
+  { path: "/courses/platform-kubernetes-fundamentals/lessons/1", markers: ["Containers, Images, and Pods", "Practice the lesson"] },
   { path: "/interview-prep", markers: ["Interview prep", "22 visible packs"] },
   { path: "/missing-route", markers: ["Page not found", "Open dashboard"] },
 ];

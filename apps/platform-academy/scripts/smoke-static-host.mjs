@@ -8,8 +8,12 @@ const htmlRoutes = [
   '/dashboard/home',
   '/roadmap',
   '/labs',
+  '/labs/history',
   '/labs/trace-service-to-pod',
   '/resources',
+  '/resources/linux-cheatsheet',
+  '/courses/platform-kubernetes-fundamentals',
+  '/courses/platform-kubernetes-fundamentals/lessons/1',
   '/interview-prep',
   '/missing-route',
 ];

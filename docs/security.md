@@ -18,5 +18,5 @@ Production requirements:
 - Store secrets in AWS Secrets Manager and project them through External Secrets.
 - Enable TLS at ingress and HSTS at the edge.
 - Add RBAC, audit logging, image signing, admission policies, and container security contexts.
-- Add SAST, image signing/provenance verification, and admission policy enforcement for production promotion.
+- Add image signing/provenance verification and admission policy enforcement for production promotion.
 - Never process real payments directly; integrate with a compliant payment provider.
