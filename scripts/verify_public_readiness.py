@@ -222,6 +222,13 @@ def verify_dependabot(errors: list[str]) -> None:
         for marker in markers:
             if marker not in block:
                 errors.append(f".github/dependabot.yml: Docker block {directory} missing base-image guardrail {marker}")
+    terraform_block = re.search(
+        r"- package-ecosystem: terraform\n\s+directory: [^\n]+\n(?P<block>.*?)(?=\n\s+- package-ecosystem:|\Z)",
+        dependabot,
+        re.DOTALL,
+    )
+    if not terraform_block or "version-update:semver-major" not in terraform_block.group("block"):
+        errors.append(".github/dependabot.yml: Terraform updates must ignore semver-major changes")
 
 
 def main() -> int:
