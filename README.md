@@ -10,6 +10,10 @@ Platform Academy is a local-first, production-style portfolio project for Kubern
 
 ![Platform Academy dashboard](docs/assets/platform-academy-dashboard.png)
 
+## AI-Assisted Development Disclosure
+
+This repository was developed with AI coding assistance. The product direction, architecture decisions, validation, deployment, operations, and maintenance are my responsibility.
+
 ## Quickstart
 
 ```bash
