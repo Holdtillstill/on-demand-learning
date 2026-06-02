@@ -129,6 +129,8 @@ def verify_expected_workflows() -> None:
 def verify_platform_image_workflow() -> None:
     name = "platform-academy-image.yml"
     data = workflow(name)
+    workflow_text = (WORKFLOW_DIR / name).read_text()
+    require("vars.AWS_ROLE_TO_ASSUME" not in workflow_text, f"{name} must not expose AWS role ARN through repository variables")
     on_config = data.get("on", {})
     push = on_config.get("push", {}) if isinstance(on_config, dict) else {}
     paths = set(push.get("paths", [])) if isinstance(push, dict) else set()
@@ -141,6 +143,13 @@ def verify_platform_image_workflow() -> None:
     require(permissions.get("id-token") == "write", f"{name} must keep id-token: write for ECR role assumption")
 
     publish_steps = steps(data, "publish", name)
+    configure_aws = next((step for step in publish_steps if step.get("uses") == "aws-actions/configure-aws-credentials@v4"), None)
+    require(isinstance(configure_aws, dict), f"{name} must configure AWS credentials before ECR login")
+    configure_with = configure_aws.get("with", {})
+    require(
+        configure_with.get("role-to-assume") == "${{ secrets.AWS_ROLE_TO_ASSUME }}",
+        f"{name} must read AWS_ROLE_TO_ASSUME from repository secrets",
+    )
     expected_order = [
         "Build API image",
         "Scan API image",
