@@ -9,6 +9,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "smoke:routes": "node scripts/smoke-routes.mjs",
+    "smoke:static-host": "node scripts/smoke-static-host.mjs",
     "test": "NODE_ENV=test vitest run",
     "typecheck": "tsc -b"
   },

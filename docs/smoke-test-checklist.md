@@ -17,6 +17,7 @@ Run this after every local rebuild, Docker Compose demo, shared-EKS preview, or 
 - `make platform-lab-smoke API_BASE=https://...` passes and verifies all lab packets, protected source bundles, learner workspace bundles, no-store download headers, safe source/workspace extraction, source helper script syntax, and each downloaded workspace `validate.sh --files-only` helper.
 - API lab smoke verifies every Markdown lab packet includes the guided run sequence, evidence artifact map, learner-safe artifact paths, workbook prompts, validation commands, validation checks, rubric, cleanup commands, local workspace command, and downloaded-workspace quickstart.
 - `make platform-deployed-smoke API_BASE=https://... WEB_BASE=https://...` passes when validating a complete remote deployment from a workstation or CI runner.
+- `WEB_BASE=https://platform-academy.bozhi.dev npm --prefix apps/platform-academy run smoke:static-host` passes when validating the always-on static public host without a live API.
 - Container and CI browser smoke fail if the API emits `request_failed`, traceback, or unique-constraint errors while the browser is exercising lab workbook and recovery flows.
 - `GET /api/platform-academy/resources` returns `320` resources.
 - `GET /api/platform-academy/interview-prep` returns `22` prep packs and `219` questions.
@@ -51,6 +52,7 @@ SMOKE_VIEWPORTS=desktop SMOKE_SKIP_WORKBOOK_FLOW=true \
 ```
 
 - `API_BASE` points API smoke at the backend origin; `WEB_BASE` points browser smoke at the Platform Academy web origin. Browser smoke can validate a static/offline portfolio build with only `WEB_BASE`, or a live API-backed build with both `WEB_BASE` and `API_BASE`.
+- `platform-static-smoke` runs the static public host check on a schedule without requiring `PLATFORM_API_BASE`; set `PLATFORM_STATIC_WEB_BASE` only if the stable static origin changes.
 - Platform Academy uses checked-in static snapshots and browser-local storage when `VITE_API_BASE_URL` is empty. Set `VITE_API_BASE_URL=https://...` for a direct API-backed frontend, or `PLATFORM_ACADEMY_DEV_API_PROXY_TARGET=http://localhost:8000` only when a local Vite dev proxy is intentionally needed.
 - `SMOKE_DRY_RUN=true` lets `platform-api-smoke`, `platform-lab-smoke`, `platform-container-smoke`, and `platform-deployed-smoke` validate origin, smoke ID, browser smoke knobs, image/container naming, and option wiring without touching the remote deployment.
 - `PLATFORM_SOURCE_BUNDLE_TOKEN` adds the instructor/source bundle token header for API and lab smoke when a non-local deployment protects `/api/platform-academy/labs/{slug}/bundle`.
