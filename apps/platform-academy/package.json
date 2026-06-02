@@ -12,6 +12,7 @@
     "smoke:routes": "node scripts/smoke-routes.mjs",
     "smoke:static-host": "node scripts/smoke-static-host.mjs",
     "test": "NODE_ENV=test vitest run",
+    "validate:static-spa-router": "node scripts/validate-static-spa-router.mjs",
     "typecheck": "tsc -b"
   },
   "dependencies": {

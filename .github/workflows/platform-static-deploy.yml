@@ -1,0 +1,110 @@
+name: deploy-platform-academy-static-site
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
+  AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+  STATIC_SITE_BUCKET: ${{ secrets.STATIC_SITE_BUCKET }}
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+  CLOUDFRONT_FUNCTION_NAME: ${{ secrets.CLOUDFRONT_FUNCTION_NAME }}
+  SITE_URL: ${{ vars.PLATFORM_STATIC_WEB_BASE || 'https://platform-academy.bozhi.dev' }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+concurrency:
+  group: platform-academy-static-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-static-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check required deployment variables
+        run: |
+          : "${AWS_ROLE_TO_ASSUME:?Set Actions secret AWS_ROLE_TO_ASSUME}"
+          : "${STATIC_SITE_BUCKET:?Set Actions secret STATIC_SITE_BUCKET}"
+          : "${CLOUDFRONT_DISTRIBUTION_ID:?Set Actions secret CLOUDFRONT_DISTRIBUTION_ID}"
+          : "${CLOUDFRONT_FUNCTION_NAME:?Set Actions secret CLOUDFRONT_FUNCTION_NAME}"
+          : "${SITE_URL:?Set PLATFORM_STATIC_WEB_BASE repository variable or use the default}"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/platform-academy/package-lock.json
+
+      - name: Install Platform Academy dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+        working-directory: apps/platform-academy
+
+      - name: Validate static edge router
+        run: npm run validate:static-spa-router
+        working-directory: apps/platform-academy
+
+      - name: Test and build Platform Academy
+        run: |
+          npm test -- --run
+          npm run build
+        working-directory: apps/platform-academy
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
+
+      - name: Publish and associate static edge router
+        run: scripts/deploy-static-edge-router.sh
+        working-directory: apps/platform-academy
+
+      - name: Sync static web assets
+        run: |
+          aws s3 sync dist/ "s3://${STATIC_SITE_BUCKET}" \
+            --delete \
+            --exclude "assets/*" \
+            --cache-control "public,max-age=300"
+
+          aws s3 cp dist/api/ "s3://${STATIC_SITE_BUCKET}/api/" \
+            --recursive \
+            --cache-control "public,max-age=300" \
+            --content-type "application/json; charset=utf-8"
+
+          aws s3 cp dist/index.html "s3://${STATIC_SITE_BUCKET}/index.html" \
+            --cache-control "no-cache" \
+            --content-type "text/html; charset=utf-8"
+
+          aws s3 sync dist/assets/ "s3://${STATIC_SITE_BUCKET}/assets/" \
+            --delete \
+            --cache-control "public,max-age=31536000,immutable"
+        working-directory: apps/platform-academy
+
+      - name: Invalidate CloudFront
+        run: |
+          invalidation_id="$(aws cloudfront create-invalidation \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+            --paths "/*" \
+            --query 'Invalidation.Id' \
+            --output text)"
+          if ! aws cloudfront wait invalidation-completed \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+            --id "${invalidation_id}"; then
+            echo "GetInvalidation is unavailable for this deploy role; sleeping before smoke."
+            sleep 30
+          fi
+
+      - name: Smoke deployed static host
+        run: SMOKE_EXPECT_CLEAN_SPA_ROUTING=true WEB_BASE="${SITE_URL}" npm run smoke:static-host
+        working-directory: apps/platform-academy
+
+      - name: Smoke deployed browser rendering
+        run: WEB_BASE="${SITE_URL}" npm run smoke:browser-static-host
+        working-directory: apps/platform-academy

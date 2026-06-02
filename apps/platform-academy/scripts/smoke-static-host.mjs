@@ -1,6 +1,7 @@
 const WEB_BASE = normalizeBase(process.env.WEB_BASE || process.env.PLATFORM_WEB_BASE || 'https://platform-academy.bozhi.dev');
 const TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 15000);
 const EXPECT_SECURITY_HEADERS = process.env.SMOKE_EXPECT_SECURITY_HEADERS !== 'false';
+const EXPECT_CLEAN_SPA_ROUTING = process.env.SMOKE_EXPECT_CLEAN_SPA_ROUTING === 'true';
 
 const htmlRoutes = [
   '/',
@@ -100,6 +101,10 @@ function assertSecurityHeaders(result) {
   requireHeader(result.headers, 'referrer-policy', 'strict-origin-when-cross-origin');
 }
 
+function isAppShell({ body, contentType, status }) {
+  return status === 200 && contentType.toLowerCase().includes('text/html') && body.includes('<div id="root"></div>');
+}
+
 async function assertHtmlShell(path) {
   const result = await fetchText(path);
   assert(result.status === 200, `${path} should return 200, got ${result.status}`);
@@ -107,6 +112,10 @@ async function assertHtmlShell(path) {
   assert(result.body.includes('<div id="root"></div>'), `${path} should serve the app shell`);
   assert(result.body.includes('https://on-demand-demos.bozhi.dev/visitor.js'), `${path} should include visitor script`);
   assert(result.body.includes('data-project="platform-academy"'), `${path} should tag visitor events with platform-academy`);
+  if (EXPECT_CLEAN_SPA_ROUTING && path !== '/') {
+    const cacheHeader = result.headers['x-cache'] || '';
+    assert(!/error from cloudfront/i.test(cacheHeader), `${path} should use clean SPA routing, got x-cache="${cacheHeader}"`);
+  }
   if (path === '/') assertSecurityHeaders(result);
 }
 
@@ -124,6 +133,16 @@ async function assertLabPacket() {
   assert(result.body.includes('Validation commands'), 'Lab packet should include validation guidance');
 }
 
+async function assertStaticApiGuardrail() {
+  if (!EXPECT_CLEAN_SPA_ROUTING) return;
+
+  const result = await fetchText('/api/health', { headers: { accept: 'application/json' } });
+  assert(result.status === 404, `/api/health should return a JSON 404 on the static host, got ${result.status}`);
+  assert(result.contentType.toLowerCase().includes('application/json'), `/api/health should return JSON, got ${result.contentType}`);
+  assert(!isAppShell(result), '/api/health returned the HTML app shell. Static hosting must reject or proxy API routes instead.');
+  assert(result.body.includes('Platform Academy'), '/api/health JSON 404 should explain the Platform Academy static/API boundary.');
+}
+
 for (const route of htmlRoutes) {
   await assertHtmlShell(route);
 }
@@ -133,5 +152,6 @@ for (const check of staticJsonChecks) {
 }
 
 await assertLabPacket();
+await assertStaticApiGuardrail();
 
 console.log(`Platform Academy static host smoke passed for ${WEB_BASE}.`);

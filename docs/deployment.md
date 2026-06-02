@@ -1,6 +1,6 @@
 # Deployment Plan
 
-This project is ready for a polished GitHub baseline and local Docker Compose demos. Treat cloud deployment as a staged path: static CDN later for public read-only surfaces, shared EKS preview for full-stack demos, and production API persistence only after database and migration choices are explicit.
+This project is ready for a polished GitHub baseline, local Docker Compose demos, a static public learning workspace, and shared-EKS previews when runtime proof is needed. Keep `platform-academy.bozhi.dev` as the low-cost CloudFront/S3 public surface, use shared EKS only for approved short-lived demos, and add production API persistence only after database and migration choices are explicit.
 
 For the short handoff version that another deployment session can follow, start with `docs/platform-academy-handoff.md`.
 
@@ -87,6 +87,7 @@ Expected workflows:
 - `.github/workflows/platform-academy-frontend.yml`
 - `.github/workflows/docker-build.yml`
 - `.github/workflows/platform-academy-image.yml`
+- `.github/workflows/platform-static-deploy.yml`
 - `.github/workflows/platform-deployed-smoke.yml`
 - `.github/workflows/platform-static-smoke.yml`
 - `.github/workflows/platform-validate.yml`
@@ -94,9 +95,28 @@ Expected workflows:
 - `.github/workflows/security.yml`
 - `.github/workflows/deploy-template.yml`
 
-`make workflow-lint` validates these workflows with actionlint and `scripts/verify_workflow_contracts.py`. Keep that contract green when deployment work changes image publishing, smoke scripts, or the Platform Academy validation workflow. Store the ECR publishing role ARN in the `AWS_ROLE_TO_ASSUME` repository secret, not a repository variable, so public workflow configuration does not expose account-specific AWS identifiers. The image publish workflow is manual-only because it pushes long-lived ECR images; regular CI still builds and scans images automatically. If GitHub environment reviewer protection is enabled later, update the AWS OIDC trust policy for that environment-specific subject before adding an `environment` binding to the image publish job.
+`make workflow-lint` validates these workflows with actionlint and `scripts/verify_workflow_contracts.py`. Keep that contract green when deployment work changes image publishing, static routing, smoke scripts, or the Platform Academy validation workflow. Store AWS role ARNs and CloudFront/S3 identifiers in repository secrets, not public variables or docs, so public workflow configuration does not expose account-specific AWS identifiers. The image publish workflow is manual-only because it pushes long-lived ECR images; regular CI still builds and scans images automatically. If GitHub environment reviewer protection is enabled later, update the AWS OIDC trust policy for that environment-specific subject before adding an `environment` binding to image or static deploy jobs.
 
-The deploy workflow is intentionally a guarded template. Do not turn it into an automatic production deploy until AWS OIDC, image promotion, kubeconfig, environment protection, and rollback procedures are configured. The deployed smoke workflow is safe to enable after `PLATFORM_API_BASE` points at a live preview or stable API; keep the full browser profile for release evidence.
+The Kubernetes deploy workflow is intentionally a guarded template. Do not turn it into an automatic production deploy until AWS OIDC, image promotion, kubeconfig, environment protection, and rollback procedures are configured. The static deploy workflow is manual-only until the static bucket, distribution, and function-name secrets are configured; it publishes the Vite build to S3, associates the CloudFront Function SPA/API guardrail, invalidates CloudFront, and runs static/browser smoke. The deployed smoke workflow is safe to enable after `PLATFORM_API_BASE` points at a live preview or stable API; keep the full browser profile for release evidence.
+
+## Static Public Host
+
+Use the static host for the public portfolio surface:
+
+- Host: `platform-academy.bozhi.dev`
+- Origin: private S3 bucket behind CloudFront
+- Runtime model: browser-local guest workspace plus checked-in static catalog snapshots
+- Edge router: CloudFront Function rewrites app deep links to the React shell and returns JSON `404` for API-like paths that are not static snapshots
+- Visitor telemetry: first-party `on-demand-demos.bozhi.dev/visitor.js`, respecting Do Not Track and Global Privacy Control
+
+The static deploy workflow expects these private repository secrets:
+
+- `AWS_ROLE_TO_ASSUME`
+- `STATIC_SITE_BUCKET`
+- `CLOUDFRONT_DISTRIBUTION_ID`
+- `CLOUDFRONT_FUNCTION_NAME`
+
+It reads `PLATFORM_STATIC_WEB_BASE` as an optional repository variable and otherwise defaults to `https://platform-academy.bozhi.dev`. Run the static deploy manually after frontend/static snapshot changes when the always-on public site should update. Do not add a push trigger until those secrets are installed and the first manual deploy is green. It does not create EKS, NAT gateways, ALBs, RDS, Redis, or long-lived runtime resources.
 
 ## Shared EKS Preview
 

@@ -17,6 +17,7 @@ EXPECTED_WORKFLOWS = {
     "docker-build.yml",
     "platform-academy-frontend.yml",
     "platform-academy-image.yml",
+    "platform-static-deploy.yml",
     "platform-deployed-smoke.yml",
     "platform-static-smoke.yml",
     "platform-validate.yml",
@@ -337,6 +338,77 @@ def verify_platform_static_smoke_workflow() -> None:
     require_run_contains(summary_step, "browser rendering", f"{name} summary")
 
 
+def verify_platform_static_deploy_workflow() -> None:
+    name = "platform-static-deploy.yml"
+    data = workflow(name)
+    workflow_text = (WORKFLOW_DIR / name).read_text()
+    require("PLATFORM_API_BASE" not in workflow_text, f"{name} must not require a live API base")
+
+    permissions = data.get("permissions", {})
+    require(permissions.get("contents") == "read", f"{name} must keep contents: read permission")
+    require(permissions.get("id-token") == "write", f"{name} must keep id-token: write for AWS OIDC")
+
+    require("workflow_dispatch" in workflow_text, f"{name} must support manual deploys")
+    require("push:" not in workflow_text, f"{name} must stay manual until static deploy secrets are configured")
+
+    jobs = data.get("jobs", {})
+    require(isinstance(jobs, dict), f"{name} must define jobs")
+    deploy_job = jobs.get("deploy-static-site", {})
+    require(isinstance(deploy_job, dict), f"{name} must define deploy-static-site job")
+
+    env = data.get("env", {})
+    require(isinstance(env, dict), f"{name} must define top-level env")
+    for key in [
+        "AWS_ROLE_TO_ASSUME",
+        "STATIC_SITE_BUCKET",
+        "CLOUDFRONT_DISTRIBUTION_ID",
+        "CLOUDFRONT_FUNCTION_NAME",
+        "SITE_URL",
+    ]:
+        require(key in env, f"{name} env must include {key}")
+    require("PLATFORM_STATIC_WEB_BASE" in str(env.get("SITE_URL", "")), f"{name} should support PLATFORM_STATIC_WEB_BASE")
+    require("https://platform-academy.bozhi.dev" in str(env.get("SITE_URL", "")), f"{name} should default to the stable static host")
+
+    deploy_steps = steps(data, "deploy-static-site", name)
+    required_step = step_by_name(deploy_steps, "Check required deployment variables", name)
+    for key in [
+        "AWS_ROLE_TO_ASSUME",
+        "STATIC_SITE_BUCKET",
+        "CLOUDFRONT_DISTRIBUTION_ID",
+        "CLOUDFRONT_FUNCTION_NAME",
+        "SITE_URL",
+    ]:
+        require_run_contains(required_step, f"${{{key}", f"{name} required deployment variables")
+
+    install_step = step_by_name(deploy_steps, "Install Platform Academy dependencies", name)
+    require_run_contains(install_step, "npm ci", f"{name} dependency install")
+    require_run_contains(install_step, "npx playwright install --with-deps chromium", f"{name} browser install")
+    require(install_step.get("working-directory") == "apps/platform-academy", f"{name} install must run from apps/platform-academy")
+
+    router_step = step_by_name(deploy_steps, "Validate static edge router", name)
+    require_run_contains(router_step, "npm run validate:static-spa-router", f"{name} router validation")
+    test_step = step_by_name(deploy_steps, "Test and build Platform Academy", name)
+    require_run_contains(test_step, "npm test -- --run", f"{name} tests")
+    require_run_contains(test_step, "npm run build", f"{name} build")
+
+    deploy_text = "\n".join(str(step) for step in deploy_steps)
+    for needle in [
+        "aws-actions/configure-aws-credentials@v6",
+        "mask-aws-account-id",
+        "scripts/deploy-static-edge-router.sh",
+        "aws s3 sync dist/",
+        "aws s3 cp dist/api/",
+        "content-type \"application/json; charset=utf-8\"",
+        "aws cloudfront create-invalidation",
+        "aws cloudfront wait invalidation-completed",
+        "GetInvalidation is unavailable",
+        "sleep 30",
+        "SMOKE_EXPECT_CLEAN_SPA_ROUTING=true WEB_BASE=\"${SITE_URL}\" npm run smoke:static-host",
+        "WEB_BASE=\"${SITE_URL}\" npm run smoke:browser-static-host",
+    ]:
+        require(needle in deploy_text, f"{name} deploy path must include {needle}")
+
+
 def main() -> None:
     verify_expected_workflows()
     verify_platform_image_workflow()
@@ -345,6 +417,7 @@ def main() -> None:
     verify_platform_validate_workflow()
     verify_platform_deployed_smoke_workflow()
     verify_platform_static_smoke_workflow()
+    verify_platform_static_deploy_workflow()
     print("Verified GitHub Actions release workflow contracts.")
 
 

@@ -1357,7 +1357,7 @@ describe("Platform Academy app", () => {
     expect(screen.getByRole("heading", { name: "Investigate, prove, validate, clean up" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Prepare workspace" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Investigate safely" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Prove the finding" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Validate the finding" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Reset or hand off" })).toBeInTheDocument();
     expect(screen.getByText("Evidence artifact map")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Learner-safe files" })).toBeInTheDocument();

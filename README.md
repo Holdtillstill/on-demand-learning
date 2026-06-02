@@ -23,7 +23,7 @@ my responsibility.
 
 | Surface | Status | Notes |
 | --- | --- | --- |
-| Static Platform Academy | Public static host | `platform-academy.bozhi.dev` serves the browsable learning workspace and static catalog snapshots when configured. |
+| Static Platform Academy | Public static host | `platform-academy.bozhi.dev` serves the browsable learning workspace, static catalog snapshots, and browser-local guest work. |
 | Full API runtime | Local and preview-ready | Progress, activity, recovery keys, and API-backed persistence run locally or in approved short-lived preview windows. |
 | Observability | Local and preview-ready | Metrics, traces, logs, dashboards, and smoke checks are wired for local validation and shared runtime demos. |
 | EKS runtime preview | Request-only | Shared EKS demos are temporary validation windows, not always-on learning infrastructure. |
@@ -68,7 +68,7 @@ Then open OpenSearch Dashboards at http://localhost:5601.
 - Dockerfiles and Docker Compose for app, DB, Redis, Prometheus, Grafana, Jaeger, and optional OpenSearch/Fluent Bit.
 - Kubernetes deployment scaffolding with probes, HPAs, PDBs, network policy, ingress, configmaps, and secret template.
 - Terraform scaffold for AWS `us-west-2`: VPC, EKS, ECR, S3, RDS, ElastiCache, IAM roles, and Budget alert.
-- GitHub Actions for backend, Platform Academy frontend, Docker build, Platform Academy validation/image smoke, scheduled deployed smoke, dependency/security scans, and manual deploy template.
+- GitHub Actions for backend, Platform Academy frontend, Docker build, static CloudFront/S3 deploy, Platform Academy validation/image smoke, scheduled deployed smoke, dependency/security scans, and manual Kubernetes deploy template.
 
 ## CI and Security
 
@@ -165,10 +165,10 @@ See [docs/platform-academy-handoff.md](docs/platform-academy-handoff.md), [docs/
 
 - Keep Platform Academy full-stack for progress, activity, learner profile recovery, and API-backed catalog data.
 - Use Docker Compose for local demos and a shared EKS preview for Kubernetes runtime validation.
-- Use `platform-academy.bozhi.dev` as the stable static public entry when configured; API-backed persistence remains preview/runtime-only unless explicitly deployed.
+- Use `platform-academy.bozhi.dev` as the stable static public entry; API-backed persistence remains preview/runtime-only unless explicitly deployed.
 - Use `preview.platform-academy.bozhi.dev` for approved on-demand shared-EKS previews.
 - Keep ECR image publishing manual-only; regular CI builds and scans images without pushing new AWS artifacts.
-- Do not deploy as pure static S3 unless the public surface is split into a read-only catalog/marketing/docs site.
+- Keep the static public site on CloudFront/S3 with checked-in snapshots, browser-local state, and an edge API guardrail; use runtime previews only when persistence or Kubernetes behavior is part of the demo.
 - Avoid an always-on dedicated EKS cluster; use shared infrastructure, TTL previews, and budgets.
 - Run Alembic migrations before production-like persistent API startup.
 

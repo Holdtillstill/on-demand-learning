@@ -556,8 +556,8 @@ function labRunPhases(lab: PlatformLab) {
       emptyText: "Use the workbook prompts as the investigation path."
     },
     {
-      title: "Prove the finding",
-      label: `${(lab.expected_evidence?.length ?? 0) + (lab.validation_commands?.length ?? 0)} proof points`,
+      title: "Validate the finding",
+      label: `${(lab.expected_evidence?.length ?? 0) + (lab.validation_commands?.length ?? 0)} validation items`,
       icon: CheckCircle2,
       items: compactLabItems([...(lab.expected_evidence ?? []), ...(lab.validation_commands ?? [])]),
       emptyText: "Save worksheet evidence before marking the lab complete."
