@@ -165,6 +165,17 @@ def verify_issue_templates(errors: list[str]) -> None:
         errors.append(".github/ISSUE_TEMPLATE/bug_report.yml: evidence instructions must require sanitized logs")
 
 
+def verify_contributing(errors: list[str]) -> None:
+    contributing = read_text(REPO_ROOT / "CONTRIBUTING.md")
+    if contributing is None:
+        errors.append("CONTRIBUTING.md: missing")
+        return
+    if "Do not include secrets" not in contributing:
+        errors.append("CONTRIBUTING.md: missing public-safety contribution boundary")
+    if "python3 scripts/verify_public_readiness.py" not in contributing:
+        errors.append("CONTRIBUTING.md: missing public-readiness validation command")
+
+
 def main() -> int:
     errors: list[str] = []
     for stale_doc in sorted(REMOVED_DOCS):
@@ -182,6 +193,7 @@ def main() -> int:
     verify_public_shell(errors)
     verify_public_discovery(errors)
     verify_issue_templates(errors)
+    verify_contributing(errors)
 
     if errors:
         print("FAIL: public-readiness check failed:", file=sys.stderr)
