@@ -425,6 +425,40 @@ def verify_codeql_workflow() -> None:
         require(needle in workflow_text, f"{name} must include {needle}")
 
 
+def verify_security_workflows() -> None:
+    dependency_audit = (WORKFLOW_DIR / "dependency-audit.yml").read_text()
+    for needle in [
+        "schedule:",
+        "permissions:\n  contents: read",
+        "actions/setup-python@v6",
+        "pip-audit --no-deps --disable-pip -r apps/api/requirements.txt",
+        "pip-audit --no-deps --disable-pip -r apps/worker/requirements.txt",
+        "actions/setup-node@v6",
+        "npm audit --audit-level=high",
+    ]:
+        require(needle in dependency_audit, f"dependency-audit.yml must include {needle}")
+
+    secret_scan = (WORKFLOW_DIR / "secret-scan.yml").read_text()
+    for needle in [
+        "schedule:",
+        "fetch-depth: 0",
+        "gitleaks detect --source /repo --redact --verbose",
+        "Block committed cloud identifiers",
+    ]:
+        require(needle in secret_scan, f"secret-scan.yml must include {needle}")
+
+    security = (WORKFLOW_DIR / "security.yml").read_text()
+    for needle in [
+        "schedule:",
+        "actions/dependency-review-action@v5",
+        "aquasecurity/trivy-action@v0.36.0",
+        "scan-type: fs",
+        "scanners: vuln,secret",
+        "scanners: misconfig",
+    ]:
+        require(needle in security, f"security.yml must include {needle}")
+
+
 def main() -> None:
     verify_expected_workflows()
     verify_platform_image_workflow()
@@ -434,6 +468,7 @@ def main() -> None:
     verify_platform_deployed_smoke_workflow()
     verify_platform_static_smoke_workflow()
     verify_platform_static_deploy_workflow()
+    verify_security_workflows()
     verify_codeql_workflow()
     print("Verified GitHub Actions release workflow contracts.")
 

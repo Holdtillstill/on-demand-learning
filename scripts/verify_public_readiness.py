@@ -194,6 +194,34 @@ def verify_issue_templates(errors: list[str]) -> None:
         errors.append(".github/ISSUE_TEMPLATE/bug_report.yml: evidence instructions must require sanitized logs")
 
 
+def verify_security_policy(errors: list[str]) -> None:
+    security_policy = read_text(REPO_ROOT / "SECURITY.md")
+    if security_policy is None:
+        errors.append("SECURITY.md: missing")
+        return
+    for marker in [
+        "GitHub private vulnerability reporting",
+        "Do not open a public issue",
+        "Gitleaks secret scanning",
+        "Trivy filesystem scanning",
+        "Docker image scanning",
+        "CodeQL source analysis",
+    ]:
+        if marker not in security_policy:
+            errors.append(f"SECURITY.md: missing security policy marker {marker}")
+
+
+def verify_license(errors: list[str]) -> None:
+    license_text = read_text(REPO_ROOT / "LICENSE")
+    if license_text is None:
+        errors.append("LICENSE: missing")
+        return
+    if "MIT License" not in license_text:
+        errors.append("LICENSE: missing MIT License")
+    if "Copyright (c) 2026 Holdtillstill" not in license_text:
+        errors.append("LICENSE: missing public copyright holder")
+
+
 def verify_contributing(errors: list[str]) -> None:
     contributing = read_text(REPO_ROOT / "CONTRIBUTING.md")
     if contributing is None:
@@ -279,6 +307,8 @@ def main() -> int:
     verify_public_discovery(errors)
     verify_privacy_note(errors)
     verify_issue_templates(errors)
+    verify_security_policy(errors)
+    verify_license(errors)
     verify_contributing(errors)
     verify_code_of_conduct(errors)
     verify_dependabot(errors)
