@@ -54,6 +54,7 @@ PUBLIC_TEXT_PATTERNS = [
     ("internal workspace artifact", re.compile(r"\b(antigravity|portfolio_review|ybz\.dev)\b", re.IGNORECASE)),
     ("stale branch reference", re.compile(r"\bcodex/runnable-labs\b", re.IGNORECASE)),
     ("controller prompt language", re.compile(r"\bdo not commit; controller\b", re.IGNORECASE)),
+    ("GitHub Actions badge URL", re.compile(r"actions/workflows/[^\s)]+/badge\.svg|badge\.svg", re.IGNORECASE)),
 ]
 
 SENSITIVE_PATTERNS = [
