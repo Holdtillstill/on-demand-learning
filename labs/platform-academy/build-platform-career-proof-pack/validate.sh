@@ -39,10 +39,10 @@ grep -q "EKS, Helm, ArgoCD" "$SKILLS" || fail "job-skills.txt should include EKS
 grep -q "Docker, supply chain, release engineering" "$SKILLS" || fail "job-skills.txt should include supply-chain skills"
 grep -q "Candidate artifacts" "$INVENTORY" || fail "evidence-inventory.md should list candidate artifacts"
 grep -q "Missing evidence to collect" "$INVENTORY" || fail "evidence-inventory.md should list missing evidence"
-grep -q "Interview Talking Points" "$TEMPLATE" || fail "readme-template.md should include interview talking points"
+grep -q "Technical Talking Points" "$TEMPLATE" || fail "readme-template.md should include technical talking points"
 
-grep -q "Kubernetes Service Debugging and Release Safety" "$PROOF" || fail "completed-proof-readme.md should name a concrete proof project"
-grep -q "kubectl describe svc checkout -n payments" "$PROOF" || fail "completed-proof-readme.md should include command evidence"
+grep -q "Kubernetes Service Debugging and Release Safety" "$PROOF" || fail "completed-proof-readme.md should name a concrete artifact project"
+grep -q "kubectl describe svc checkout -n payments" "$PROOF" || fail "completed-proof-readme.md should include command validation"
 grep -q "bash labs/platform-academy/verify-full-labs.sh" "$PROOF" || fail "completed-proof-readme.md should reference full-lab validation"
 grep -q "digest promotion" "$PROOF" || fail "completed-proof-readme.md should include release evidence"
 grep -q "Rollback" "$PROOF" || fail "completed-proof-readme.md should include rollback"
@@ -64,7 +64,7 @@ grep -q "Redaction is part of the artifact" "$TRIAGE" || fail "triage-notes.md s
 grep -q "## Triage Notes And False Leads" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for triage false leads"
 grep -q "## Skill Demand Evidence" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for skill demand evidence"
 grep -q "## Portfolio Artifact Evidence" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for portfolio artifact evidence"
-grep -q "## Interview And Resume Evidence" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for interview and resume evidence"
+grep -q "## Technical Review And Resume Evidence" "$TEMPLATE_EVIDENCE" || fail "evidence-template.md should prompt for technical review and resume evidence"
 grep -q "Career artifact pack analysis passed" "$ANALYZER" || fail "career_proof_analyzer.py should report successful analysis"
 
 python3 "$ANALYZER" --skills "$SKILLS" --inventory "$INVENTORY" --proof "$PROOF" --bullets "$BULLETS" --star "$STAR" --quiet
@@ -81,7 +81,7 @@ if [[ -n "$evidence_file" ]]; then
   require_evidence_match "$evidence_file" "release and rollback evidence" "digest promotion|Rollback|rollback"
   require_evidence_match "$evidence_file" "resume bullet evidence" "resume bullet|repository-backed|profile-backed|digest, SBOM, scan"
   require_evidence_match "$evidence_file" "STAR story coverage" "Incident Response|Security|Cost|Release Safety|STAR"
-  require_evidence_match "$evidence_file" "local career artifact analyzer evidence" "Career artifact pack analysis passed|career proof analyzer|artifact pack analysis"
+  require_evidence_match "$evidence_file" "local career artifact analyzer evidence" "Career artifact pack analysis passed|career artifact analyzer|artifact pack analysis"
   require_evidence_match "$evidence_file" "public-safe or missing-evidence note" "public-safe|redaction|missing evidence|stronger evidence"
   echo "Evidence checks passed for build-platform-career-proof-pack."
 fi

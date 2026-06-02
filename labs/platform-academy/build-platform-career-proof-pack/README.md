@@ -45,7 +45,7 @@ Find:
 - Which incidents, tradeoffs, and influence moments can become STAR stories.
 - Which claims still need screenshots, diagrams, validation output, or public-safe redaction.
 
-Run the local career proof analyzer after collecting the pack, or use setup with `--run-analyzer`:
+Run the local career artifact analyzer after collecting the pack, or use setup with `--run-analyzer`:
 
 ```bash
 python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py \

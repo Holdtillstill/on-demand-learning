@@ -1396,7 +1396,7 @@ def test_cost_lab_feedback_tracks_delete_first_false_leads():
     assert cadence_feedback["status"] == "strong"
 
 
-def test_career_proof_lab_feedback_tracks_claim_quality_false_leads():
+def test_career_artifact_lab_feedback_tracks_claim_quality_false_leads():
     checked_items = {f"worksheet-{index}": True for index in range(7)}
     checked_items.update({f"validation-{index}": True for index in range(8)})
 
@@ -1409,7 +1409,7 @@ def test_career_proof_lab_feedback_tracks_claim_quality_false_leads():
                 "worksheet-1": "triage-notes.md False Leads rule out completed labs, duty-only bullets, weak STAR, and redaction gaps.",
                 "worksheet-2": "Kubernetes, Terraform, AWS, CI/CD plus EKS, Helm, ArgoCD and Docker, supply chain domains mapped.",
                 "worksheet-3": "Candidate artifacts, Missing evidence to collect, verify-full-labs.sh, and Rollback evidence cited.",
-                "worksheet-4": "completed-proof-readme.md includes Problem, Environment, and Interview Talking Points.",
+                "worksheet-4": "completed-proof-readme.md includes Problem, Environment, and Technical Talking Points.",
                 "worksheet-5": "resume-bullets.md and star-stories.md cover Incident Response, Security, Cost, and Release Safety.",
                 "worksheet-6": (
                     "validate output, screenshots, diagrams, evidence-template.md, stronger evidence, "

@@ -24,7 +24,7 @@
 - Screenshots or diagrams needed:
 - Public-safe redaction note:
 
-## Interview And Resume Evidence
+## Technical Review And Resume Evidence
 
 - README artifact section:
 - Resume bullet with action/scope/impact:

@@ -8,7 +8,7 @@ These notes are a captured portfolio review for the career artifact pack lab. Us
 
 - 19:00 UTC: Target role review found repeated demand for Kubernetes, Terraform, AWS, CI/CD, incident response, observability, EKS, Helm, ArgoCD, Docker, supply chain, and release engineering.
 - 19:14 UTC: Evidence inventory mapped labs to candidate artifacts and missing evidence.
-- 19:25 UTC: README review required concrete problem, environment, commands, decision, validation, rollback, and interview talking points.
+- 19:25 UTC: README review required concrete problem, environment, commands, decision, validation, rollback, and technical talking points.
 - 19:38 UTC: Resume review rejected broad claims that were not tied to artifacts, validators, or outcomes.
 - 19:47 UTC: STAR story review required incident response, security, cost, and release safety examples.
 - 19:55 UTC: Public-safety review blocked secrets, customer identifiers, private screenshots, and live production IDs.

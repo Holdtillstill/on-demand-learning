@@ -4382,8 +4382,8 @@ RUNNABLE_LAB_UPDATES = {
             "Read the triage notes and rule out broad career claims without evidence.",
             "Extract repeated skills from the sample target roles.",
             "Pick three lab artifacts and map them to artifact bullets.",
-            "Fill the README template with commands, evidence, validation, rollback, and interview talking points.",
-            "Run the local career proof analyzer to verify the README, bullets, STAR stories, missing-evidence list, and public-safety boundary.",
+            "Fill the README template with commands, evidence, validation, rollback, and technical talking points.",
+            "Run the local career artifact analyzer to verify the README, bullets, STAR stories, missing-evidence list, and public-safety boundary.",
         ],
         "expected_evidence": [
             "The triage notes rule out lab-count claims, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.",
@@ -5151,7 +5151,7 @@ DEEPENED_LAB_UPDATES = {
             ["triage-notes.md", "False Leads", "completed labs", "duty-only", "STAR", "redaction"],
             ["Kubernetes, Terraform, AWS, CI/CD", "EKS, Helm, ArgoCD", "Docker, supply chain"],
             ["Candidate artifacts", "Missing evidence to collect", "verify-full-labs.sh", "Rollback"],
-            ["completed-proof-readme.md", "Problem", "Environment", "Interview Talking Points"],
+            ["completed-proof-readme.md", "Problem", "Environment", "Technical Talking Points"],
             ["resume-bullets.md", "star-stories.md", "Incident Response", "Security", "Cost", "Release Safety"],
             ["validate", "screenshots", "diagrams", "evidence-template.md", "stronger evidence", "Career artifact pack analysis passed"],
         ],
@@ -6352,9 +6352,9 @@ RESOURCE_DOMAIN_BLUEPRINTS = [
         "level_group": "Advanced",
         "course_slug": "platform-career-job-search-sprint",
         "lab_slug": "build-platform-career-proof-pack",
-        "topics": "skill matrix, portfolio projects, interview scenarios, CKA/CKAD/CKS, AWS, Terraform Associate, resume proof",
+        "topics": "skill matrix, portfolio projects, technical scenarios, CKA/CKAD/CKS, AWS, Terraform Associate, resume artifacts",
         "command": "git log --oneline --decorate -5",
-        "artifact": "portfolio artifact and interview rubric",
+        "artifact": "portfolio artifact and technical review rubric",
     },
 ]
 
@@ -6772,7 +6772,7 @@ RESOURCE_RESEARCH_PROFILES.update(
         "Cloud Native": {
             "source_takeaways": [
                 "Cloud-native work is about declarative configuration, immutable artifacts, service ownership, observability, and automated recovery.",
-                "YAML is not proof of safety; rendered manifests, permissions, resource requests, and rollout behavior need review.",
+                "YAML alone is not a safety review; rendered manifests, permissions, resource requests, and rollout behavior need inspection.",
                 "The best platform defaults make reliability and security the easiest path for application teams.",
             ],
             "study_tasks": [

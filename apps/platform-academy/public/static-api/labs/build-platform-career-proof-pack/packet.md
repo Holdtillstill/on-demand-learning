@@ -20,7 +20,7 @@ You need interview-ready artifacts that show your platform skills are practical,
    - Read the triage notes and rule out broad career claims without evidence.
    - Extract repeated skills from the sample target roles.
    - Pick three lab artifacts and map them to artifact bullets.
-   - Fill the README template with commands, evidence, validation, rollback, and interview talking points.
+   - Fill the README template with commands, evidence, validation, rollback, and technical talking points.
 3. Prove the finding
    - The triage notes rule out lab-count claims, duty-only bullets, weak STAR stories, context-free screenshots, and unredacted claims.
    - Target roles repeatedly mention Kubernetes, AWS, Terraform, CI/CD, observability, SRE, and security.
@@ -110,8 +110,8 @@ You need interview-ready artifacts that show your platform skills are practical,
 - [ ] Read the triage notes and rule out broad career claims without evidence.
 - [ ] Extract repeated skills from the sample target roles.
 - [ ] Pick three lab artifacts and map them to artifact bullets.
-- [ ] Fill the README template with commands, evidence, validation, rollback, and interview talking points.
-- [ ] Run the local career proof analyzer to verify the README, bullets, STAR stories, missing-evidence list, and public-safety boundary.
+- [ ] Fill the README template with commands, evidence, validation, rollback, and technical talking points.
+- [ ] Run the local career artifact analyzer to verify the README, bullets, STAR stories, missing-evidence list, and public-safety boundary.
 
 ## Runbook commands
 

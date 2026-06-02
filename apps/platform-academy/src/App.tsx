@@ -109,22 +109,22 @@ const starterLabPath = [
   {
     slug: "trace-service-to-pod",
     label: "Service routing incident",
-    proof: "Selector, Pod label, EndpointSlice, fix, and cleanup evidence."
+    evidence: "Selector, Pod label, EndpointSlice, fix, and cleanup notes."
   },
   {
     slug: "debug-crashloop-imagepull",
     label: "First-response triage",
-    proof: "CrashLoopBackOff, ImagePullBackOff, previous logs, events, and owner split."
+    evidence: "CrashLoopBackOff, ImagePullBackOff, previous logs, events, and owner split."
   },
   {
     slug: "review-yaml-before-apply",
     label: "Safe manifest review",
-    proof: "Risk inventory, false leads, dry-run boundary, vendor questions, and safer baseline."
+    evidence: "Risk inventory, false leads, dry-run boundary, vendor questions, and safer baseline."
   },
   {
     slug: "debug-irsa-access-denied",
     label: "Cloud access handoff",
-    proof: "ServiceAccount identity, IAM trust subject, CloudTrail denial, and least-privilege fix."
+    evidence: "ServiceAccount identity, IAM trust subject, CloudTrail denial, and least-privilege fix."
   }
 ] as const;
 const rubricStatusLabels: Record<string, string> = {
@@ -1933,7 +1933,7 @@ function LabStarterPath({ data }: { data: AcademyData }) {
             <div>
               <p className="eyebrow">{item.label}</p>
               <strong>{item.lab.title}</strong>
-              <span>{item.proof}</span>
+              <span>{item.evidence}</span>
               <div className="lab-starter-meta">
                 <LabRuntimeBadge lab={item.lab} />
                 <LabSubmissionBadge submission={item.submission} />
@@ -2347,7 +2347,7 @@ function InterviewPrepPage({ data, onSaveActivity }: { data: AcademyData; onSave
           <p className="eyebrow">Scenario questions, answer notes, docs links</p>
           <h1>Interview prep</h1>
           <p className="lead">
-            Practice realistic platform interview scenarios with answer outlines, common mistakes, and links to official docs.
+            Practice realistic platform review scenarios with answer outlines, common mistakes, and links to official docs.
           </p>
         </div>
         <dl className="resource-stats">

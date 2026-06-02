@@ -1561,7 +1561,7 @@ def verify_build_platform_career_proof_pack() -> None:
         "supply chain",
         "release engineering",
     ]:
-        require(term in skills, f"career proof skill demand should include {term}")
+        require(term in skills, f"career artifact skill demand should include {term}")
     for term in [
         "Candidate artifacts",
         "Trace Service traffic to ready Pods",
@@ -1575,16 +1575,16 @@ def verify_build_platform_career_proof_pack() -> None:
         "One architecture diagram",
         "One measurable business or reliability outcome",
     ]:
-        require(term in inventory, f"career proof inventory should include {term}")
-    require(len(markdown_bullets(inventory)) >= 10, "career proof inventory should include candidate and missing-artifact bullets")
+        require(term in inventory, f"career artifact inventory should include {term}")
+    require(len(markdown_bullets(inventory)) >= 10, "career artifact inventory should include candidate and missing-artifact bullets")
     for heading in [
         "## Problem",
         "## Environment",
-        "## Commands And Evidence",
+        "## Commands And Validation",
         "## Decision",
         "## Validation",
         "## Rollback",
-        "## Interview Talking Points",
+        "## Technical Talking Points",
     ]:
         require(heading in template, f"career artifact README template should include {heading}")
         require(heading in proof, f"completed career artifact README should include {heading}")
@@ -1605,18 +1605,18 @@ def verify_build_platform_career_proof_pack() -> None:
     for term in [
         "repository-backed Kubernetes and platform engineering labs",
         "profile-backed lab workbooks",
-        "portfolio-ready proof",
+        "portfolio-ready artifacts",
         "digest, SBOM, scan",
         "STAR stories",
     ]:
-        require(term in bullets, f"career proof resume bullets should include {term}")
-    require(len(markdown_bullets(bullets)) >= 5, "career proof resume file should include at least five bullets")
+        require(term in bullets, f"career artifact resume bullets should include {term}")
+    require(len(markdown_bullets(bullets)) >= 5, "career artifact resume file should include at least five bullets")
 
     for story in ["Incident Response", "Security", "Cost", "Release Safety"]:
         body = markdown_section(star, story)
-        require(body, f"career proof STAR stories should include {story}")
+        require(body, f"career artifact STAR stories should include {story}")
         for label in ["Situation:", "Task:", "Action:", "Result:"]:
-            require(label in body, f"career proof {story} STAR story should include {label}")
+            require(label in body, f"career artifact {story} STAR story should include {label}")
     for term in [
         "A long list of completed labs is not credible",
         "Resume bullets are weak",
@@ -1625,14 +1625,14 @@ def verify_build_platform_career_proof_pack() -> None:
         "Missing evidence should be named directly",
         "Redaction is part of the artifact",
     ]:
-        require(term in triage, f"career proof triage notes should include {term}")
+        require(term in triage, f"career artifact triage notes should include {term}")
     for heading in [
         "## Triage Notes And False Leads",
         "## Skill Demand Evidence",
         "## Portfolio Artifact Evidence",
-        "## Interview And Resume Evidence",
+        "## Technical Review And Resume Evidence",
     ]:
-        require(heading in evidence_template, f"career proof evidence template should include {heading}")
+        require(heading in evidence_template, f"career artifact evidence template should include {heading}")
     for term in [
         "Career artifact pack analysis passed",
         "Skill demand",
@@ -1642,9 +1642,9 @@ def verify_build_platform_career_proof_pack() -> None:
         "STAR stories",
         "public artifacts avoid obvious secrets",
     ]:
-        require(term in analyzer, f"career proof analyzer should include {term}")
+        require(term in analyzer, f"career artifact analyzer should include {term}")
     for private_value in ["secret=", "password=", "customer@example.com", "prod-111122223333"]:
-        require(private_value not in proof + bullets + star, f"career proof public artifacts should not include {private_value}")
+        require(private_value not in proof + bullets + star, f"career artifact public artifacts should not include {private_value}")
 
 
 VERIFY_BY_LAB = {

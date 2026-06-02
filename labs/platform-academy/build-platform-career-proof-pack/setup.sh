@@ -18,8 +18,8 @@ Usage:
 
 Options:
   --cluster        Refuse live setup; this lab is a local portfolio Evidence review.
-  --no-cluster     Copy the evidence template and stage career proof artifacts. This is the default.
-  --run-analyzer   Run the local career proof analyzer after staging evidence.
+  --no-cluster     Copy the evidence template and stage career artifact files. This is the default.
+  --run-analyzer   Run the local career artifact analyzer after staging evidence.
   --evidence       Evidence note path to create when it does not already exist.
 EOF
 }
@@ -68,10 +68,10 @@ else
 fi
 
 echo
-echo "Captured career proof triage notes:"
+echo "Captured career artifact triage notes:"
 sed -n '1,220p' "$TRIAGE"
 echo
-echo "Staged career proof review bundle:"
+echo "Staged career artifact review bundle:"
 echo "  sed -n '1,220p' labs/platform-academy/build-platform-career-proof-pack/triage-notes.md"
 echo "  sed -n '1,160p' labs/platform-academy/build-platform-career-proof-pack/job-skills.txt"
 echo "  sed -n '1,200p' labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md"
@@ -85,7 +85,7 @@ if [[ "$run_analyzer" == true ]]; then
     --bullets "$LAB_DIR/resume-bullets.md" \
     --star "$LAB_DIR/star-stories.md"
 else
-  echo "Analyzer is intentionally not run by default; inspect skill demand, inventory, proof, resume, STAR, and redaction evidence first, then run:"
+  echo "Analyzer is intentionally not run by default; inspect skill demand, inventory, artifact README, resume, STAR, and redaction evidence first, then run:"
   echo "  python3 labs/platform-academy/build-platform-career-proof-pack/career_proof_analyzer.py \\"
   echo "    --skills labs/platform-academy/build-platform-career-proof-pack/job-skills.txt \\"
   echo "    --inventory labs/platform-academy/build-platform-career-proof-pack/evidence-inventory.md \\"

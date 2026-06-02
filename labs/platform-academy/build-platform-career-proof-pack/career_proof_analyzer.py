@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evidence-oriented local analyzer for the platform career artifact pack."""
+"""Validation-oriented local analyzer for the platform career artifact pack."""
 
 from __future__ import annotations
 
@@ -85,13 +85,13 @@ def main() -> int:
                 "Kubernetes Service Debugging and Release Safety",
                 "## Problem",
                 "## Environment",
-                "## Commands And Evidence",
+                "## Commands And Validation",
                 "kubectl describe svc checkout -n payments",
                 "bash labs/platform-academy/verify-full-labs.sh",
                 "digest promotion",
                 "## Validation",
                 "## Rollback",
-                "## Interview Talking Points",
+                "## Technical Talking Points",
             ],
         )
     )
@@ -129,7 +129,7 @@ def main() -> int:
         print("- Skill demand: Kubernetes, Terraform, AWS, CI/CD, incident, observability, EKS, Helm, ArgoCD, Docker.")
         print("- Evidence inventory: candidate artifacts and missing evidence are both explicit.")
         print("- Artifact README: problem, environment, commands, decision, validation, rollback, and talking points are filled.")
-        print("- Resume bullets: platform scope, product implementation, supply chain, and portfolio evidence are represented.")
+        print("- Resume bullets: platform scope, product implementation, supply chain, and portfolio artifacts are represented.")
         print("- STAR stories: incident response, security, cost, and release safety each include Situation/Task/Action/Result.")
         print("- Safety: public artifacts avoid obvious secrets, customer identifiers, and live production account values.")
     return 0
