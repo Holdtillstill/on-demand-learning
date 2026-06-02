@@ -280,10 +280,9 @@ def write_pathspecs(files_by_area: dict[str, list[ChangedFile]], output_dir: Pat
     output_dir.mkdir(parents=True, exist_ok=True)
     for area_key in AREA_ORDER:
         files = files_by_area.get(area_key, [])
-        if not files:
-            continue
         pathspec = output_dir / pathspec_name(area_key)
-        pathspec.write_text("\n".join(changed.path for changed in files) + "\n", encoding="utf-8")
+        content = "\n".join(changed.path for changed in files)
+        pathspec.write_text(f"{content}\n" if content else "", encoding="utf-8")
 
 
 def print_commit_plan(
