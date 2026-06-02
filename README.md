@@ -95,19 +95,19 @@ make clean-smoke-images
 
 ```bash
 curl http://localhost:8000/api/courses
-curl "http://localhost:8000/api/learning-path?user_id=demo-user"
-curl http://localhost:8000/api/users/demo-user/dashboard
-curl "http://localhost:8000/api/reviews/due?user_id=demo-user"
+curl "http://localhost:8000/api/learning-path?user_id=guest-local-demo"
+curl http://localhost:8000/api/users/guest-local-demo/dashboard
+curl "http://localhost:8000/api/reviews/due?user_id=guest-local-demo"
 curl "http://localhost:8000/api/search?q=Kubernetes"
 curl http://localhost:8000/api/platform-academy/catalog
 curl http://localhost:8000/api/platform-academy/roadmap
 curl http://localhost:8000/api/platform-academy/labs
 curl -X POST http://localhost:8000/api/progress \
   -H 'content-type: application/json' \
-  -d '{"user_id":"demo-user","lesson_id":1,"completed":true,"score":1}'
+  -d '{"user_id":"guest-local-demo","lesson_id":1,"completed":true,"score":1}'
 curl -X POST http://localhost:8000/api/reviews/1/answer \
   -H 'content-type: application/json' \
-  -d '{"user_id":"demo-user","quality":5,"correct":true}'
+  -d '{"user_id":"guest-local-demo","quality":5,"correct":true}'
 
 # Generate local demo activity for metrics, traces, XP, reviews, and dashboards.
 bash scripts/generate_learner_activity.sh
@@ -145,7 +145,7 @@ See [docs/platform-academy-handoff.md](docs/platform-academy-handoff.md), [docs/
 
 ## Known Limitations
 
-- Auth is represented by a mock `demo-user`; production auth would use OIDC or a managed identity provider.
+- Auth is represented by browser-local guest profiles and demo API users; production auth would use OIDC or a managed identity provider.
 - Subscription/payment status is a mock field, with no real payment integration.
 - SQLAlchemy creates schema at startup for local/demo speed; production-like deployments should run Alembic separately with `CREATE_SCHEMA_ON_STARTUP=false`.
 - Platform Academy anonymous progress uses browser-local guest IDs plus backend rows; clearing local storage creates a new guest profile unless the learner saved the recovery key.

@@ -35,6 +35,8 @@ jobs:
         run: make env-contract-check PYTHON=python3
       - name: Verify Platform Academy content counts
         run: make platform-content-count-check PYTHON=python3
+      - name: Verify public readiness
+        run: make public-readiness-check PYTHON=python3
       - name: Verify working tree hygiene
         run: make working-tree-hygiene-check PYTHON=python3
       - name: Validate Docker Compose config

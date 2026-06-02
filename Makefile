@@ -1,4 +1,4 @@
-.PHONY: help up up-logging down logs clean-generated clean-smoke-images test bootstrap backend-test api-migration-check api-image-migration-check doc-link-check env-contract-check platform-content-count-check working-tree-hygiene-check platform-academy-test platform-lab-contract platform-lab-artifact-contract platform-lab-matrix platform-lab-verify platform-review-manifest platform-api-smoke platform-lab-smoke platform-browser-smoke platform-container-smoke platform-deployed-smoke platform-release-validation platform-release-evidence platform-review-pack smoke-helper-check worker-test build compose-config terraform-validate k8s-platform-contract kubeconform-check workflow-lint workflow-contract-check script-syntax-check fmt-check release-check platform-release-check
+.PHONY: help up up-logging down logs clean-generated clean-smoke-images test bootstrap backend-test api-migration-check api-image-migration-check doc-link-check env-contract-check platform-content-count-check public-readiness-check working-tree-hygiene-check platform-academy-test platform-lab-contract platform-lab-artifact-contract platform-lab-matrix platform-lab-verify platform-review-manifest platform-api-smoke platform-lab-smoke platform-browser-smoke platform-container-smoke platform-deployed-smoke platform-release-validation platform-release-evidence platform-review-pack smoke-helper-check worker-test build compose-config terraform-validate k8s-platform-contract kubeconform-check workflow-lint workflow-contract-check script-syntax-check fmt-check release-check platform-release-check
 
 PYTHON ?= python3.11
 KUBECONFORM_IMAGE ?= ghcr.io/yannh/kubeconform:v0.6.7
@@ -89,6 +89,9 @@ env-contract-check: ## Verify sample env and local Compose cover runtime setting
 platform-content-count-check: ## Verify smoke defaults and docs match Platform Academy content counts
 	PYTHONPATH=apps/api $(PYTHON) scripts/verify_platform_content_counts.py
 
+public-readiness-check: ## Verify public repo docs/copy avoid stale process notes and sensitive identifiers
+	$(PYTHON) scripts/verify_public_readiness.py
+
 working-tree-hygiene-check: ## Verify branch and local changed files are clean enough to review
 	$(PYTHON) scripts/verify_working_tree_hygiene.py
 
@@ -150,6 +153,6 @@ fmt-check: ## Run Python lint checks
 	cd apps/worker && $(PYTHON) -m ruff check .
 	$(PYTHON) -m ruff check scripts labs/platform-academy/simulator.py
 
-release-check: fmt-check doc-link-check env-contract-check platform-content-count-check working-tree-hygiene-check script-syntax-check smoke-helper-check api-migration-check test compose-config terraform-validate k8s-platform-contract kubeconform-check workflow-lint ## Run local release gates before tagging or publishing images
+release-check: fmt-check doc-link-check env-contract-check platform-content-count-check public-readiness-check working-tree-hygiene-check script-syntax-check smoke-helper-check api-migration-check test compose-config terraform-validate k8s-platform-contract kubeconform-check workflow-lint ## Run local release gates before tagging or publishing images
 
 platform-release-check: release-check api-image-migration-check platform-container-smoke ## Run local release gates plus built-container Platform Academy smoke

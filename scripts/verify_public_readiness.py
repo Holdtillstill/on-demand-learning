@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""Scan public repository text for stale process notes and sensitive identifiers."""
+
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+SKIP_DIRS = {
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".terraform",
+    ".venv",
+    ".vite",
+    "__pycache__",
+    "coverage",
+    "dist",
+    "htmlcov",
+    "node_modules",
+    "playwright-report",
+    "smoke-artifacts",
+    "test-results",
+}
+
+TEXT_SUFFIXES = {
+    ".css",
+    ".html",
+    ".js",
+    ".json",
+    ".md",
+    ".mjs",
+    ".py",
+    ".sh",
+    ".toml",
+    ".ts",
+    ".tsx",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
+
+REMOVED_DOCS = {
+    Path("docs/platform-academy-browser-local-progress-plan.md"),
+    Path("docs/platform-academy-premium-polish-plan.md"),
+}
+
+PUBLIC_TEXT_PATTERNS = [
+    ("assistant/tooling name", re.compile(r"\b(Codex|Gemini|Claude|ChatGPT|LLM)\b", re.IGNORECASE)),
+    ("internal workspace artifact", re.compile(r"\b(antigravity|portfolio_review|ybz\.dev)\b", re.IGNORECASE)),
+    ("stale branch reference", re.compile(r"\bcodex/runnable-labs\b", re.IGNORECASE)),
+    ("controller prompt language", re.compile(r"\bdo not commit; controller\b", re.IGNORECASE)),
+]
+
+SENSITIVE_PATTERNS = [
+    ("Discord webhook", re.compile(r"discord\.com/api/webhooks/", re.IGNORECASE)),
+    ("account-specific AWS ARN", re.compile(r"arn:aws:[^\s\"'`]+::([0-9]{12})[^\s\"'`]*", re.IGNORECASE)),
+    ("ECR registry account", re.compile(r"([0-9]{12})\.dkr\.ecr\.[^\s\"'`]+", re.IGNORECASE)),
+    ("state bucket account suffix", re.compile(r"terraform-state-([0-9]{12})", re.IGNORECASE)),
+    ("hosted zone id assignment", re.compile(r"hosted_zone_id[^\n]*Z[A-Z0-9]{10,32}", re.IGNORECASE)),
+]
+
+ALLOWED_PLACEHOLDER_ACCOUNTS = {"000000000000", "111122223333", "123456789012"}
+
+
+def is_skipped(path: Path) -> bool:
+    return any(part in SKIP_DIRS for part in path.parts)
+
+
+def is_text_path(path: Path) -> bool:
+    return path.suffix in TEXT_SUFFIXES or path.name in {".env.example", "Makefile"}
+
+
+def read_text(path: Path) -> str | None:
+    data = path.read_bytes()
+    if b"\0" in data:
+        return None
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+
+
+def scan_file(path: Path, errors: list[str]) -> None:
+    text = read_text(path)
+    if text is None:
+        return
+    rel = path.relative_to(REPO_ROOT)
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        for label, pattern in PUBLIC_TEXT_PATTERNS:
+            if pattern.search(line):
+                errors.append(f"{rel}:{line_number}: {label}")
+        for label, pattern in SENSITIVE_PATTERNS:
+            for match in pattern.finditer(line):
+                account = match.group(1) if match.lastindex else ""
+                if account and account in ALLOWED_PLACEHOLDER_ACCOUNTS:
+                    continue
+                errors.append(f"{rel}:{line_number}: {label}")
+
+
+def main() -> int:
+    errors: list[str] = []
+    for stale_doc in sorted(REMOVED_DOCS):
+        if (REPO_ROOT / stale_doc).exists():
+            errors.append(f"{stale_doc}: stale implementation-plan doc should not be public")
+
+    for path in sorted(REPO_ROOT.rglob("*")):
+        rel = path.relative_to(REPO_ROOT)
+        if not path.is_file() or is_skipped(rel) or not is_text_path(path):
+            continue
+        if rel == Path("scripts/verify_public_readiness.py"):
+            continue
+        scan_file(path, errors)
+
+    if errors:
+        print("FAIL: public-readiness check failed:", file=sys.stderr)
+        for error in errors[:120]:
+            print(f"- {error}", file=sys.stderr)
+        if len(errors) > 120:
+            print(f"- ... {len(errors) - 120} more issue(s)", file=sys.stderr)
+        return 1
+
+    print("public readiness checks passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

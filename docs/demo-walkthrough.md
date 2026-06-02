@@ -1,4 +1,4 @@
-# Interview Demo Walkthrough
+# Demo Walkthrough
 
 Use this flow to show both product depth and platform maturity without deploying anything.
 
@@ -17,7 +17,7 @@ Open:
 
 ## 2. Show Product Depth
 
-1. Open **Dashboard** and point out XP, daily goal, streak, achievements, and due reviews for `demo-user`.
+1. Open **Dashboard** and point out XP, daily goal, streak, achievements, due reviews, and the browser-local guest profile.
 2. Open **Learning Path** and show completed, recommended, and locked lesson states across the Platform Academy sequence.
 3. Show Platform Academy filtering by level/topic, then open the roadmap to explain the recommended order from Kubernetes basics to production SRE.
 4. Open a Platform Academy course and lesson to show teaching content, commands, production tradeoffs, key terms, review flashcards, lab scenario, and **Mark complete** progress hook.
@@ -47,6 +47,6 @@ Then show:
 
 ## 5. Close With Limitations
 
-- Auth is represented by `demo-user`.
+- Auth is represented by browser-local guest profiles and demo API users.
 - Payments and subscriptions are mocked.
 - SRS uses a simple local scheduling algorithm, not a full SM-2 implementation.
