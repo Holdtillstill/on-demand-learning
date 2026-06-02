@@ -127,6 +127,25 @@ def verify_public_shell(errors: list[str]) -> None:
             errors.append(f"apps/platform-academy/index.html: missing {label}")
 
 
+def verify_readme(errors: list[str]) -> None:
+    readme = read_text(REPO_ROOT / "README.md")
+    if readme is None:
+        errors.append("README.md: missing")
+        return
+    required_markers = {
+        "public static URL": "Public static workspace: <https://platform-academy.bozhi.dev>",
+        "runtime request boundary": "Runtime preview: request-only through <https://bozhi.dev/#request>",
+        "AI-assisted disclosure": "This project was built with AI-assisted coding support",
+        "public status table": "| EKS runtime preview | Request-only |",
+        "README screenshot": "![Platform Academy dashboard](docs/assets/platform-academy-dashboard.png)",
+    }
+    for label, marker in required_markers.items():
+        if marker not in readme:
+            errors.append(f"README.md: missing {label}")
+    if not (REPO_ROOT / "docs" / "assets" / "platform-academy-dashboard.png").exists():
+        errors.append("docs/assets/platform-academy-dashboard.png: missing README screenshot")
+
+
 def verify_public_discovery(errors: list[str]) -> None:
     public_dir = REPO_ROOT / "apps" / "platform-academy" / "public"
     robots = read_text(public_dir / "robots.txt")
@@ -256,6 +275,7 @@ def main() -> int:
         scan_file(path, errors)
 
     verify_public_shell(errors)
+    verify_readme(errors)
     verify_public_discovery(errors)
     verify_privacy_note(errors)
     verify_issue_templates(errors)
