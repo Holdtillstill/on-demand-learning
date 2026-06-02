@@ -218,7 +218,7 @@ def verify_platform_validate_workflow() -> None:
     runs = {step.get("run") for step in validate_steps if isinstance(step.get("run"), str)}
     missing = sorted(PLATFORM_VALIDATE_COMMANDS - runs)
     require(not missing, f"{name} missing local contract commands: {missing}")
-    setup_terraform = next((step for step in validate_steps if step.get("uses") == "hashicorp/setup-terraform@v3"), None)
+    setup_terraform = next((step for step in validate_steps if step.get("uses") == "hashicorp/setup-terraform@v4"), None)
     require(isinstance(setup_terraform, dict), f"{name} must install Terraform before make terraform-validate")
 
 
