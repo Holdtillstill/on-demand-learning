@@ -212,7 +212,7 @@ git diff --check
 For deployed preview or stable release evidence:
 
 \`\`\`bash
-make platform-deployed-smoke API_BASE=https://preview.academy.ybz.dev WEB_BASE=https://preview.academy.ybz.dev
+make platform-deployed-smoke API_BASE=https://preview.platform-academy.bozhi.dev WEB_BASE=https://preview.platform-academy.bozhi.dev
 \`\`\`
 
 Do not use browser or lab skip flags as release evidence for the first preview. Use skip flags only after a full profile has already passed once on the target environment.
