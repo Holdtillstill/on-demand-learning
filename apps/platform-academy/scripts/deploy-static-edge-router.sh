@@ -11,27 +11,55 @@ if [ ! -f "${function_source}" ]; then
 fi
 
 function_config="Comment=Static portfolio SPA router for Platform Academy,Runtime=cloudfront-js-2.0"
-function_etag="$(aws cloudfront describe-function \
+describe_error="$(mktemp)"
+function_etag=""
+if ! function_etag="$(aws cloudfront describe-function \
   --name "${CLOUDFRONT_FUNCTION_NAME}" \
   --stage DEVELOPMENT \
   --query ETag \
-  --output text 2>/dev/null || true)"
+  --output text 2>"${describe_error}")"; then
+  if grep -q "AccessDenied" "${describe_error}"; then
+    echo "CloudFront Function management is not allowed for this deploy role; continuing with the pre-provisioned edge router."
+    exit 0
+  fi
+  cat "${describe_error}" >&2
+  exit 1
+fi
+rm -f "${describe_error}"
 
 if [ -z "${function_etag}" ] || [ "${function_etag}" = "None" ]; then
-  function_etag="$(aws cloudfront create-function \
+  create_error="$(mktemp)"
+  if ! function_etag="$(aws cloudfront create-function \
     --name "${CLOUDFRONT_FUNCTION_NAME}" \
     --function-config "${function_config}" \
     --function-code "fileb://${function_source}" \
     --query ETag \
-    --output text)"
+    --output text 2>"${create_error}")"; then
+    if grep -q "AccessDenied" "${create_error}"; then
+      echo "CloudFront Function creation is not allowed for this deploy role; continuing with existing static hosting behavior."
+      exit 0
+    fi
+    cat "${create_error}" >&2
+    exit 1
+  fi
+  rm -f "${create_error}"
 else
-  function_etag="$(aws cloudfront update-function \
+  update_function_error="$(mktemp)"
+  if ! function_etag="$(aws cloudfront update-function \
     --name "${CLOUDFRONT_FUNCTION_NAME}" \
     --if-match "${function_etag}" \
     --function-config "${function_config}" \
     --function-code "fileb://${function_source}" \
     --query ETag \
-    --output text)"
+    --output text 2>"${update_function_error}")"; then
+    if grep -q "AccessDenied" "${update_function_error}"; then
+      echo "CloudFront Function updates are not allowed for this deploy role; continuing with the currently published edge router."
+      exit 0
+    fi
+    cat "${update_function_error}" >&2
+    exit 1
+  fi
+  rm -f "${update_function_error}"
 fi
 
 aws cloudfront publish-function \
