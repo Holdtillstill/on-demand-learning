@@ -9,7 +9,7 @@ permissions:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
-  AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+  AWS_ROLE_TO_ASSUME: ${{ secrets.STATIC_AWS_ROLE_TO_ASSUME || secrets.AWS_ROLE_TO_ASSUME }}
   STATIC_SITE_BUCKET: ${{ secrets.STATIC_SITE_BUCKET }}
   CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
   CLOUDFRONT_FUNCTION_NAME: ${{ secrets.CLOUDFRONT_FUNCTION_NAME }}
@@ -28,7 +28,7 @@ jobs:
 
       - name: Check required deployment variables
         run: |
-          : "${AWS_ROLE_TO_ASSUME:?Set Actions secret AWS_ROLE_TO_ASSUME}"
+          : "${AWS_ROLE_TO_ASSUME:?Set Actions secret STATIC_AWS_ROLE_TO_ASSUME or AWS_ROLE_TO_ASSUME}"
           : "${STATIC_SITE_BUCKET:?Set Actions secret STATIC_SITE_BUCKET}"
           : "${CLOUDFRONT_DISTRIBUTION_ID:?Set Actions secret CLOUDFRONT_DISTRIBUTION_ID}"
           : "${CLOUDFRONT_FUNCTION_NAME:?Set Actions secret CLOUDFRONT_FUNCTION_NAME}"
