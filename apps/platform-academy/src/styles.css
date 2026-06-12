@@ -5916,3 +5916,435 @@ body {
     transform: none;
   }
 }
+
+/* Portfolio pass: calmer product workspace, less dark/glass styling. */
+:root {
+  color-scheme: light;
+  --pa-bg: #f4f6f4;
+  --pa-bg-soft: #eef2ef;
+  --pa-panel: #ffffff;
+  --pa-panel-strong: #ffffff;
+  --pa-panel-subtle: #f7faf8;
+  --pa-border: #d7ded9;
+  --pa-border-strong: #9eb4a8;
+  --pa-text: #111c17;
+  --pa-text-soft: #34433c;
+  --pa-readable-secondary: #506159;
+  --pa-muted: #64746d;
+  --pa-faint: #7a8a83;
+  --pa-accent: #147d64;
+  --pa-accent-strong: #0f604d;
+  --pa-accent-soft: #e4f3ee;
+  --pa-cyan: #256f8f;
+  --pa-cyan-soft: #e4f0f4;
+  --pa-warm: #b45f11;
+  --pa-shadow: 0 18px 42px rgba(32, 45, 38, 0.08);
+  --pa-shadow-soft: 0 10px 28px rgba(32, 45, 38, 0.06);
+  --pa-focus: 0 0 0 3px rgba(37, 111, 143, 0.18), 0 0 0 1px #256f8f;
+}
+
+body,
+.academy-shell,
+.product-shell,
+.public-shell {
+  background: #f4f6f4;
+  color: var(--pa-text);
+}
+
+.product-sidebar {
+  border-right: 1px solid #d7ded9;
+  background: #fbfcfa;
+  color: var(--pa-text);
+}
+
+.product-brand > span {
+  border-color: #b8c6bf;
+  background: #12352d;
+  color: #ffffff;
+}
+
+.product-brand strong,
+.product-nav a,
+.product-sidebar-note {
+  color: var(--pa-text);
+}
+
+.product-brand small,
+.product-topline span,
+.learner-profile span,
+.workspace-header p,
+.workspace-panel p,
+.course-row p,
+.lab-queue-row p,
+.resource-row p,
+.course-card p,
+.lab-card p,
+.resource-card p,
+.interview-pack-card p,
+.lesson-row p,
+.term-card p,
+.review-list p,
+.state-panel p,
+.check-list {
+  color: var(--pa-muted);
+}
+
+.product-nav a {
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.product-nav a.active,
+.product-nav a:hover {
+  border-color: #c7d3cc;
+  background: #edf3ef;
+  color: #0f604d;
+}
+
+.product-frame {
+  background: #f4f6f4;
+}
+
+.product-topline {
+  border-bottom: 1px solid #d7ded9;
+  background: rgba(244, 246, 244, 0.94);
+}
+
+.learner-profile,
+.topline-actions a,
+.workspace-actions a,
+.workspace-actions button,
+.secondary-action,
+.resource-pagination button,
+.copy-command-button,
+.activity-toggle-button {
+  border-color: #d7ded9;
+  background: #ffffff;
+  color: var(--pa-text);
+  box-shadow: none;
+}
+
+.learner-profile strong,
+.workspace-header h1,
+.workspace-panel h2,
+.workspace-panel h3,
+.course-card h3,
+.lab-card h3,
+.resource-card h3,
+.interview-pack-card strong,
+.term-card strong,
+.course-hero aside strong,
+.ops-summary strong,
+.readiness-score strong,
+.resource-stats dd,
+.progress-panel strong {
+  color: var(--pa-text);
+  text-shadow: none;
+}
+
+.workspace-shell,
+.dashboard-home,
+.roadmap-page,
+.labs-page,
+.interview-page,
+.resources-page {
+  background: transparent;
+}
+
+.workspace-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 22px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
+.workspace-header h1 {
+  max-width: 840px;
+  font-size: clamp(2.25rem, 4.5vw, 4rem);
+  line-height: 0.98;
+}
+
+.workspace-header p {
+  max-width: 760px;
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+
+.workspace-panel,
+.progress-panel,
+.readiness-panel,
+.runbook-workspace,
+.lab-workbook-panel,
+.interview-pack-list,
+.lab-evidence-card,
+.dashboard-hero,
+.course-hero,
+.course-card,
+.lab-card,
+.resource-card,
+.lesson-row,
+.term-card,
+.roadmap-stage,
+.toolbar,
+.canonical-toolbar,
+.lab-starter-path,
+.lab-starter-step,
+.resume-status,
+.activity-rail-card a,
+.achievement-row,
+.question-progress-toolbar,
+.course-row,
+.lab-queue-row,
+.resource-row,
+.canonical-lesson-row,
+.resource-mini-row,
+.stage-courses a {
+  border: 1px solid #d7ded9;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.workspace-panel::before,
+.runbook-workspace::before,
+.dashboard-home .workspace-panel.next-work::before,
+.resource-panel::before,
+.lab-contract-panel::before {
+  display: none;
+}
+
+.dashboard-home .workspace-panel.next-work {
+  border-color: #b8cbc2;
+  background: #ffffff;
+}
+
+.next-work-grid > div,
+.roadmap-source-panel div {
+  border-color: #e3e9e5;
+}
+
+.eyebrow,
+.workspace-panel > .eyebrow,
+.section-heading > span,
+.lab-starter-step > div > span,
+.stage-metrics span,
+.runbook-meta span,
+.resource-card-top span:not(.level-badge),
+.resource-links span,
+.chip-list span,
+.gate-state,
+.level-badge,
+.lab-tier-badge,
+.portfolio-lab-badge,
+.lab-runtime-badge,
+.lab-submission-badge,
+.lab-saved-badge {
+  border-color: #d7ded9;
+  background: #f6f9f7;
+  color: #51625a;
+}
+
+.primary-action,
+.workspace-actions .primary-action {
+  border-color: #147d64;
+  background: #147d64;
+  color: #ffffff;
+}
+
+.primary-action:hover,
+.workspace-actions .primary-action:hover {
+  border-color: #0f604d;
+  background: #0f604d;
+  color: #ffffff;
+}
+
+.secondary-action:hover,
+.text-link:hover,
+.resource-pagination button:hover,
+.course-row:hover,
+.resource-row:hover,
+.lab-queue-row:hover,
+.canonical-lesson-row:hover,
+.resource-mini-row:hover,
+.stage-courses a:hover,
+.course-card:hover,
+.lab-card:hover,
+.resource-card:hover,
+.lesson-row:hover,
+.lab-starter-step:hover {
+  border-color: #aabdb3;
+  background: #f7faf8;
+  color: var(--pa-text);
+  box-shadow: none;
+}
+
+.dashboard-hero,
+.course-hero {
+  background: #ffffff;
+}
+
+.ops-summary article,
+.dashboard-home .workspace-panel.next-work,
+.interview-rail-card,
+.activity-rail-card,
+.achievement-rail-card {
+  background: #ffffff;
+}
+
+.resume-status strong,
+.activity-rail-card a strong,
+.achievement-row strong,
+.roadmap-source-panel dd {
+  color: var(--pa-text);
+}
+
+.progress-bar,
+.progress-track,
+.quota-track {
+  background: #e1e8e4;
+}
+
+.progress-bar > span,
+.progress-track > span,
+.quota-track > span {
+  background: linear-gradient(90deg, #147d64, #256f8f);
+}
+
+.segmented button,
+.filter-chip,
+.resource-type-chip {
+  border-color: #d7ded9;
+  background: #ffffff;
+  color: var(--pa-text);
+}
+
+.segmented button.active,
+.segmented button.selected,
+.filter-chip.active,
+.filter-chip.selected,
+.resource-type-chip.active {
+  border-color: #147d64;
+  background: #e4f3ee;
+  color: #0f604d;
+}
+
+.lab-starter-step-number {
+  border-color: #b8cbc2;
+  background: #e4f3ee;
+  color: #0f604d;
+}
+
+.runbook-workspace {
+  background: #17211d;
+  color: #f7faf8;
+}
+
+.runbook-workspace p,
+.runbook-workspace li,
+.runbook-workspace span {
+  color: #d7e4dd;
+}
+
+.runbook-workspace h2,
+.runbook-workspace h3,
+.runbook-workspace strong {
+  color: #ffffff;
+}
+
+.workspace-header .lead,
+.lead {
+  color: #506159;
+}
+
+.eyebrow,
+.workspace-panel > .eyebrow,
+.section-heading > span,
+.lab-starter-step > div > .eyebrow {
+  color: #587068;
+}
+
+.lab-starter-step strong,
+.lab-card strong,
+.course-card strong,
+.resource-card strong,
+.level-strip strong {
+  color: #111c17;
+}
+
+.dashboard-home .workspace-panel.next-work .text-link,
+.text-link {
+  color: #0f604d;
+}
+
+.dashboard-home .workspace-panel.next-work .text-link {
+  border-color: #b8cbc2;
+  background: #e4f3ee;
+}
+
+.dashboard-home .workspace-panel.next-work .text-link:hover,
+.text-link:hover {
+  color: #0a4638;
+}
+
+.level-strip p,
+.resume-status p,
+.next-work-grid p {
+  color: #506159;
+}
+
+.learner-profile-label,
+.learner-profile span,
+.product-topline span {
+  color: #506159;
+}
+
+input,
+select,
+textarea {
+  border-color: #c5d0ca;
+  background: #ffffff;
+  color: var(--pa-text);
+}
+
+.level-readiness > div {
+  background: #f8fbf9;
+  border-color: #d4e0da;
+}
+
+.level-readiness > div strong {
+  color: #17221d;
+}
+
+.level-readiness > div > span {
+  color: #4c5d56;
+}
+
+.lab-starter-step > div > .eyebrow,
+.lab-starter-step > div > span:not([class]) {
+  border-color: transparent;
+  background: transparent;
+  padding: 0;
+}
+
+.lab-starter-step > div > .eyebrow {
+  color: #5a6d65;
+}
+
+.lab-starter-step > div > span:not([class]) {
+  color: #506159;
+}
+
+.topics button.selected,
+.topics button:nth-child(3n + 1).selected,
+.topics button:nth-child(3n + 2).selected {
+  border-color: #147d64;
+  background: #e4f3ee;
+  color: #0f604d;
+}
+
+@media (max-width: 920px) {
+  .workspace-header {
+    grid-template-columns: 1fr;
+  }
+}
