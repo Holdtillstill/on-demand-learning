@@ -6550,3 +6550,537 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+/* Lab console pass: make the academy feel like a hands-on platform workspace. */
+:root {
+  color-scheme: dark;
+  --pa-bg: #07100f;
+  --pa-bg-soft: #0d1816;
+  --pa-panel: #101d1a;
+  --pa-panel-strong: #14241f;
+  --pa-panel-subtle: rgba(255, 255, 255, 0.045);
+  --pa-border: rgba(188, 211, 202, 0.16);
+  --pa-border-strong: rgba(73, 218, 170, 0.38);
+  --pa-text: #f3fff9;
+  --pa-text-soft: #c5d8d0;
+  --pa-readable-secondary: #d9e8e2;
+  --pa-muted: #94aaa1;
+  --pa-faint: #71877e;
+  --pa-accent: #49daaa;
+  --pa-accent-strong: #20bf8f;
+  --pa-accent-soft: rgba(73, 218, 170, 0.14);
+  --pa-cyan: #8edcff;
+  --pa-cyan-soft: rgba(142, 220, 255, 0.13);
+  --pa-warm: #f5b45b;
+  --pa-rose: #ff7d90;
+  --pa-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+  --pa-shadow-soft: 0 14px 40px rgba(0, 0, 0, 0.24);
+  background: var(--pa-bg);
+  color: var(--pa-text);
+}
+
+body {
+  background:
+    radial-gradient(circle at 74% -12%, rgba(73, 218, 170, 0.18), transparent 32rem),
+    radial-gradient(circle at 12% 22%, rgba(245, 180, 91, 0.10), transparent 28rem),
+    #07100f !important;
+  color: var(--pa-text) !important;
+}
+
+.topbar,
+.product-topline {
+  border-color: var(--pa-border) !important;
+  background: rgba(7, 16, 15, 0.82) !important;
+  color: var(--pa-text) !important;
+  backdrop-filter: blur(18px);
+}
+
+.product-shell {
+  background:
+    linear-gradient(180deg, rgba(73, 218, 170, 0.055), transparent 310px),
+    var(--pa-bg) !important;
+  color: var(--pa-text) !important;
+}
+
+.product-sidebar {
+  background:
+    linear-gradient(180deg, rgba(73, 218, 170, 0.07), transparent 38%),
+    #08120f !important;
+  border-color: var(--pa-border) !important;
+}
+
+.product-brand strong,
+.brand strong,
+.workspace-header h1,
+.workspace-panel h2,
+.workspace-panel h3,
+.dashboard-hero h1,
+.course-hero h1,
+.course-hero aside strong,
+.runbook-workspace h2,
+.runbook-workspace h3,
+.runbook-workspace strong {
+  color: var(--pa-text) !important;
+}
+
+.product-brand small,
+.brand span,
+.product-topline span,
+.workspace-header p,
+.workspace-header .lead,
+.workspace-panel p,
+.workspace-panel li,
+.roadmap-stage p,
+.roadmap-stage li,
+.runbook-workspace p,
+.runbook-workspace li,
+.runbook-workspace span {
+  color: var(--pa-text-soft) !important;
+}
+
+.product-brand > span {
+  border-color: rgba(73, 218, 170, 0.32) !important;
+  background: linear-gradient(135deg, #49daaa, #f5b45b) !important;
+  color: #06100d !important;
+}
+
+.product-nav a {
+  color: #c8d8d1 !important;
+}
+
+.product-nav a.active,
+.product-nav a:hover {
+  background: rgba(73, 218, 170, 0.12) !important;
+  color: #ffffff !important;
+  box-shadow: inset 3px 0 0 var(--pa-accent);
+}
+
+.workspace-shell,
+.roadmap-page,
+.labs-page,
+.resource-page,
+.interview-page {
+  background: transparent !important;
+}
+
+.workspace-header {
+  border-color: var(--pa-border) !important;
+  background:
+    linear-gradient(135deg, rgba(73, 218, 170, 0.10), rgba(255, 255, 255, 0.02)),
+    var(--pa-panel) !important;
+  box-shadow: var(--pa-shadow-soft);
+  animation: academy-rise 560ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.workspace-panel,
+.state-panel,
+.activity-save-panel,
+.lab-run-phase,
+.lab-run-phase > div,
+.lab-artifact-map-panel,
+.lab-artifact-map-item,
+.lab-workbook-panel,
+.lab-phase-status,
+.lab-phase-status-row,
+.lab-command-deck,
+.lab-worksheet-answer,
+.practice-panel,
+.review-list article,
+.resource-stats,
+.resource-stats div,
+.dashboard-hero,
+.course-hero,
+.roadmap-stage,
+.runbook-workspace {
+  border-color: var(--pa-border) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.018)),
+    var(--pa-panel) !important;
+  color: var(--pa-text) !important;
+  box-shadow: none !important;
+}
+
+.dashboard-home .workspace-panel.next-work {
+  border-color: var(--pa-border-strong) !important;
+  background:
+    linear-gradient(135deg, rgba(73, 218, 170, 0.13), transparent 50%),
+    var(--pa-panel-strong) !important;
+}
+
+.workspace-panel::before,
+.runbook-workspace::before,
+.dashboard-home .workspace-panel.next-work::before {
+  display: none !important;
+}
+
+.level-readiness > div,
+.course-card,
+.lesson-card,
+.lab-card,
+.term-card,
+.question-card,
+.topic-card {
+  border-color: var(--pa-border) !important;
+  background: #0e1a17 !important;
+  color: var(--pa-text) !important;
+}
+
+.level-readiness > div strong,
+.resource-stats dd,
+.state-panel h1,
+.lab-run-phase h3,
+.lab-artifact-map-panel .section-heading h3,
+.lab-artifact-map-item strong,
+.lab-workbook-panel .section-heading h2,
+.lab-workbook-panel .section-heading h3,
+.lab-workbook-grid h3,
+.lab-phase-status .section-heading h3,
+.lab-phase-status-copy strong,
+.lab-command-deck .section-heading h3,
+.lab-worksheet-answer label span,
+.review-list article strong {
+  color: var(--pa-text) !important;
+}
+
+.workspace-actions a,
+.workspace-actions button,
+.primary-action,
+.learner-recovery-button,
+.learner-reset-button,
+.source-link {
+  border-color: var(--pa-accent) !important;
+  background: var(--pa-accent) !important;
+  color: #06100d !important;
+  box-shadow: 0 14px 38px rgba(73, 218, 170, 0.16) !important;
+}
+
+.workspace-actions a:hover,
+.workspace-actions button:hover,
+.primary-action:hover,
+.source-link:hover {
+  background: #7bf2c7 !important;
+  color: #06100d !important;
+}
+
+input,
+select,
+textarea,
+.lab-artifact-list code {
+  border-color: rgba(188, 211, 202, 0.24) !important;
+  background: #07100f !important;
+  color: var(--pa-text) !important;
+}
+
+.command-block,
+.lab-command-deck pre,
+.lab-artifact-list code {
+  background: #050a09 !important;
+  color: #d9fff2 !important;
+}
+
+@supports (animation-timeline: view()) {
+  .workspace-panel,
+  .roadmap-stage,
+  .lab-card,
+  .course-card {
+    animation: academy-rise both ease-out;
+    animation-range: entry 6% cover 24%;
+    animation-timeline: view();
+  }
+}
+
+@keyframes academy-rise {
+  from {
+    opacity: 0.18;
+    transform: translateY(24px) scale(0.992);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-header,
+  .workspace-panel,
+  .roadmap-stage,
+  .lab-card,
+  .course-card {
+    animation: none !important;
+  }
+}
+
+.workspace-header .eyebrow,
+.workspace-panel .section-heading .eyebrow,
+.workspace-panel > .eyebrow,
+.lab-starter-path .section-heading .eyebrow {
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--pa-muted) !important;
+  padding: 0 !important;
+}
+
+.ops-summary article,
+.resume-status,
+.level-readiness > div,
+.topbar nav a,
+.secondary-action,
+.text-link {
+  border-color: var(--pa-border) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.018)),
+    #101d1a !important;
+  color: var(--pa-text) !important;
+}
+
+.ops-summary article span,
+.ops-summary article small,
+.resume-status span,
+.resume-status p,
+.level-readiness > div > span {
+  color: var(--pa-text-soft) !important;
+}
+
+.ops-summary article strong,
+.resume-status strong,
+.level-readiness > div strong {
+  color: var(--pa-text) !important;
+}
+
+.secondary-action:hover,
+.text-link:hover,
+.topbar nav a:hover,
+.topbar nav a.active {
+  border-color: var(--pa-border-strong) !important;
+  background: rgba(73, 218, 170, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.topbar .learner-profile {
+  border-color: var(--pa-border) !important;
+  background: rgba(16, 29, 26, 0.92) !important;
+  color: var(--pa-text) !important;
+}
+
+.learner-profile-label,
+.learner-profile span {
+  color: var(--pa-text-soft) !important;
+}
+
+.dashboard-layout {
+  align-items: start;
+}
+
+.dashboard-side .workspace-panel,
+.dashboard-home .workspace-panel.next-work {
+  box-shadow: var(--pa-shadow-soft) !important;
+}
+
+.product-frame,
+.product-frame .page,
+.product-frame main,
+.workspace-shell,
+.dashboard-home,
+.labs-page,
+.roadmap-page,
+.resource-page,
+.interview-page {
+  background: transparent !important;
+}
+
+.topbar a,
+.topbar button,
+.topbar .secondary-action,
+.topbar .text-link {
+  border-color: var(--pa-border) !important;
+  background: rgba(16, 29, 26, 0.82) !important;
+  color: var(--pa-text) !important;
+}
+
+.topbar a:hover,
+.topbar button:hover,
+.topbar .secondary-action:hover,
+.topbar .text-link:hover {
+  border-color: var(--pa-border-strong) !important;
+  background: rgba(73, 218, 170, 0.14) !important;
+  color: #ffffff !important;
+}
+
+.canonical-toolbar,
+.toolbar,
+.course-filter-toolbar {
+  border-color: var(--pa-border) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018)),
+    #101d1a !important;
+  color: var(--pa-text) !important;
+  box-shadow: none !important;
+}
+
+.canonical-toolbar label span,
+.course-topic-select span,
+.search-box span,
+.toolbar span {
+  color: var(--pa-text-soft) !important;
+}
+
+.search-box,
+.course-topic-select,
+.course-topic-select select,
+.canonical-toolbar select {
+  border-color: rgba(188, 211, 202, 0.22) !important;
+  background: #07100f !important;
+  color: var(--pa-text) !important;
+}
+
+.course-row,
+.lab-card,
+.course-card,
+.lesson-card,
+.term-card,
+.question-card,
+.topic-card,
+.activity-rail-card,
+.achievement-rail-card,
+.interview-rail-card,
+.readiness-panel {
+  border-color: var(--pa-border) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.014)),
+    #0f1a17 !important;
+  color: var(--pa-text) !important;
+  box-shadow: none !important;
+}
+
+.course-row:hover,
+.lab-card:hover,
+.course-card:hover,
+.lesson-card:hover,
+.term-card:hover,
+.question-card:hover,
+.topic-card:hover {
+  border-color: var(--pa-border-strong) !important;
+  background:
+    linear-gradient(135deg, rgba(73, 218, 170, 0.11), rgba(255, 255, 255, 0.02)),
+    #13221e !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+.course-row strong,
+.course-row b,
+.course-row h3,
+.lab-card strong,
+.course-card strong,
+.lesson-card strong,
+.term-card strong,
+.question-card strong,
+.topic-card strong {
+  color: var(--pa-text) !important;
+}
+
+.course-row p,
+.course-row span,
+.course-row small,
+.lab-card p,
+.course-card p,
+.lesson-card p,
+.term-card p,
+.question-card p,
+.topic-card p {
+  color: var(--pa-text-soft) !important;
+}
+
+.course-row > svg,
+.lab-card svg,
+.course-card svg,
+.lesson-card svg,
+.topic-card svg {
+  color: var(--pa-accent) !important;
+}
+
+.level-badge,
+.lab-tier-badge,
+.portfolio-lab-badge,
+.course-row > span,
+.course-row b {
+  border-color: rgba(73, 218, 170, 0.2) !important;
+  background: rgba(73, 218, 170, 0.1) !important;
+  color: #b8ffe5 !important;
+}
+
+.segmented,
+.lab-runtime-filter,
+.topics {
+  border-color: rgba(188, 211, 202, 0.2) !important;
+  background: #07100f !important;
+  color: var(--pa-text) !important;
+}
+
+.segmented button {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--pa-text-soft) !important;
+  box-shadow: none !important;
+}
+
+.segmented button:hover {
+  background: rgba(73, 218, 170, 0.1) !important;
+  color: #ffffff !important;
+  transform: none;
+}
+
+.segmented button.active,
+.segmented button.selected,
+.segmented button[aria-pressed="true"] {
+  background: var(--pa-accent) !important;
+  color: #06100d !important;
+}
+
+.progress-bar,
+.progress-track {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.progress-bar > span,
+.progress-fill {
+  background: linear-gradient(90deg, var(--pa-accent), #f5b45b) !important;
+}
+
+.topline-actions a,
+.product-topline .topline-actions a {
+  border-color: var(--pa-border) !important;
+  background: rgba(16, 29, 26, 0.88) !important;
+  color: var(--pa-text) !important;
+  box-shadow: none !important;
+}
+
+.topline-actions a span,
+.topline-actions a svg {
+  color: var(--pa-text-soft) !important;
+}
+
+.topline-actions a:hover {
+  border-color: var(--pa-border-strong) !important;
+  background: rgba(73, 218, 170, 0.13) !important;
+  color: #ffffff !important;
+}
+
+.course-table {
+  border-color: var(--pa-border) !important;
+  background: rgba(255, 255, 255, 0.012) !important;
+}
+
+.course-row {
+  min-height: 112px;
+  opacity: 1 !important;
+}
+
+.course-row,
+.workspace-panel,
+.lab-card,
+.course-card,
+.lesson-card {
+  animation: none !important;
+}
