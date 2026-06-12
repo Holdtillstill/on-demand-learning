@@ -24,7 +24,7 @@ const ROUTES = [
   {
     path: "/labs",
     heading: "Labs for incidents and architecture reviews",
-    visibleText: ["Evidence journal", "Starter incident path", "Selected lab", "Cluster setup included"],
+    visibleText: ["Evidence journal", "Starter path", "Selected lab", "Cluster setup included"],
   },
   {
     path: "/labs/trace-service-to-pod",
@@ -34,7 +34,7 @@ const ROUTES = [
   {
     path: "/roadmap",
     heading: "Roadmap from kubectl basics to running platforms",
-    visibleText: ["Recommended order", "Checkpoints"],
+    visibleText: ["Roadmap", "Checkpoints"],
   },
   {
     path: "/missing-route",
@@ -645,7 +645,7 @@ async function assertPortfolioLabUi(page, portfolioLabs) {
   await expect(queueRows).toHaveCount(CLUSTER_LAB_SLUGS.length, { timeout: TIMEOUT_MS });
   await expect(page.getByText("Cluster setup included").first()).toBeVisible({ timeout: TIMEOUT_MS });
   await page.getByRole("button", { name: "All runtimes", exact: true }).click();
-  await expect(page.getByText(`${EXPECTED_PORTFOLIO_LABS} portfolio-grade`, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
+  await expect(page.getByText(`${EXPECTED_PORTFOLIO_LABS} evidence-ready`, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
   await expect(page.getByRole("button", { name: "Portfolio-grade", exact: true })).toHaveCount(0);
   await expect(page.getByText(firstPortfolioLab.portfolio_focus, { exact: true }).first()).toBeVisible({ timeout: TIMEOUT_MS });
 
@@ -655,11 +655,11 @@ async function assertPortfolioLabUi(page, portfolioLabs) {
     await expect(queueRows.filter({ hasText: lab.title })).toHaveCount(1, { timeout: TIMEOUT_MS });
   }
   await expect(page.getByRole("heading", { name: "Build a platform career artifact pack", exact: true })).toBeVisible({ timeout: TIMEOUT_MS });
-  await expect(page.getByText("Structurally verified lab")).toBeVisible({ timeout: TIMEOUT_MS });
+  await expect(page.getByText("Evidence-ready lab")).toBeVisible({ timeout: TIMEOUT_MS });
 
   await page.goto(`${WEB_BASE}/labs/${encodeURIComponent(firstPortfolioLab.slug)}`, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
   await expect(page.getByRole("heading", { name: firstPortfolioLab.title })).toBeVisible({ timeout: TIMEOUT_MS });
-  await expect(page.getByText("Portfolio-grade practice")).toBeVisible({ timeout: TIMEOUT_MS });
+  await expect(page.getByText("Evidence-ready practice")).toBeVisible({ timeout: TIMEOUT_MS });
   await expect(page.getByText(firstPortfolioLab.portfolio_focus, { exact: true }).first()).toBeVisible({ timeout: TIMEOUT_MS });
   console.log(`Verified ${portfolioLabs.length} portfolio-grade lab UI signals`);
 }

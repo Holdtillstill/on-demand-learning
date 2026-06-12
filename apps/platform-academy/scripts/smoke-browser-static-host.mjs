@@ -18,7 +18,7 @@ const routes = [
   { path: "/roadmap", markers: ["Roadmap from kubectl basics to running platforms", "Checkpoints"] },
   { path: "/labs", markers: ["Labs for incidents and architecture reviews", "Evidence journal"] },
   { path: "/labs/history", markers: ["Saved workbooks and rubric signals"] },
-  { path: "/labs/trace-service-to-pod", markers: ["Trace Service traffic to ready Pods", "GUIDED LAB RUN SEQUENCE"] },
+  { path: "/labs/trace-service-to-pod", markers: ["Trace Service traffic to ready Pods", "Guided lab run sequence"] },
   { path: "/resources", markers: ["Resource library", "320 matches"] },
   { path: "/resources/linux-cheatsheet", markers: ["Linux Field Cheatsheet", "Official links"] },
   { path: "/courses/platform-kubernetes-fundamentals", markers: ["Kubernetes Fundamentals", "Course progress"] },

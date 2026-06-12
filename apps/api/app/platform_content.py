@@ -2606,7 +2606,7 @@ PLATFORM_ROADMAP.extend(
         {
             "sequence": 10,
             "title": "Linux Operator Foundations",
-            "role": "You can inspect servers, containers, logs, processes, permissions, and text output without panic.",
+            "role": "Inspect servers, containers, logs, processes, permissions, and text output from evidence.",
             "focus": "Shell fluency for every later Kubernetes and CI/CD troubleshooting workflow.",
             "level_group": "Fresher",
             "course_slugs": ["platform-linux-command-line-foundations"],

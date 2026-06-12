@@ -218,20 +218,18 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
             );
           })}
         </nav>
-        <div className="product-sidebar-note">
-          <span>Privacy</span>
-          <p>First-party pageview telemetry respects DNT and GPC. Learning inputs stay browser-local on the static host.</p>
-          <a href="https://bozhi.dev/privacy.html">Privacy note</a>
-        </div>
+        <a className="product-sidebar-note" href="https://bozhi.dev/privacy.html">
+          Privacy
+        </a>
       </aside>
       <div className="product-frame">
         <header className="product-topline">
           <div className="learner-profile" aria-label="Active learner profile">
             <UserRound aria-hidden="true" />
             <div>
-              <span className="learner-profile-label">Guest workspace</span>
+              <span className="learner-profile-label">Guest profile</span>
               <strong>{learnerId}</strong>
-              <span>Browser-local progress</span>
+              <span>Local progress</span>
             </div>
             <div className="learner-profile-actions">
               <button

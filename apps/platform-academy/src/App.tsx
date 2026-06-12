@@ -1208,7 +1208,7 @@ function DashboardPage({ data }: { data: AcademyData }) {
     <section className="page canonical-page dashboard-home">
       <header className="workspace-header">
         <div>
-          <p className="eyebrow">Platform learning workspace</p>
+          <p className="eyebrow">Learning state</p>
           <h1>Platform Academy</h1>
           <p className="lead">{data.catalog.promise}</p>
         </div>
@@ -1500,7 +1500,7 @@ function RoadmapPage({ data }: { data: AcademyData }) {
     <section className="page canonical-page roadmap-page">
       <header className="workspace-header">
         <div>
-        <p className="eyebrow">Recommended order</p>
+          <p className="eyebrow">Roadmap</p>
           <h1>Roadmap from kubectl basics to running platforms</h1>
           <p className="lead">Each stage groups lessons, checkpoints, and labs so you know what to practice next.</p>
         </div>
@@ -1555,10 +1555,23 @@ function RoadmapPage({ data }: { data: AcademyData }) {
         </div>
 
         <aside className="roadmap-rail">
-          <section className="workspace-panel">
-            <p className="eyebrow">Sources</p>
-            <h2>What this roadmap uses</h2>
-            <p>Roadmap stages are built from the app's courses, labs, checkpoints, and resources. Resource pages include official links and reviewed dates where available.</p>
+          <section className="workspace-panel roadmap-source-panel">
+            <p className="eyebrow">Catalog</p>
+            <h2>Course coverage</h2>
+            <dl>
+              <div>
+                <dt>Courses</dt>
+                <dd>{data.catalog.total_courses}</dd>
+              </div>
+              <div>
+                <dt>Lessons</dt>
+                <dd>{data.catalog.total_lessons}</dd>
+              </div>
+              <div>
+                <dt>Labs</dt>
+                <dd>{data.catalog.labs.length}</dd>
+              </div>
+            </dl>
           </section>
           <section className="workspace-panel">
             <p className="eyebrow">Level summary</p>
@@ -1602,7 +1615,7 @@ function LabsPage({ data }: { data: AcademyData }) {
   const inventoryDetail = labInventorySummary(activeSubmissionCount, fullLabCount, data.catalog.labs.length);
   const inventorySummary = [
     clusterLabCount > 0 ? `${clusterLabCount} cluster-ready` : "",
-    portfolioLabCount > 0 ? `${portfolioLabCount} portfolio-grade` : "",
+    portfolioLabCount > 0 ? `${portfolioLabCount} evidence-ready` : "",
     inventoryDetail
   ]
     .filter(Boolean)
@@ -1612,7 +1625,7 @@ function LabsPage({ data }: { data: AcademyData }) {
     <section className="page canonical-page labs-page">
       <header className="workspace-header">
         <div>
-          <p className="eyebrow">Lab workspace</p>
+          <p className="eyebrow">Lab queue</p>
           <h1>Labs for incidents and architecture reviews</h1>
           <p className="lead">Practice short scenarios with commands and checks you can run locally before marking a lesson complete.</p>
         </div>
@@ -1698,7 +1711,7 @@ function LabsPage({ data }: { data: AcademyData }) {
               </div>
               {isPortfolioLab(activeLab) ? (
                 <div className="portfolio-lab-callout">
-                  <strong>Structurally verified lab</strong>
+                  <strong>Evidence-ready lab</strong>
                   <span>Broken and fixed artifacts are parsed in the release gate, including YAML or JSON contracts where this lab uses them.</span>
                 </div>
               ) : null}
@@ -1918,13 +1931,15 @@ function LabStarterPath({ data }: { data: AcademyData }) {
   if (!starterLabs.length) return null;
 
   return (
-    <section className="lab-starter-path" aria-label="Starter incident path">
+    <section className="lab-starter-path" aria-label="Starter path">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Starter incident path</p>
-          <h2>Begin with live-feeling incidents</h2>
+          <p className="eyebrow">Starter path</p>
+          <h2>Incident drills</h2>
         </div>
-        <span>{starterLabs.length} priority labs</span>
+        <span>
+          {starterLabs.length} starter {starterLabs.length === 1 ? "lab" : "labs"}
+        </span>
       </div>
       <div className="lab-starter-path-grid">
         {starterLabs.map((item, index) => (
@@ -2735,7 +2750,7 @@ function LabDetailPage({
           </div>
           {isPortfolioLab(lab) ? (
             <div className="portfolio-lab-callout">
-              <strong>Portfolio-grade practice</strong>
+              <strong>Evidence-ready practice</strong>
               <span>Use the workbook and saved evidence as a reusable incident, release, or architecture review note.</span>
             </div>
           ) : null}

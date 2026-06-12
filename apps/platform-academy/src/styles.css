@@ -5550,6 +5550,345 @@ pre {
   }
 }
 
+/* Portfolio polish: quieter product workbench, less template gloss. */
+body {
+  background: #09100e;
+}
+
+.product-shell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 18rem),
+    #09100e;
+}
+
+.product-shell::before,
+.workspace-panel::before,
+.ops-summary article::before,
+.ops-summary article::after,
+.runbook-workspace::before,
+.dashboard-home .workspace-panel.next-work::before,
+.lab-starter-path::before,
+.lab-operational-brief::before,
+.lab-workbook-panel::before,
+.primary-action::before {
+  display: none;
+}
+
+.product-sidebar {
+  grid-template-rows: auto 1fr auto;
+  background: #0a1412;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.product-brand > span,
+.stage-index,
+.lesson-row > span {
+  background: #15241f;
+  color: #c8f7e7;
+  box-shadow: none;
+}
+
+.product-sidebar-note {
+  align-self: end;
+  display: inline-flex;
+  width: fit-content;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--pa-muted);
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+.product-sidebar-note:hover {
+  background: rgba(255, 255, 255, 0.055);
+  color: #f2fff9;
+}
+
+.product-topline {
+  background: rgba(9, 16, 14, 0.92);
+  box-shadow: none;
+  backdrop-filter: blur(16px);
+}
+
+.product-topline > .learner-profile {
+  min-width: min(380px, 48vw);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: none;
+}
+
+.learner-profile > svg,
+.product-nav a svg,
+.product-topline a svg,
+.primary-action svg,
+.secondary-action svg,
+.text-link svg,
+.back-link svg,
+.source-link svg,
+.course-title-line svg,
+.state-panel svg {
+  box-shadow: none;
+}
+
+.learner-profile-label,
+.canonical-page .eyebrow,
+.eyebrow,
+.resume-status span,
+.achievement-next > span,
+.recovery-key-card span,
+.recovery-form label,
+.recovery-backup-actions span,
+.lab-artifact-map-item span,
+.lab-feedback-card-header > span,
+.lab-evidence-metrics dt {
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.learner-profile-label {
+  color: var(--pa-muted) !important;
+}
+
+.canonical-page .eyebrow,
+.eyebrow {
+  color: #9bb0a9;
+  font-size: 0.76rem;
+  font-weight: 780;
+}
+
+.workspace-header {
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.workspace-header h1 {
+  max-width: 820px;
+  color: #f6fffb;
+  font-size: clamp(2.2rem, 3.5vw, 3.55rem);
+  line-height: 1.04;
+  text-shadow: none;
+}
+
+.canonical-page .lead {
+  max-width: 760px;
+  color: #c4d7cf;
+}
+
+.workspace-panel,
+.ops-summary article,
+.runbook-workspace,
+.resource-stats div,
+.dashboard-hero,
+.course-hero,
+.level-strip article,
+.course-card,
+.lab-card,
+.resource-card,
+.outcome-panel,
+.state-panel,
+.practice-panel,
+.term-card,
+.review-list article,
+.canonical-stage,
+.roadmap-stage,
+.lab-starter-path,
+.lab-operational-brief,
+.lab-workbook-panel,
+.interview-pack-list,
+.lab-evidence-card {
+  border-color: rgba(198, 218, 209, 0.14);
+  border-radius: 8px;
+  background: rgba(15, 25, 22, 0.88);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.ops-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.ops-summary article {
+  min-height: 108px;
+  padding: 14px;
+}
+
+.ops-summary strong,
+.readiness-score strong,
+.resource-stats dd,
+.progress-panel strong,
+.course-hero aside strong {
+  color: #c8f7e7;
+  text-shadow: none;
+}
+
+.dashboard-home .workspace-panel.next-work {
+  border-color: rgba(126, 224, 190, 0.28);
+  background: rgba(17, 35, 30, 0.9);
+  box-shadow: none;
+}
+
+.next-work-grid > div {
+  border: 0;
+  border-top: 1px solid rgba(198, 218, 209, 0.14);
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 0 0;
+}
+
+.resume-status,
+.activity-rail-card a,
+.achievement-row,
+.question-progress-toolbar,
+.lab-starter-step,
+.course-row,
+.lab-queue-row,
+.resource-row,
+.canonical-lesson-row,
+.resource-mini-row,
+.stage-courses a {
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: none;
+}
+
+.primary-action {
+  border-color: rgba(126, 224, 190, 0.42);
+  background: #74e3bd;
+  color: #07110f;
+  box-shadow: none;
+}
+
+.primary-action:hover,
+.secondary-action:hover,
+.text-link:hover,
+.resource-pagination button:hover,
+.course-row:hover,
+.resource-row:hover,
+.lab-queue-row:hover,
+.canonical-lesson-row:hover,
+.resource-mini-row:hover,
+.stage-courses a:hover,
+.course-card:hover,
+.lab-card:hover,
+.resource-card:hover,
+.lesson-row:hover,
+.lab-starter-step:hover {
+  border-color: rgba(126, 224, 190, 0.34);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+  transform: translateY(-1px);
+}
+
+.primary-action:hover {
+  background: #8bf0cb;
+  color: #07110f;
+  filter: none;
+}
+
+.roadmap-source-panel dl {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+}
+
+.roadmap-source-panel div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+  border-top: 1px solid rgba(198, 218, 209, 0.14);
+  padding-top: 10px;
+}
+
+.roadmap-source-panel dt,
+.roadmap-source-panel dd {
+  margin: 0;
+}
+
+.roadmap-source-panel dt {
+  color: var(--pa-readable-secondary);
+  font-weight: 760;
+}
+
+.roadmap-source-panel dd {
+  color: #ffffff;
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.lab-starter-path {
+  padding: 16px;
+}
+
+.lab-starter-step-number {
+  border-color: rgba(126, 224, 190, 0.28);
+  background: rgba(126, 224, 190, 0.12);
+  color: #c8f7e7;
+}
+
+.lab-starter-step > div > span,
+.next-work-grid p,
+.workspace-panel p,
+.course-row p,
+.lab-queue-row p,
+.resource-row p,
+.level-strip p,
+.course-card p,
+.lab-card p,
+.resource-card p,
+.interview-pack-card p,
+.roadmap-stage p,
+.roadmap-stage ul,
+.lab-card ul,
+.resource-card ul,
+.outcome-panel ul,
+.lesson-row p,
+.outcome-panel p,
+.lesson-body p,
+.practice-panel p,
+.term-card p,
+.review-list p,
+.state-panel p,
+.check-list {
+  color: #c6d8d0;
+}
+
+.stage-metrics span,
+.runbook-meta span,
+.resource-card-top span:not(.level-badge),
+.resource-links span,
+.chip-list span,
+.gate-state,
+.level-badge,
+.lab-tier-badge,
+.portfolio-lab-badge,
+.lab-runtime-badge,
+.lab-submission-badge,
+.lab-saved-badge {
+  border-color: rgba(198, 218, 209, 0.16);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+@media (max-width: 920px) {
+  .ops-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .ops-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-header h1 {
+    font-size: clamp(2rem, 12vw, 2.75rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

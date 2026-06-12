@@ -490,7 +490,7 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Platform Academy" })).toBeInTheDocument();
-    expect(screen.getByText("Platform learning workspace")).toBeInTheDocument();
+    expect(screen.getByText("Learning state")).toBeInTheDocument();
     expect(screen.getAllByText("Kubernetes Fundamentals").length).toBeGreaterThan(0);
     expect(screen.getByText("Course list")).toBeInTheDocument();
     expect(screen.getByText("Learning checks")).toBeInTheDocument();
@@ -500,8 +500,8 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("Kubernetes Fundamentals: Containers, Images, and Pods")).toBeInTheDocument();
     expect(screen.getAllByRole("progressbar").length).toBeGreaterThan(0);
     expect(screen.getByText(testLearnerId)).toBeInTheDocument();
-    expect(screen.getByText("Guest workspace")).toBeInTheDocument();
-    expect(screen.getByText("Browser-local progress")).toBeInTheDocument();
+    expect(screen.getByText("Guest profile")).toBeInTheDocument();
+    expect(screen.getByText("Local progress")).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/static-api/platform-academy-catalog.json", expect.objectContaining({ cache: "force-cache" }));
   });
 
@@ -1088,9 +1088,9 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Labs for incidents and architecture reviews" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Starter incident path")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Begin with live-feeling incidents" })).toBeInTheDocument();
-    expect(screen.getByText("1 priority labs")).toBeInTheDocument();
+    expect(screen.getByLabelText("Starter path")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Incident drills" })).toBeInTheDocument();
+    expect(screen.getByText("1 starter lab")).toBeInTheDocument();
     expect(screen.getByText("Service routing incident")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /open starter lab: trace service traffic to ready pods/i })).toHaveAttribute(
       "href",
@@ -1098,7 +1098,7 @@ describe("Platform Academy app", () => {
     );
     expect(screen.getAllByText(/Strong evidence · \d+%|In progress · \d+%/).length).toBeGreaterThan(0);
     expect(screen.getByText(/\d+% workbook score/)).toBeInTheDocument();
-    expect(screen.getByText("1 cluster-ready / 1 portfolio-grade / 1 active / 1 full lab")).toBeInTheDocument();
+    expect(screen.getByText("1 cluster-ready / 1 evidence-ready / 1 active / 1 full lab")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Portfolio-grade" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cluster setup" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "File-only" })).toBeInTheDocument();
