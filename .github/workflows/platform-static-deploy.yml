@@ -68,8 +68,8 @@ jobs:
 
       - name: Sync static web assets
         run: |
-          aws s3 sync dist/ "s3://${STATIC_SITE_BUCKET}" \
-            --delete \
+          aws s3 cp dist/ "s3://${STATIC_SITE_BUCKET}" \
+            --recursive \
             --exclude "assets/*" \
             --cache-control "public,max-age=300"
 
@@ -82,8 +82,8 @@ jobs:
             --cache-control "no-cache" \
             --content-type "text/html; charset=utf-8"
 
-          aws s3 sync dist/assets/ "s3://${STATIC_SITE_BUCKET}/assets/" \
-            --delete \
+          aws s3 cp dist/assets/ "s3://${STATIC_SITE_BUCKET}/assets/" \
+            --recursive \
             --cache-control "public,max-age=31536000,immutable"
         working-directory: apps/platform-academy
 
