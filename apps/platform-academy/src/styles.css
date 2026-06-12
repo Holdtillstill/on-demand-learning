@@ -3574,7 +3574,7 @@ pre {
   color: #ffffff;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size: 0.9rem;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -8184,5 +8184,109 @@ textarea {
     gap: 8px !important;
     height: auto !important;
     padding: 10px 14px !important;
+  }
+}
+
+/* Academy refinement pass: learning surface first, counters second. */
+.dashboard-home .workspace-header {
+  min-height: 176px !important;
+  align-items: end !important;
+}
+
+.dashboard-home .workspace-header h1 {
+  max-width: 11ch !important;
+}
+
+.dashboard-home .workspace-actions {
+  align-self: end !important;
+}
+
+.dashboard-home .learning-board {
+  grid-template-columns: minmax(420px, 1.22fr) minmax(320px, .8fr) minmax(340px, .9fr) !important;
+  gap: 16px !important;
+  margin-bottom: 28px !important;
+}
+
+.dashboard-home .learning-board article {
+  min-height: 320px !important;
+  overflow: hidden !important;
+  border-color: rgba(15, 103, 81, .16) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 34px 90px rgba(17, 32, 26, .1) !important;
+  animation: academy-card-in 680ms cubic-bezier(.2,.75,.2,1) both;
+}
+
+.dashboard-home .learning-board article:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.dashboard-home .learning-board article:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.dashboard-home .learning-board-primary {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(191, 106, 30, .12), transparent 19rem),
+    linear-gradient(135deg, rgba(20, 125, 100, .16), transparent 62%),
+    #ffffff !important;
+}
+
+.dashboard-home .learning-board-primary::after {
+  align-self: end;
+  height: 9px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0f6751 0 28%, #c9ded6 28% 100%);
+  content: "";
+}
+
+.dashboard-home .learning-board strong {
+  letter-spacing: 0;
+}
+
+.dashboard-home .learning-board article:not(.learning-roadmap-strip) .text-link {
+  min-height: 44px;
+  border: 1px solid #c7d9d1;
+  border-radius: 999px;
+  padding: 0 14px;
+}
+
+.dashboard-home .learning-roadmap-strip a {
+  min-height: 48px;
+}
+
+.dashboard-home .ops-summary {
+  margin-top: 6px !important;
+}
+
+.dashboard-home .ops-summary span,
+.dashboard-home .ops-summary small {
+  color: #50625d;
+}
+
+.dashboard-home .dashboard-layout {
+  margin-top: 22px;
+}
+
+@keyframes academy-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 1180px) {
+  .dashboard-home .learning-board {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-home .learning-board article {
+    animation: none !important;
   }
 }

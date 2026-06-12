@@ -637,7 +637,7 @@ async function assertPortfolioLabUi(page, portfolioLabs) {
   }
 
   await page.goto(`${WEB_BASE}/labs`, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
-  await expect(page.getByRole("heading", { name: "Labs for incidents and architecture reviews" })).toBeVisible({ timeout: TIMEOUT_MS });
+  await expect(page.getByRole("heading", { name: "Labs", exact: true })).toBeVisible({ timeout: TIMEOUT_MS });
   await expect(page.getByText(`${CLUSTER_LAB_SLUGS.length} cluster-ready`, { exact: false }).first()).toBeVisible({ timeout: TIMEOUT_MS });
   await expect(page.getByRole("button", { name: "Cluster setup", exact: true })).toBeVisible({ timeout: TIMEOUT_MS });
   await page.getByRole("button", { name: "Cluster setup", exact: true }).click();
