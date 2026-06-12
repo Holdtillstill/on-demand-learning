@@ -6791,12 +6791,10 @@ textarea,
 
 @keyframes academy-rise {
   from {
-    opacity: 0.18;
     transform: translateY(24px) scale(0.992);
   }
 
   to {
-    opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
@@ -6953,6 +6951,29 @@ textarea,
   box-shadow: none !important;
 }
 
+.activity-rail-card a,
+.achievement-rail-card a,
+.interview-rail-card a,
+.readiness-panel a {
+  border-color: var(--pa-border) !important;
+  background: #0b1714 !important;
+  color: var(--pa-text) !important;
+}
+
+.activity-rail-card a span,
+.achievement-rail-card a span,
+.interview-rail-card a span,
+.readiness-panel a span {
+  color: var(--pa-text-soft) !important;
+}
+
+.activity-rail-card a strong,
+.achievement-rail-card a strong,
+.interview-rail-card a strong,
+.readiness-panel a strong {
+  color: var(--pa-text) !important;
+}
+
 .course-row:hover,
 .lab-card:hover,
 .course-card:hover,
@@ -7081,6 +7102,184 @@ textarea,
 .workspace-panel,
 .lab-card,
 .course-card,
-.lesson-card {
+.lesson-card,
+.roadmap-stage {
   animation: none !important;
+  opacity: 1 !important;
+}
+
+.roadmap-stage .stage-metrics span {
+  border-color: var(--pa-border) !important;
+  background: #0b1714 !important;
+  color: var(--pa-text-soft) !important;
+}
+
+.roadmap-stage .stage-courses a {
+  border: 1px solid var(--pa-border) !important;
+  background: #0b1714 !important;
+  color: var(--pa-text) !important;
+  box-shadow: none !important;
+}
+
+.roadmap-stage .stage-courses a svg {
+  color: var(--pa-accent) !important;
+}
+
+.lab-starter-path {
+  border-color: var(--pa-border) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.018)),
+    var(--pa-panel) !important;
+  color: var(--pa-text) !important;
+}
+
+.lab-starter-path h2 {
+  color: var(--pa-text) !important;
+}
+
+.lab-starter-path .eyebrow {
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--pa-text-soft) !important;
+  padding: 0 !important;
+}
+
+.lab-starter-path .lab-starter-step {
+  border-color: var(--pa-border) !important;
+  background: #0b1714 !important;
+  color: var(--pa-text) !important;
+}
+
+.lab-starter-path .lab-starter-step .eyebrow,
+.lab-starter-path .lab-starter-step > div > span:not([class]) {
+  color: var(--pa-text-soft) !important;
+}
+
+.lab-starter-path .lab-starter-step strong {
+  color: var(--pa-text) !important;
+}
+
+.copy-command-button {
+  border-color: var(--pa-border-strong) !important;
+  background: #0b1714 !important;
+  color: var(--pa-text) !important;
+}
+
+.lab-operational-brief,
+.lab-workspace-quickstart,
+.lab-contract-panel,
+.resource-mini-row {
+  border-color: var(--pa-border) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.018)),
+    var(--pa-panel) !important;
+  color: var(--pa-text) !important;
+}
+
+.lab-operational-brief .section-heading > span,
+.lab-workspace-quickstart .section-heading > span,
+.lab-contract-panel .section-heading > span,
+.resource-mini-row span {
+  background: transparent !important;
+  color: var(--pa-text-soft) !important;
+}
+
+.lab-operational-brief .section-heading,
+.lab-artifact-map-panel .section-heading,
+.lab-workspace-quickstart .section-heading,
+.lab-contract-panel .section-heading {
+  background: transparent !important;
+  color: var(--pa-text) !important;
+}
+
+.lab-artifact-map-panel .section-heading > span {
+  background: transparent !important;
+  color: var(--pa-text-soft) !important;
+}
+
+.resource-mini-row strong {
+  color: var(--pa-text) !important;
+}
+
+.resource-card,
+.resource-row {
+  border-color: var(--pa-border) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.014)),
+    #0f1a17 !important;
+  color: var(--pa-text) !important;
+  box-shadow: none !important;
+}
+
+.resource-card h2,
+.resource-card strong,
+.resource-row h2,
+.resource-row strong {
+  color: var(--pa-text) !important;
+}
+
+.resource-card p,
+.resource-row p,
+.resource-card span,
+.resource-row span,
+.resource-card-artifacts span {
+  background: transparent !important;
+  color: var(--pa-text-soft) !important;
+}
+
+.resource-card .level-badge,
+.resource-row .level-badge {
+  border-color: rgba(73, 218, 170, 0.28) !important;
+  background: rgba(73, 218, 170, 0.14) !important;
+  color: #b8ffe5 !important;
+}
+
+.resource-pagination button {
+  border-color: var(--pa-border-strong) !important;
+  background: #0b1714 !important;
+  color: var(--pa-text) !important;
+}
+
+.lesson-row,
+.canonical-lesson-row {
+  border-color: var(--pa-border) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.014)),
+    #0f1a17 !important;
+  color: var(--pa-text) !important;
+}
+
+.lesson-row h2,
+.lesson-row strong,
+.canonical-lesson-row h2,
+.canonical-lesson-row strong {
+  color: var(--pa-text) !important;
+}
+
+.lesson-row p,
+.lesson-row span,
+.canonical-lesson-row p,
+.canonical-lesson-row span {
+  background: transparent !important;
+  color: var(--pa-text-soft) !important;
+}
+
+.interview-pack-list,
+.question-progress-toolbar {
+  border-color: var(--pa-border) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.018)),
+    var(--pa-panel) !important;
+  color: var(--pa-text) !important;
+}
+
+.interview-pack-list .section-heading,
+.question-progress-toolbar > div {
+  background: transparent !important;
+  color: var(--pa-text) !important;
+}
+
+.interview-pack-list h2,
+.question-progress-toolbar h3 {
+  color: var(--pa-text) !important;
 }
