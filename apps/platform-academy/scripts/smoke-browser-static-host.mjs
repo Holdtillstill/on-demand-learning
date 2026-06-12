@@ -15,8 +15,8 @@ const viewports = [
 const routes = [
   { path: "/", markers: ["Platform Academy", "Curriculum", "Lab inventory", "Interview bank"] },
   { path: "/dashboard/home", markers: ["Platform Academy", "Curriculum", "Lab inventory", "Interview bank"] },
-  { path: "/roadmap", markers: ["Roadmap from kubectl basics to running platforms", "Checkpoints"] },
-  { path: "/labs", markers: ["Labs for incidents and architecture reviews", "Evidence journal"] },
+  { path: "/roadmap", markers: ["Roadmap", "Stages, checkpoints, and labs."] },
+  { path: "/labs", markers: ["Labs", "Command-backed scenarios with validation and evidence."] },
   { path: "/labs/history", markers: ["Saved workbooks and rubric signals"] },
   { path: "/labs/trace-service-to-pod", markers: ["Trace Service traffic to ready Pods", "Guided lab run sequence"] },
   { path: "/resources", markers: ["Resource library", "320 matches"] },

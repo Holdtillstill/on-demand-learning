@@ -23,7 +23,7 @@ const ROUTES = [
   },
   {
     path: "/labs",
-    heading: "Labs for incidents and architecture reviews",
+    heading: "Labs",
     visibleText: ["Evidence journal", "Starter path", "Selected lab", "Cluster setup included"],
   },
   {
@@ -33,8 +33,8 @@ const ROUTES = [
   },
   {
     path: "/roadmap",
-    heading: "Roadmap from kubectl basics to running platforms",
-    visibleText: ["Roadmap", "Checkpoints"],
+    heading: "Roadmap",
+    visibleText: ["Stages, checkpoints, and labs.", "Checkpoints"],
   },
   {
     path: "/missing-route",
