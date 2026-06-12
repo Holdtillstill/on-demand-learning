@@ -6296,7 +6296,14 @@ body,
 .learner-profile-label,
 .learner-profile span,
 .product-topline span {
-  color: #506159;
+  color: #506159 !important;
+}
+
+.learner-recovery-button,
+.learner-reset-button {
+  border-color: #147d64 !important;
+  background: #147d64 !important;
+  color: #ffffff !important;
 }
 
 input,
@@ -6341,6 +6348,201 @@ textarea {
   border-color: #147d64;
   background: #e4f3ee;
   color: #0f604d;
+}
+
+.workspace-header .eyebrow,
+.workspace-panel .section-heading .eyebrow,
+.workspace-panel > .eyebrow,
+.lab-starter-path .section-heading .eyebrow,
+.toolbar label span,
+.canonical-toolbar label span {
+  color: #4d6259 !important;
+}
+
+.roadmap-stage p,
+.roadmap-stage li,
+.stage-body p,
+.stage-body li {
+  color: #506159 !important;
+}
+
+.runbook-workspace .eyebrow {
+  border-color: #3f574d !important;
+  background: #24352e !important;
+  color: #e7f5ef !important;
+}
+
+.runbook-workspace .text-link {
+  border-color: #5d8577 !important;
+  background: #203f36 !important;
+  color: #f3fff9 !important;
+}
+
+.runbook-workspace .runbook-meta span,
+.runbook-workspace .level-badge,
+.runbook-workspace .lab-tier-badge,
+.runbook-workspace .portfolio-lab-badge,
+.runbook-workspace .lab-runtime-badge,
+.runbook-workspace .lab-submission-badge,
+.runbook-workspace .lab-saved-badge {
+  border-color: #48665b !important;
+  background: #263a33 !important;
+  color: #f3fff9 !important;
+}
+
+.state-panel {
+  border-color: #d7ded9 !important;
+  background: #ffffff !important;
+}
+
+.state-panel h1 {
+  color: #111c17 !important;
+}
+
+.state-panel p {
+  color: #506159 !important;
+}
+
+.activity-save-panel,
+.lab-run-phase,
+.lab-run-phase > div {
+  border-color: #d7ded9 !important;
+  background: #ffffff !important;
+}
+
+.activity-save-panel .eyebrow,
+.lab-run-phase .eyebrow {
+  border-color: #d7ded9 !important;
+  background: #f6f9f7 !important;
+  color: #4d6259 !important;
+}
+
+.lab-run-phase h3 {
+  color: #111c17 !important;
+}
+
+.lab-run-phase p,
+.lab-run-phase li {
+  color: #506159 !important;
+}
+
+.lab-artifact-map-panel,
+.lab-artifact-map-item,
+.lab-workbook-panel,
+.lab-phase-status,
+.lab-phase-status-row,
+.lab-command-deck,
+.lab-worksheet-answer {
+  border-color: #d7ded9 !important;
+  background: #ffffff !important;
+}
+
+.lab-artifact-map-panel .section-heading h3,
+.lab-artifact-map-item strong,
+.lab-workbook-panel .section-heading h2,
+.lab-workbook-panel .section-heading h3,
+.lab-workbook-grid h3,
+.lab-phase-status .section-heading h3,
+.lab-phase-status-copy strong,
+.lab-command-deck .section-heading h3,
+.lab-worksheet-answer label span {
+  color: #111c17 !important;
+}
+
+.lab-artifact-map-panel .section-heading > span,
+.lab-artifact-map-item span,
+.lab-artifact-map-item code,
+.lab-artifact-map-more,
+.lab-artifact-map-empty,
+.lab-workbook-progress span,
+.lab-phase-status .section-heading > span,
+.lab-phase-status-copy span,
+.lab-phase-status-row small,
+.lab-command-deck .section-heading > span,
+.lab-artifact-list code {
+  color: #506159 !important;
+}
+
+.lab-workbook-panel label span,
+.lab-worksheet-answer label span {
+  color: #111c17 !important;
+}
+
+.lab-artifact-list code {
+  border-color: #d7ded9 !important;
+  background: #f7faf8 !important;
+  color: #35463e !important;
+}
+
+.lab-feedback-summary-needs-evidence {
+  border-color: #d8a846 !important;
+  background: #fff7e8 !important;
+  color: #805108 !important;
+}
+
+.lab-feedback-summary-missing {
+  border-color: #dc9aa4 !important;
+  background: #fff0f2 !important;
+  color: #8b2636 !important;
+}
+
+.resource-stats,
+.resource-stats div {
+  border-color: #d7ded9 !important;
+  background: #ffffff !important;
+}
+
+.resource-stats dt,
+.resources-page .section-heading .eyebrow {
+  color: #4d6259 !important;
+}
+
+.resource-stats dd {
+  color: #111c17 !important;
+}
+
+.source-link {
+  border-color: #b8cbc2 !important;
+  background: #e4f3ee !important;
+  color: #0f604d !important;
+}
+
+.lesson-body li,
+.practice-panel li {
+  color: #506159 !important;
+}
+
+.practice-panel,
+.review-list article {
+  border-color: #d7ded9 !important;
+  background: #ffffff !important;
+}
+
+.practice-panel .eyebrow,
+.lesson-page .eyebrow {
+  color: #4d6259 !important;
+}
+
+.term-card span {
+  color: #0f604d !important;
+}
+
+.review-list article strong {
+  color: #111c17 !important;
+}
+
+.review-list article p {
+  color: #506159 !important;
+}
+
+.interview-page .eyebrow {
+  color: #4d6259 !important;
+}
+
+.question-number {
+  border-color: #b8cbc2 !important;
+  background: #e4f3ee !important;
+  color: #0f604d !important;
 }
 
 @media (max-width: 920px) {
