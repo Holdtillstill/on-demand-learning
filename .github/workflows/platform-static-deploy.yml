@@ -68,8 +68,7 @@ jobs:
 
       - name: Sync static web assets
         run: |
-          aws s3 cp dist/ "s3://${STATIC_SITE_BUCKET}" \
-            --recursive \
+          aws s3 sync dist/ "s3://${STATIC_SITE_BUCKET}" \
             --exclude "assets/*" \
             --cache-control "public,max-age=300"
 
