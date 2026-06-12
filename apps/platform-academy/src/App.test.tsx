@@ -490,7 +490,9 @@ describe("Platform Academy app", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Platform Academy" })).toBeInTheDocument();
-    expect(screen.getByText("Learning state")).toBeInTheDocument();
+    expect(screen.getByText("Workspace")).toBeInTheDocument();
+    expect(screen.getByText("Next lesson")).toBeInTheDocument();
+    expect(screen.getAllByText("Lab evidence").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Kubernetes Fundamentals").length).toBeGreaterThan(0);
     expect(screen.getByText("Course list")).toBeInTheDocument();
     expect(screen.getByText("Learning checks")).toBeInTheDocument();
@@ -499,9 +501,9 @@ describe("Platform Academy app", () => {
     expect(screen.getByText("Saved progress")).toBeInTheDocument();
     expect(screen.getByText("Kubernetes Fundamentals: Containers, Images, and Pods")).toBeInTheDocument();
     expect(screen.getAllByRole("progressbar").length).toBeGreaterThan(0);
-    expect(screen.getByText(testLearnerId)).toBeInTheDocument();
-    expect(screen.getByText("Guest profile")).toBeInTheDocument();
-    expect(screen.getByText("Local progress")).toBeInTheDocument();
+    expect(screen.queryByText(testLearnerId)).not.toBeInTheDocument();
+    expect(screen.getByText("Local profile")).toBeInTheDocument();
+    expect(screen.getByText("Browser workspace")).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/static-api/platform-academy-catalog.json", expect.objectContaining({ cache: "force-cache" }));
   });
 
@@ -726,7 +728,8 @@ describe("Platform Academy app", () => {
     const regeneratedLearnerId = localStorage.getItem(LOCAL_LEARNER_ID_KEY) ?? "";
     expect(regeneratedLearnerId).toMatch(/^guest-[a-z0-9]+$/i);
     expect(regeneratedLearnerId).not.toBe(testLearnerId);
-    await waitFor(() => expect(screen.getByText(regeneratedLearnerId)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Progress saved")).toBeInTheDocument());
+    expect(screen.queryByText(regeneratedLearnerId)).not.toBeInTheDocument();
     expect(readLocalProgress(regeneratedLearnerId)).toEqual([]);
   });
 
@@ -760,7 +763,8 @@ describe("Platform Academy app", () => {
     fireEvent.change(screen.getByLabelText(/restore saved key/i), { target: { value: restoredLearnerId.toUpperCase() } });
     fireEvent.click(screen.getByRole("button", { name: /restore profile/i }));
 
-    await waitFor(() => expect(screen.getByText(restoredLearnerId)).toBeInTheDocument());
+    await waitFor(() => expect(localStorage.getItem(LOCAL_LEARNER_ID_KEY)).toBe(restoredLearnerId));
+    expect(screen.queryByText(restoredLearnerId)).not.toBeInTheDocument();
     expect(readLocalActivity(restoredLearnerId)).toContainEqual(
       expect.objectContaining({
         user_id: restoredLearnerId,
@@ -1087,7 +1091,7 @@ describe("Platform Academy app", () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByRole("heading", { name: "Labs for incidents and architecture reviews" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Labs" })).toBeInTheDocument();
     expect(screen.getByLabelText("Starter path")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Incident drills" })).toBeInTheDocument();
     expect(screen.getByText("1 starter lab")).toBeInTheDocument();

@@ -227,9 +227,9 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
           <div className="learner-profile" aria-label="Active learner profile">
             <UserRound aria-hidden="true" />
             <div>
-              <span className="learner-profile-label">Guest profile</span>
-              <strong>{learnerId}</strong>
-              <span>Local progress</span>
+              <span className="learner-profile-label">Local profile</span>
+              <strong>Progress saved</strong>
+              <span>Browser workspace</span>
             </div>
             <div className="learner-profile-actions">
               <button
@@ -241,7 +241,7 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
                 type="button"
               >
                 <Copy aria-hidden="true" />
-                Recovery key
+                Profile
               </button>
               <button
                 aria-label="New profile: start a new local guest workspace"
@@ -251,7 +251,7 @@ export function AppShell({ children, learnerId, onResetLearner, onRecoverLearner
                 type="button"
               >
                 <RefreshCcw aria-hidden="true" />
-                New profile
+                Reset
               </button>
             </div>
           </div>

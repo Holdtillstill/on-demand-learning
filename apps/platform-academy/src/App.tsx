@@ -1193,6 +1193,10 @@ function DashboardPage({ data }: { data: AcademyData }) {
   const strongLabSubmissions = activeLabSubmissions.filter((submission) => submission.rubric_feedback.some((item) => item.status === "strong")).length;
   const earnedAchievements = data.dashboard.achievements.filter((achievement) => achievement.earned);
   const nextAchievement = data.dashboard.achievements.find((achievement) => !achievement.earned);
+  const latestLabSubmission = sortedLabSubmissions(activeLabSubmissions)[0];
+  const latestLab = latestLabSubmission ? data.catalog.labs.find((lab) => lab.slug === latestLabSubmission.lab_slug) : upcomingLab;
+  const latestLabSummary = labSubmissionSummary(latestLabSubmission);
+  const roadmapPreview = data.roadmap.stages.slice(0, 4);
 
   const filteredCourses = courses.filter((course) => {
     const levelGroup = data.catalog.tracks.find((track) => track.course.slug === course.slug)?.level_group ?? course.level;
@@ -1208,9 +1212,9 @@ function DashboardPage({ data }: { data: AcademyData }) {
     <section className="page canonical-page dashboard-home">
       <header className="workspace-header">
         <div>
-          <p className="eyebrow">Learning state</p>
+          <p className="eyebrow">Workspace</p>
           <h1>Platform Academy</h1>
-          <p className="lead">{data.catalog.promise}</p>
+          <p className="lead">Kubernetes, EKS, Helm, GitOps, SRE labs, and interview drills.</p>
         </div>
         <div className="workspace-actions">
           {stats.recommended && (
@@ -1225,6 +1229,38 @@ function DashboardPage({ data }: { data: AcademyData }) {
           </Link>
         </div>
       </header>
+
+      <section className="learning-board" aria-label="Current learning workspace">
+        <article className="learning-board-primary">
+          <span>Next lesson</span>
+          <strong>{stats.recommended?.title ?? "Select a lesson"}</strong>
+          <p>{recommendedCourse?.title ?? "No course selected"}</p>
+          {stats.recommended && (
+            <Link className="text-link" to={lessonPathForId(data, stats.recommended.id)}>
+              Open lesson <ArrowRight aria-hidden="true" />
+            </Link>
+          )}
+        </article>
+        <article>
+          <span>Lab evidence</span>
+          <strong>{latestLabSummary.label}</strong>
+          <p>{latestLab?.title ?? "No lab selected"}</p>
+          <Link className="text-link" to={latestLab ? `/labs/${latestLab.slug}` : "/labs"}>
+            Open lab <ArrowRight aria-hidden="true" />
+          </Link>
+        </article>
+        <article className="learning-roadmap-strip">
+          <span>Path</span>
+          <div>
+            {roadmapPreview.map((stage) => (
+              <Link key={stage.sequence} to="/roadmap">
+                <em>{stage.sequence}</em>
+                <strong>{stage.title}</strong>
+              </Link>
+            ))}
+          </div>
+        </article>
+      </section>
 
       <section className="ops-summary" aria-label="Academy operating summary">
         <article>
@@ -1501,8 +1537,8 @@ function RoadmapPage({ data }: { data: AcademyData }) {
       <header className="workspace-header">
         <div>
           <p className="eyebrow">Roadmap</p>
-          <h1>Roadmap from kubectl basics to running platforms</h1>
-          <p className="lead">Each stage groups lessons, checkpoints, and labs so you know what to practice next.</p>
+          <h1>Roadmap</h1>
+          <p className="lead">Stages, checkpoints, and labs.</p>
         </div>
         <div className="readiness-score">
           <span>Current progress</span>
@@ -1626,8 +1662,8 @@ function LabsPage({ data }: { data: AcademyData }) {
       <header className="workspace-header">
         <div>
           <p className="eyebrow">Lab queue</p>
-          <h1>Labs for incidents and architecture reviews</h1>
-          <p className="lead">Practice short scenarios with commands and checks you can run locally before marking a lesson complete.</p>
+          <h1>Labs</h1>
+          <p className="lead">Command-backed scenarios with validation and evidence.</p>
         </div>
         <div className="workspace-actions">
           <Link className="secondary-action" to="/labs/history">
