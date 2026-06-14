@@ -4,8 +4,6 @@ import AxeBuilder from "@axe-core/playwright";
 const WEB_BASE = normalizeBase(process.env.WEB_BASE || process.env.PLATFORM_WEB_BASE || "https://platform-academy.bozhi.dev");
 const TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 30000);
 const SETTLE_MS = Number(process.env.SMOKE_SETTLE_MS || 1000);
-const VISITOR_ENDPOINT = "https://on-demand-demos.bozhi.dev/api/events";
-const VISITOR_ENDPOINTS = Array.from(new Set([VISITOR_ENDPOINT, `${WEB_BASE}/api/events`]));
 
 const viewports = [
   { name: "desktop", width: 1440, height: 900 },
@@ -13,18 +11,24 @@ const viewports = [
 ];
 
 const routes = [
-  { path: "/", markers: ["Platform Academy", "Curriculum", "Lab inventory", "Interview bank"] },
-  { path: "/dashboard/home", markers: ["Platform Academy", "Curriculum", "Lab inventory", "Interview bank"] },
-  { path: "/roadmap", markers: ["Roadmap", "Stages, checkpoints, and labs."] },
-  { path: "/labs", markers: ["Labs", "Command-backed scenarios with validation and evidence."] },
-  { path: "/labs/history", markers: ["Saved workbooks and rubric signals"] },
-  { path: "/labs/trace-service-to-pod", markers: ["Trace Service traffic to ready Pods", "Guided lab run sequence"] },
-  { path: "/resources", markers: ["Resource library", "320 matches"] },
-  { path: "/resources/linux-cheatsheet", markers: ["Linux Field Cheatsheet", "Official links"] },
-  { path: "/courses/platform-kubernetes-fundamentals", markers: ["Kubernetes Fundamentals", "Course progress"] },
-  { path: "/courses/platform-kubernetes-fundamentals/lessons/1", markers: ["Containers, Images, and Pods", "Practice the lesson"] },
-  { path: "/interview-prep", markers: ["Interview prep", "22 visible packs"] },
-  { path: "/missing-route", markers: ["Page not found", "Open dashboard"] },
+  { path: "/", heading: "Platform Engineering Readiness", markers: ["Curriculum", "CONTINUE LESSON", "READINESS SCORE"] },
+  { path: "/dashboard/home", heading: "Platform Engineering Readiness", markers: ["Curriculum", "CONTINUE LESSON", "READINESS SCORE"] },
+  { path: "/roadmap", heading: "Platform Engineering Roadmap", markers: ["Platform Engineering Roadmap", "All levels"] },
+  { path: "/labs", heading: "Lab Queue", markers: ["Lab Queue", "Open workbook"] },
+  { path: "/labs/trace-service-to-pod", heading: "Lab Workbook", markers: ["Trace Service traffic to ready Pods", "Workbook", "Evidence"] },
+  { path: "/resources", heading: "Resource Index", markers: ["Resource Index", "330 resources", "All domains"] },
+  { path: "/resources/linux-project-brief", heading: "Resource Detail", markers: ["Linux Portfolio Project Brief", "Operator workflow"] },
+  { path: "/courses/platform-kubernetes-fundamentals/lessons/1", heading: "Lesson Reader", markers: ["platform-kubernetes-fundamentals", "Lesson 1"] },
+  { path: "/interview-prep", heading: "Interview Prep", markers: ["Interview Prep", "Question queue", "Answer write-up"] },
+  { path: "/missing-route", heading: "Page not found", markers: ["Page not found", "Open dashboard"] },
+];
+
+const forbiddenMarkers = [
+  "Platform Academy is unavailable.",
+  "Unexpected token",
+  "Resource library",
+  "320 matches",
+  "22 visible packs",
 ];
 
 function normalizeBase(value) {
@@ -40,31 +44,29 @@ function shouldIgnoreFailedRequest(request) {
   }
 }
 
-async function installVisitorStub(page, visitorEvents) {
-  const handler = async (eventRoute) => {
-    const request = eventRoute.request();
-    try {
-      visitorEvents.push(JSON.parse(request.postData() || "{}"));
-    } catch {
-      visitorEvents.push({ parseError: true, raw: request.postData() || "" });
-    }
-    await eventRoute.fulfill({ status: 202, contentType: "application/json", body: "{}" });
-  };
-  for (const endpoint of VISITOR_ENDPOINTS) {
-    await page.route(endpoint, handler);
-  }
+async function allVisibleText(page) {
+  return page.evaluate(() => {
+    const shadowText = Array.from(document.querySelectorAll(".reference-figma-screen"))
+      .map((host) => host.shadowRoot?.querySelector(".figma-shadow-root")?.innerText || "")
+      .join("\n");
+    return `${document.body.innerText}\n${shadowText}`.replace(/\s+/g, " ").trim();
+  });
 }
 
 async function checkRoute(context, viewport, route) {
   const page = await context.newPage();
   const issues = [];
-  const visitorEvents = [];
 
   page.on("console", (message) => {
     if (message.type() === "error") issues.push(`console: ${message.text().slice(0, 300)}`);
   });
   page.on("pageerror", (error) => {
     issues.push(`pageerror: ${String(error.message || error).slice(0, 300)}`);
+  });
+  page.on("request", (request) => {
+    if (request.url().includes("/api/events") || request.url().includes("on-demand-demos.bozhi.dev")) {
+      issues.push(`unexpected telemetry request: ${request.method()} ${request.url()}`);
+    }
   });
   page.on("requestfailed", (request) => {
     if (!shouldIgnoreFailedRequest(request)) {
@@ -73,10 +75,8 @@ async function checkRoute(context, viewport, route) {
   });
   page.on("response", (response) => {
     const status = response.status();
-    if (status >= 400) issues.push(`bad response: ${status} ${response.url()}`);
+    if (status >= 400 && !response.url().endsWith("/favicon.ico")) issues.push(`bad response: ${status} ${response.url()}`);
   });
-
-  await installVisitorStub(page, visitorEvents);
 
   const response = await page.goto(`${WEB_BASE}${route.path}`, {
     waitUntil: "domcontentloaded",
@@ -87,12 +87,15 @@ async function checkRoute(context, viewport, route) {
   }
 
   await page.waitForTimeout(SETTLE_MS);
-  const bodyText = await page.locator("body").innerText({ timeout: TIMEOUT_MS }).catch(() => "");
+  const heading = await page.locator("main > h1#app-route-heading").textContent({ timeout: TIMEOUT_MS }).catch(() => "");
+  if ((heading || "").trim() !== route.heading) issues.push(`heading mismatch: expected ${route.heading}, got ${heading || "empty"}`);
+
+  const text = await allVisibleText(page);
   for (const marker of route.markers) {
-    if (!bodyText.includes(marker)) issues.push(`missing marker: ${marker}`);
+    if (!text.includes(marker)) issues.push(`missing marker: ${marker}`);
   }
-  for (const badText of ["Platform Academy is unavailable.", "Unexpected token"]) {
-    if (bodyText.includes(badText)) issues.push(`unexpected text: ${badText}`);
+  for (const marker of forbiddenMarkers) {
+    if (text.includes(marker)) issues.push(`unexpected legacy marker: ${marker}`);
   }
 
   const horizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -100,16 +103,6 @@ async function checkRoute(context, viewport, route) {
 
   const accessibilityIssues = await seriousAccessibilityViolations(page);
   issues.push(...accessibilityIssues.map((issue) => `accessibility: ${issue}`));
-
-  const pageview = visitorEvents.find((event) => event.project === "platform-academy" && event.eventType === "pageview");
-  if (!pageview) {
-    issues.push("first-party visitor pageview was not sent");
-  } else {
-    if (pageview.path !== route.path) issues.push(`visitor path mismatch: ${pageview.path}`);
-    if (!["initial", "manual"].includes(pageview.navigationType)) {
-      issues.push(`unexpected visitor navigation type: ${pageview.navigationType}`);
-    }
-  }
 
   await page.close();
   if (issues.length) {
@@ -126,33 +119,6 @@ async function seriousAccessibilityViolations(page) {
     .map((violation) => `${violation.id}: ${violation.help} (${violation.nodes.length} node(s))`);
 }
 
-async function verifyPrivacySignals(browser) {
-  const context = await browser.newContext({
-    colorScheme: "dark",
-    userAgent: "platform-academy-static-privacy-smoke/1.0",
-    viewport: { width: 1440, height: 900 },
-  });
-  await context.addInitScript(() => {
-    Object.defineProperty(navigator, "doNotTrack", { configurable: true, get: () => "1" });
-    Object.defineProperty(navigator, "globalPrivacyControl", { configurable: true, get: () => true });
-    Object.defineProperty(window, "doNotTrack", { configurable: true, get: () => "1" });
-  });
-
-  const page = await context.newPage();
-  const visitorEvents = [];
-  await installVisitorStub(page, visitorEvents);
-  try {
-    await page.goto(`${WEB_BASE}/`, { waitUntil: "domcontentloaded", timeout: TIMEOUT_MS });
-    await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
-    await page.waitForTimeout(SETTLE_MS);
-    if (visitorEvents.length) {
-      throw new Error(`privacy signals should suppress visitor telemetry, saw ${visitorEvents.length} event(s)`);
-    }
-  } finally {
-    await context.close();
-  }
-}
-
 const browser = await chromium.launch({ headless: true });
 try {
   for (const viewport of viewports) {
@@ -166,12 +132,10 @@ try {
     }
     await context.close();
   }
-
-  await verifyPrivacySignals(browser);
 } finally {
   await browser.close();
 }
 
 console.log(
-  `Platform Academy static browser smoke passed for ${WEB_BASE} across ${routes.length} route(s), ${viewports.length} viewport(s), privacy telemetry checks, and serious/critical accessibility checks.`
+  `Platform Academy static browser smoke passed for ${WEB_BASE} across ${routes.length} route(s), ${viewports.length} viewport(s), no telemetry requests, and serious/critical accessibility checks.`
 );

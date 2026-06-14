@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import re
 import sys
 from pathlib import Path
@@ -27,6 +28,16 @@ COUNTS = {
     "RESOURCES": len(PLATFORM_RESOURCES),
     "INTERVIEW_PACKS": len(PLATFORM_INTERVIEW_PREP),
     "INTERVIEW_QUESTIONS": sum(len(pack.get("questions", [])) for pack in PLATFORM_INTERVIEW_PREP),
+}
+
+STATIC_RESOURCES = json.loads((ROOT / "apps/platform-academy/public/static-api/platform-academy-resources.json").read_text(encoding="utf-8"))
+STATIC_INTERVIEW_PREP = json.loads((ROOT / "apps/platform-academy/public/static-api/platform-academy-interview-prep.json").read_text(encoding="utf-8"))
+
+BROWSER_COUNTS = {
+    **COUNTS,
+    "RESOURCES": len(STATIC_RESOURCES["resources"]),
+    "INTERVIEW_PACKS": len(STATIC_INTERVIEW_PREP["packs"]),
+    "INTERVIEW_QUESTIONS": sum(len(pack.get("questions", [])) for pack in STATIC_INTERVIEW_PREP["packs"]),
 }
 
 
@@ -69,7 +80,7 @@ def verify_shell_defaults() -> None:
 
 def verify_browser_defaults() -> None:
     smoke_routes = "apps/platform-academy/scripts/smoke-routes.mjs"
-    for name, value in COUNTS.items():
+    for name, value in BROWSER_COUNTS.items():
         require_regex(
             smoke_routes,
             rf'^const EXPECTED_{name} = readPositiveInteger\("SMOKE_EXPECTED_{name}", "EXPECTED_{name}", {value}\);$',
@@ -85,6 +96,9 @@ def verify_count_docs() -> None:
     resources = COUNTS["RESOURCES"]
     packs = COUNTS["INTERVIEW_PACKS"]
     questions = COUNTS["INTERVIEW_QUESTIONS"]
+    browser_resources = BROWSER_COUNTS["RESOURCES"]
+    browser_packs = BROWSER_COUNTS["INTERVIEW_PACKS"]
+    browser_questions = BROWSER_COUNTS["INTERVIEW_QUESTIONS"]
 
     require_text("docs/deployment.md", f"- {courses} courses")
     require_text("docs/deployment.md", f"- {lessons} lessons")
@@ -94,7 +108,8 @@ def verify_count_docs() -> None:
     require_text("docs/deployment.md", f"- {questions} interview questions")
     require_text("docs/deployment.md", f"`{courses} courses / {lessons} lessons`")
     require_text("docs/deployment.md", f"`/labs` renders {labs} labs")
-    require_text("docs/deployment.md", f"`/resources` renders {resources} resources")
+    require_text("docs/deployment.md", f"`/resources` renders {browser_resources} resources")
+    require_text("docs/deployment.md", f"`/interview-prep` renders {browser_packs} prep packs and {browser_questions} total questions.")
 
     require_text(
         "docs/platform-academy.md",
@@ -105,19 +120,19 @@ def verify_count_docs() -> None:
     require_text(
         "docs/smoke-test-checklist.md",
         f"`/dashboard/home` shows {courses} courses, {lessons} lessons, {labs} labs, "
-        f"{resources} resources, and {questions} interview questions.",
+        f"{browser_resources} resources, and {browser_questions} interview questions.",
     )
 
     release_gate_text = (
         f"{courses} courses, {lessons} lessons, {labs} full labs, {portfolio} portfolio-grade lab UI signals, "
-        f"{resources} resources, {packs} interview prep packs, {questions} interview questions"
+        f"{browser_resources} resources, {browser_packs} interview prep packs, {browser_questions} interview questions"
     )
     require_text("docs/release-checklist.md", release_gate_text)
 
     browser_scope_text = (
         f"Browser smoke: {courses} courses, {lessons} lessons, {labs} lab detail routes, "
-        f"{portfolio} portfolio-grade UI signals, {resources} resource detail routes, "
-        f"{packs} interview prep packs, desktop and mobile route checks."
+        f"{portfolio} portfolio-grade UI signals, {browser_resources} resource detail routes, "
+        f"{browser_packs} interview prep packs, desktop and mobile route checks."
     )
     require_text("scripts/platform_release_evidence.sh", browser_scope_text)
 

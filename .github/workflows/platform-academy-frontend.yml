@@ -20,6 +20,10 @@ jobs:
           cache-dependency-path: apps/platform-academy/package-lock.json
       - run: npm ci
         working-directory: apps/platform-academy
+      - run: npm run check:reference-static-api
+        working-directory: apps/platform-academy
+      - run: npm run validate:static-spa-router
+        working-directory: apps/platform-academy
       - run: npm run typecheck
         working-directory: apps/platform-academy
       - run: npm test
@@ -50,6 +54,10 @@ jobs:
         run: npm ci
         working-directory: apps/platform-academy
 
+      - name: Check generated static snapshots
+        run: npm run check:reference-static-api
+        working-directory: apps/platform-academy
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
         working-directory: apps/platform-academy
@@ -78,6 +86,8 @@ jobs:
 
           smoke_status=0
           WEB_BASE=http://localhost:5174 SMOKE_API_BASE=http://127.0.0.1:8000 SMOKE_ARTIFACT_DIR="${GITHUB_WORKSPACE}/smoke-artifacts" npm --prefix apps/platform-academy run smoke:routes || smoke_status=$?
+          ui_status=0
+          WEB_BASE=http://localhost:5174 npm --prefix apps/platform-academy run validate:figma-ui || ui_status=$?
 
           kill "${web_pid}" "${api_pid}" >/dev/null 2>&1 || true
           wait "${web_pid}" "${api_pid}" >/dev/null 2>&1 || true
@@ -86,7 +96,7 @@ jobs:
           log_status=0
           scripts/audit_api_log.sh "${api_log}" "Platform Academy browser smoke" || log_status=$?
 
-          if [ "${smoke_status}" -ne 0 ] || [ "${log_status}" -ne 0 ]; then
+          if [ "${smoke_status}" -ne 0 ] || [ "${ui_status}" -ne 0 ] || [ "${log_status}" -ne 0 ]; then
             exit 1
           fi
         env:

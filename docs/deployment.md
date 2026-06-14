@@ -226,8 +226,8 @@ Run after every deployment or major rebuild:
 - `/dashboard/home` renders and shows `21 courses / 84 lessons`.
 - `/roadmap` renders 21 roadmap stages.
 - `/labs` renders 21 labs and linked lesson buttons.
-- `/resources` renders 320 resources and filters without excessive blank space.
-- `/interview-prep` renders 22 prep packs and 219 total questions.
+- `/resources` renders 330 resources and filters without excessive blank space.
+- `/interview-prep` renders 29 prep packs and 268 total questions.
 - A course page opens from the dashboard course table.
 - A lesson page opens from a course page.
 - Lesson next/previous navigation works.

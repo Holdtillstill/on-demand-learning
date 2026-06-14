@@ -28,7 +28,7 @@ Run this after every local rebuild, Docker Compose demo, shared-EKS preview, or 
 
 - `make platform-browser-smoke WEB_BASE=https://...` passes against the Platform Academy web origin, including the 21 portfolio-grade lab UI signals and filter, all course, lesson, lab detail, resource detail, and interview-pack deep links, active-pack and visible-pack interview cram-sheet downloads, custom study-plan save/download, lab workbook save, lab evidence report download, guest profile export, and invalid backup import validation.
 - `/dashboard/home` renders the dashboard without topbar overlap.
-- `/dashboard/home` shows 21 courses, 84 lessons, 21 labs, 320 resources, and 219 interview questions.
+- `/dashboard/home` shows 21 courses, 84 lessons, 21 labs, 330 resources, and 268 interview questions.
 - `/roadmap` renders all roadmap stages and remains readable on desktop and mobile widths.
 - `/labs` renders lab cards and linked course/lesson actions.
 - Every `/courses/{course_slug}` and `/courses/{course_slug}/lessons/{sequence}` route from the API catalog renders its title and expected lesson/progress controls.

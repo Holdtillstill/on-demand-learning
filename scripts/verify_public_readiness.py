@@ -23,6 +23,7 @@ SKIP_DIRS = {
     "htmlcov",
     "node_modules",
     "playwright-report",
+    "references",
     "smoke-artifacts",
     "test-results",
 }
@@ -110,10 +111,12 @@ def verify_public_shell(errors: list[str]) -> None:
     if shell is None:
         errors.append("apps/platform-academy/index.html: public shell is unreadable")
         return
-    if 'src="https://on-demand-demos.bozhi.dev/visitor.js"' not in shell:
-        errors.append("apps/platform-academy/index.html: missing first-party visitor script")
-    if 'data-project="platform-academy"' not in shell:
-        errors.append("apps/platform-academy/index.html: missing platform-academy visitor project id")
+    if "on-demand-demos.bozhi.dev/visitor.js" in shell:
+        errors.append("apps/platform-academy/index.html: stale visitor script should not be present")
+    if 'data-project="platform-academy"' in shell:
+        errors.append("apps/platform-academy/index.html: stale visitor project id should not be present")
+    if "/api/events" in shell:
+        errors.append("apps/platform-academy/index.html: stale visitor event endpoint should not be present")
     required_markers = {
         "canonical metadata": '<link rel="canonical" href="https://platform-academy.bozhi.dev/"',
         "OpenGraph URL metadata": 'property="og:url" content="https://platform-academy.bozhi.dev/"',
