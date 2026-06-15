@@ -135,6 +135,26 @@ process.stdout.write(match?.ResponseHeadersPolicy?.Id || "");
 NODE
 }
 
+read_current_distribution_response_headers_policy_id() {
+  local get_config_error="${tmp_dir}/distribution-current-policy-error.txt"
+  local current_policy_id
+  if ! current_policy_id="$(aws cloudfront get-distribution-config \
+    --id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+    --query DistributionConfig.DefaultCacheBehavior.ResponseHeadersPolicyId \
+    --output text 2>"${get_config_error}")"; then
+    if grep -q "AccessDenied" "${get_config_error}"; then
+      require_edge_control_or_explicit_preprovisioned "CloudFront distribution reads are not allowed for this deploy role"
+      return 0
+    fi
+    cat "${get_config_error}" >&2
+    exit 1
+  fi
+
+  if [ -n "${current_policy_id}" ] && [ "${current_policy_id}" != "None" ] && [ "${current_policy_id}" != "null" ]; then
+    printf "%s" "${current_policy_id}"
+  fi
+}
+
 ensure_response_headers_policy() {
   if [ -n "${response_headers_policy_id}" ]; then
     echo "Using configured CloudFront response headers policy ${response_headers_policy_id}."
@@ -153,7 +173,12 @@ ensure_response_headers_policy() {
     exit 1
   fi
 
-  response_headers_policy_id="$(lookup_response_headers_policy_id "${policy_name}")"
+  response_headers_policy_id="$(read_current_distribution_response_headers_policy_id)"
+  if [ -n "${response_headers_policy_id}" ]; then
+    echo "Using currently associated CloudFront response headers policy ${response_headers_policy_id}."
+  else
+    response_headers_policy_id="$(lookup_response_headers_policy_id "${policy_name}")"
+  fi
 
   if [ -n "${response_headers_policy_id}" ]; then
     local policy_etag
