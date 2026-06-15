@@ -608,16 +608,31 @@ async function fetchJson<T>(url: string, path: string, init?: RequestInit): Prom
   return parseJsonResponse<T>(response, path);
 }
 
+function isNetworkFetchError(error: unknown) {
+  if (error instanceof TypeError) return true;
+  const message = error instanceof Error ? error.message : String(error);
+  return /failed to fetch|fetch failed|networkerror|load failed/i.test(message);
+}
+
 async function getJson<T>(path: string): Promise<T> {
+  const localFallback = await localGetFallback<T>(path);
   if (USE_STATIC_API_FALLBACK) {
-    const localFallback = await localGetFallback<T>(path);
     if (localFallback !== undefined) return localFallback;
 
     const staticPath = staticJsonPath(path);
     if (staticPath) return fetchJson<T>(staticPath, path, { cache: "force-cache" });
   }
 
-  return fetchJson<T>(`${API_BASE}${path}`, path, { cache: "no-store" });
+  try {
+    return await fetchJson<T>(`${API_BASE}${path}`, path, { cache: "no-store" });
+  } catch (error) {
+    if (!isNetworkFetchError(error)) throw error;
+    if (localFallback !== undefined) return localFallback;
+
+    const staticPath = staticJsonPath(path);
+    if (staticPath) return fetchJson<T>(staticPath, path, { cache: "force-cache" });
+    throw error;
+  }
 }
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
@@ -626,11 +641,18 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
     if (localFallback !== undefined) return localFallback;
   }
 
-  return fetchJson<T>(`${API_BASE}${path}`, path, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body)
-  });
+  try {
+    return await fetchJson<T>(`${API_BASE}${path}`, path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body)
+    });
+  } catch (error) {
+    if (!isNetworkFetchError(error)) throw error;
+    const localFallback = await localPostFallback<T>(path, body);
+    if (localFallback !== undefined) return localFallback;
+    throw error;
+  }
 }
 
 export const api = {

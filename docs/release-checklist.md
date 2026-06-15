@@ -105,7 +105,7 @@ For a single disposable reviewer/deployment bundle with the release scaffold, la
 make platform-review-pack
 ```
 
-For a full release candidate, keep the default smoke gates: 21 courses, 84 lessons, 21 full labs, 21 portfolio-grade lab UI signals, 320 resources, 22 interview prep packs, 219 interview questions, desktop and mobile browser routes, interview cram-sheet downloads, custom study-plan save/download, workbook save, lab evidence report download, and guest recovery validation.
+For a full release candidate, keep the default smoke gates: 21 courses, 84 lessons, 21 full labs, 21 portfolio-grade lab UI signals, 330 resources, 29 interview prep packs, 268 interview questions, desktop and mobile browser routes, interview cram-sheet downloads, custom study-plan save/download, workbook save, lab evidence report download, and guest recovery validation.
 The lab contract also requires every full lab to expose a deepened evidence template, lab-specific workbook prompts, validation checks, rubric items, and criterion-specific evidence terms. The portfolio-grade lab subset additionally has structural checks for broken/fixed Kubernetes YAML, rendered Helm release risk, ALB target-health and health-path evidence, tenant RBAC/NetworkPolicy/Pod Security boundaries, pre-apply manifest risk, EKS IP exhaustion evidence, Terraform plan risk, ArgoCD ignore rules, IAM trust and least-privilege JSON, release workflow gates, SLO alert rules, and career proof-pack artifacts. Downloaded lab packets must include the guided run sequence and evidence artifact map before workbook prompts and commands.
 The browser lab-detail smoke also requires every advertised lab route to render the guided run sequence and learner-safe artifact map before the workbook controls.
 

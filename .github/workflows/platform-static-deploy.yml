@@ -13,6 +13,8 @@ env:
   STATIC_SITE_BUCKET: ${{ secrets.STATIC_SITE_BUCKET }}
   CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
   CLOUDFRONT_FUNCTION_NAME: ${{ secrets.CLOUDFRONT_FUNCTION_NAME }}
+  CLOUDFRONT_RESPONSE_HEADERS_POLICY_ID: ${{ secrets.CLOUDFRONT_RESPONSE_HEADERS_POLICY_ID }}
+  STATIC_ALLOW_PREPROVISIONED_EDGE: ${{ vars.STATIC_ALLOW_PREPROVISIONED_EDGE || 'false' }}
   SITE_URL: ${{ vars.PLATFORM_STATIC_WEB_BASE || 'https://platform-academy.bozhi.dev' }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -47,7 +49,9 @@ jobs:
         working-directory: apps/platform-academy
 
       - name: Validate static edge router
-        run: npm run validate:static-spa-router
+        run: |
+          npm run check:reference-static-api
+          npm run validate:static-spa-router
         working-directory: apps/platform-academy
 
       - name: Test and build Platform Academy
@@ -106,4 +110,8 @@ jobs:
 
       - name: Smoke deployed browser rendering
         run: WEB_BASE="${SITE_URL}" npm run smoke:browser-static-host
+        working-directory: apps/platform-academy
+
+      - name: Validate deployed Figma UI flows
+        run: WEB_BASE="${SITE_URL}" npm run validate:figma-ui
         working-directory: apps/platform-academy

@@ -1,9 +1,5 @@
-import { EmptyState } from "../components/EmptyState";
+import { ReferenceFigmaStatus } from "../components/ReferenceFigmaScreens";
 
 export function DeferredContentPage({ title, detail }: { title: string; detail: string }) {
-  return (
-    <section className="page canonical-page">
-      <EmptyState title={title} detail={detail} />
-    </section>
-  );
+  return <ReferenceFigmaStatus title={title.replace(/\.\.\.$/, "")} detail={detail} />;
 }

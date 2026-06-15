@@ -5,13 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "export:static-api": "cd ../.. && PYTHONPATH=apps/api uv run --no-sync python scripts/export_platform_academy_static_api.py",
+    "check:reference-static-api": "node scripts/check-reference-static-api.mjs",
+    "export:static-api": "cd ../.. && PYTHONPATH=apps/api uv run --no-sync python scripts/export_platform_academy_static_api.py && cd apps/platform-academy && node scripts/sync-reference-static-api.mjs",
+    "sync:reference-static-api": "node scripts/sync-reference-static-api.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "smoke:browser-static-host": "node scripts/smoke-browser-static-host.mjs",
     "smoke:routes": "node scripts/smoke-routes.mjs",
     "smoke:static-host": "node scripts/smoke-static-host.mjs",
     "test": "NODE_ENV=test vitest run",
+    "validate:figma-ui": "node scripts/validate-figma-ui.mjs",
     "validate:static-spa-router": "node scripts/validate-static-spa-router.mjs",
     "typecheck": "tsc -b"
   },

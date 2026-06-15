@@ -44,6 +44,14 @@ export function writeInterviewStudyPlans(plans: InterviewStudyPlan[]) {
   }
 }
 
+export function clearInterviewStudyPlans() {
+  try {
+    globalThis.localStorage?.removeItem(INTERVIEW_STUDY_PLAN_STORAGE_KEY);
+  } catch {
+    // Local storage can be unavailable in private browsing modes.
+  }
+}
+
 export function makeInterviewStudyPlanId() {
   return `plan-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }

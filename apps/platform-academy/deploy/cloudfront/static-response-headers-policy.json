@@ -1,0 +1,51 @@
+{
+  "Name": "platform-academy-static-security-headers",
+  "Comment": "Security headers for Platform Academy static SPA.",
+  "SecurityHeadersConfig": {
+    "FrameOptions": {
+      "Override": true,
+      "FrameOption": "DENY"
+    },
+    "ReferrerPolicy": {
+      "Override": true,
+      "ReferrerPolicy": "strict-origin-when-cross-origin"
+    },
+    "ContentSecurityPolicy": {
+      "Override": true,
+      "ContentSecurityPolicy": "default-src 'self'; base-uri 'self'; connect-src 'self'; font-src 'self' https://fonts.gstatic.com data:; frame-ancestors 'none'; img-src 'self' data: https://platform-academy.bozhi.dev; object-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; upgrade-insecure-requests"
+    },
+    "ContentTypeOptions": {
+      "Override": true
+    },
+    "StrictTransportSecurity": {
+      "Override": true,
+      "IncludeSubdomains": true,
+      "Preload": true,
+      "AccessControlMaxAgeSec": 31536000
+    },
+    "XSSProtection": {
+      "Override": true,
+      "Protection": true,
+      "ModeBlock": true
+    }
+  },
+  "CustomHeadersConfig": {
+    "Quantity": 2,
+    "Items": [
+      {
+        "Header": "Cross-Origin-Opener-Policy",
+        "Value": "same-origin",
+        "Override": true
+      },
+      {
+        "Header": "Permissions-Policy",
+        "Value": "camera=(), microphone=(), geolocation=(), payment=()",
+        "Override": true
+      }
+    ]
+  },
+  "ServerTimingHeadersConfig": {
+    "Enabled": false,
+    "SamplingRate": 0
+  }
+}

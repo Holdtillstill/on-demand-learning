@@ -2,6 +2,9 @@ const WEB_BASE = normalizeBase(process.env.WEB_BASE || process.env.PLATFORM_WEB_
 const TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 30000);
 const EXPECT_SECURITY_HEADERS = process.env.SMOKE_EXPECT_SECURITY_HEADERS !== 'false';
 const EXPECT_CLEAN_SPA_ROUTING = process.env.SMOKE_EXPECT_CLEAN_SPA_ROUTING === 'true';
+const EXPECTED_RESOURCES = 330;
+const EXPECTED_INTERVIEW_PACKS = 29;
+const EXPECTED_INTERVIEW_QUESTIONS = 268;
 
 const htmlRoutes = [
   '/',
@@ -29,16 +32,19 @@ const staticJsonChecks = [
   },
   {
     path: '/static-api/platform-academy-resources.json',
-    validate: (payload) => {
-      assert(Array.isArray(payload.resources) && payload.resources.length === 320, `Expected 320 resources, got ${payload.resources?.length}`);
-    },
+    validate: validateResourceCatalog,
+  },
+  {
+    path: '/api/platform-academy/resources',
+    validate: validateResourceCatalog,
   },
   {
     path: '/static-api/platform-academy-interview-prep.json',
-    validate: (payload) => {
-      assert(Array.isArray(payload.packs) && payload.packs.length === 22, `Expected 22 interview packs, got ${payload.packs?.length}`);
-      assert(payload.total_questions === 219, `Expected 219 interview questions, got ${payload.total_questions}`);
-    },
+    validate: validateInterviewCatalog,
+  },
+  {
+    path: '/api/platform-academy/interview-prep',
+    validate: validateInterviewCatalog,
   },
   {
     path: '/api/platform-academy/catalog',
@@ -47,6 +53,24 @@ const staticJsonChecks = [
     },
   },
 ];
+
+function validateResourceCatalog(payload) {
+  assert(Array.isArray(payload.resources), 'Resources payload should expose resources[]');
+  assert(payload.resources.length === EXPECTED_RESOURCES, `Expected ${EXPECTED_RESOURCES} resources, got ${payload.resources.length}`);
+  assert(payload.resources.every((resource) => resource.slug && resource.title), 'Every resource should expose a slug and title');
+  assert(Array.isArray(payload.domains) && payload.domains.length > 0, 'Resources payload should expose domains[]');
+  assert(Array.isArray(payload.types) && payload.types.length > 0, 'Resources payload should expose types[]');
+}
+
+function validateInterviewCatalog(payload) {
+  assert(Array.isArray(payload.packs), 'Interview payload should expose packs[]');
+  assert(payload.packs.length === EXPECTED_INTERVIEW_PACKS, `Expected ${EXPECTED_INTERVIEW_PACKS} interview packs, got ${payload.packs.length}`);
+  const questionTotal = payload.packs.reduce((total, pack) => total + (Array.isArray(pack.questions) ? pack.questions.length : 0), 0);
+  assert(questionTotal === EXPECTED_INTERVIEW_QUESTIONS, `Expected ${EXPECTED_INTERVIEW_QUESTIONS} interview questions, got ${questionTotal}`);
+  assert(payload.total_questions === questionTotal, `Interview total_questions should match pack questions (${payload.total_questions} !== ${questionTotal})`);
+  assert(Array.isArray(payload.domains) && payload.domains.length > 0, 'Interview payload should expose domains[]');
+  assert(Array.isArray(payload.levels) && payload.levels.length > 0, 'Interview payload should expose levels[]');
+}
 
 function normalizeBase(value) {
   return value.replace(/\/+$/, '');
@@ -89,15 +113,16 @@ function assertSecurityHeaders(result) {
   const csp = requireHeader(result.headers, 'content-security-policy', /default-src 'self'/);
   for (const requiredDirective of [
     "base-uri 'self'",
-    "connect-src 'self' https://on-demand-demos.bozhi.dev",
+    "connect-src 'self'",
     "frame-ancestors 'none'",
     "object-src 'none'",
-    "script-src 'self' https://on-demand-demos.bozhi.dev",
+    "script-src 'self'",
     'upgrade-insecure-requests',
   ]) {
     assert(csp.includes(requiredDirective), `CSP should include ${requiredDirective}`);
   }
   assert(!/script-src[^;]*'unsafe-inline'/.test(csp), 'CSP script-src should not allow unsafe-inline');
+  assert(!csp.includes('on-demand-demos.bozhi.dev'), 'CSP should not keep the removed visitor telemetry origin');
 
   requireHeader(result.headers, 'strict-transport-security', /max-age=31536000/);
   requireHeader(result.headers, 'x-content-type-options', 'nosniff');
@@ -116,8 +141,8 @@ async function assertHtmlShell(path) {
   assert(result.status === 200, `${path} should return 200, got ${result.status}`);
   assert(result.contentType.toLowerCase().includes('text/html'), `${path} should return HTML, got ${result.contentType}`);
   assert(result.body.includes('<div id="root"></div>'), `${path} should serve the app shell`);
-  assert(result.body.includes('https://on-demand-demos.bozhi.dev/visitor.js'), `${path} should include visitor script`);
-  assert(result.body.includes('data-project="platform-academy"'), `${path} should tag visitor events with platform-academy`);
+  assert(!result.body.includes('visitor.js'), `${path} should not include the removed visitor script`);
+  assert(!result.body.includes('/api/events'), `${path} should not include visitor event calls`);
   if (EXPECT_CLEAN_SPA_ROUTING && path !== '/') {
     const cacheHeader = result.headers['x-cache'] || '';
     assert(!/error from cloudfront/i.test(cacheHeader), `${path} should use clean SPA routing, got x-cache="${cacheHeader}"`);
