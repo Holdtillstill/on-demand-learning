@@ -212,35 +212,35 @@ export default function LabDetail({ labId, onBack }: LabDetailProps) {
   ];
 
   const packetOverlay = packetPreview ? (
-    <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 500 }}>
-      <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.65)' }} onClick={() => setPacketPreview(null)} />
-      <div className="relative w-full max-w-[760px] rounded-sm border shadow-2xl overflow-hidden" style={{ background: SURF, borderColor: BORDER2 }}>
-        <div className="px-5 py-4 border-b flex items-start justify-between gap-4" style={{ borderColor: BORDER }}>
+    <div className="figma-v2-packet-overlay fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 500 }}>
+      <div className="figma-v2-packet-backdrop absolute inset-0" onClick={() => setPacketPreview(null)} />
+      <div className="figma-v2-packet-panel relative w-full max-w-[760px] rounded-sm border shadow-2xl overflow-hidden">
+        <div className="figma-v2-packet-header px-5 py-4 border-b flex items-start justify-between gap-4">
           <div>
-            <p style={{ color: packetPreview.error ? AMBER : ACCENT, fontSize: 10, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>
+            <p style={{ color: packetPreview.error ? AMBER : 'var(--packet-accent)', fontSize: 10, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>
               {packetPreview.error ? 'Packet fallback ready' : 'Packet ready'}
             </p>
-            <h2 style={{ color: TEXT, fontSize: 15, fontWeight: 600, marginTop: 4 }}>{lab.title}</h2>
+            <h2 style={{ color: 'var(--packet-text)', fontSize: 15, fontWeight: 600, marginTop: 4 }}>{lab.title}</h2>
           </div>
-          <button aria-label="Close lab packet preview" onClick={() => setPacketPreview(null)} style={{ color: TEXT3, fontSize: 20, lineHeight: 1 }} type="button">×</button>
+          <button aria-label="Close lab packet preview" onClick={() => setPacketPreview(null)} style={{ color: 'var(--packet-text-3)', fontSize: 20, lineHeight: 1 }} type="button">×</button>
         </div>
-        <pre className="m-0 p-5 overflow-auto" style={{ maxHeight: '56vh', background: TERMINAL, color: TEXT2, fontSize: 11, lineHeight: 1.7, fontFamily: 'var(--font-mono)', whiteSpace: 'pre-wrap' }}>
+        <pre className="figma-v2-packet-body m-0 p-5 overflow-auto" style={{ maxHeight: '56vh', fontSize: 11, lineHeight: 1.7, fontFamily: 'var(--font-mono)', whiteSpace: 'pre-wrap' }}>
           {packetPreview.markdown}
         </pre>
-        <div className="px-5 py-3 border-t flex items-center gap-2 justify-end" style={{ borderColor: BORDER }}>
+        <div className="figma-v2-packet-footer px-5 py-3 border-t flex items-center gap-2 justify-end">
           <a
-            className="px-3 py-2 rounded-sm border text-[10px]"
+            className="figma-v2-packet-secondary px-3 py-2 rounded-sm border text-[10px]"
             href={packetPreview.sourceUrl}
             rel="noreferrer"
-            style={{ borderColor: BORDER2, color: TEXT2, fontFamily: 'var(--font-mono)' }}
+            style={{ fontFamily: 'var(--font-mono)' }}
             target="_blank"
           >
             Open raw
           </a>
           <button
-            className="px-3 py-2 rounded-sm border text-[10px]"
+            className="figma-v2-packet-primary px-3 py-2 rounded-sm border text-[10px]"
             onClick={() => void navigator.clipboard.writeText(packetPreview.markdown).catch(() => undefined)}
-            style={{ background: ACCENT_BG, borderColor: alpha(ACCENT, 25), color: ACCENT, fontFamily: 'var(--font-mono)' }}
+            style={{ fontFamily: 'var(--font-mono)' }}
             type="button"
           >
             Copy packet

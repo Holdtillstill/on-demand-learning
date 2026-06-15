@@ -17545,6 +17545,72 @@ html body #root .reference-figma-v2 .figma-v2-tab-button {
   color: var(--figma-tab-color) !important;
 }
 
+html body .figma-v2-packet-overlay {
+  --packet-backdrop: rgba(2, 4, 10, 0.78);
+  --packet-panel: #0d0f17;
+  --packet-header: #131620;
+  --packet-code-bg: #060810;
+  --packet-border: #242840;
+  --packet-border-soft: #1a1d2e;
+  --packet-text: #dde2f0;
+  --packet-text-2: #9aa3c7;
+  --packet-text-3: #838bab;
+  --packet-accent: #3dffd6;
+  --packet-accent-bg: #0a201c;
+  --packet-accent-border: rgba(61, 255, 214, 0.35);
+  color: var(--packet-text);
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+html[data-pa-theme="light"] body .figma-v2-packet-overlay {
+  --packet-backdrop: rgba(23, 32, 43, 0.48);
+  --packet-panel: #ffffff;
+  --packet-header: #f6f8fb;
+  --packet-code-bg: #f2f5f9;
+  --packet-border: #c4cedb;
+  --packet-border-soft: #d7dee8;
+  --packet-text: #17202b;
+  --packet-text-2: #3d4a59;
+  --packet-text-3: #657386;
+  --packet-accent: #008f7a;
+  --packet-accent-bg: #e4fbf5;
+  --packet-accent-border: rgba(0, 143, 122, 0.35);
+}
+
+html body .figma-v2-packet-backdrop {
+  background: var(--packet-backdrop) !important;
+  backdrop-filter: blur(2px);
+}
+
+html body .figma-v2-packet-panel {
+  background: var(--packet-panel) !important;
+  border-color: var(--packet-border) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42) !important;
+}
+
+html body .figma-v2-packet-header,
+html body .figma-v2-packet-footer {
+  background: var(--packet-header) !important;
+  border-color: var(--packet-border-soft) !important;
+}
+
+html body .figma-v2-packet-body {
+  background: var(--packet-code-bg) !important;
+  color: var(--packet-text-2) !important;
+}
+
+html body .figma-v2-packet-secondary {
+  border-color: var(--packet-border) !important;
+  background: var(--packet-panel) !important;
+  color: var(--packet-text-2) !important;
+}
+
+html body .figma-v2-packet-primary {
+  border-color: var(--packet-accent-border) !important;
+  background: var(--packet-accent-bg) !important;
+  color: var(--packet-accent) !important;
+}
+
 html body #root .product-nav-chevron {
   display: none !important;
 }
